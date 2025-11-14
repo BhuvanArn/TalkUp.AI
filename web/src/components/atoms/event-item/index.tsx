@@ -4,7 +4,7 @@
  * Note: The height and top position will be controlled by the parent component (CalendarDayColumn)
  * using inline styles (or utility classes) based on start/end time.
  */
-interface EventItemProps {
+export interface EventItemProps {
   /** The primary label of the event (e.g., "Interview Amazon Web"). */
   title: string;
   /** The secondary information (e.g., "Amazon Web"). */
@@ -23,7 +23,7 @@ const EventItem = ({ title, subtitle, color }: EventItemProps) => {
   return (
     <div
       className={`absolute w-full p-2 text-xs rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow 
-                    ${colorMap[color]}`}
+                      ${colorMap[color]}`}
       style={{
         minHeight: '40px',
       }}
