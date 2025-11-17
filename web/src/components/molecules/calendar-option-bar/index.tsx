@@ -1,73 +1,40 @@
-import { Button } from '@/components/atoms/button';
-import { Icon } from '@/components/atoms/icon';
+import { format, addDays, isDate } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Locale } from 'date-fns/locale';
+import { useCalendarStore } from './useCalendarStore'; 
 
-type CalendarView = 'List' | 'Table';
+/**
+ * Calendar option bar component displaying the date range.
+ * Navigation arrows are removed for this component.
+ * @returns {JSX.Element} The calendar option bar component.
+ */
+const CalendarOptionBar = () => {
+    const { weekStart } = useCalendarStore(); 
+    const isWeekStartValid = isDate(weekStart) && !isNaN(weekStart.getTime());
+    let weekTitle = "Loading...";
+    type FormatWithOptions = (date: Date | number, formatStr: string, options: { locale?: Locale }) => string;
+    const formatWithLocale = format as FormatWithOptions;
+   
+    if (isWeekStartValid) {
+        const weekEnd = addDays(weekStart, 6);
+        const startDay = formatWithLocale(weekStart, 'd', { locale: fr });
+        const endFull = formatWithLocale(weekEnd, 'd MMMM yyyy', { locale: fr });
+        weekTitle = `${startDay} - ${endFull}`;
+       
+    } else {
+        weekTitle = "Invalid Date"; 
+    }
 
-// CORRECTION : AJOUT DES PROPS DE NAVIGATION DE LA SEMAINE
-interface CalendarOptionBarProps {
-  activeView: CalendarView;
-  onViewChange: (view: CalendarView) => void;
-  startDate: string; // Ex: 'Nov 10'
-  endDate: string; // Ex: 'Nov 16'
-  onPrevWeek: () => void;
-  onNextWeek: () => void;
-}
-
-const CalendarOptionBar = ({
-  activeView,
-  onViewChange,
-  startDate,
-  endDate,
-  onPrevWeek,
-  onNextWeek,
-}: CalendarOptionBarProps) => {
-  return (
-    <div className="flex justify-between items-center mb-4">
-      {/* 1. Navigation Semaine */}
-      <div className="flex items-center space-x-3">
-        <h3 className="text-xl font-semibold text-gray-800">
-          {startDate} - {endDate} {/* Affichage de la semaine */}
-        </h3>
-        <div className="flex space-x-1">
-          {/* Boutons de navigation */}
-          <Button variant="text" size="sm" onClick={onPrevWeek}>
-            <Icon icon="arrow-left" size="sm" />
-          </Button>
-          <Button variant="text" size="sm" onClick={onNextWeek}>
-            <Icon icon="arrow-right" size="sm" />
-          </Button>
+    return (
+        <div className="flex items-center text-2xl font-bold text-gray-800">
+             
+            {/* Week Title (Date Range) */}
+            <span className="mx-4">
+                {weekTitle}
+            </span>
+             
         </div>
-      </div>
-
-      {/* 2. Options (Filters et View Toggle) */}
-      <div className="flex items-center space-x-3">
-        {/* Bouton Filters (Stub) */}
-        <Button variant="outlined" size="sm">
-          <Icon icon="cog" className="mr-1" />
-          Filters
-        </Button>
-
-        {/* View Toggle */}
-        <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-          <Button
-            size="sm"
-            onClick={() => onViewChange('Table')}
-            variant={activeView === 'Table' ? 'outlined' : 'text'}
-            className={activeView === 'Table' ? '' : 'border-r'}
-          >
-            Table
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => onViewChange('List')}
-            variant={activeView === 'List' ? 'outlined' : 'text'}
-          >
-            List
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default CalendarOptionBar;
