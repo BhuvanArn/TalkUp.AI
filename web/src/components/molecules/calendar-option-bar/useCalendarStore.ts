@@ -1,14 +1,14 @@
-import { startOfWeek, isFuture } from 'date-fns'; 
+import { isFuture, startOfWeek } from 'date-fns';
 import { create } from 'zustand';
 
 // --- Mock Dates (Maintenant, le 17 novembre 2025) ---
 const NOV_10_PAST = new Date('2025-11-10T10:30:00');
 const NOV_13_PAST = new Date('2025-11-13T16:00:00');
 
-const NOV_18_FUTURE = new Date('2025-11-18T09:00:00'); 
+const NOV_18_FUTURE = new Date('2025-11-18T09:00:00');
 const NOV_20_FUTURE = new Date('2025-11-20T14:30:00');
 
-const MOCK_TODAY = new Date('2025-11-17T12:00:00'); 
+const MOCK_TODAY = new Date('2025-11-17T12:00:00');
 // ------------------------------------------------------
 
 /**
@@ -44,17 +44,15 @@ interface CalendarState {
 
   /** Opens the modal for creating a new event at the given date. */
   openModalForCreation: (date: Date) => void;
-  
+
   /** Opens the modal for editing an existing event. */
   openModalForEdit: (event: CalendarEvent) => void;
-  
+
   /** Closes the modal and resets modal state. */
   closeModal: () => void;
 
   /** Adds a new event to the store. */
-  addEvent: (
-    eventData: Omit<CalendarEvent, 'id' | 'fullDate'>
-  ) => void;
+  addEvent: (eventData: Omit<CalendarEvent, 'id' | 'fullDate'>) => void;
 
   /** Updates an existing event and closes the modal. */
   updateEvent: (event: CalendarEvent) => void;
@@ -68,7 +66,7 @@ interface CalendarState {
 
 const buildNewEventDetails = (
   date: Date,
-  eventData: Omit<CalendarEvent, 'id' | 'fullDate'>
+  eventData: Omit<CalendarEvent, 'id' | 'fullDate'>,
 ) => {
   const made = new Date(date);
   made.setSeconds(0);
@@ -76,7 +74,7 @@ const buildNewEventDetails = (
 
   return {
     ...eventData,
-    fullDate: made
+    fullDate: made,
   };
 };
 
@@ -97,54 +95,56 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
     events: [
       {
         id: 'e1',
-        title: "Interview Passée",
-        subtitle: "Amazon Web",
+        title: 'Interview Passée',
+        subtitle: 'Amazon Web',
         color: 'blue',
         startHour: 10,
         startMinute: 30,
         endHour: 11,
         endMinute: 30,
-        fullDate: NOV_10_PAST 
+        fullDate: NOV_10_PAST,
       },
       {
         id: 'e4',
-        title: "Practice Passée",
-        subtitle: "Google Cloud France",
+        title: 'Practice Passée',
+        subtitle: 'Google Cloud France',
         color: 'red',
         startHour: 16,
         startMinute: 0,
         endHour: 17,
         endMinute: 30,
-        fullDate: NOV_13_PAST 
+        fullDate: NOV_13_PAST,
       },
       {
         id: 'e5',
-        title: "Prochain Événement",
+        title: 'Prochain Événement',
         subtitle: "Réunion d'équipe",
         color: 'green',
         startHour: 9,
         startMinute: 0,
         endHour: 10,
         endMinute: 0,
-        fullDate: NOV_18_FUTURE 
+        fullDate: NOV_18_FUTURE,
       },
       {
         id: 'e6',
-        title: "Événement Suivant",
-        subtitle: "Présentation Client",
+        title: 'Événement Suivant',
+        subtitle: 'Présentation Client',
         color: 'purple',
         startHour: 14,
         startMinute: 30,
         endHour: 16,
         endMinute: 0,
-        fullDate: NOV_20_FUTURE 
-      }
+        fullDate: NOV_20_FUTURE,
+      },
     ],
 
     getNextUpcomingEvent: () => {
       const allEvents = get().events;
-      
-      const futureEvents = allEvents.filter(event => isFuture(event.fullDate));
+
+      const futureEvents = allEvents.filter((event) =>
+        isFuture(event.fullDate),
+      );
       if (futureEvents.length === 0) {
         return undefined;
       }
@@ -156,7 +156,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       const validDate = date instanceof Date ? date : new Date(date);
 
       if (isNaN(validDate.getTime())) {
-        console.error("[STORE] Invalid date:", date);
+        console.error('[STORE] Invalid date:', date);
         return;
       }
 
@@ -164,20 +164,32 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
 
       set({
         currentDate: validDate,
-        weekStart: newMonday
+        weekStart: newMonday,
       });
 
-      console.log("[STORE] Updated currentDate & weekStart to:", validDate);
+      console.log('[STORE] Updated currentDate & weekStart to:', validDate);
     },
 
     openModalForCreation: (date: Date) =>
-      set({ isModalOpen: true, modalInitialDate: date, modalEventToEdit: null }),
+      set({
+        isModalOpen: true,
+        modalInitialDate: date,
+        modalEventToEdit: null,
+      }),
 
     openModalForEdit: (event: CalendarEvent) =>
-      set({ isModalOpen: true, modalInitialDate: null, modalEventToEdit: event }),
+      set({
+        isModalOpen: true,
+        modalInitialDate: null,
+        modalEventToEdit: event,
+      }),
 
     closeModal: () =>
-      set({ isModalOpen: false, modalInitialDate: null, modalEventToEdit: null }),
+      set({
+        isModalOpen: false,
+        modalInitialDate: null,
+        modalEventToEdit: null,
+      }),
 
     addEvent: (eventData) => {
       const date = get().modalInitialDate;
@@ -185,11 +197,11 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
 
       const newEvent = {
         id: Date.now().toString(),
-        ...buildNewEventDetails(date, eventData)
+        ...buildNewEventDetails(date, eventData),
       };
 
       set((state) => ({
-        events: [...state.events, newEvent]
+        events: [...state.events, newEvent],
       }));
 
       get().closeModal();
@@ -197,7 +209,9 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
 
     updateEvent: (updatedEvent) => {
       set((state) => ({
-        events: state.events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)),
+        events: state.events.map((e) =>
+          e.id === updatedEvent.id ? updatedEvent : e,
+        ),
       }));
 
       get().closeModal();

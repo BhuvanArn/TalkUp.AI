@@ -1,8 +1,8 @@
 import { Icon } from '@/components/atoms/icon';
 import { useCalendarStore } from '@/components/molecules/calendar-option-bar/useCalendarStore';
 import { MiniCalendarDay, getMiniCalendarDays } from '@/utils/calendarUtils';
-import { useMemo, useState } from 'react';
 import { addDays } from 'date-fns';
+import { useMemo, useState } from 'react';
 
 interface MiniCalendarViewProps {}
 
@@ -96,8 +96,8 @@ export const MiniCalendar = ({}: MiniCalendarViewProps) => {
 
             const dayTime = day.fullDate.getTime();
             const weekStart = currentWeekStart.getTime();
-            
-            const weekEnd = addDays(currentWeekStart, 7).getTime(); 
+
+            const weekEnd = addDays(currentWeekStart, 7).getTime();
 
             return dayTime >= weekStart && dayTime < weekEnd;
           };
