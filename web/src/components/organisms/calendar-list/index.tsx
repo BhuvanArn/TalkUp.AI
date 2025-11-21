@@ -1,4 +1,3 @@
-
 import ListEventBlock from '@/components/atoms/list-event-block';
 import {
   CalendarEvent,
@@ -19,9 +18,9 @@ interface ListEventItem {
   /** The color indicator for the event. */
   color: 'green' | 'blue' | 'red';
   /** The start time string (e.g., '8:30'). */
-  startTime: string; 
+  startTime: string;
   /** The end time string (e.g., '9:30'). */
-  endTime: string; 
+  endTime: string;
 }
 
 /**
@@ -30,9 +29,9 @@ interface ListEventItem {
  */
 interface CalendarListDayData {
   /** Short name of the day (e.g., 'Mon'). */
-  dayName: string; 
+  dayName: string;
   /** Numeric date of the month (e.g., 10). */
-  date: number; 
+  date: number;
   /** Indicates if the day is today. */
   isToday: boolean;
   /** List of events scheduled for this day. */
@@ -44,7 +43,7 @@ interface CalendarListDayData {
  * Properties for the CalendarList component.
  */
 interface CalendarListProps {
-  /** * Optional callback function to navigate to a specific date, 
+  /** * Optional callback function to navigate to a specific date,
    * typically used for modal opening or view change.
    * @param {Date} date The target date.
    */
@@ -58,7 +57,10 @@ interface CalendarListProps {
  * @param {CalendarEvent[]} allEvents - All events available in the calendar store.
  * @returns {CalendarListDayData[]} An array containing data for each of the seven days.
  */
-const getListWeekDaysData = (startDate: Date, allEvents: CalendarEvent[]): CalendarListDayData[] => {
+const getListWeekDaysData = (
+  startDate: Date,
+  allEvents: CalendarEvent[],
+): CalendarListDayData[] => {
   const days: CalendarListDayData[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -71,13 +73,16 @@ const getListWeekDaysData = (startDate: Date, allEvents: CalendarEvent[]): Calen
 
     const eventsForDay = allEvents
       .filter((e) => e.fullDate && isSameDay(e.fullDate, date))
-      .map((e) => ({
-        title: e.title,
-        subtitle: e.subtitle,
-        color: e.color || 'blue', 
-        startTime: (e as any).startTime || '', 
-        endTime: (e as any).endTime || '',
-      }) as ListEventItem);
+      .map(
+        (e) =>
+          ({
+            title: e.title,
+            subtitle: e.subtitle,
+            color: e.color || 'blue',
+            startTime: (e as any).startTime || '',
+            endTime: (e as any).endTime || '',
+          }) as ListEventItem,
+      );
 
     days.push({
       dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -89,16 +94,15 @@ const getListWeekDaysData = (startDate: Date, allEvents: CalendarEvent[]): Calen
   return days;
 };
 
-
 /**
  * @function CalendarList
  * @param {CalendarListProps} props - The properties for the component.
  * @returns {JSX.Element} The rendered calendar list view component.
- * * The CalendarList component displays scheduled events in a vertical list format. 
- * It dynamically fetches its data (current week start date and events) from the 
+ * * The CalendarList component displays scheduled events in a vertical list format.
+ * It dynamically fetches its data (current week start date and events) from the
  * global `useCalendarStore` to ensure synchronization with navigation changes.
  */
-const CalendarList = ({ onGoToDate }: CalendarListProps) => { 
+const CalendarList = ({ onGoToDate }: CalendarListProps) => {
   const { weekStart, events } = useCalendarStore();
   const daysData = useMemo(
     () => getListWeekDaysData(weekStart, events),
@@ -111,7 +115,7 @@ const CalendarList = ({ onGoToDate }: CalendarListProps) => {
    * @returns {string} The formatted full date string.
    */
   const getFullDate = (dayIndex: number): string => {
-    const targetDate = new Date(weekStart); 
+    const targetDate = new Date(weekStart);
     targetDate.setDate(targetDate.getDate() + dayIndex);
     return targetDate.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -126,7 +130,7 @@ const CalendarList = ({ onGoToDate }: CalendarListProps) => {
    * @param {ListEventItem} event - The clicked event object.
    */
   const handleEventClick = (dayIndex: number, event: ListEventItem): void => {
-    const targetDate = new Date(weekStart); 
+    const targetDate = new Date(weekStart);
     targetDate.setDate(targetDate.getDate() + dayIndex);
     const [hour, minute] = event.startTime.split(':').map(Number);
     targetDate.setHours(hour, minute, 0, 0);
