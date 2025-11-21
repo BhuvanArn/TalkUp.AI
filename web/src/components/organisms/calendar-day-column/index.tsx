@@ -44,16 +44,13 @@ interface CalendarDayColumnProps {
  */
 const CalendarDayColumn = ({
   dayName,
+  date,
+  isToday,
   events,
 }: CalendarDayColumnProps) => {
-  return (
-    <div>
-      <h2>{dayName}</h2> {/* Using dayName here */}
-      {/* Other component logic */}
-    </div>
-  );
   const CALENDAR_START_HOUR = 8;
   const PIXELS_PER_MINUTE = 1;
+
   const getEventPositionStyles = (event: EventData) => {
     const startMinutesOfDay = event.startHour * 60 + event.startMinute;
     const calendarStartMinutes = CALENDAR_START_HOUR * 60;
