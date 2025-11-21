@@ -1,7 +1,7 @@
 import { isFuture, startOfWeek } from 'date-fns';
 import { create } from 'zustand';
 
-// --- Mock Dates (Maintenant, le 17 novembre 2025) ---
+// --- Mock Dates (exemple for me ,  17 novembre 2025) ---
 const NOV_10_PAST = new Date('2025-11-10T10:30:00');
 const NOV_13_PAST = new Date('2025-11-13T16:00:00');
 
