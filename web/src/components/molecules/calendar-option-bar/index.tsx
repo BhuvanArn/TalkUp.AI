@@ -1,3 +1,4 @@
+
 import { addDays, format, isDate } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Locale } from 'date-fns/locale';
@@ -5,14 +6,36 @@ import { Locale } from 'date-fns/locale';
 import { useCalendarStore } from './useCalendarStore';
 
 /**
- * Calendar option bar component displaying the date range.
- * Navigation arrows are removed for this component.
- * @returns {JSX.Element} The calendar option bar component.
+ * Defines the possible views for the calendar display.
+ * @type {'List' | 'Table'}
  */
-const CalendarOptionBar = () => {
+type CalendarView = 'List' | 'Table';
+
+/**
+ * @interface CalendarOptionBarProps
+ * Properties for the CalendarOptionBar component.
+ */
+interface CalendarOptionBarProps {
+  /** The currently active view mode ('List' or 'Table'). */
+  activeView: CalendarView;
+  /** Callback function to change the active view mode. */
+  onViewChange: (newView: CalendarView) => void;
+}
+
+
+/**
+ * @function CalendarOptionBar
+ * @param {CalendarOptionBarProps} props - The properties for the component.
+ * @returns {JSX.Element} The rendered calendar option bar component.
+ * * The CalendarOptionBar displays the current week's date range and allows the user 
+ * to switch between the 'Table' (Grid) and 'List' views.
+ */
+const CalendarOptionBar = ({ activeView, onViewChange }: CalendarOptionBarProps) => { 
   const { weekStart } = useCalendarStore();
+  
   const isWeekStartValid = isDate(weekStart) && !isNaN(weekStart.getTime());
   let weekTitle = 'Loading...';
+  
   type FormatWithOptions = (
     date: Date | number,
     formatStr: string,
@@ -30,9 +53,36 @@ const CalendarOptionBar = () => {
   }
 
   return (
-    <div className="flex items-center text-2xl font-bold text-gray-800">
-      {/* Week Title (Date Range) */}
-      <span className="mx-4">{weekTitle}</span>
+    <div className="flex items-center justify-between p-4">
+      {/* 1. Week Title (Date Range Display) */}
+      <span className="text-2xl font-bold text-gray-800">{weekTitle}</span>
+
+      {/* 2. VIEW SELECTOR */}
+      <div className="flex border border-gray-300 rounded-md shadow-sm">
+        {/* TABLE/GRID Button */}
+        <button
+          className={`px-3 py-1 text-sm font-medium transition-colors duration-150
+            ${activeView === 'Table' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          onClick={() => onViewChange('Table')}
+        >
+          Grid
+        </button>
+
+        {/* LIST Button */}
+        <button
+          className={`px-3 py-1 text-sm font-medium transition-colors duration-150
+            ${activeView === 'List' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+            } border-l border-gray-300`}
+          onClick={() => onViewChange('List')}
+        >
+          List
+        </button>
+      </div>
     </div>
   );
 };
