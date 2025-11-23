@@ -2,7 +2,6 @@
 import { addDays, format, isDate } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Locale } from 'date-fns/locale';
-
 import { useCalendarStore } from './useCalendarStore';
 
 type CalendarView = 'List' | 'Table';
