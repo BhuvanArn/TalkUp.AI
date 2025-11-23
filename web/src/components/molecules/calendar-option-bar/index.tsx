@@ -5,37 +5,22 @@ import { Locale } from 'date-fns/locale';
 
 import { useCalendarStore } from './useCalendarStore';
 
-/**
- * Defines the possible views for the calendar display.
- * @type {'List' | 'Table'}
- */
 type CalendarView = 'List' | 'Table';
 
-/**
- * @interface CalendarOptionBarProps
- * Properties for the CalendarOptionBar component.
- */
 interface CalendarOptionBarProps {
-  /** The currently active view mode ('List' or 'Table'). */
   activeView: CalendarView;
-  /** Callback function to change the active view mode. */
   onViewChange: (newView: CalendarView) => void;
 }
 
 
 /**
- * @function CalendarOptionBar
- * @param {CalendarOptionBarProps} props - The properties for the component.
- * @returns {JSX.Element} The rendered calendar option bar component.
- * * The CalendarOptionBar displays the current week's date range and allows the user 
- * to switch between the 'Table' (Grid) and 'List' views.
+ * Calendar option bar component displaying the date range AND view selector.
+ * @returns {JSX.Element} The calendar option bar component.
  */
 const CalendarOptionBar = ({ activeView, onViewChange }: CalendarOptionBarProps) => { 
   const { weekStart } = useCalendarStore();
-  
   const isWeekStartValid = isDate(weekStart) && !isNaN(weekStart.getTime());
   let weekTitle = 'Loading...';
-  
   type FormatWithOptions = (
     date: Date | number,
     formatStr: string,
@@ -54,12 +39,12 @@ const CalendarOptionBar = ({ activeView, onViewChange }: CalendarOptionBarProps)
 
   return (
     <div className="flex items-center justify-between p-4">
-      {/* 1. Week Title (Date Range Display) */}
+      {/* 1. Week Title (Date Range) */}
       <span className="text-2xl font-bold text-gray-800">{weekTitle}</span>
 
-      {/* 2. VIEW SELECTOR */}
+      {/* 2. views selection*/}
       <div className="flex border border-gray-300 rounded-md shadow-sm">
-        {/* TABLE/GRID Button */}
+        {/* buttons TABLE/GRILLE */}
         <button
           className={`px-3 py-1 text-sm font-medium transition-colors duration-150
             ${activeView === 'Table' 
@@ -68,10 +53,10 @@ const CalendarOptionBar = ({ activeView, onViewChange }: CalendarOptionBarProps)
             }`}
           onClick={() => onViewChange('Table')}
         >
-          Grid
+          Grille
         </button>
 
-        {/* LIST Button */}
+        {/* Buton LIST */}
         <button
           className={`px-3 py-1 text-sm font-medium transition-colors duration-150
             ${activeView === 'List' 
@@ -80,7 +65,7 @@ const CalendarOptionBar = ({ activeView, onViewChange }: CalendarOptionBarProps)
             } border-l border-gray-300`}
           onClick={() => onViewChange('List')}
         >
-          List
+          Liste
         </button>
       </div>
     </div>
