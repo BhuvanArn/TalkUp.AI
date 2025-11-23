@@ -44,7 +44,6 @@ interface CalendarDayColumnProps {
  */
 const CalendarDayColumn = ({
   dayName,
-  date,
   isToday,
   events,
 }: CalendarDayColumnProps) => {
