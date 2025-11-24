@@ -1,5 +1,4 @@
 import EventItem, { EventItemProps } from '@/components/atoms/event-item';
-
 /**
  * Interface for event data including time information for vertical positioning.
  */
