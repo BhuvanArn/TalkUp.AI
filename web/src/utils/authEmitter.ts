@@ -8,7 +8,13 @@ export const subscribe = (cb: Listener) => {
 };
 
 export const emit = (v: boolean) => {
-  listeners.forEach((cb) => cb(v));
+  listeners.forEach((cb) => {
+    try {
+      cb(v);
+    } catch (error) {
+      console.error('Auth listener failed:', error);
+    }
+  });
 };
 
 export const hasListeners = () => listeners.size > 0;

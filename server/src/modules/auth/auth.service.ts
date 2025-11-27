@@ -142,4 +142,10 @@ export class AuthService {
       accessToken: await this.jwtService.signAsync(payload),
     };
   }
+
+  async getUserById(userId: string): Promise<user | null> {
+    return this.userRepository.findOne({
+      where: { user_id: userId },
+    });
+  }
 }

@@ -21,7 +21,9 @@ const checkAuthStatus = async (): Promise<boolean> => {
     const isAuth = response.data?.authenticated === true;
     try {
       emitAuth(isAuth);
-    } catch {}
+    } catch (error) {
+      console.error('Auth emitter failed:', error);
+    }
 
     return isAuth;
   } catch {
