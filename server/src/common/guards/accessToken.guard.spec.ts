@@ -82,7 +82,7 @@ describe("AccessTokenGuard (unit)", () => {
       findOne: jest.fn().mockResolvedValue({ user_id: "u1" }),
     };
 
-    const localGuard = new AccessTokenGuard(localJwt, localRepo);
+    const localGuard = new AccessTokenGuard(localJwt as any, localRepo as any);
 
     const ctx = { switchToHttp: () => ({ getRequest: () => reqObj }) };
 
