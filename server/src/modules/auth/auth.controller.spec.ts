@@ -66,20 +66,20 @@ describe("AuthController", () => {
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         "accessToken",
         serviceResponse.accessToken,
-        expect.objectContaining({ httpOnly: true })
+        expect.objectContaining({ httpOnly: true }),
       );
     });
 
     it("should throw ConflictException when email already exists", async () => {
       const conflictError = new ConflictException(
-        "An account with this email already exists"
+        "An account with this email already exists",
       );
       mockAuthService.register = jest.fn().mockRejectedValue(conflictError);
 
       const mockResponse: any = { cookie: jest.fn() };
 
       await expect(
-        controller.register(createUserDto, mockResponse)
+        controller.register(createUserDto, mockResponse),
       ).rejects.toThrow(conflictError);
 
       expect(mockAuthService.register).toHaveBeenCalledWith(createUserDto);
@@ -93,7 +93,7 @@ describe("AuthController", () => {
       const mockResponse: any = { cookie: jest.fn() };
 
       await expect(
-        controller.register(createUserDto, mockResponse)
+        controller.register(createUserDto, mockResponse),
       ).rejects.toThrow(serviceError);
 
       expect(mockAuthService.register).toHaveBeenCalledWith(createUserDto);
@@ -118,7 +118,7 @@ describe("AuthController", () => {
       expect(result).toEqual({ message: "Login successful" });
       expect(mockAuthService.validateUser).toHaveBeenCalledWith(
         "testuser@example.com",
-        "password123"
+        "password123",
       );
       expect(mockAuthService.login).toHaveBeenCalledWith(mockUser);
       expect(mockAuthService.validateUser).toHaveBeenCalledTimes(1);
@@ -126,7 +126,7 @@ describe("AuthController", () => {
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         "accessToken",
         serviceLoginResponse.accessToken,
-        expect.objectContaining({ httpOnly: true })
+        expect.objectContaining({ httpOnly: true }),
       );
     });
 
@@ -139,19 +139,19 @@ describe("AuthController", () => {
       const mockResponse: any = { cookie: jest.fn() };
 
       await expect(controller.login(loginDto, mockResponse)).rejects.toThrow(
-        unauthorizedError
+        unauthorizedError,
       );
 
       expect(mockAuthService.validateUser).toHaveBeenCalledWith(
         "testuser@example.com",
-        "password123"
+        "password123",
       );
       expect(mockAuthService.login).not.toHaveBeenCalled();
     });
 
     it("should throw UnauthorizedException when password is invalid", async () => {
       const invalidPasswordError = new UnauthorizedException(
-        "Invalid password"
+        "Invalid password",
       );
       mockAuthService.validateUser = jest
         .fn()
@@ -160,12 +160,12 @@ describe("AuthController", () => {
       const mockResponse: any = { cookie: jest.fn() };
 
       await expect(controller.login(loginDto, mockResponse)).rejects.toThrow(
-        invalidPasswordError
+        invalidPasswordError,
       );
 
       expect(mockAuthService.validateUser).toHaveBeenCalledWith(
         "testuser@example.com",
-        "password123"
+        "password123",
       );
       expect(mockAuthService.login).not.toHaveBeenCalled();
     });
@@ -187,12 +187,12 @@ describe("AuthController", () => {
       expect(result).toEqual({ message: "Login successful" });
       expect(mockAuthService.validateUser).toHaveBeenCalledWith(
         "different@example.com",
-        "differentPassword"
+        "differentPassword",
       );
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         "accessToken",
         expectedResponse.accessToken,
-        expect.objectContaining({ httpOnly: true })
+        expect.objectContaining({ httpOnly: true }),
       );
     });
 
@@ -203,12 +203,12 @@ describe("AuthController", () => {
       const mockResponse: any = { cookie: jest.fn() };
 
       await expect(controller.login(loginDto, mockResponse)).rejects.toThrow(
-        serviceError
+        serviceError,
       );
 
       expect(mockAuthService.validateUser).toHaveBeenCalledWith(
         "testuser@example.com",
-        "password123"
+        "password123",
       );
     });
   });

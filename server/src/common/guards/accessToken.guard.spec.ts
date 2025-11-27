@@ -27,14 +27,14 @@ describe("AccessTokenGuard (unit)", () => {
   it("throws when header missing", async () => {
     guard = new AccessTokenGuard(mockJwt, mockRepo);
     await expect(guard.canActivate(makeContext({}))).rejects.toThrow(
-      UnauthorizedException
+      UnauthorizedException,
     );
   });
 
   it("throws when header malformed", async () => {
     guard = new AccessTokenGuard(mockJwt, mockRepo);
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: 123 } }))
+      guard.canActivate(makeContext({}, { cookies: { accessToken: 123 } })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -42,7 +42,7 @@ describe("AccessTokenGuard (unit)", () => {
     mockJwt.verifyAsync.mockRejectedValueOnce(new Error("nope"));
     guard = new AccessTokenGuard(mockJwt, mockRepo);
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } }))
+      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -50,7 +50,7 @@ describe("AccessTokenGuard (unit)", () => {
     mockJwt.verifyAsync.mockResolvedValueOnce({});
     guard = new AccessTokenGuard(mockJwt, mockRepo);
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } }))
+      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -59,7 +59,7 @@ describe("AccessTokenGuard (unit)", () => {
     mockRepo.findOne.mockRejectedValueOnce(new Error("repo error"));
     guard = new AccessTokenGuard(mockJwt, mockRepo);
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } }))
+      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
     ).rejects.toThrow(InternalServerErrorException);
   });
 
@@ -68,7 +68,7 @@ describe("AccessTokenGuard (unit)", () => {
     mockRepo.findOne.mockResolvedValueOnce(null);
     guard = new AccessTokenGuard(mockJwt, mockRepo);
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } }))
+      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
