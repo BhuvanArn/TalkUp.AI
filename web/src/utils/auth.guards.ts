@@ -1,5 +1,6 @@
 import { getRouteConfig } from '@/config/routes.config';
 import axiosInstance from '@/services/axiosInstance';
+import { emit as emitAuth } from '@/utils/authEmitter';
 import { redirect } from '@tanstack/react-router';
 
 export interface AuthGuardContext {
@@ -14,9 +15,15 @@ export interface AuthGuardContext {
  */
 const checkAuthStatus = async (): Promise<boolean> => {
   try {
-    // Lightweight request to check auth status
     const response = await axiosInstance.get('/v1/api/auth/status');
-    return response.data?.authenticated === true;
+
+    // Update global AuthContext with the backend's authoritative value
+    const isAuth = response.data?.authenticated === true;
+    try {
+      emitAuth(isAuth);
+    } catch {}
+
+    return isAuth;
   } catch {
     return false;
   }

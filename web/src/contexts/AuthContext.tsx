@@ -1,5 +1,12 @@
 import { User } from '@/types/user';
-import { ReactNode, createContext, useContext, useState } from 'react';
+import { subscribe as subscribeAuthEmitter } from '@/utils/authEmitter';
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 /**
  * Authentication context interface defining the shape of authentication state and methods.
@@ -16,6 +23,10 @@ export interface AuthContextType {
   /** Function to log out the current user */
   logout: () => void;
 }
+
+// The AuthProvider subscribes to an external emitter to stay in sync with
+// auth checks performed outside React (route guards, utils, etc.).
+// See `src/utils/authEmitter.ts` for the emitter implementation.
 
 /**
  * React context for managing authentication state across the application.
@@ -83,6 +94,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     login,
     logout,
   };
+
+  /**
+   * Subscribe to external auth emitter (synchronize with authGuard getAuthStatus)
+   */
+  useEffect(() => {
+    const unsubscribe = subscribeAuthEmitter(setIsAuthenticated);
+    return () => {
+      try {
+        unsubscribe();
+      } catch {}
+    };
+  }, []);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
