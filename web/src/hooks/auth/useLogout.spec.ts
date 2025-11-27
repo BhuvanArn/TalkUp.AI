@@ -26,8 +26,8 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('react-hot-toast', () => ({
   default: {
     success: vi.fn(),
+    error: vi.fn(),
   },
-  error: vi.fn(),
 }));
 
 vi.mock('@/services/auth/http', () => {

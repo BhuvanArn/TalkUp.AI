@@ -25,8 +25,9 @@ const COOKIE_MAX_AGE = 48 * 60 * 60 * 1000; // 48 hours in milliseconds
 const BASE_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   path: "/",
+  domain: process.env.COOKIE_DOMAIN,
 };
 
 @ApiTags("Auth")

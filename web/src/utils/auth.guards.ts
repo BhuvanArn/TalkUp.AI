@@ -27,6 +27,11 @@ const checkAuthStatus = async (): Promise<boolean> => {
 
     return isAuth;
   } catch {
+    try {
+      emitAuth(false);
+    } catch (error) {
+      console.error('Auth emitter failed:', error);
+    }
     return false;
   }
 };
