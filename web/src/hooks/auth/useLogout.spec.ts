@@ -10,10 +10,8 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: vi.fn(() => ({
     isAuthenticated: false,
     user: null,
-    token: null,
     login: vi.fn(),
     logout: vi.fn(),
-    isLoading: false,
   })),
 }));
 
@@ -49,10 +47,8 @@ describe('useLogout', () => {
     const mockAuthLogout = vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: false,
       user: null,
-      token: null,
       login: vi.fn(),
       logout: vi.fn(),
-      isLoading: false,
     });
     const { result } = renderHook(() => useLogout());
 
@@ -90,10 +86,8 @@ describe('useLogout', () => {
     vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: false,
       user: null,
-      token: null,
       login: vi.fn(),
       logout: mockAuthLogout,
-      isLoading: false,
     });
 
     vi.mocked(useRouter).mockReturnValue({

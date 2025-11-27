@@ -46,19 +46,14 @@ export class AccessTokenGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
-    const header = req.headers?.authorization as string | undefined;
 
-    // Ensure header is found/wellformed
-    if (
-      !header ||
-      typeof header !== "string" ||
-      !header.startsWith("Bearer ")
-    ) {
+    const token = req.cookies?.accessToken;
+
+    if (!token || typeof token !== "string") {
       throw new UnauthorizedException(
-        "Authorization header missing or malformed",
+        "Authentication token missing or malformed",
       );
     }
-    const token = header.slice(7);
 
     // Verify accesstoken JWT
     let payload;

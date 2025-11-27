@@ -99,7 +99,7 @@ export class AuthService {
    */
   async validateUser(email: string, password: string): Promise<user> {
     const emailEntity = await this.userEmailRepository.findOne({
-      where: { email: email },
+      where: { email },
     });
 
     if (!emailEntity) {
