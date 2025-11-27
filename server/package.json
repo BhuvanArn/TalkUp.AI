@@ -10,15 +10,11 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
-
     "build": "nest build",
-
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
-
     "lint": "oxlint --fix --jest-plugin --promise-plugin --node-plugin src/ test/",
     "lint:check": "oxlint --jest-plugin --promise-plugin --node-plugin src/ test/",
-
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -36,11 +32,13 @@
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/typeorm": "^11.0.0",
     "@types/bcrypt": "^5.0.2",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^4.17.17",
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^16.5.0",
     "pg": "^8.15.6",
     "reflect-metadata": "^0.2.0",

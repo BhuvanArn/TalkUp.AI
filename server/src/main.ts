@@ -7,6 +7,7 @@ import initSwagger from "@config/swagger.config";
 
 // dotenv
 import * as dotenv from "dotenv";
+import * as cookieParser from "cookie-parser";
 dotenv.config();
 
 async function bootstrap() {
@@ -20,6 +21,7 @@ async function bootstrap() {
     process.stdout.write(`Using port: ${port}\n`);
 
     app.useGlobalPipes(new ValidationPipe());
+    app.use(cookieParser());
     app.setGlobalPrefix("v1/api");
 
     const corsOrigin = process.env.CORS_ORIGIN;
