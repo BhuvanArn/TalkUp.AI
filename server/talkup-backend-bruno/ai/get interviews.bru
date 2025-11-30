@@ -1,0 +1,27 @@
+meta {
+  name: get interviews
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/ai/interviews?sort=created_at&order=DESC
+  body: none
+  auth: inherit
+}
+
+params:query {
+  sort: created_at
+  order: DESC
+  ~page: 
+  ~limit: 
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwMTlhYzVhNi1hZGE3LTdhOTYtOWEzOC0yMzgxOWYzN2FiOTAiLCJ1c2VybmFtZSI6IkFkbWluU3lzODE5IiwiaWF0IjoxNzY0MjUyNjI2LCJleHAiOjE3NjQ4NTc0MjZ9.QWxsKERfN-kqkmdXv2aHvjRkjPO3T21t83J-6zHzzhk
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

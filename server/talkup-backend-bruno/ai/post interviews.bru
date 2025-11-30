@@ -1,0 +1,28 @@
+meta {
+  name: post interviews
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/ai/interviews
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwMTlhYzVhNi1hZGE3LTdhOTYtOWEzOC0yMzgxOWYzN2FiOTAiLCJ1c2VybmFtZSI6IkFkbWluU3lzODE5IiwiaWF0IjoxNzY0MjUyNjI2LCJleHAiOjE3NjQ4NTc0MjZ9.QWxsKERfN-kqkmdXv2aHvjRkjPO3T21t83J-6zHzzhk
+}
+
+body:json {
+  {
+    "type": "technical",
+    "language": "French",
+    "status": "asked"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
