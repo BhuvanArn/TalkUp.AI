@@ -1,5 +1,4 @@
 import { createAuthGuard } from '@/utils/auth.guards';
-import { createFileRoute } from '@tanstack/react-router';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import {
