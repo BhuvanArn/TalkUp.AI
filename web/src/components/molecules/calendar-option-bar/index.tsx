@@ -1,7 +1,7 @@
-
 import { addDays, format, isDate } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Locale } from 'date-fns/locale';
+
 import { useCalendarStore } from './useCalendarStore';
 
 type CalendarView = 'List' | 'Table';
@@ -11,12 +11,14 @@ interface CalendarOptionBarProps {
   onViewChange: (newView: CalendarView) => void;
 }
 
-
 /**
  * Calendar option bar component displaying the date range AND view selector.
  * @returns {JSX.Element} The calendar option bar component.
  */
-const CalendarOptionBar = ({ activeView, onViewChange }: CalendarOptionBarProps) => { 
+const CalendarOptionBar = ({
+  activeView,
+  onViewChange,
+}: CalendarOptionBarProps) => {
   const { weekStart } = useCalendarStore();
   const isWeekStartValid = isDate(weekStart) && !isNaN(weekStart.getTime());
   let weekTitle = 'Loading...';
@@ -46,9 +48,10 @@ const CalendarOptionBar = ({ activeView, onViewChange }: CalendarOptionBarProps)
         {/* buttons TABLE/GRILLE */}
         <button
           className={`px-3 py-1 text-sm font-medium transition-colors duration-150
-            ${activeView === 'Table' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-white text-gray-700 hover:bg-gray-100'
+            ${
+              activeView === 'Table'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           onClick={() => onViewChange('Table')}
         >
@@ -58,9 +61,10 @@ const CalendarOptionBar = ({ activeView, onViewChange }: CalendarOptionBarProps)
         {/* Buton LIST */}
         <button
           className={`px-3 py-1 text-sm font-medium transition-colors duration-150
-            ${activeView === 'List' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-white text-gray-700 hover:bg-gray-100'
+            ${
+              activeView === 'List'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
             } border-l border-gray-300`}
           onClick={() => onViewChange('List')}
         >

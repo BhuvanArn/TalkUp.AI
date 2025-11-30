@@ -41,7 +41,7 @@ export const getMiniCalendarDays = (targetDate: Date): MiniCalendarDay[] => {
   const days: MiniCalendarDay[] = [];
 
   const prevMonthLastDay = new Date(firstDayOfMonth);
-  prevMonthLastDay.setDate(0); 
+  prevMonthLastDay.setDate(0);
   for (let i = firstDayIndex; i > 0; i--) {
     const date = new Date(prevMonthLastDay);
     date.setDate(prevMonthLastDay.getDate() - i + 1);
@@ -65,7 +65,7 @@ export const getMiniCalendarDays = (targetDate: Date): MiniCalendarDay[] => {
   }
 
   const totalDaysSoFar = days.length;
-  const remainingSlots = 42 - totalDaysSoFar;  
+  const remainingSlots = 42 - totalDaysSoFar;
   const nextMonthFirstDay = new Date(
     targetDate.getFullYear(),
     targetDate.getMonth() + 1,

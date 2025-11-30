@@ -12,7 +12,9 @@ import {
   FaHeart,
   FaLinkedin,
   FaLock,
+  FaSave,
   FaSearch,
+  FaTag,
   FaTrash,
   FaUnlock,
   FaUpload,
@@ -121,6 +123,8 @@ export const iconMap = {
   help: PiQuestion,
   progression: PiChartLine,
   schedule: FaCalendarAlt,
+  tag: FaTag,
+  save: FaSave,
 
   // Sidebar icons
   'collapse-sidebar': PiSidebarSimple,

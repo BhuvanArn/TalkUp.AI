@@ -100,7 +100,7 @@ export const useAddEventInteraction = ({
         openModalForCreation(target);
       } else {
         console.warn(
-          "useAddEventInteraction: Unable to determine target time.",
+          'useAddEventInteraction: Unable to determine target time.',
         );
       }
     },

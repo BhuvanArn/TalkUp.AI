@@ -37,8 +37,6 @@ interface CalendarDayColumnProps {
 const CalendarDayColumn = ({ events }: CalendarDayColumnProps) => {
   const CALENDAR_START_HOUR = 8;
   const PIXELS_PER_MINUTE = 1;
-
-  // Zustand store function to open the edit modal
   const openModalForEdit = useCalendarStore((state) => state.openModalForEdit);
 
   /**
@@ -50,8 +48,12 @@ const CalendarDayColumn = ({ events }: CalendarDayColumnProps) => {
   const getEventPositionStyles = (event: EventData) => {
     const startMinutes = event.startHour * 60 + event.startMinute;
     const calendarStartMinutes = CALENDAR_START_HOUR * 60;
-    const top = Math.max(0, (startMinutes - calendarStartMinutes) * PIXELS_PER_MINUTE);
-    const height = (event.endHour * 60 + event.endMinute - startMinutes) * PIXELS_PER_MINUTE;
+    const top = Math.max(
+      0,
+      (startMinutes - calendarStartMinutes) * PIXELS_PER_MINUTE,
+    );
+    const height =
+      (event.endHour * 60 + event.endMinute - startMinutes) * PIXELS_PER_MINUTE;
     return { top: `${top}px`, height: `${height}px` };
   };
 

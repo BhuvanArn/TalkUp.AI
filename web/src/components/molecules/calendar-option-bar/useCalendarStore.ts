@@ -1,7 +1,7 @@
 import { isFuture, startOfWeek } from 'date-fns';
 import { create } from 'zustand';
 
-// --- Mock Dates (exemple for me ,  17 novembre 2025) ---
+// --- Mock Dates (Example for me, November 17, 2025) ---
 const NOV_10_PAST = new Date('2025-11-10T10:30:00');
 const NOV_13_PAST = new Date('2025-11-13T16:00:00');
 
@@ -58,23 +58,29 @@ interface CalendarState {
   updateEvent: (event: CalendarEvent) => void;
 
   /**
-   * Retrieves the single event that is closest to the current time, but est toujours dans le futur.
+   * Retrieves the single event that is closest to the current time, and is still in the future.
    * @returns {CalendarEvent | undefined} The next upcoming event or undefined if none exists.
    */
   getNextUpcomingEvent: () => CalendarEvent | undefined;
 }
 
+/**
+ * Constructs the detailed event object from a base date and time data.
+ * @param {Date} date - The base date for the event.
+ * @param {Omit<CalendarEvent, 'id' | 'fullDate'>} eventData - The time and content details.
+ * @returns {Omit<CalendarEvent, 'id'>} The event data including the calculated fullDate.
+ */
 const buildNewEventDetails = (
   date: Date,
   eventData: Omit<CalendarEvent, 'id' | 'fullDate'>,
 ) => {
-  const made = new Date(date);
-  made.setSeconds(0);
-  made.setMilliseconds(0);
+  const fullDate = new Date(date);
+
+  fullDate.setHours(eventData.startHour, eventData.startMinute, 0, 0);
 
   return {
     ...eventData,
-    fullDate: made,
+    fullDate: fullDate,
   };
 };
 
@@ -95,7 +101,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
     events: [
       {
         id: 'e1',
-        title: 'Interview Passée',
+        title: 'Past Interview',
         subtitle: 'Amazon Web',
         color: 'blue',
         startHour: 10,
@@ -106,7 +112,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       },
       {
         id: 'e4',
-        title: 'Practice Passée',
+        title: 'Past Practice',
         subtitle: 'Google Cloud France',
         color: 'red',
         startHour: 16,
@@ -117,8 +123,8 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       },
       {
         id: 'e5',
-        title: 'Prochain Événement',
-        subtitle: "Réunion d'équipe",
+        title: 'Next Upcoming Event',
+        subtitle: 'Team Meeting',
         color: 'green',
         startHour: 9,
         startMinute: 0,
@@ -128,17 +134,21 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       },
       {
         id: 'e6',
-        title: 'Événement Suivant',
-        subtitle: 'Présentation Client',
+        title: 'Following Event',
+        subtitle: 'Client Presentation',
         color: 'purple',
         startHour: 14,
-        startMinute: 30,
+        startMinute: 39,
         endHour: 16,
         endMinute: 0,
         fullDate: NOV_20_FUTURE,
       },
     ],
 
+    /**
+     * Retrieves the single event that is closest to the current time, and is still in the future.
+     * @returns {CalendarEvent | undefined} The next upcoming event or undefined if none exists.
+     */
     getNextUpcomingEvent: () => {
       const allEvents = get().events;
 
@@ -152,6 +162,10 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       return futureEvents[0];
     },
 
+    /**
+     * Sets the current date and updates the week's start date based on the new date.
+     * @param {Date | string} date - The new date to set.
+     */
     setCurrentDate: (date: Date | string) => {
       const validDate = date instanceof Date ? date : new Date(date);
 
@@ -170,6 +184,10 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       console.log('[STORE] Updated currentDate & weekStart to:', validDate);
     },
 
+    /**
+     * Opens the modal for creating a new event.
+     * @param {Date} date - The date to pre-populate the new event with.
+     */
     openModalForCreation: (date: Date) =>
       set({
         isModalOpen: true,
@@ -177,6 +195,10 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
         modalEventToEdit: null,
       }),
 
+    /**
+     * Opens the modal for editing an existing event.
+     * @param {CalendarEvent} event - The event object to load for editing.
+     */
     openModalForEdit: (event: CalendarEvent) =>
       set({
         isModalOpen: true,
@@ -184,6 +206,9 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
         modalEventToEdit: event,
       }),
 
+    /**
+     * Closes the modal and resets modal state.
+     */
     closeModal: () =>
       set({
         isModalOpen: false,
@@ -191,11 +216,15 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
         modalEventToEdit: null,
       }),
 
+    /**
+     * Adds a new event to the store using the initial modal date.
+     * @param {Omit<CalendarEvent, 'id' | 'fullDate'>} eventData - The event content and time details.
+     */
     addEvent: (eventData) => {
       const date = get().modalInitialDate;
       if (!date) return;
 
-      const newEvent = {
+      const newEvent: CalendarEvent = {
         id: Date.now().toString(),
         ...buildNewEventDetails(date, eventData),
       };
@@ -207,6 +236,10 @@ export const useCalendarStore = create<CalendarState>((set, get) => {
       get().closeModal();
     },
 
+    /**
+     * Updates an existing event in the store.
+     * @param {CalendarEvent} updatedEvent - The updated event object.
+     */
     updateEvent: (updatedEvent) => {
       set((state) => ({
         events: state.events.map((e) =>
