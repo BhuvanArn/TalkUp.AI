@@ -16,7 +16,9 @@ import { user, user_password, user_email } from "@entities/user.entity";
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: "2d" },
+      signOptions: {
+        expiresIn: process.env.JWT_EXPIRES_IN ?? "2d",
+      },
     }),
   ],
   controllers: [AuthController],
