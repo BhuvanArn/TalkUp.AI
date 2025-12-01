@@ -27,6 +27,7 @@ const checkAuthStatus = async (): Promise<boolean> => {
 
     return isAuth;
   } catch (error) {
+    console.error('Error on auth status check', error);
     // Backend throws 401 Unauthorized when not authenticated or token is invalid
     try {
       emitAuth(false);

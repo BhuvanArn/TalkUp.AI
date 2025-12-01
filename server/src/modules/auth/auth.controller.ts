@@ -31,7 +31,10 @@ const BASE_COOKIE_OPTIONS: CookieOptions = {
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   path: "/",
-  domain: process.env.NODE_ENV === "production" ? process.env.COOKIE_DOMAIN : undefined,
+  domain:
+    process.env.NODE_ENV === "production"
+      ? process.env.COOKIE_DOMAIN
+      : undefined,
 };
 
 @ApiTags("Auth")
