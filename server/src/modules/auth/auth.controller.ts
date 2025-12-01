@@ -92,7 +92,6 @@ export class AuthController {
       maxAge: COOKIE_MAX_AGE,
     };
 
-    console.log("Setting cookie with options:", cookieOptions);
     response.cookie(COOKIE_NAME, result.accessToken, cookieOptions);
 
     return { message: "Login successful" };
