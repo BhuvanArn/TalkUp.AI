@@ -3,7 +3,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../config/env';
 
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL, // Dynamically determined API base URL
   withCredentials: true, // Send cookies with requests
 });
 
