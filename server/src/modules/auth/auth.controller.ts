@@ -63,10 +63,7 @@ export class AuthController {
   @Patch("editUser")
   @UseGuards(AccessTokenGuard)
   @ApiOkResponse({ description: "User updated successfully." })
-  async editUser(
-    @UserId() userId: string,
-    @Body() editUserDto: EditUserDto,
-  ) {
+  async editUser(@UserId() userId: string, @Body() editUserDto: EditUserDto) {
     return await this.authService.editUser(userId, editUserDto);
   }
 }

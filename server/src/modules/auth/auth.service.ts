@@ -153,7 +153,7 @@ export class AuthService {
    */
   async editUser(userId: string, EditUserDto: EditUserDto) {
     const user = await this.userRepository.findOneByOrFail({
-      user_id: userId
+      user_id: userId,
     });
     try {
       if (EditUserDto.username) user.username = EditUserDto.username;
