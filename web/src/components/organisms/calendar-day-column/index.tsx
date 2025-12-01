@@ -36,11 +36,13 @@ interface CalendarDayColumnProps {
  */
 const CalendarDayColumn = ({ events }: CalendarDayColumnProps) => {
   const CALENDAR_START_HOUR = 8;
-  const PIXELS_PER_MINUTE = 1;
+  const CALENDAR_END_HOUR = 19; // 8:00 to 19:00 = 11 hours
+  const TOTAL_MINUTES = (CALENDAR_END_HOUR - CALENDAR_START_HOUR) * 60;
   const openModalForEdit = useCalendarStore((state) => state.openModalForEdit);
 
   /**
    * Computes the top and height CSS values for an event based on its time.
+   * Uses percentages to scale with the available container height.
    *
    * @param {EventData} event - The event data
    * @returns {{top: string; height: string}} CSS styles
@@ -48,13 +50,13 @@ const CalendarDayColumn = ({ events }: CalendarDayColumnProps) => {
   const getEventPositionStyles = (event: EventData) => {
     const startMinutes = event.startHour * 60 + event.startMinute;
     const calendarStartMinutes = CALENDAR_START_HOUR * 60;
-    const top = Math.max(
-      0,
-      (startMinutes - calendarStartMinutes) * PIXELS_PER_MINUTE,
-    );
-    const height =
-      (event.endHour * 60 + event.endMinute - startMinutes) * PIXELS_PER_MINUTE;
-    return { top: `${top}px`, height: `${height}px` };
+    const minutesFromStart = Math.max(0, startMinutes - calendarStartMinutes);
+    const topPercent = (minutesFromStart / TOTAL_MINUTES) * 100;
+
+    const durationMinutes = event.endHour * 60 + event.endMinute - startMinutes;
+    const heightPercent = (durationMinutes / TOTAL_MINUTES) * 100;
+
+    return { top: `${topPercent}%`, height: `${heightPercent}%` };
   };
 
   return (

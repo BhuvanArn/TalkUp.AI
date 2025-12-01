@@ -6,17 +6,17 @@ import CalendarTable from '../calendar-table';
 
 /**
  * Defines the possible views for the calendar display.
- * @type {'List' | 'Table'}
+ * @type {'list' | 'table'}
  */
-type CalendarView = 'List' | 'Table';
+export type CalendarView = 'list' | 'table';
 
 /**
  * @interface CalendarContainerProps
  * Properties for the CalendarContainer component.
  */
 interface CalendarContainerProps {
-  /** The initial view mode for the calendar ('List' or 'Table'). */
-  initialView: CalendarView;
+  /** The active view mode for the calendar ('list' or 'table'). */
+  activeView: CalendarView;
 }
 
 /**
@@ -27,19 +27,11 @@ interface CalendarContainerProps {
  * calendar view (List or Table) and conditionally rendering the appropriate
  * view component (CalendarTable or CalendarList).
  */
-const CalendarContainer = ({ initialView }: CalendarContainerProps) => {
-  const [activeView, setActiveView] = useState<CalendarView>(initialView);
-
+const CalendarContainer = ({ activeView }: CalendarContainerProps) => {
   return (
-    <div>
-      {/* 1. Option Bar (Molecule) - Provides navigation and view switch buttons */}
-      <CalendarOptionBar activeView={activeView} onViewChange={setActiveView} />
-
-      {/* 2. Calendar Display based on the active state */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        {activeView === 'Table' && <CalendarTable />}
-        {activeView === 'List' && <CalendarList />}
-      </div>
+    <div className="h-full flex flex-col">
+      {activeView === 'table' && <CalendarTable />}
+      {activeView === 'list' && <CalendarList />}
     </div>
   );
 };

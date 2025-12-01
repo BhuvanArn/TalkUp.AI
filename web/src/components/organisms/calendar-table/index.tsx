@@ -96,10 +96,9 @@ const CalendarTable = () => {
   const todayIndex = isTodayInView ? (getDay(now) + 6) % 7 : -1;
 
   return (
-    <div className="relative">
-      <div className="border border-gray-200 rounded-lg">
+      <div className="h-full flex flex-col">
         {/* Headers */}
-        <div className="grid grid-cols-[80px_1fr] bg-gray-50 border-b border-gray-200">
+        <div className="grid grid-cols-[80px_1fr] bg-gray-50 border-b border-gray-200 shrink-0">
           <div className="h-16"></div> {/* Empty cell above time slots */}
           <div className="grid grid-cols-7">
             {daysData.map((day) => (
@@ -118,11 +117,11 @@ const CalendarTable = () => {
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-[80px_1fr]">
+        <div className="flex-1 min-h-0 grid grid-cols-[80px_1fr]">
           {/* Time Slots Column */}
-          <div className="border-r border-gray-200">
+          <div className="border-r border-gray-200 flex flex-col">
             {timeSlots.map((time) => (
-              <div key={time} style={{ height: `${slotHeight}px` }}>
+              <div key={time} className="flex-1 min-h-0">
                 <TimeSlot time={time} />
               </div>
             ))}
@@ -130,8 +129,7 @@ const CalendarTable = () => {
 
           {/* Day Columns Area (Events) */}
           <div
-            className="relative grid grid-cols-7"
-            style={{ minHeight: `${totalHeight}px` }}
+            className="relative grid grid-cols-7 h-full"
           >
             {/* Current Time Cursor */}
             {cursorTop && todayIndex !== -1 && (
@@ -154,7 +152,8 @@ const CalendarTable = () => {
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const relativeY = e.clientY - rect.top;
-                  const slotIndex = Math.floor(relativeY / slotHeight);
+                  const percentY = relativeY / rect.height;
+                  const slotIndex = Math.floor(percentY * timeSlots.length);
                   const startHour = 8 + slotIndex;
                   const initialDate = new Date(
                     weekStart.getFullYear(),
@@ -171,8 +170,7 @@ const CalendarTable = () => {
                     key={i}
                     className="absolute left-0 right-0 border-t border-gray-100"
                     style={{
-                      top: `${i * slotHeight + slotHeight}px`,
-                      height: `${slotHeight}px`,
+                      top: `${((i + 1) / timeSlots.length) * 100}%`,
                     }}
                   />
                 ))}
@@ -188,7 +186,6 @@ const CalendarTable = () => {
           </div>
         </div>
         <CalendarModal />
-      </div>
     </div>
   );
 };
