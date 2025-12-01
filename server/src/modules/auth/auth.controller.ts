@@ -1,4 +1,5 @@
 import { Body, Controller, Post, Patch, UseGuards } from "@nestjs/common";
+import { AccessTokenGuard } from "@common/guards/accessToken.guard";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
 
 import {
@@ -10,14 +11,13 @@ import {
   ApiOkResponse,
   ApiBearerAuth,
 } from "@nestjs/swagger";
-import { AuthGuard } from "@nestjs/passport";
 
 import { CreateUserDto } from "./dto/createUser.dto";
 import { LoginDto } from "./dto/login.dto";
 import { EditUserDto } from "./dto/editUser.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
-import { CurrentUser } from "@common/decorators/currentUser.decorator";
+import { UserId } from "@common/decorators/userId.decorator";
 
 import { AuthService } from "./auth.service";
 
@@ -61,10 +61,10 @@ export class AuthController {
   }
 
   @Patch("editUser")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AccessTokenGuard)
   @ApiOkResponse({ description: "User updated successfully." })
   async editUser(
-    @CurrentUser("id") userId: string,
+    @UserId() userId: string,
     @Body() editUserDto: EditUserDto,
   ) {
     return await this.authService.editUser(userId, editUserDto);

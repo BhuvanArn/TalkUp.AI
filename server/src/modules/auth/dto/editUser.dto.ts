@@ -7,6 +7,7 @@ import { Length, IsEmail, IsOptional, IsString } from "class-validator";
 })
 export class EditUserDto {
   @Length(1, 50)
+  @IsOptional()
   @ApiProperty({
     description: "The user's name",
     maxLength: 50,
@@ -16,6 +17,7 @@ export class EditUserDto {
   username: string;
 
   @IsEmail()
+  @IsOptional()
   @ApiProperty({
     description:
       "The user's email address. It will be used for login and verification.",

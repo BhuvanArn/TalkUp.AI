@@ -4,6 +4,7 @@ import {
   ConflictException,
   Injectable,
   UnauthorizedException,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { JwtService } from "@nestjs/jwt";
@@ -151,31 +152,30 @@ export class AuthService {
    * @returns  A message if the user is upadte succesfully or not
    */
   async editUser(userId: string, EditUserDto: EditUserDto) {
-    const user = await this.userRepository.findOne({
-      where: { user_id: userId },
+    const user = await this.userRepository.findOneByOrFail({
+      user_id: userId
     });
-
-    if (!user) {
-      throw new UnauthorizedException("User not found");
-    }
-    if (EditUserDto.username) user.username = EditUserDto.username;
-    // This part will be uncommented when those arguments will be added in the user's infos
-    // if (EditUserDto.phone) user.phone = EditUserDto.phone;
-    // if (EditUserDto.profilePicture) user.profilePicture = EditUserDto.profilePicture;
-    // if (EditUserDto.cv) user.cv = EditUserDto.cv;
-    // if (EditUserDto.activitySector) user.activitySector = EditUserDto.activitySector;
-
-    if (EditUserDto.email) {
-      const emailEntity = await this.userEmailRepository.findOne({
-        where: { user_id: userId },
-      });
-
-      if (emailEntity) {
-        emailEntity.email = EditUserDto.email;
-        await this.userEmailRepository.save(emailEntity);
+    try {
+      if (EditUserDto.username) user.username = EditUserDto.username;
+      // This part will be uncommented when those arguments will be added in the user's infos
+      // if (EditUserDto.phone) user.phone = EditUserDto.phone;
+      // if (EditUserDto.profilePicture) user.profilePicture = EditUserDto.profilePicture;
+      // if (EditUserDto.cv) user.cv = EditUserDto.cv;
+      // if (EditUserDto.activitySector) user.activitySector = EditUserDto.activitySector;
+      if (EditUserDto.email) {
+        const emailEntity = await this.userEmailRepository.findOne({
+          where: { user_id: userId },
+        });
+        if (emailEntity) {
+          emailEntity.email = EditUserDto.email;
+          await this.userEmailRepository.save(emailEntity);
+        }
       }
+      return await this.userRepository.save(user);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        "Internal server error while editing the user's info.",
+      );
     }
-
-    return await this.userRepository.save(user);
   }
 }
