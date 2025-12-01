@@ -1,7 +1,6 @@
-import { Body, Controller, Post, Res, Get, Req } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
+import { Body, Controller, Post, Res, Get, UseGuards } from "@nestjs/common";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
-import { Request, Response, CookieOptions } from "express";
+import { Response, CookieOptions } from "express";
 
 import {
   ApiBadRequestResponse,
@@ -10,12 +9,14 @@ import {
   ApiUnprocessableEntityResponse,
   ApiTags,
   ApiOkResponse,
+  ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 
 import { CreateUserDto } from "./dto/createUser.dto";
 import { LoginDto } from "./dto/login.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
+import { AccessTokenGuard } from "@common/guards/accessToken.guard";
 
 import { AuthService } from "./auth.service";
 
@@ -36,10 +37,7 @@ const BASE_COOKIE_OPTIONS: CookieOptions = {
 @ApiTags("Auth")
 @Controller("auth")
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly jwtService: JwtService
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @ApiCreatedResponse({
     description: "The user has been successfully created.",
@@ -58,7 +56,7 @@ export class AuthController {
   @Post("register")
   async register(
     @Body() createUserDto: CreateUserDto,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.authService.register(createUserDto);
 
@@ -78,11 +76,11 @@ export class AuthController {
   @Post("login")
   async login(
     @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
     const user = await this.authService.validateUser(
       loginDto.email,
-      loginDto.password
+      loginDto.password,
     );
     const result = await this.authService.login(user);
 
@@ -99,6 +97,10 @@ export class AuthController {
   @ApiOkResponse({
     description: "User successfully logged out.",
   })
+  @ApiUnauthorizedResponse({
+    description: "User is not authenticated or token is invalid.",
+  })
+  @UseGuards(AccessTokenGuard)
   @Post("logout")
   async logout(@Res({ passthrough: true }) response: Response) {
     response.cookie(COOKIE_NAME, "", {
@@ -111,26 +113,14 @@ export class AuthController {
   }
 
   @ApiOkResponse({
-    description: "Returns authentication status.",
+    description: "User is authenticated.",
   })
+  @ApiUnauthorizedResponse({
+    description: "User is not authenticated or token is invalid.",
+  })
+  @UseGuards(AccessTokenGuard)
   @Get("status")
-  async getAuthStatus(@Req() request: Request) {
-    try {
-      const token = request.cookies?.accessToken;
-      if (!token) {
-        return { authenticated: false };
-      }
-
-      const payload = await this.jwtService.verifyAsync(token);
-
-      const user = await this.authService.getUserById(payload.userId);
-      if (!user) {
-        return { authenticated: false };
-      }
-
-      return { authenticated: true };
-    } catch {
-      return { authenticated: false };
-    }
+  async getAuthStatus() {
+    return { authenticated: true };
   }
 }
