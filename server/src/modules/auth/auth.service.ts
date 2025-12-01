@@ -172,7 +172,7 @@ export class AuthService {
         }
       }
       return await this.userRepository.save(user);
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException(
         "Internal server error while editing the user's info.",
       );
