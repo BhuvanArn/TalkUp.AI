@@ -20,7 +20,10 @@ import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { AuthService } from "./auth.service";
 
 const COOKIE_NAME = "accessToken";
-const COOKIE_MAX_AGE = 48 * 60 * 60 * 1000; // 48 hours in milliseconds
+const DEFAULT_COOKIE_MAX_AGE = 48 * 60 * 60 * 1000;
+const COOKIE_MAX_AGE = process.env.COOKIE_MAX_AGE
+  ? parseInt(process.env.COOKIE_MAX_AGE, 10)
+  : DEFAULT_COOKIE_MAX_AGE;
 
 const BASE_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
@@ -35,7 +38,7 @@ const BASE_COOKIE_OPTIONS: CookieOptions = {
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly jwtService: JwtService,
+    private readonly jwtService: JwtService
   ) {}
 
   @ApiCreatedResponse({
@@ -55,7 +58,7 @@ export class AuthController {
   @Post("register")
   async register(
     @Body() createUserDto: CreateUserDto,
-    @Res({ passthrough: true }) response: Response,
+    @Res({ passthrough: true }) response: Response
   ) {
     const result = await this.authService.register(createUserDto);
 
@@ -75,17 +78,19 @@ export class AuthController {
   @Post("login")
   async login(
     @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) response: Response,
+    @Res({ passthrough: true }) response: Response
   ) {
     const user = await this.authService.validateUser(
       loginDto.email,
-      loginDto.password,
+      loginDto.password
     );
     const result = await this.authService.login(user);
 
     response.cookie(COOKIE_NAME, result.accessToken, {
       ...BASE_COOKIE_OPTIONS,
-      maxAge: COOKIE_MAX_AGE,
+      maxAge: process.env.COOKIE_MAX_AGE
+        ? parseInt(process.env.COOKIE_MAX_AGE, 10)
+        : DEFAULT_COOKIE_MAX_AGE,
     });
 
     return { message: "Login successful" };
