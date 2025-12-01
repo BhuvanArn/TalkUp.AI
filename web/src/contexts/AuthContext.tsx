@@ -103,7 +103,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => {
       try {
         unsubscribe();
-      } catch {}
+      } catch (error) {
+        console.error('Failed to unsubscribe from auth emitter:', error);
+      } 
     };
   }, []);
 
