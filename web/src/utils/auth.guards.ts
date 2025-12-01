@@ -11,13 +11,13 @@ export interface AuthGuardContext {
  * Validates authentication by checking with the backend.
  * The backend will verify the HTTP-only cookie.
  *
- * @returns `true` if authenticated, `false` otherwise
+ * @returns `true` if authenticated (200 status), `false` otherwise (401 status or error)
  */
 const checkAuthStatus = async (): Promise<boolean> => {
   try {
     const response = await axiosInstance.get('/v1/api/auth/status');
 
-    // Update global AuthContext with the backend's authoritative value
+    // Backend returns { authenticated: true } with 200 status when authenticated
     const isAuth = response.data?.authenticated === true;
     try {
       emitAuth(isAuth);
@@ -26,11 +26,12 @@ const checkAuthStatus = async (): Promise<boolean> => {
     }
 
     return isAuth;
-  } catch {
+  } catch (error) {
+    // Backend throws 401 Unauthorized when not authenticated or token is invalid
     try {
       emitAuth(false);
-    } catch (error) {
-      console.error('Auth emitter failed:', error);
+    } catch (emitError) {
+      console.error('Auth emitter failed:', emitError);
     }
     return false;
   }

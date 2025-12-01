@@ -31,7 +31,7 @@ const BASE_COOKIE_OPTIONS: CookieOptions = {
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   path: "/",
-  domain: process.env.COOKIE_DOMAIN,
+  domain: process.env.NODE_ENV === "production" ? process.env.COOKIE_DOMAIN : undefined,
 };
 
 @ApiTags("Auth")
@@ -84,12 +84,13 @@ export class AuthController {
     );
     const result = await this.authService.login(user);
 
-    response.cookie(COOKIE_NAME, result.accessToken, {
+    const cookieOptions = {
       ...BASE_COOKIE_OPTIONS,
-      maxAge: process.env.COOKIE_MAX_AGE
-        ? parseInt(process.env.COOKIE_MAX_AGE, 10)
-        : DEFAULT_COOKIE_MAX_AGE,
-    });
+      maxAge: COOKIE_MAX_AGE,
+    };
+
+    console.log("Setting cookie with options:", cookieOptions);
+    response.cookie(COOKIE_NAME, result.accessToken, cookieOptions);
 
     return { message: "Login successful" };
   }

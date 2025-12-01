@@ -17,7 +17,7 @@ import { user, user_password, user_email } from "@entities/user.entity";
       global: true,
       secret: process.env.JWT_SECRET,
       signOptions: {
-        expiresIn: process.env.JWT_EXPIRES_IN ?? "2d",
+        expiresIn: (process.env.JWT_EXPIRES_IN || "2d") as any,
       },
     }),
   ],

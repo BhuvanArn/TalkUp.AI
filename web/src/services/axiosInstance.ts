@@ -15,7 +15,10 @@ axiosInstance.defaults.headers.common['Accept'] = 'application/json';
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Don't redirect on 401 for auth status checks - they're expected to return 401 when not authenticated
+    const isAuthStatusCheck = error.config?.url?.includes('/auth/status');
+
+    if (error.response?.status === 401 && !isAuthStatusCheck) {
       console.warn('Authentication failed. Redirecting to login...');
       window.location.href = '/login';
     }
