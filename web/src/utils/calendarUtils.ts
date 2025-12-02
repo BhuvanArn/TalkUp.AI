@@ -1,6 +1,13 @@
 import { CalendarListDayData } from '@/components/organisms/calendar-list/types';
 import { CalendarEvent } from '@/stores/useCalendarStore';
-import { addDays, format, isSameDay } from 'date-fns';
+import {
+  addDays,
+  format,
+  getDay,
+  getDaysInMonth,
+  isSameDay,
+  startOfMonth,
+} from 'date-fns';
 
 /**
  * Interface for a single day data object used in the MiniCalendar grid.
@@ -133,4 +140,55 @@ export const getListWeekDaysData = (
     });
   }
   return days;
+};
+
+/**
+ * Generates the array of day objects for the mini-calendar based on the month,
+ * including leading/trailing gray days and event markers.
+ * @param {Date} monthDate The date representing the month to display.
+ * @param {CalendarEvent[]} allEvents All available events from the store.
+ * @returns {Array<{date: number, isGray?: boolean, isToday?: boolean, hasEvent?: boolean}>}
+ */
+export const getMiniCalendarDaysData = (
+  monthDate: Date,
+  allEvents: CalendarEvent[],
+) => {
+  const today = new Date();
+  const start = startOfMonth(monthDate);
+  const daysInMonth = getDaysInMonth(monthDate);
+  const days: Array<{
+    date: number;
+    isGray?: boolean;
+    isToday?: boolean;
+    hasEvent?: boolean;
+  }> = [];
+  const startDayIndex = (getDay(start) + 6) % 7;
+  const daysBefore = startDayIndex;
+
+  for (let i = 0; i < daysBefore; i++) {
+    days.push({ date: 0, isGray: true });
+  }
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    const date = addDays(start, i - 1);
+
+    const hasEvent = allEvents.some(
+      (event) => event.start && isSameDay(event.start, date),
+    );
+
+    days.push({
+      date: i,
+      isToday: isSameDay(date, today),
+      hasEvent: hasEvent,
+    });
+  }
+
+  const totalCells = days.length;
+  const remainingCells = 42 - totalCells;
+
+  for (let i = 0; i < remainingCells; i++) {
+    days.push({ date: 0, isGray: true });
+  }
+
+  return days.filter((_, index) => index < 42);
 };
