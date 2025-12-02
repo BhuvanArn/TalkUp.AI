@@ -9,6 +9,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 
+import { Logger } from "@nestjs/common";
+
 import { CreateUserDto } from "./dto/createUser.dto";
 
 import { user, user_password, user_email } from "@entities/user.entity";
@@ -17,6 +19,8 @@ import { hashPassword } from "@common/utils/passwordHasher";
 
 @Injectable()
 export class AuthService {
+  logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(user) private userRepository: Repository<user>,
     @InjectRepository(user_password)
@@ -180,6 +184,7 @@ export class AuthService {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
+      this.logger.warn(`Access token verification failed:`, error);
       throw new UnauthorizedException("Invalid or expired access token");
     }
   }
