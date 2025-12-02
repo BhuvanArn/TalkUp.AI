@@ -1,29 +1,16 @@
+import Badge from '@/components/atoms/badge';
+import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { useCalendarStore } from '@/stores/useCalendarStore';
 import { format } from 'date-fns';
-
-import { useCalendarStore } from '../calendar-option-bar/useCalendarStore';
-
-/**
- * NextEventCard component props.
- * @interface NextEventCardProps
- */
-interface NextEventCardProps {
-  /** The main title of the event. */
-  title: string;
-  /** The secondary subtitle or location of the event. */
-  subtitle: string;
-  /** The label for the event tag (e.g., 'TalkUp'). */
-  tagLabel: string;
-  /** The URL for viewing event details. */
-  detailsUrl: string;
-  /** The complete Date object of the event. */
-  eventDate: Date;
-}
+import { NextEventCardProps } from './types';
 
 /**
  * NextEventCard component.
  * Displays details about the next scheduled event, typically used in a sidebar.
- * @function NextEventCard
+ *
+ * @param props - The component props.
+ * @returns The rendered component.
  */
 const NextEventCard = ({
   title,
@@ -33,60 +20,41 @@ const NextEventCard = ({
 }: NextEventCardProps) => {
   const { setCurrentDate } = useCalendarStore();
 
-  /** Formatted date string for display (e.g., "18 November 2025"). */
   const displayDate =
     eventDate instanceof Date && !isNaN(eventDate.getTime())
-      ? format(eventDate, 'dd MMMM yyyy')
+      ? format(eventDate, 'd MMM yyyy')
       : 'Date inconnue';
 
-  /** Handler to navigate the calendar view to the event's week. */
   const handleGoToEventWeek = () => {
-    try {
-      if (!eventDate || isNaN(eventDate.getTime())) {
-        console.error('[NextEventCard] Invalid eventDate.', eventDate);
-        return;
-      }
-
-      console.log(
-        `[NextEventCard] Navigating to week of: ${eventDate.toISOString()}`,
-      );
-
+    if (eventDate && !isNaN(eventDate.getTime())) {
       setCurrentDate(eventDate);
-    } catch (err) {
-      console.error('[NextEventCard] Error in handleGoToEventWeek:', err);
     }
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-      <h3 className="text-base font-semibold text-gray-800 mb-3">Next Event</h3>
+    <div className="p-4 bg-white rounded-[10px] flex flex-col gap-3">
+      <h3 className="text-h5 text-idle">Next Event</h3>
 
-      {/* Event Content */}
-      <div className="space-y-2">
-        <p className="font-semibold text-gray-900 leading-tight">{title}</p>
-        <p className="text-sm text-gray-600 leading-tight">{subtitle}</p>
-        <p className="text-xs text-gray-400 leading-tight">{displayDate}</p>
+      <div className="flex flex-col">
+        <div className="flex justify-between items-center">
+          <p className="text-body-m text-active">{title}</p>
+          <p className="text-body-s text-idle italic">{displayDate}</p>
+        </div>
+        <p className="text-body-s text-idle">{subtitle}</p>
       </div>
 
-      {/* Actions and Tags */}
-      <div className="flex items-center mt-3 pt-3 border-t border-gray-100">
-        {/* Tag (TalkUp) */}
-        <button
-          type="button"
-          className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full mr-3 hover:bg-blue-100 transition duration-150"
-        >
-          {tagLabel}
-        </button>
+      <div className="flex gap-3">
+        <Badge color="accent">{tagLabel}</Badge>
 
-        {/* "Go to week" button */}
-        <button
-          type="button"
+        <Button
+          size="xs"
+          color="sidebar"
+          variant="outlined"
           onClick={handleGoToEventWeek}
-          className="text-xs text-blue-500 flex items-center hover:text-blue-700 focus:outline-none transition duration-150"
         >
           Go to week
-          <Icon icon="arrow-right" size="xs" className="ml-1" />
-        </button>
+          <Icon icon="arrow-right-up" size="xs" className="ml-1" />
+        </Button>
       </div>
     </div>
   );
