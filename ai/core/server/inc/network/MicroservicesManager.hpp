@@ -13,6 +13,9 @@
 #include <unordered_map>
 #include <iostream>
 #include <fstream>
+#include <crow.h>
+
+#include "ExceptionManager.hpp"
 
 namespace talkup_network {
     class MicroservicesManager {
@@ -30,15 +33,6 @@ namespace talkup_network {
             ~MicroservicesManager() = default;
 
             /**
-             * @brief Get the URL of a microservice by its name.
-             * It's will allow the server to communicate with other microservices.
-             *
-             * @param service_name
-             * @return std::string
-             */
-            static std::string get_microservice_url(const std::string &service_name);
-
-            /**
              * @brief Load the microservices information from a JSON file.
              *
              * @param file_path
@@ -53,6 +47,17 @@ namespace talkup_network {
              */
             static const std::unordered_map<std::string,
                 std::unordered_map<std::string, std::string>>& get_services_list();
+
+            /**
+             * @brief Send data to the STT microservice.
+             * This function will send audio data to the STT microservice for processing.
+             * It will first check if the STT microservice is registered in the services list.
+             * If it is, it will send a ping request to ensure the microservice is reachable. If the ping is successful,
+             * it will then send the audio data to the microservice.
+             *
+             * @param data Json data containing the audio information to be sent to the STT microservice.
+             */
+            static void send_to_stt_microservice(const nlohmann::json &data);
 
         protected:
         private:
