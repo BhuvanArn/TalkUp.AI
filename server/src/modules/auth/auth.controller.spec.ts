@@ -42,9 +42,7 @@ describe("AuthController", () => {
       ],
     })
       .overrideGuard(AccessTokenGuard)
-      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
-      ;
-
+      .useValue({ canActivate: jest.fn().mockReturnValue(true) });
     const module: TestingModule =
       await applyMockAccessTokenGuard(moduleBuilder).compile();
     controller = module.get<AuthController>(AuthController);
