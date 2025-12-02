@@ -1,5 +1,5 @@
-import { CalendarEvent } from '@/components/molecules/calendar-option-bar/useCalendarStore';
 import { CalendarListDayData } from '@/components/organisms/calendar-list/types';
+import { CalendarEvent } from '@/stores/useCalendarStore';
 import { addDays, format, isSameDay } from 'date-fns';
 
 /**
