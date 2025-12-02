@@ -10,7 +10,6 @@ import {
   ApiUnprocessableEntityResponse,
   ApiTags,
   ApiOkResponse,
-  ApiBearerAuth,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 
@@ -40,7 +39,6 @@ const BASE_COOKIE_OPTIONS: CookieOptions = {
       : undefined,
 };
 
-@ApiBearerAuth()
 @ApiTags("Auth")
 @Controller("auth")
 export class AuthController {
