@@ -1,3 +1,4 @@
+import { useCalendarStore } from '@/stores/useCalendarStore';
 import { render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 
@@ -19,17 +20,28 @@ vi.mock('../event-modal', () => ({
   default: () => <div data-testid="mock-calendar-modal">CalendarModal</div>,
 }));
 
+// Mock the store
+vi.mock('@/stores/useCalendarStore', () => ({
+  useCalendarStore: vi.fn(),
+}));
+
 describe('CalendarContainer', () => {
-  it('renders CalendarTable when activeView is table and includes CalendarModal', () => {
-    render(<CalendarContainer activeView="table" />);
+  it('renders CalendarTable when calendarLayoutMode is table and includes CalendarModal', () => {
+    (useCalendarStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      calendarLayoutMode: 'table',
+    });
+    render(<CalendarContainer />);
 
     expect(screen.getByTestId('mock-calendar-table')).toBeInTheDocument();
     expect(screen.queryByTestId('mock-calendar-list')).toBeNull();
     expect(screen.getByTestId('mock-calendar-modal')).toBeInTheDocument();
   });
 
-  it('renders CalendarList when activeView is list and includes CalendarModal', () => {
-    render(<CalendarContainer activeView="list" />);
+  it('renders CalendarList when calendarLayoutMode is list and includes CalendarModal', () => {
+    (useCalendarStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      calendarLayoutMode: 'list',
+    });
+    render(<CalendarContainer />);
 
     expect(screen.getByTestId('mock-calendar-list')).toBeInTheDocument();
     expect(screen.queryByTestId('mock-calendar-table')).toBeNull();

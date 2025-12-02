@@ -4,7 +4,7 @@ import CalendarControlBar from '@/components/molecules/calendar-control-bar';
 import MiniCalendar from '@/components/molecules/mini-calendar';
 import NextEventCard from '@/components/molecules/next-event-card';
 import CalendarContainer from '@/components/organisms/calendar-container';
-import { useAgenda } from '@/hooks/calendar/useAgenda';
+
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -13,37 +13,12 @@ export const Route = createFileRoute('/agenda')({
   component: Agenda,
 });
 
-interface MiniCalendarViewProps {
-  monthYear: string;
-  days: Array<{
-    date: number;
-    isGray?: boolean;
-    isToday?: boolean;
-    hasEvent?: boolean;
-  }>;
-  onPrevMonth: () => void;
-  onNextMonth: () => void;
-  onSelectDate: (date: Date) => void;
-}
-const MiniCalendarFixed = MiniCalendar as React.FC<MiniCalendarViewProps>;
-
 /**
  * Main component for the Agenda page.
  * Displays the main calendar view, a mini-calendar, and the next upcoming event.
  * @returns {JSX.Element} The Agenda page component.
  */
 function Agenda() {
-  const {
-    activeView,
-    setActiveView,
-    nextEvent,
-    monthYearLabel,
-    miniCalendarDays,
-    handleNextMonth,
-    handlePrevMonth,
-    handleMiniCalendarSelectDate,
-  } = useAgenda();
-
   return (
     <div className="grid grid-rows-[96px_minmax(0,1fr)] px-4 sm:px-8 md:px-16 pt-11 pb-12 gap-11 h-screen w-full min-w-0">
       <div className="w-full min-w-0 flex flex-col justify-center">
@@ -65,40 +40,17 @@ function Agenda() {
 
       <div className="bg-surface-raised p-8 rounded-[20px] grid grid-cols-[1fr_300px] gap-6 h-full">
         <div className="bg-white rounded-[10px] px-6 py-3 h-full flex flex-col gap-3 overflow-hidden">
-          <CalendarControlBar
-            activeView={activeView}
-            setActiveView={setActiveView}
-          />
+          <CalendarControlBar />
 
           <div className="flex-1 min-h-0">
-            <CalendarContainer activeView={activeView} />
+            <CalendarContainer />
           </div>
         </div>
 
         <div className="flex flex-col space-y-6">
-          <MiniCalendarFixed
-            monthYear={monthYearLabel}
-            days={miniCalendarDays}
-            onPrevMonth={handlePrevMonth}
-            onNextMonth={handleNextMonth}
-            onSelectDate={(date: Date) => {
-              handleMiniCalendarSelectDate(date);
-            }}
-          />
+          <MiniCalendar />
 
-          {nextEvent ? (
-            <NextEventCard
-              title={nextEvent.title}
-              subtitle={nextEvent.description || ''}
-              tagLabel="TalkUp"
-              detailsUrl="#"
-              eventDate={nextEvent.start}
-            />
-          ) : (
-            <div className="p-4 bg-white rounded-[10px] text-center text-body-m text-gray-500">
-              No events this month.
-            </div>
-          )}
+          <NextEventCard />
         </div>
       </div>
     </div>

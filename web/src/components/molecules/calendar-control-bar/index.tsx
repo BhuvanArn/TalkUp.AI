@@ -1,30 +1,20 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import { SwitchButton } from '@/components/atoms/switch-button';
-import { CalendarView } from '@/components/organisms/calendar-container';
 import { useCalendarStore } from '@/stores/useCalendarStore';
-
-/**
- * Props for the CalendarControlBar component.
- */
-interface CalendarControlBarProps {
-  /* Active view state */
-  activeView: CalendarView;
-  /* Function to set active view */
-  setActiveView: (view: CalendarView) => void;
-}
 
 /**
  * CalendarControlBar component.
  *
- * @param param0 Props for the CalendarControlBar component.
  * @returns JSX.Element representing the calendar control bar.
  */
-const CalendarControlBar = ({
-  activeView,
-  setActiveView,
-}: CalendarControlBarProps) => {
-  const { calendarViewMode, setCalendarViewMode } = useCalendarStore();
+const CalendarControlBar = () => {
+  const {
+    calendarViewMode,
+    setCalendarViewMode,
+    calendarLayoutMode,
+    setCalendarLayoutMode,
+  } = useCalendarStore();
 
   return (
     <div className="flex items-center justify-between">
@@ -45,9 +35,9 @@ const CalendarControlBar = ({
         <SwitchButton
           leftLabel="Table"
           rightLabel="List"
-          activeView={activeView === 'table' ? 'left' : 'right'}
+          activeView={calendarLayoutMode === 'table' ? 'left' : 'right'}
           onSwitch={(view) => {
-            setActiveView(view === 'left' ? 'table' : 'list');
+            setCalendarLayoutMode(view === 'left' ? 'table' : 'list');
           }}
         />
       </div>

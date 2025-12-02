@@ -4,7 +4,7 @@ import { Icon } from '@/components/atoms/icon';
 import { useCalendarStore } from '@/stores/useCalendarStore';
 import { format } from 'date-fns';
 
-import { NextEventCardProps } from './types';
+
 
 /**
  * NextEventCard component.
@@ -13,13 +13,19 @@ import { NextEventCardProps } from './types';
  * @param props - The component props.
  * @returns The rendered component.
  */
-const NextEventCard = ({
-  title,
-  subtitle,
-  tagLabel,
-  eventDate,
-}: NextEventCardProps) => {
-  const { setCurrentDate } = useCalendarStore();
+const NextEventCard = () => {
+  const { getNextUpcomingEvent, setCurrentDate } = useCalendarStore();
+  const nextEvent = getNextUpcomingEvent();
+
+  if (!nextEvent) {
+    return (
+      <div className="p-4 bg-white rounded-[10px] text-center text-body-m text-gray-500">
+        No events this month.
+      </div>
+    );
+  }
+
+  const { title, description, start: eventDate } = nextEvent;
 
   const displayDate =
     eventDate instanceof Date && !isNaN(eventDate.getTime())
@@ -41,11 +47,11 @@ const NextEventCard = ({
           <p className="text-body-m text-active">{title}</p>
           <p className="text-body-s text-idle italic">{displayDate}</p>
         </div>
-        <p className="text-body-s text-idle">{subtitle}</p>
+        <p className="text-body-s text-idle">{description || ''}</p>
       </div>
 
       <div className="flex gap-3">
-        <Badge color="accent">{tagLabel}</Badge>
+        <Badge color="accent">TalkUp</Badge>
 
         <Button
           size="xs"

@@ -1,3 +1,5 @@
+import { useCalendarStore } from '@/stores/useCalendarStore';
+
 import CalendarList from '../calendar-list';
 import CalendarTable from '../calendar-table';
 /**
@@ -16,20 +18,12 @@ import CalendarModal from '../event-modal';
  */
 export type CalendarView = 'list' | 'table';
 
-/**
- * @interface CalendarContainerProps
- * Properties for the CalendarContainer component.
- */
-interface CalendarContainerProps {
-  /** The active view mode for the calendar ('list' or 'table'). */
-  activeView: CalendarView;
-}
-
-const CalendarContainer = ({ activeView }: CalendarContainerProps) => {
+const CalendarContainer = () => {
+  const { calendarLayoutMode } = useCalendarStore();
   return (
     <div className="h-full flex flex-col min-h-0 overflow-hidden">
-      {activeView === 'table' && <CalendarTable />}
-      {activeView === 'list' && <CalendarList />}
+      {calendarLayoutMode === 'table' && <CalendarTable />}
+      {calendarLayoutMode === 'list' && <CalendarList />}
       <CalendarModal />
     </div>
   );

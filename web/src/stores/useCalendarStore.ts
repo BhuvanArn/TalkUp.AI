@@ -31,6 +31,7 @@ interface CalendarState {
   error: string | null;
 
   calendarViewMode: 'week' | 'day';
+  calendarLayoutMode: 'list' | 'table';
 
   // Modal State
   isModalOpen: boolean;
@@ -41,6 +42,7 @@ interface CalendarState {
   // Actions
   setCurrentDate: (date: Date) => void;
   setCalendarViewMode: (mode: 'week' | 'day') => void;
+  setCalendarLayoutMode: (mode: 'list' | 'table') => void;
   fetchEvents: () => Promise<void>;
   addEvent: (eventData: CreateEventDto) => Promise<void>;
   updateEvent: (id: string, eventData: UpdateEventDto) => Promise<void>;
@@ -72,6 +74,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   isLoading: false,
   error: null,
   calendarViewMode: 'week',
+  calendarLayoutMode: 'table',
 
   isModalOpen: false,
   modalInitialDate: null,
@@ -88,6 +91,10 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
 
   setCalendarViewMode: (mode: 'week' | 'day') => {
     set({ calendarViewMode: mode });
+  },
+
+  setCalendarLayoutMode: (mode: 'list' | 'table') => {
+    set({ calendarLayoutMode: mode });
   },
 
   fetchEvents: async () => {
