@@ -48,7 +48,8 @@ void talkup_network::Router::get_env_key(void)
     env_file.close();
 }
 
-void talkup_network::Router::set_routes_definitions(crow::SimpleApp& app)
+void talkup_network::Router::set_routes_definitions(crow::SimpleApp& app,
+    std::shared_ptr<MicroservicesManager> microservices_manager)
 {
     get_env_key();
     CROW_ROUTE(app, "/")([](){
@@ -160,7 +161,8 @@ void talkup_network::Router::set_routes_definitions(crow::SimpleApp& app)
         oss << "[WS] Connection closed: " << (void*)&conn << " reason: " << reason;
         std::cout << oss.str() << std::endl;
     })
-    .onmessage([this](crow::websocket::connection& conn, const std::string& data, bool is_binary){
+    .onmessage([this, microservices_manager](crow::websocket::connection& conn,
+        const std::string& data, bool is_binary){
         try {
             if (is_binary) {
                 return;
@@ -176,7 +178,7 @@ void talkup_network::Router::set_routes_definitions(crow::SimpleApp& app)
                 nlohmann::json err;
                 throw ExceptionManager::NetworkInvalidKeyException();
             }
-            wsManager.connection_type_manager(j, conn);
+            wsManager.connection_type_manager(j, conn, microservices_manager);
         } catch (const std::exception &e) {
             nlohmann::json err;
             err["type"] = "error";

@@ -10,6 +10,8 @@
 
 #include <crow.h>
 
+#include "MicroservicesManager.hpp"
+
 namespace talkup_network {
     class Router {
         public:
@@ -32,7 +34,8 @@ namespace talkup_network {
              *
              * @param app
              */
-            void set_routes_definitions(crow::SimpleApp& app);
+            void set_routes_definitions(crow::SimpleApp& app,
+                std::shared_ptr<MicroservicesManager> microservices_manager);
 
             /**
              * @brief Get the environment key used by the server.
