@@ -1,5 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ConflictException, UnauthorizedException } from "@nestjs/common";
+import { applyMockAccessTokenGuard } from "@src/test/utils/mock-guards";
 
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
@@ -28,7 +29,7 @@ describe("AuthController", () => {
       login: jest.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleBuilder = Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         {
@@ -36,8 +37,10 @@ describe("AuthController", () => {
           useValue: mockAuthService,
         },
       ],
-    }).compile();
+    });
 
+    const module: TestingModule =
+      await applyMockAccessTokenGuard(moduleBuilder).compile();
     controller = module.get<AuthController>(AuthController);
   });
 
