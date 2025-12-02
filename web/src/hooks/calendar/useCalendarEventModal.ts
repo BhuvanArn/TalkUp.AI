@@ -1,7 +1,4 @@
-import {
-  CalendarEvent,
-  useCalendarStore,
-} from '@/components/molecules/calendar-option-bar/useCalendarStore';
+import { CalendarEvent, useCalendarStore } from '@/stores/useCalendarStore';
 import {
   EVENT_COLORS,
   EventColorName,

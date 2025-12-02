@@ -1,7 +1,4 @@
-import {
-  CalendarEvent,
-  useCalendarStore,
-} from '@/components/molecules/calendar-option-bar/useCalendarStore';
+import { CalendarEvent, useCalendarStore } from '@/stores/useCalendarStore';
 import { format, getDay, isSameDay, parse, startOfWeek } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { useEffect, useMemo } from 'react';
@@ -111,4 +108,3 @@ export const useCalendarTable = () => {
     eventPropGetter,
   };
 };
-

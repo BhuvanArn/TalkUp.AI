@@ -1,5 +1,5 @@
-import { useCalendarStore } from '@/components/molecules/calendar-option-bar/useCalendarStore';
 import { ListEventItem } from '@/components/organisms/calendar-list/types';
+import { useCalendarStore } from '@/stores/useCalendarStore';
 import { getListWeekDaysData } from '@/utils/calendarUtils';
 import { isSameDay } from 'date-fns';
 import { useMemo } from 'react';
