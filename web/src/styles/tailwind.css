@@ -114,6 +114,8 @@
   --font-size-h4: 24px;
   --font-size-h5: 20px;
   --font-size-h6: 18px;
+  --font-size-body-xl: 18px;
+  --font-size-body-l: 16px;
   --font-size-body-m: 14px;
   --font-size-body-s: 12px;
 }
@@ -143,6 +145,7 @@
   --color-background: #121212;
   --color-surface: #1e1e1e;
   --color-surface-raised: #2a2a2a;
+  --color-surface-raised-hover: #3a3a3a;
 
   --color-note-card: #2a2a3a;
   --color-note-card-hover: #35354a;
@@ -243,10 +246,31 @@
     line-height: 1.4;
   }
 
+  .text-body-xl-strong {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-xl);
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  .text-body-l {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-l);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
   .text-body-m {
     font-family: var(--font-body);
     font-size: var(--font-size-body-m);
     font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .text-body-s-strong {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-s);
+    font-weight: 700;
     line-height: 1.5;
   }
 
