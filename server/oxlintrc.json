@@ -3,7 +3,7 @@
   "categories": {
     "correctness": "error",
     "suspicious": "error",
-    "pedantic": "warn", 
+    "pedantic": "warn",
     "style": "warn"
   },
   "rules": {
@@ -33,7 +33,7 @@
   },
   "ignore": [
     "dist/**",
-    "coverage/**", 
+    "coverage/**",
     "node_modules/**",
     "*.config.js",
     "*.config.mjs"

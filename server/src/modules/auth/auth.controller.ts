@@ -1,4 +1,5 @@
-import { Body, Controller, Post, Res, Get, UseGuards } from "@nestjs/common";
+import { Body, Controller, Post, Res, Get, Patch, UseGuards } from "@nestjs/common";
+import { AccessTokenGuard } from "@common/guards/accessToken.guard";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
 import { Response, CookieOptions } from "express";
 
@@ -9,14 +10,16 @@ import {
   ApiUnprocessableEntityResponse,
   ApiTags,
   ApiOkResponse,
+  ApiBearerAuth,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 
 import { CreateUserDto } from "./dto/createUser.dto";
 import { LoginDto } from "./dto/login.dto";
+import { EditUserDto } from "./dto/editUser.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
-import { AccessTokenGuard } from "@common/guards/accessToken.guard";
+import { UserId } from "@common/decorators/userId.decorator";
 
 import { AuthService } from "./auth.service";
 
@@ -37,6 +40,7 @@ const BASE_COOKIE_OPTIONS: CookieOptions = {
       : undefined,
 };
 
+@ApiBearerAuth()
 @ApiTags("Auth")
 @Controller("auth")
 export class AuthController {
@@ -125,5 +129,12 @@ export class AuthController {
   @Get("status")
   async getAuthStatus() {
     return { authenticated: true };
+  }
+
+  @Patch("editUser")
+  @UseGuards(AccessTokenGuard)
+  @ApiOkResponse({ description: "User updated successfully." })
+  async editUser(@UserId() userId: string, @Body() editUserDto: EditUserDto) {
+    return await this.authService.editUser(userId, editUserDto);
   }
 }
