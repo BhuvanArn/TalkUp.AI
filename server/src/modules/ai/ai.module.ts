@@ -19,7 +19,13 @@ import { user_password } from "@entities/user.entity";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ai_interview, ai_transcript, user, user_email, user_password]),
+    TypeOrmModule.forFeature([
+      ai_interview,
+      ai_transcript,
+      user,
+      user_email,
+      user_password,
+    ]),
     HttpModule.register({
       timeout: 5000,
     }),

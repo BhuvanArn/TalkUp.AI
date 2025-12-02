@@ -10,9 +10,7 @@ dotenv.config();
 import { user, user_password, user_email } from "@entities/user.entity";
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([user, user_password, user_email]),
-  ],
+  imports: [TypeOrmModule.forFeature([user, user_password, user_email])],
   controllers: [AuthController],
   providers: [AuthService],
   exports: [AuthService],

@@ -34,7 +34,9 @@ describe("AccessTokenGuard (unit)", () => {
   });
 
   it("throws when jwt verify fails", async () => {
-    mockAuthService.verifyAccessToken.mockRejectedValueOnce(new UnauthorizedException());
+    mockAuthService.verifyAccessToken.mockRejectedValueOnce(
+      new UnauthorizedException(),
+    );
     guard = new AccessTokenGuard(mockAuthService);
     await expect(
       guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),

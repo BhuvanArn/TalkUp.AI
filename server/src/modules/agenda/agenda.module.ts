@@ -15,7 +15,9 @@ import { user_email } from "@entities/user.entity";
 import { user_password } from "@entities/user.entity";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([agenda_event, user, user_email, user_password])],
+  imports: [
+    TypeOrmModule.forFeature([agenda_event, user, user_email, user_password]),
+  ],
   controllers: [AgendaController],
   providers: [AgendaService, AccessTokenGuard, AuthService],
   exports: [AgendaService],
