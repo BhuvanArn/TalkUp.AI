@@ -40,7 +40,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     ports:
-      - "5053:5000"
+      - "8002:8002"
 
   text_to_speech:
     build:
