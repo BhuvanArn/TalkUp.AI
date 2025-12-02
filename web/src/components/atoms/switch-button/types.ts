@@ -10,4 +10,3 @@ export interface SwitchButtonProps {
   /* set which view is currently active */
   activeView?: 'left' | 'right';
 }
-
