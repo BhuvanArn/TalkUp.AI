@@ -1,3 +1,7 @@
+import { CalendarEvent } from '@/components/molecules/calendar-option-bar/useCalendarStore';
+import { CalendarListDayData } from '@/components/organisms/calendar-list/types';
+import { addDays, format, isSameDay } from 'date-fns';
+
 /**
  * Interface for a single day data object used in the MiniCalendar grid.
  */
@@ -5,7 +9,7 @@ export interface MiniCalendarDay {
   /** The day number (1-31). */
   date: number;
   /** True if the day belongs to the previous or next month (visually grayed out). */
-  isGray: boolean;
+  isNotCurrentMonth: boolean;
   /** True if the day is today. */
   isToday: boolean;
   /** The complete Date object for this day, necessary for store lookups and selection. */
@@ -47,7 +51,7 @@ export const getMiniCalendarDays = (targetDate: Date): MiniCalendarDay[] => {
     date.setDate(prevMonthLastDay.getDate() - i + 1);
     days.push({
       date: date.getDate(),
-      isGray: true,
+      isNotCurrentMonth: true,
       isToday: false,
       fullDate: date,
     });
@@ -58,7 +62,7 @@ export const getMiniCalendarDays = (targetDate: Date): MiniCalendarDay[] => {
     const isCurrentDay = date.getTime() === today.getTime();
     days.push({
       date: i,
-      isGray: false,
+      isNotCurrentMonth: false,
       isToday: isCurrentDay,
       fullDate: date,
     });
@@ -77,11 +81,56 @@ export const getMiniCalendarDays = (targetDate: Date): MiniCalendarDay[] => {
     date.setDate(i);
     days.push({
       date: i,
-      isGray: true,
+      isNotCurrentMonth: true,
       isToday: false,
       fullDate: date,
     });
   }
 
   return days.slice(0, 42);
+};
+
+/**
+ * Generates a list of day data for a week starting from the given start date.
+ * It filters and formats events for each day of the week.
+ *
+ * @param startDate - The start date of the week.
+ * @param allEvents - An array of all calendar events to filter from.
+ * @returns An array of `CalendarListDayData` objects representing each day of the week.
+ */
+export const getListWeekDaysData = (
+  startDate: Date,
+  allEvents: CalendarEvent[],
+): CalendarListDayData[] => {
+  const days: CalendarListDayData[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (isNaN(startDate.getTime())) return [];
+
+  for (let i = 0; i < 7; i++) {
+    const date = addDays(startDate, i);
+    const isToday = isSameDay(date, today);
+
+    const eventsForDay = allEvents
+      .filter((e) => isSameDay(e.start, date))
+      .map((e) => ({
+        title: e.title,
+        subtitle: e.description || '',
+        color: e.color || 'blue',
+        startTime: format(e.start, 'HH:mm'),
+        endTime: format(e.end, 'HH:mm'),
+        originalEvent: e,
+      }))
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    days.push({
+      dayName: date.toLocaleDateString('en-US', { weekday: 'long' }),
+      date: date.getDate(),
+      fullDate: date,
+      isToday,
+      events: eventsForDay,
+    });
+  }
+  return days;
 };
