@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res, Get, Patch, UseGuards } from "@nestjs/common";
+import { Body, Controller, Post, Res, Get, Patch, UseGuards, HttpCode } from "@nestjs/common";
 import { AccessTokenGuard } from "@common/guards/accessToken.guard";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
 import { Response, CookieOptions } from "express";
@@ -81,6 +81,7 @@ export class AuthController {
   })
   @UsePipes(new PostValidationPipe())
   @Post("login")
+  @HttpCode(200)
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
@@ -108,6 +109,7 @@ export class AuthController {
     description: "User is not authenticated or token is invalid.",
   })
   @UseGuards(AccessTokenGuard)
+  @HttpCode(200)
   @Post("logout")
   async logout(@Res({ passthrough: true }) response: Response) {
     response.cookie(COOKIE_NAME, "", {
