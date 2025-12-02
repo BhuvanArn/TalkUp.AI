@@ -32,6 +32,9 @@ export interface UseCalendarEventModalReturn {
   errorMessage: string | null;
   handleSubmit: () => Promise<void>;
   handleDelete: () => Promise<void>;
+  handleInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => void;
 }
 
 /**
@@ -161,6 +164,13 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
     }
   };
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   return {
     isModalOpen,
     closeModal,
@@ -170,5 +180,6 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
     errorMessage,
     handleSubmit,
     handleDelete,
+    handleInputChange,
   };
 };

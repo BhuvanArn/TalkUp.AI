@@ -3,6 +3,7 @@ import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import { useCalendarStore } from '@/stores/useCalendarStore';
 import { format } from 'date-fns';
+
 import { NextEventCardProps } from './types';
 
 /**

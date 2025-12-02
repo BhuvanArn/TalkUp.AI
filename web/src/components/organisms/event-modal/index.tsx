@@ -10,7 +10,7 @@ import { EVENT_COLORS, EventColorName } from '@/utils/eventColors';
 /**
  * CalendarModal component.
  * Displays a modal for creating and editing calendar events.
- * 
+ *
  * @returns The CalendarModal component for creating and editing calendar events.
  */
 const CalendarModal = () => {

@@ -5,7 +5,7 @@ import { isSameDay } from 'date-fns';
 /**
  * MiniCalendar component.
  * Displays a compact calendar view for month navigation and day selection.
- * 
+ *
  * @returns The MiniCalendar component.
  */
 export const MiniCalendar = () => {

@@ -16,7 +16,7 @@ interface CalendarControlBarProps {
 
 /**
  * CalendarControlBar component.
- * 
+ *
  * @param param0 Props for the CalendarControlBar component.
  * @returns JSX.Element representing the calendar control bar.
  */
