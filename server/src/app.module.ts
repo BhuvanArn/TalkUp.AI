@@ -1,6 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule } from "@nestjs/config";
+import { JwtModule } from "@nestjs/jwt";
 
 import pgConfig from "@config/postgres.config";
 
@@ -39,6 +40,13 @@ import { AgendaModule } from "./modules/agenda/agenda.module";
       },
     }),
     AiModule,
+    JwtModule.register({
+      global: true,
+      secret: process.env.JWT_SECRET,
+      signOptions: {
+        expiresIn: (process.env.JWT_EXPIRES_IN || "2d") as any,
+      },
+    }),
   ],
   controllers: [HealthController],
   providers: [PostValidationPipe],
