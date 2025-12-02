@@ -6,7 +6,7 @@ export const logoVariants = cva(
   {
     variants: {
       variant: {
-        line: 'flex-row gap-3 h-10',
+        line: 'flex-row gap-3 h-8',
         column: 'flex-col gap-2 h-20',
         'no-text': 'h-10',
       },
@@ -26,9 +26,9 @@ export type LogoVariants = VariantProps<typeof logoVariants>;
 
 // Logo size mapping based on variant
 export const logoSizeMap = {
-  line: 38,
+  line: 32,
   column: 32,
-  'no-text': 38,
+  'no-text': 32,
 } as const;
 
 /**

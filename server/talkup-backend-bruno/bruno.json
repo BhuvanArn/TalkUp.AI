@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "talkup-backend-bruno",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

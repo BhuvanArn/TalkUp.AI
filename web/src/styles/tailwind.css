@@ -4,7 +4,8 @@
 
 @source inline('{text,fill}-{primary,accent}');
 @source inline('{,hover:,active:}{bg,border,text}-{primary,accent,black,white,error,warning,success,neutral,note-card,video-off}{,-hover,-active,-weak,-weaker}');
-@source inline('text-text-{idle,active}');
+@source inline('{bg,border}-surface-sidebar{,-hover,-active}');
+@source inline('text-{idle,active,hover,weak,weaker,weakest}');
 
 /* Smooth theme transitions */
 :root {
@@ -58,9 +59,22 @@
   --color-text-idle: #57585e;
   --color-text-active: #1e2229;
 
-  --color-border: #e2e2ea;
+  --color-idle: #57585e;
+  --color-active: #1e2229;
+  --color-hover: #24242d;
+  --color-weak: #383850;
+  --color-weaker: #5f5f77;
+  --color-weakest: #a4a4b2;
+
+  --color-surface-sidebar: #ECEDF6;
+  --color-surface-sidebar-hover: #E2E4F0;
+  --color-surface-sidebar-active: #E2E4F0;
+
+  --color-border: #d9dbeb;
   --color-border-strong: #c8c8d4;
   --color-border-hover: #5f5f77;
+
+  --color-notification-banner: #F8F9FF;
 
   --color-success-weak: #def7e3;
   --color-success-weaker: #ebfbec;
@@ -95,6 +109,7 @@
   /* Typography styles */
   --font-size-h1: 40px;
   --font-size-h2: 32px;
+  --font-size-h4: 24px;
   --font-size-h5: 20px;
   --font-size-body-m: 14px;
   --font-size-body-s: 12px;
@@ -146,6 +161,17 @@
   --color-text-idle: #a0a0a8;
   --color-text-active: #f0f0f0;
 
+  --color-idle: #9595A2;
+  --color-active: #f0f0f0;
+  --color-hover: #e8e8e8;
+  --color-weak: #b8b8c0;
+  --color-weaker: #909098;
+  --color-weakest: #606068;
+
+  --color-surface-sidebar: #232429;
+  --color-surface-sidebar-hover: #312F3D;
+  --color-surface-sidebar-active: #312F3D;
+
   --color-border: #3a3a3a;
   --color-border-strong: #4a4a4a;
   --color-border-hover: #909098;
@@ -193,6 +219,13 @@
     line-height: 1.2;
   }
 
+  .text-h4 {
+    font-family: var(--font-display);
+    font-size: var(--font-size-h4);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
   .text-h5 {
     font-family: var(--font-display);
     font-size: var(--font-size-h5);
@@ -209,6 +242,34 @@
 
   .text-body-s {
     font-family: var(--font-body);
+    font-size: var(--font-size-body-s);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .text-label-m {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-m);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .text-label-s {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-s);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .text-button-m {
+    font-family: var(--font-display);
+    font-size: var(--font-size-body-m);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  .text-button-s {
+    font-family: var(--font-display);
     font-size: var(--font-size-body-s);
     font-weight: 400;
     line-height: 1.5;

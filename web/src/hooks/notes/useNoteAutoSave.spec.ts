@@ -103,7 +103,7 @@ describe('useNoteAutoSave', () => {
     (updateNote as any).mockRejectedValue(new Error('Save failed'));
     mockEditor.getHTML.mockReturnValue('<p>New content</p>');
 
-    const { result } = renderHook(() =>
+    const { result, unmount } = renderHook(() =>
       useNoteAutoSave('note-1', mockNote, mockEditor as any, 'Test Note'),
     );
 
@@ -119,22 +119,36 @@ describe('useNoteAutoSave', () => {
     });
 
     expect(result.current.saveStatus).toBe('error');
+
+    // Reset mock to avoid errors on unmount
+    (updateNote as any).mockResolvedValue(undefined);
+
+    // Clean unmount
+    unmount();
     consoleSpy.mockRestore();
   });
 
   it('saves immediately when saveNow is called', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    (updateNote as any).mockResolvedValue(undefined);
     mockEditor.getHTML.mockReturnValue('<p>Immediate content</p>');
 
-    const { result } = renderHook(() =>
+    const { result, unmount } = renderHook(() =>
       useNoteAutoSave('note-1', mockNote, mockEditor as any, 'Test Note'),
     );
 
-    await result.current.saveNow();
+    await act(async () => {
+      await result.current.saveNow();
+    });
 
     expect(updateNote).toHaveBeenCalledWith('note-1', {
       title: 'Test Note',
       content: '<p>Immediate content</p>',
     });
     expect(result.current.saveStatus).toBe('saved');
+
+    // Clean unmount to avoid error logs
+    unmount();
+    consoleSpy.mockRestore();
   });
 });

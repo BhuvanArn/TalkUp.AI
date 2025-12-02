@@ -1,5 +1,5 @@
 import { createNote } from '@/services/notes/http';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useNoteCreation } from './useNoteCreation';
@@ -37,15 +37,10 @@ describe('useNoteCreation', () => {
 
     const { result } = renderHook(() => useNoteCreation());
 
-    let promise: Promise<any>;
-    act(() => {
-      promise = result.current.createNewNote('My Note', 'Content', 'red');
+    let note: any;
+    await act(async () => {
+      note = await result.current.createNewNote('My Note', 'Content', 'red');
     });
-
-    // Check isCreating is true after state update
-    expect(result.current.isCreating).toBe(true);
-
-    const note = await promise!;
 
     expect(createNote).toHaveBeenCalledWith({
       title: 'My Note',
@@ -53,11 +48,7 @@ describe('useNoteCreation', () => {
       color: 'red',
     });
     expect(note).toEqual(mockNote);
-
-    // Wait for state to update to false
-    await waitFor(() => {
-      expect(result.current.isCreating).toBe(false);
-    });
+    expect(result.current.isCreating).toBe(false);
   });
 
   it('handles creation errors', async () => {
@@ -66,9 +57,11 @@ describe('useNoteCreation', () => {
 
     const { result } = renderHook(() => useNoteCreation());
 
-    await expect(result.current.createNewNote()).rejects.toThrow(
-      'Creation failed',
-    );
+    await act(async () => {
+      await expect(result.current.createNewNote()).rejects.toThrow(
+        'Creation failed',
+      );
+    });
 
     expect(result.current.isCreating).toBe(false);
     consoleSpy.mockRestore();
@@ -81,13 +74,18 @@ describe('useNoteCreation', () => {
 
     const { result } = renderHook(() => useNoteCreation());
 
-    // Start first creation
-    const promise1 = result.current.createNewNote();
+    let promise1: Promise<any>;
+    let promise2: Promise<any>;
 
-    // Try second creation immediately
-    const promise2 = result.current.createNewNote();
+    await act(async () => {
+      // Start first creation
+      promise1 = result.current.createNewNote();
 
-    expect(await promise2).toBeNull();
-    await promise1;
+      // Try second creation immediately
+      promise2 = result.current.createNewNote();
+
+      expect(await promise2).toBeNull();
+      await promise1;
+    });
   });
 });

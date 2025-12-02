@@ -7,7 +7,8 @@ export type ButtonColor =
   | 'success'
   | 'warning'
   | 'neutral'
-  | 'error';
+  | 'error'
+  | 'sidebar';
 
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -17,5 +18,7 @@ export interface ButtonProps
   color?: ButtonColor;
   size?: ButtonSize;
   loading?: boolean;
+  squared?: boolean;
+  circled?: boolean;
   children?: React.ReactNode;
 }

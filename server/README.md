@@ -73,6 +73,16 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Open using Bruno
+
+We created a collection for Bruno users to facilitate api tests.
+This collection is available in the folder `talkup-backend-bruno`
+
+In order to open this collection on Bruno, you have to click the tab `Collection`, then the button `Open Collection`, and select our collection folder.
+
+This will open the sidebar the list of api requests available in our server.
+You can then proceed to test each of them.
+
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
