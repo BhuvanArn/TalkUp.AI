@@ -10,15 +10,11 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
-
     "build": "nest build",
-
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
-
     "lint": "oxlint --fix --jest-plugin --promise-plugin --node-plugin src/ test/",
     "lint:check": "oxlint --jest-plugin --promise-plugin --node-plugin src/ test/",
-
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -32,6 +28,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.0",
     "@nestjs/jwt": "^11.0.0",
+    "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.0",
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/typeorm": "^11.0.0",
@@ -42,6 +39,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "^16.5.0",
+    "passport": "^0.7.0",
     "pg": "^8.15.6",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
@@ -50,7 +48,7 @@
   },
   "devDependencies": {
     "@nestjs/schematics": "^11.0.5",
-    "@nestjs/testing": "^11.1.0",
+    "@nestjs/testing": "^11.1.9",
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.1",
     "@types/supertest": "^6.0.0",

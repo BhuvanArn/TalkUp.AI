@@ -1,4 +1,5 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, Patch, UseGuards } from "@nestjs/common";
+import { AccessTokenGuard } from "@common/guards/accessToken.guard";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
 
 import {
@@ -8,15 +9,19 @@ import {
   ApiUnprocessableEntityResponse,
   ApiTags,
   ApiOkResponse,
+  ApiBearerAuth,
 } from "@nestjs/swagger";
 
 import { CreateUserDto } from "./dto/createUser.dto";
 import { LoginDto } from "./dto/login.dto";
+import { EditUserDto } from "./dto/editUser.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
+import { UserId } from "@common/decorators/userId.decorator";
 
 import { AuthService } from "./auth.service";
 
+@ApiBearerAuth()
 @ApiTags("Auth")
 @Controller("auth")
 export class AuthController {
@@ -53,5 +58,12 @@ export class AuthController {
       loginDto.password,
     );
     return await this.authService.login(user);
+  }
+
+  @Patch("editUser")
+  @UseGuards(AccessTokenGuard)
+  @ApiOkResponse({ description: "User updated successfully." })
+  async editUser(@UserId() userId: string, @Body() editUserDto: EditUserDto) {
+    return await this.authService.editUser(userId, editUserDto);
   }
 }
