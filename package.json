@@ -13,22 +13,29 @@
   ],
   "scripts": {
     "start": "npm run build:server && npm run start:prod --workspace=server",
+
     "dev:web": "npm run dev --workspace=web",
     "dev:server": "npm run start:dev --workspace=server",
+
     "format:check": "npm run format:check --workspaces --if-present",
     "format": "npm run format --workspaces --if-present",
+
     "lint:check": "npm run lint:check --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
+
     "build:web": "npm run build --workspace=web",
     "build:server": "npm run build --workspace=server",
+
     "tsc:check": "npm run tsc:check --workspaces --if-present",
     "tsc:check:web": "npm run tsc:check --workspace=web",
+
     "test:server": "npm run test --workspace=server",
     "test:web": "npm run test --workspace=web",
     "test": "npm run test --workspaces --if-present",
     "test:coverage:server": "npm run test:coverage --workspace=server",
     "test:coverage:web": "npm run test:coverage --workspace=web",
     "test:coverage": "npm run test:coverage --workspaces --if-present",
+
     "e2e:web": "npm run e2e --workspace=web",
     "e2e:web:ui": "npm run e2e:ui --workspace=web"
   }

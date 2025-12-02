@@ -4,5 +4,6 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true
-  }
+  },
+  "exclude": ["test", "**/*spec.ts", "**/*test.ts", "src/test"]
 }

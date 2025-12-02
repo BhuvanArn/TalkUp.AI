@@ -16,7 +16,6 @@ import {
   ApiUnprocessableEntityResponse,
   ApiTags,
   ApiOkResponse,
-  ApiBearerAuth,
   ApiExtraModels,
   ApiNotFoundResponse,
 } from "@nestjs/swagger";
@@ -36,7 +35,6 @@ import { CreateAiTranscriptsDto } from "./dto/createAiTranscripts.dto";
 
 @ApiTags("AI")
 @Controller("ai")
-@ApiBearerAuth("access-token")
 @UseGuards(AccessTokenGuard)
 export class AiController {
   constructor(private readonly aiService: AiService) {}
