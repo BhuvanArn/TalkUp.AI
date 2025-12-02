@@ -35,6 +35,17 @@ const CalendarTable = () => {
 
   return (
     <div className="flex-1 h-full flex flex-col overflow-hidden">
+      {calendarViewMode === 'day' && (
+        <div className="flex-none bg-white">
+          <CalendarTableDayHeader
+            dayName={format(currentDate, 'EEEE')}
+            date={currentDate.getDate()}
+            isToday={new Date().toDateString() === currentDate.toDateString()}
+            view="day"
+            onBackToWeek={() => setCalendarViewMode('week')}
+          />
+        </div>
+      )}
       <DnDCalendar
         localizer={localizer}
         events={events}
@@ -55,13 +66,17 @@ const CalendarTable = () => {
         toolbar={false}
         formats={calendarFormats}
         components={{
-          header: ({ date }) => (
-            <CalendarTableDayHeader
-              dayName={format(date, 'EEEE')}
-              date={date.getDate()}
-              isToday={new Date().toDateString() === date.toDateString()}
-            />
-          ),
+          header: ({ date }) => {
+            if (calendarViewMode === 'day') return null;
+            return (
+              <CalendarTableDayHeader
+                dayName={format(date, 'EEEE')}
+                date={date.getDate()}
+                isToday={new Date().toDateString() === date.toDateString()}
+                view={calendarViewMode}
+              />
+            );
+          },
           event: ({ event }) => (
             <div className="h-full w-full">
               <CalendarTableEventItem

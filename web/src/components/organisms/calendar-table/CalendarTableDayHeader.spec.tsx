@@ -30,6 +30,16 @@ describe('CalendarTableDayHeader', () => {
     // Should not have idle text class
     expect(dateEl).not.toHaveClass('text-idle');
   });
+
+  it('renders correctly in day view', () => {
+    const { container } = render(
+      <CalendarTableDayHeader dayName="Fri" date={12} view="day" />,
+    );
+    // Check for the specific class used in day view (horizontal layout)
+    expect(container.firstChild).toHaveClass(
+      'pl-2 grid grid-cols-[100px_100px_1fr] items-center justify-center pt-3 pb-6',
+    );
+  });
 });
 
 export {};

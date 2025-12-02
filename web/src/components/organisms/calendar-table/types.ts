@@ -5,6 +5,10 @@ export interface CalendarTableDayHeaderProps {
   date: number;
   /** Whether the day is today (for styling). */
   isToday?: boolean;
+  /** The current calendar view mode. */
+  view?: 'week' | 'day';
+  /** Callback to switch back to week view. */
+  onBackToWeek?: () => void;
 }
 
 export interface CalendarTableEventItemProps {

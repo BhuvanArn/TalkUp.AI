@@ -4,7 +4,6 @@ import CalendarControlBar from '@/components/molecules/calendar-control-bar';
 import MiniCalendar from '@/components/molecules/mini-calendar';
 import NextEventCard from '@/components/molecules/next-event-card';
 import CalendarContainer from '@/components/organisms/calendar-container';
-
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 

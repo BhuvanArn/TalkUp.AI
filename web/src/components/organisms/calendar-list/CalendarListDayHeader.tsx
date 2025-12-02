@@ -19,12 +19,16 @@ const CalendarListDayHeader = ({
   onCreateEvent,
 }: CalendarListDayHeaderProps) => {
   return (
-    <div className="relative flex items-center justify-between cursor-pointer">
-      <button
-        className="w-full h-full hover:bg-surface absolute rounded-[5px] cursor-pointer"
-        onClick={() => onDayClick(fullDate)}
-      />
-      <div className="pl-2 grid grid-cols-[100px_100px_1fr] items-center justify-center cursor-pointer z-10">
+    <div
+      className={`relative flex items-center ${calendarViewMode === 'week' && 'hover:bg-surface'} rounded-[5px] justify-between`}
+    >
+      {calendarViewMode === 'week' && (
+        <button
+          className="w-full h-full absolute cursor-pointer z-10"
+          onClick={() => onDayClick(fullDate)}
+        />
+      )}
+      <div className="pl-2 grid grid-cols-[100px_100px_1fr] items-center justify-center">
         <span className="text-body-m text-idle">{dayName}</span>
         <div
           className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-body-xl-strong 
@@ -36,13 +40,13 @@ const CalendarListDayHeader = ({
 
       <IconAction
         onClick={() => onCreateEvent(fullDate)}
-        className={`opacity-0 hover:bg-accent/20 z-10 mr-1 rounded-full p-1 ${
+        className={`opacity-0 hover:bg-surface-raised z-10 mr-1 rounded-full p-1 ${
           calendarViewMode === 'day'
             ? 'opacity-100'
             : 'group-hover:opacity-100 focus:opacity-100'
         }`}
         title="Add event"
-        icon={'plus'}
+        icon="plus"
       />
     </div>
   );

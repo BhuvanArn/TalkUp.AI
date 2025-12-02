@@ -4,8 +4,6 @@ import { Icon } from '@/components/atoms/icon';
 import { useCalendarStore } from '@/stores/useCalendarStore';
 import { format } from 'date-fns';
 
-
-
 /**
  * NextEventCard component.
  * Displays details about the next scheduled event, typically used in a sidebar.
