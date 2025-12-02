@@ -10,12 +10,7 @@ export type IconColor =
   | 'warning'
   | 'neutral'
   | 'error'
-  | 'inherit'
-  | 'blue'
-  | 'green'
-  | 'red'
-  | 'purple'
-  | 'grey';
+  | 'inherit';
 
 export interface IconProps extends React.SVGAttributes<SVGElement> {
   icon: IconName | React.ComponentType<React.SVGProps<SVGSVGElement>>;
