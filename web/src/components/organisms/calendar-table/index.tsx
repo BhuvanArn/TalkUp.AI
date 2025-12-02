@@ -1,5 +1,5 @@
-import { CalendarEvent } from '@/components/molecules/calendar-option-bar/useCalendarStore';
 import { useCalendarTable } from '@/hooks/calendar/useCalendarTable';
+import { CalendarEvent } from '@/stores/useCalendarStore';
 import { format } from 'date-fns';
 import { Calendar } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';

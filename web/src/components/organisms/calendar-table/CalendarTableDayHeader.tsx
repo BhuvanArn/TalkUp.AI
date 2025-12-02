@@ -1,4 +1,3 @@
-
 import { CalendarTableDayHeaderProps } from './types';
 
 /**

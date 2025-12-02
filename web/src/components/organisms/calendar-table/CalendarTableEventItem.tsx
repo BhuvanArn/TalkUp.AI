@@ -1,6 +1,6 @@
-
-import { format } from 'date-fns';
 import { getEventColorData } from '@/utils/eventColors';
+import { format } from 'date-fns';
+
 import { CalendarTableEventItemProps } from './types';
 
 /**
