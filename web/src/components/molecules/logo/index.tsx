@@ -38,13 +38,7 @@ const Logo = ({
       data-testid={`${variant}-logo`}
     >
       <LogoSvg color={color} size={logoSize} />
-      {showText && (
-        <h1
-          className={`text-[20px] leading-[20px] text-${color} uppercase font-display font-extrabold tracking-tight select-none`}
-        >
-          TalkUp
-        </h1>
-      )}
+      {showText && <h1 className={cn(`text-${color}`, 'text-h4')}>TALKUP</h1>}
     </div>
   );
 };

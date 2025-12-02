@@ -3,14 +3,20 @@ import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/cv-analysis')({
   beforeLoad: createAuthGuard('/cv-analysis'),
-  component: CVAnalysis,
+  component: CV,
 });
 
-function CVAnalysis() {
+/**
+ * Curriculum Vitae page
+ *
+ * Allows users to manage and analyze their CV.
+ */
+function CV() {
   return (
-    <div className="p-2">
-      <h3 className="text-primary">Analyse CV</h3>
-      <p>Analyse de CV</p>
+    <div className="p-6">
+      <div className="mb-6">
+        <h2 className="text-h4 text-idle">Curriculum Vitae</h2>
+      </div>
     </div>
   );
 }

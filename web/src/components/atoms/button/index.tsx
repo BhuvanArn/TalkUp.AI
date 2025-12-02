@@ -10,10 +10,12 @@ import { buttonVariants } from './variants';
  * @component
  * @param {Object} props - The component props
  * @param {'contained' | 'outlined' | 'text'} [props.variant='contained'] - The visual style variant
- * @param {'primary' | 'accent' | 'black' | 'white' | 'error' | 'warning' | 'neutral' | 'success'} [props.color='primary'] - The color scheme
+ * @param {'primary' | 'accent' | 'black' | 'white' | 'error' | 'warning' | 'neutral' | 'success' | 'sidebar'} [props.color='primary'] - The color scheme
  * @param {'sm' | 'md' | 'lg'} [props.size='md'] - The size of the button
  * @param {boolean} [props.loading=false] - Whether to show a loading indicator
  * @param {boolean} [props.disabled=false] - Whether the button is disabled
+ * @param {boolean} [props.squared=false] - Makes button square with equal padding on all sides
+ * @param {boolean} [props.circled=false] - Makes button circular (implies squared with rounded-full)
  * @param {React.ReactNode} props.children - The content to be displayed inside the button
  * @param {string} [props.className] - Additional CSS classes
  *
@@ -27,6 +29,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       size,
       loading = false,
       disabled = false,
+      squared = false,
+      circled = false,
       className,
       children,
       ...props
@@ -45,6 +49,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             size,
             disabled,
             loading,
+            squared,
+            circled,
           }),
           className,
         )}

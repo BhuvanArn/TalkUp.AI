@@ -29,7 +29,7 @@ describe('Logo Component', () => {
         'items-center',
         'justify-start',
         'gap-3',
-        'h-10',
+        'h-8',
         'flex-row',
       );
     });
@@ -43,13 +43,13 @@ describe('Logo Component', () => {
         'items-center',
         'justify-start',
         'gap-3',
-        'h-10',
+        'h-8',
         'flex-row',
       );
 
       const logoText = lineLogo.querySelector('h1');
       expect(logoText).toBeInTheDocument();
-      expect(logoText).toHaveTextContent('TalkUp');
+      expect(logoText).toHaveTextContent('TALKUP');
     });
 
     it('renders column variant', () => {
@@ -67,7 +67,7 @@ describe('Logo Component', () => {
 
       const logoText = columnLogo.querySelector('h1');
       expect(logoText).toBeInTheDocument();
-      expect(logoText).toHaveTextContent('TalkUp');
+      expect(logoText).toHaveTextContent('TALKUP');
     });
 
     it('renders no-text variant', () => {
@@ -108,8 +108,8 @@ describe('Logo Component', () => {
     it('uses correct logo size for line variant', () => {
       const { getByTestId } = render(<Logo variant="line" />);
       const logoSvg = getByTestId('line-logo').querySelector('svg');
-      expect(logoSvg).toHaveAttribute('width', '38');
-      expect(logoSvg).toHaveAttribute('height', '38');
+      expect(logoSvg).toHaveAttribute('width', '32');
+      expect(logoSvg).toHaveAttribute('height', '32');
     });
 
     it('uses correct logo size for column variant', () => {
@@ -122,8 +122,8 @@ describe('Logo Component', () => {
     it('uses correct logo size for no-text variant', () => {
       const { getByTestId } = render(<Logo variant="no-text" />);
       const logoSvg = getByTestId('no-text-logo').querySelector('svg');
-      expect(logoSvg).toHaveAttribute('width', '38');
-      expect(logoSvg).toHaveAttribute('height', '38');
+      expect(logoSvg).toHaveAttribute('width', '32');
+      expect(logoSvg).toHaveAttribute('height', '32');
     });
   });
 
@@ -174,26 +174,16 @@ describe('Logo Component', () => {
       const { getByTestId } = render(<Logo variant="line" />);
       const logoText = getByTestId('line-logo').querySelector('h1');
       expect(logoText).toBeInTheDocument();
-      expect(logoText).toHaveTextContent('TalkUp');
-      expect(logoText).toHaveClass(
-        'text-primary',
-        'uppercase',
-        'font-display',
-        'font-extrabold',
-      );
+      expect(logoText).toHaveTextContent('TALKUP');
+      expect(logoText).toHaveClass('text-primary', 'text-h4');
     });
 
     it('shows text for column variant', () => {
       const { getByTestId } = render(<Logo variant="column" />);
       const logoText = getByTestId('column-logo').querySelector('h1');
       expect(logoText).toBeInTheDocument();
-      expect(logoText).toHaveTextContent('TalkUp');
-      expect(logoText).toHaveClass(
-        'text-primary',
-        'uppercase',
-        'font-display',
-        'font-extrabold',
-      );
+      expect(logoText).toHaveTextContent('TALKUP');
+      expect(logoText).toHaveClass('text-primary', 'text-h4');
     });
 
     it('does not show text for no-text variant', () => {

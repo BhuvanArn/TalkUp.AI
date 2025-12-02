@@ -6,13 +6,13 @@ export const buttonVariants = cva(
     'inline-flex items-center justify-center gap-2',
     'rounded-md font-medium text-sm cursor-pointer',
     'transition-all duration-200 ease-in-out',
-    'focus:outline-none focus:ring-2 focus:ring-offset-2',
+    'focus:outline-none',
   ],
   {
     variants: {
       variant: {
-        contained: 'border-transparent text-white shadow-sm hover:shadow-md',
-        outlined: 'border-2 bg-transparent shadow-sm',
+        contained: 'border-transparent text-white',
+        outlined: 'border-2 bg-transparent',
         text: 'border-transparent bg-transparent',
       },
       color: {
@@ -24,6 +24,7 @@ export const buttonVariants = cva(
         warning: '',
         neutral: '',
         error: '',
+        sidebar: '',
       },
       size: {
         sm: 'h-8 px-3 text-xs',
@@ -38,8 +39,48 @@ export const buttonVariants = cva(
         true: 'cursor-wait',
         false: '',
       },
+      squared: {
+        true: '',
+        false: '',
+      },
+      circled: {
+        true: '',
+        false: '',
+      },
     },
     compoundVariants: [
+      // Squared - equal padding on all sides
+      {
+        squared: true,
+        size: 'sm',
+        className: 'h-8 w-8 p-0',
+      },
+      {
+        squared: true,
+        size: 'md',
+        className: 'h-10 w-10 p-0',
+      },
+      {
+        squared: true,
+        size: 'lg',
+        className: 'h-12 w-12 p-0',
+      },
+      // Circled - squared + rounded-full
+      {
+        circled: true,
+        size: 'sm',
+        className: 'h-8 w-8 p-0 rounded-full',
+      },
+      {
+        circled: true,
+        size: 'md',
+        className: 'h-10 w-10 p-0 rounded-full',
+      },
+      {
+        circled: true,
+        size: 'lg',
+        className: 'h-12 w-12 p-0 rounded-full',
+      },
       // Contained variants
       {
         variant: 'contained',
@@ -187,12 +228,31 @@ export const buttonVariants = cva(
         className:
           'text-error hover:text-error-hover hover:bg-error-weaker active:text-error-active active:bg-error-weak focus:ring-2 focus:ring-error-weak focus:ring-offset-2',
       },
+      // Sidebar variants - subtle styling for sidebar buttons
+      {
+        variant: 'contained',
+        color: 'sidebar',
+        className:
+          'bg-surface-sidebar text-idle hover:bg-surface-sidebar-hover hover:text-active active:bg-surface-sidebar-active active:text-active',
+      },
+      {
+        variant: 'outlined',
+        color: 'sidebar',
+        className:
+          'border-border text-idle hover:border-border-hover hover:text-active hover:bg-surface-sidebar-hover active:text-active active:bg-surface-sidebar-active',
+      },
+      {
+        variant: 'text',
+        color: 'sidebar',
+        className:
+          'text-idle hover:text-active hover:bg-surface-sidebar-hover active:text-active active:bg-surface-sidebar-active',
+      },
       // Disabled variants - prevent hover effects
       {
         disabled: true,
         variant: 'contained',
         className:
-          'opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400 active:bg-gray-400 text-gray-600 hover:text-gray-600 active:text-gray-600 shadow-none hover:shadow-none focus:ring-0',
+          'opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400 active:bg-gray-400 text-gray-600 hover:text-gray-600 active:text-gray-600 focus:ring-0',
       },
       {
         disabled: true,
@@ -218,6 +278,8 @@ export const buttonVariants = cva(
       size: 'md',
       disabled: false,
       loading: false,
+      squared: false,
+      circled: false,
     },
   },
 );

@@ -12,11 +12,13 @@ import { useNoteData } from '@/hooks/notes/useNoteData';
 import { useNoteFavorite } from '@/hooks/notes/useNoteFavorite';
 import { useNoteNavigation } from '@/hooks/notes/useNoteNavigation';
 import { useRichTextEditor } from '@/hooks/utils/useRichTextEditor';
+import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 import { EditorContent } from '@tiptap/react';
 import { useEffect } from 'react';
 
 export const Route = createFileRoute('/notes/$noteId')({
+  beforeLoad: createAuthGuard('/notes/$noteId'),
   loader: async ({ params }) => {
     return { noteId: params.noteId };
   },

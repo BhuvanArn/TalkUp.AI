@@ -5,19 +5,41 @@ export interface RouteConfig {
 }
 
 export const routeConfigs: RouteConfig[] = [
+  // Public routes
   { path: '/', requiresAuth: false },
   { path: '/login', requiresAuth: false },
   { path: '/signup', requiresAuth: false },
   { path: '/about', requiresAuth: false },
 
+  // Protected routes - Main pages
   { path: '/dashboard', requiresAuth: true },
   { path: '/profile', requiresAuth: true },
   { path: '/cv-analysis', requiresAuth: true },
   { path: '/simulations', requiresAuth: true },
   { path: '/progression', requiresAuth: true },
   { path: '/diary', requiresAuth: true },
-  { path: '/notes', requiresAuth: true },
   { path: '/ai-chat', requiresAuth: true },
+
+  // Protected routes - Applications
+  { path: '/applications', requiresAuth: true },
+  { path: '/applications/$applicationId/', requiresAuth: true },
+  { path: '/applications/$applicationId/dashboard', requiresAuth: true },
+  { path: '/applications/$applicationId/simulations', requiresAuth: true },
+  { path: '/applications/$applicationId/analytics', requiresAuth: true },
+
+  // Protected routes - Notes
+  { path: '/notes', requiresAuth: true },
+  { path: '/notes/$noteId', requiresAuth: true },
+
+  // Protected routes - Settings
+  { path: '/settings/', requiresAuth: true },
+  { path: '/settings/profile', requiresAuth: true },
+  { path: '/settings/security', requiresAuth: true },
+  { path: '/settings/billing', requiresAuth: true },
+  { path: '/settings/integrations', requiresAuth: true },
+
+  // Protected routes - Agenda
+  { path: '/agenda', requiresAuth: true },
 ];
 
 /**

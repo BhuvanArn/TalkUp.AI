@@ -1,0 +1,35 @@
+meta {
+  name: put interview
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{host}}/ai/interviews/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwMTlhYzVhNi1hZGE3LTdhOTYtOWEzOC0yMzgxOWYzN2FiOTAiLCJ1c2VybmFtZSI6IkFkbWluU3lzODE5IiwiaWF0IjoxNzY0MjUyNjI2LCJleHAiOjE3NjQ4NTc0MjZ9.QWxsKERfN-kqkmdXv2aHvjRkjPO3T21t83J-6zHzzhk
+}
+
+body:json {
+  {
+    "type": "technical",
+    "language": "French",
+    "status": "asked",
+    "score": 85,
+    "feedback": "Great performance with room for improvement in technical questions.",
+    "videoLink": "https://example.com/interview/video/12345"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

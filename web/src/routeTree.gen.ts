@@ -18,10 +18,21 @@ import { Route as DiaryRouteImport } from './routes/diary'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CvAnalysisRouteImport } from './routes/cv-analysis'
 import { Route as AiChatRouteImport } from './routes/ai-chat'
+import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as NotesIndexRouteImport } from './routes/notes/index'
+import { Route as ApplicationsIndexRouteImport } from './routes/applications/index'
+import { Route as SettingsSecurityRouteImport } from './routes/settings/security'
+import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
+import { Route as SettingsIntegrationsRouteImport } from './routes/settings/integrations'
+import { Route as SettingsBillingRouteImport } from './routes/settings/billing'
 import { Route as NotesNoteIdRouteImport } from './routes/notes/$noteId'
+import { Route as ApplicationsApplicationIdIndexRouteImport } from './routes/applications/$applicationId/index'
+import { Route as ApplicationsApplicationIdSimulationsRouteImport } from './routes/applications/$applicationId/simulations'
+import { Route as ApplicationsApplicationIdDashboardRouteImport } from './routes/applications/$applicationId/dashboard'
+import { Route as ApplicationsApplicationIdAnalyticsRouteImport } from './routes/applications/$applicationId/analytics'
 
 const SimulationsRoute = SimulationsRouteImport.update({
   id: '/simulations',
@@ -68,6 +79,11 @@ const AiChatRoute = AiChatRouteImport.update({
   path: '/ai-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgendaRoute = AgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -78,9 +94,39 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NotesIndexRoute = NotesIndexRouteImport.update({
   id: '/notes/',
   path: '/notes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplicationsIndexRoute = ApplicationsIndexRouteImport.update({
+  id: '/applications/',
+  path: '/applications/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
+  id: '/settings/security',
+  path: '/settings/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/settings/profile',
+  path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsIntegrationsRoute = SettingsIntegrationsRouteImport.update({
+  id: '/settings/integrations',
+  path: '/settings/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsBillingRoute = SettingsBillingRouteImport.update({
+  id: '/settings/billing',
+  path: '/settings/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotesNoteIdRoute = NotesNoteIdRouteImport.update({
@@ -88,10 +134,35 @@ const NotesNoteIdRoute = NotesNoteIdRouteImport.update({
   path: '/notes/$noteId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApplicationsApplicationIdIndexRoute =
+  ApplicationsApplicationIdIndexRouteImport.update({
+    id: '/applications/$applicationId/',
+    path: '/applications/$applicationId/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApplicationsApplicationIdSimulationsRoute =
+  ApplicationsApplicationIdSimulationsRouteImport.update({
+    id: '/applications/$applicationId/simulations',
+    path: '/applications/$applicationId/simulations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApplicationsApplicationIdDashboardRoute =
+  ApplicationsApplicationIdDashboardRouteImport.update({
+    id: '/applications/$applicationId/dashboard',
+    path: '/applications/$applicationId/dashboard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApplicationsApplicationIdAnalyticsRoute =
+  ApplicationsApplicationIdAnalyticsRouteImport.update({
+    id: '/applications/$applicationId/analytics',
+    path: '/applications/$applicationId/analytics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/agenda': typeof AgendaRoute
   '/ai-chat': typeof AiChatRoute
   '/cv-analysis': typeof CvAnalysisRoute
   '/dashboard': typeof DashboardRoute
@@ -102,11 +173,22 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/simulations': typeof SimulationsRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
+  '/settings/billing': typeof SettingsBillingRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
+  '/applications': typeof ApplicationsIndexRoute
   '/notes': typeof NotesIndexRoute
+  '/settings': typeof SettingsIndexRoute
+  '/applications/$applicationId/analytics': typeof ApplicationsApplicationIdAnalyticsRoute
+  '/applications/$applicationId/dashboard': typeof ApplicationsApplicationIdDashboardRoute
+  '/applications/$applicationId/simulations': typeof ApplicationsApplicationIdSimulationsRoute
+  '/applications/$applicationId': typeof ApplicationsApplicationIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/agenda': typeof AgendaRoute
   '/ai-chat': typeof AiChatRoute
   '/cv-analysis': typeof CvAnalysisRoute
   '/dashboard': typeof DashboardRoute
@@ -117,12 +199,23 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/simulations': typeof SimulationsRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
+  '/settings/billing': typeof SettingsBillingRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
+  '/applications': typeof ApplicationsIndexRoute
   '/notes': typeof NotesIndexRoute
+  '/settings': typeof SettingsIndexRoute
+  '/applications/$applicationId/analytics': typeof ApplicationsApplicationIdAnalyticsRoute
+  '/applications/$applicationId/dashboard': typeof ApplicationsApplicationIdDashboardRoute
+  '/applications/$applicationId/simulations': typeof ApplicationsApplicationIdSimulationsRoute
+  '/applications/$applicationId': typeof ApplicationsApplicationIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/agenda': typeof AgendaRoute
   '/ai-chat': typeof AiChatRoute
   '/cv-analysis': typeof CvAnalysisRoute
   '/dashboard': typeof DashboardRoute
@@ -133,13 +226,24 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/simulations': typeof SimulationsRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
+  '/settings/billing': typeof SettingsBillingRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
+  '/applications/': typeof ApplicationsIndexRoute
   '/notes/': typeof NotesIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/applications/$applicationId/analytics': typeof ApplicationsApplicationIdAnalyticsRoute
+  '/applications/$applicationId/dashboard': typeof ApplicationsApplicationIdDashboardRoute
+  '/applications/$applicationId/simulations': typeof ApplicationsApplicationIdSimulationsRoute
+  '/applications/$applicationId/': typeof ApplicationsApplicationIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
+    | '/agenda'
     | '/ai-chat'
     | '/cv-analysis'
     | '/dashboard'
@@ -150,11 +254,22 @@ export interface FileRouteTypes {
     | '/signup'
     | '/simulations'
     | '/notes/$noteId'
+    | '/settings/billing'
+    | '/settings/integrations'
+    | '/settings/profile'
+    | '/settings/security'
+    | '/applications'
     | '/notes'
+    | '/settings'
+    | '/applications/$applicationId/analytics'
+    | '/applications/$applicationId/dashboard'
+    | '/applications/$applicationId/simulations'
+    | '/applications/$applicationId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
+    | '/agenda'
     | '/ai-chat'
     | '/cv-analysis'
     | '/dashboard'
@@ -165,11 +280,22 @@ export interface FileRouteTypes {
     | '/signup'
     | '/simulations'
     | '/notes/$noteId'
+    | '/settings/billing'
+    | '/settings/integrations'
+    | '/settings/profile'
+    | '/settings/security'
+    | '/applications'
     | '/notes'
+    | '/settings'
+    | '/applications/$applicationId/analytics'
+    | '/applications/$applicationId/dashboard'
+    | '/applications/$applicationId/simulations'
+    | '/applications/$applicationId'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/agenda'
     | '/ai-chat'
     | '/cv-analysis'
     | '/dashboard'
@@ -180,12 +306,23 @@ export interface FileRouteTypes {
     | '/signup'
     | '/simulations'
     | '/notes/$noteId'
+    | '/settings/billing'
+    | '/settings/integrations'
+    | '/settings/profile'
+    | '/settings/security'
+    | '/applications/'
     | '/notes/'
+    | '/settings/'
+    | '/applications/$applicationId/analytics'
+    | '/applications/$applicationId/dashboard'
+    | '/applications/$applicationId/simulations'
+    | '/applications/$applicationId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AgendaRoute: typeof AgendaRoute
   AiChatRoute: typeof AiChatRoute
   CvAnalysisRoute: typeof CvAnalysisRoute
   DashboardRoute: typeof DashboardRoute
@@ -196,7 +333,17 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SimulationsRoute: typeof SimulationsRoute
   NotesNoteIdRoute: typeof NotesNoteIdRoute
+  SettingsBillingRoute: typeof SettingsBillingRoute
+  SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
+  SettingsProfileRoute: typeof SettingsProfileRoute
+  SettingsSecurityRoute: typeof SettingsSecurityRoute
+  ApplicationsIndexRoute: typeof ApplicationsIndexRoute
   NotesIndexRoute: typeof NotesIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
+  ApplicationsApplicationIdAnalyticsRoute: typeof ApplicationsApplicationIdAnalyticsRoute
+  ApplicationsApplicationIdDashboardRoute: typeof ApplicationsApplicationIdDashboardRoute
+  ApplicationsApplicationIdSimulationsRoute: typeof ApplicationsApplicationIdSimulationsRoute
+  ApplicationsApplicationIdIndexRoute: typeof ApplicationsApplicationIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -264,6 +411,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agenda': {
+      id: '/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AgendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -278,11 +432,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/notes/': {
       id: '/notes/'
       path: '/notes'
       fullPath: '/notes'
       preLoaderRoute: typeof NotesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applications/': {
+      id: '/applications/'
+      path: '/applications'
+      fullPath: '/applications'
+      preLoaderRoute: typeof ApplicationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/security': {
+      id: '/settings/security'
+      path: '/settings/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof SettingsSecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/integrations': {
+      id: '/settings/integrations'
+      path: '/settings/integrations'
+      fullPath: '/settings/integrations'
+      preLoaderRoute: typeof SettingsIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/billing': {
+      id: '/settings/billing'
+      path: '/settings/billing'
+      fullPath: '/settings/billing'
+      preLoaderRoute: typeof SettingsBillingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notes/$noteId': {
@@ -292,12 +488,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotesNoteIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/applications/$applicationId/': {
+      id: '/applications/$applicationId/'
+      path: '/applications/$applicationId'
+      fullPath: '/applications/$applicationId'
+      preLoaderRoute: typeof ApplicationsApplicationIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applications/$applicationId/simulations': {
+      id: '/applications/$applicationId/simulations'
+      path: '/applications/$applicationId/simulations'
+      fullPath: '/applications/$applicationId/simulations'
+      preLoaderRoute: typeof ApplicationsApplicationIdSimulationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applications/$applicationId/dashboard': {
+      id: '/applications/$applicationId/dashboard'
+      path: '/applications/$applicationId/dashboard'
+      fullPath: '/applications/$applicationId/dashboard'
+      preLoaderRoute: typeof ApplicationsApplicationIdDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applications/$applicationId/analytics': {
+      id: '/applications/$applicationId/analytics'
+      path: '/applications/$applicationId/analytics'
+      fullPath: '/applications/$applicationId/analytics'
+      preLoaderRoute: typeof ApplicationsApplicationIdAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AgendaRoute: AgendaRoute,
   AiChatRoute: AiChatRoute,
   CvAnalysisRoute: CvAnalysisRoute,
   DashboardRoute: DashboardRoute,
@@ -308,7 +533,20 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SimulationsRoute: SimulationsRoute,
   NotesNoteIdRoute: NotesNoteIdRoute,
+  SettingsBillingRoute: SettingsBillingRoute,
+  SettingsIntegrationsRoute: SettingsIntegrationsRoute,
+  SettingsProfileRoute: SettingsProfileRoute,
+  SettingsSecurityRoute: SettingsSecurityRoute,
+  ApplicationsIndexRoute: ApplicationsIndexRoute,
   NotesIndexRoute: NotesIndexRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
+  ApplicationsApplicationIdAnalyticsRoute:
+    ApplicationsApplicationIdAnalyticsRoute,
+  ApplicationsApplicationIdDashboardRoute:
+    ApplicationsApplicationIdDashboardRoute,
+  ApplicationsApplicationIdSimulationsRoute:
+    ApplicationsApplicationIdSimulationsRoute,
+  ApplicationsApplicationIdIndexRoute: ApplicationsApplicationIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
