@@ -48,6 +48,7 @@ describe('useCalendarStore', () => {
 
   it('should handle fetch events error', async () => {
     (api.getEvents as any).mockRejectedValue(new Error('Network error'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const { result } = renderHook(() => useCalendarStore());
 
@@ -57,6 +58,12 @@ describe('useCalendarStore', () => {
 
     expect(result.current.error).toBe('Failed to fetch events');
     expect(result.current.isLoading).toBe(false);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'Failed to fetch events:',
+      expect.any(Error),
+    );
+
+    consoleSpy.mockRestore();
   });
 
   it('should add an event optimistically and then confirm', async () => {
