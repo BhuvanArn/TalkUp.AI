@@ -21,15 +21,19 @@ from network.protocol import Message
 from network.websockets import WebSocketMicroservice
 from .notifications import Notifications
 from vosk import Model, KaldiRecognizer
-from typing import Optional, Tuple, Any
+from typing import Optional
 
 class STT():
-    def __init__(self, model_type: str, websocket: WebSocket) -> None:
+    def __init__(self, model_type: str, websocket: WebSocket, samplerate: Optional[int] = None) -> None:
         """
         Class constructor
         """
         self.q: queue = queue.Queue()
         self.STTWsMicroservice = WebSocketMicroservice("STT", websocket, owner=self)
+        self.n: Notifications = Notifications()
+        self.model: str = Model(lang=model_type)
+        self.running: bool = True
+
         try:
             self.loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -41,10 +45,19 @@ class STT():
                 self.send_queue = asyncio.Queue()
                 self._send_consumer_task = self.loop.create_task(self._send_consumer())
             self.loop.call_soon_threadsafe(_setup_send_queue)
-        self.model: str = Model(lang=model_type)
-        self.samplerate: int = 16000
-        self.n: Notifications = Notifications()
-        self.running: bool = True
+
+        env_sr = os.environ.get("STT_SAMPLERATE")
+        if samplerate is not None:
+            self.samplerate: int = int(samplerate)
+        elif env_sr:
+            try:
+                self.samplerate = int(env_sr)
+            except Exception:
+                self.samplerate = 16000
+                self.n.send_notification(enumMcs.MicroservicesNames.STT, 2,
+                    f"Invalid STT_SAMPLERATE env var '{env_sr}', falling back to 16000Hz")
+        else:
+            self.samplerate: int = 16000
 
     async def on_stream_chunk(self, ws: WebSocket, msg: Message):
         """
@@ -67,16 +80,28 @@ class STT():
                 container_bytes = base64.b64decode(audio_b64)
             else:
                 container_bytes = audio_b64
+
+            probe_sr = self.probe_sample_rate(container_bytes)
+            if probe_sr is None:
+                self.n.send_notification(enumMcs.MicroservicesNames.STT, 1,
+                    f"Could not determine incoming audio sample rate; assuming {self.samplerate}Hz and converting")
+            else:
+                if probe_sr != self.samplerate:
+                    self.n.send_notification(enumMcs.MicroservicesNames.STT, 1,
+                        f"Incoming audio sample rate {probe_sr}Hz differs from configured {self.samplerate}Hz; resampling")
+
             ffmpeg_cmd = [
                 "ffmpeg", "-hide_banner", "-loglevel", "error",
                 "-i", "pipe:0",
                 "-f", "s16le", "-acodec", "pcm_s16le",
-                "-ac", "1", "-ar", str(self.samplerate),
-                "pipe:1"
+                "-ac", "1",
             ]
+            if probe_sr is None or probe_sr != self.samplerate:
+                ffmpeg_cmd += ["-ar", str(self.samplerate)]
+            ffmpeg_cmd += ["pipe:1"]
+
             proc = subprocess.run(ffmpeg_cmd, input=container_bytes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if proc.returncode != 0:
-                # Report ffmpeg error
                 err = proc.stderr.decode(errors="ignore")
                 await self.STTWsMicroservice.send(ws, msg.services, "error", {"message": "ffmpeg decode error", "detail": err})
                 return
@@ -87,6 +112,33 @@ class STT():
 
         except Exception as e:
             await self.STTWsMicroservice.send(ws, msg.services, "error", {"message": str(e)})
+
+    def probe_sample_rate(self, data: bytes) -> Optional[int]:
+        """
+        Probe an audio blob with ffprobe and return the sample_rate in Hz if available.
+        Returns none if probing fails or ffprobe is not available.
+        """
+        try:
+            cmd = [
+                "ffprobe", "-v", "error",
+                "-select_streams", "a:0",
+                "-show_entries", "stream=sample_rate",
+                "-of", "json",
+                "-i", "pipe:0",
+            ]
+            proc = subprocess.run(cmd, input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if proc.returncode != 0:
+                return None
+            info = json.loads(proc.stdout.decode(errors="ignore") or "{}")
+            streams = info.get("streams", [])
+            if not streams:
+                return None
+            sr = streams[0].get("sample_rate")
+            if sr:
+                return int(sr)
+            return None
+        except Exception:
+            return None
 
     async def on_process_request(self, ws: WebSocket, msg: Message):
         """Override for processing requests."""
@@ -108,7 +160,7 @@ class STT():
             if item is None:
                 break
             try:
-                services, msg_type, data = item  # type: ignore
+                services, msg_type, data = item
             except Exception:
                 self.n.send_notification(enumMcs.MicroservicesNames.STT, 2,
                     "[STT] invalid send_queue item, skipping")
@@ -191,9 +243,11 @@ class STT():
                             self.n.send_notification(enumMcs.MicroservicesNames.STT, 2, f"Failed to push to send_queue: {e}")
                     else:
                         try:
-                            coro = self.STTWsMicroservice.send(self.STTWsMicroservice.websocket,
-                                [self.STTWsMicroservice.service_name], "stt_result", {"text": token.get('text', '')})
-                            asyncio.run_coroutine_threadsafe(coro, self.loop or asyncio.new_event_loop())
+                            asyncio.run(self.STTWsMicroservice.send(
+                                self.STTWsMicroservice.websocket,
+                                [self.STTWsMicroservice.service_name],
+                                "stt_result", {"text": token.get('text', '')}
+                            ))
                         except Exception as e:
                             self.n.send_notification(enumMcs.MicroservicesNames.STT, 2, f"Failed to send stt_result: {e}")
                 else:
