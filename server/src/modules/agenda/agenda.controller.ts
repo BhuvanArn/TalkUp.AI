@@ -11,7 +11,6 @@ import {
 } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -33,7 +32,6 @@ import { GetEventsQueryDto } from "./dto/getEventsQuery.dto";
 
 @ApiTags("Agenda")
 @Controller("agenda")
-@ApiBearerAuth("access-token")
 @UseGuards(AccessTokenGuard)
 export class AgendaController {
   constructor(private service: AgendaService) {}

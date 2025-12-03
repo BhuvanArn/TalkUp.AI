@@ -9,24 +9,12 @@ const authService = new AuthService();
 /**
  * Custom hook for user registration functionality.
  *
- * This hook uses the React Query's useMutation to handle the registration process.
+ * This hook uses React Query's useMutation to handle the registration process.
  * It takes username, email, and password as inputs, sends them to the authentication service,
- * and stores the returned access token in localStorage.
+ * and the server sets an HTTP-only cookie containing the JWT.
  *
  * @returns A mutation object that can be used to trigger the registration process
  * and monitor its state.
- *
- * @example
- * const registerMutation = usePostRegister();
- *
- * // Later in a component:
- * const handleRegister = () => {
- *   registerMutation.mutate({
- *     username: "user123",
- *     email: "admin.admin@admin.com",
- *     password: "securePassword"
- *   });
- * };
  */
 export const usePostRegister = () => {
   const { login } = useAuth();
@@ -42,11 +30,10 @@ export const usePostRegister = () => {
       email: string;
       password: string;
     }) => {
-      const result = await authService.postRegister(username, email, password);
-      return result.accessToken;
+      return await authService.postRegister(username, email, password);
     },
-    onSuccess: (accessToken) => {
-      login(accessToken);
+    onSuccess: () => {
+      login();
       toast.success('Registration successful');
       router.navigate({ to: '/dashboard' });
     },
@@ -60,23 +47,12 @@ export const usePostRegister = () => {
 /**
  * Custom hook for user login functionality.
  *
- * This hook uses the React Query's useMutation to handle the login process.
+ * This hook uses React Query's useMutation to handle the login process.
  * It takes email and password as inputs, sends them to the authentication service,
- * and stores the returned access token in localStorage.
+ * and the server sets an HTTP-only cookie containing the JWT.
  *
  * @returns A mutation object that can be used to trigger the login process
  * and monitor its state.
- *
- * @example
- * const loginMutation = usePostLogin();
- *
- * // Later in a component:
- * const handleLogin = () => {
- *   loginMutation.mutate({
- *     email: "admin.admin@admin.com",
- *     password: "securePassword"
- *   });
- * };
  */
 export const usePostLogin = () => {
   const { login } = useAuth();
@@ -90,11 +66,10 @@ export const usePostLogin = () => {
       email: string;
       password: string;
     }) => {
-      const result = await authService.postLogin(email, password);
-      return result.accessToken;
+      return await authService.postLogin(email, password);
     },
-    onSuccess: (accessToken) => {
-      login(accessToken);
+    onSuccess: () => {
+      login();
       toast.success('Login successful');
 
       const search = new URLSearchParams(window.location.search);
@@ -104,6 +79,37 @@ export const usePostLogin = () => {
     onError: (error) => {
       toast.error('Login failed');
       console.error('Error during login:', error);
+    },
+  });
+};
+
+/**
+ * Custom hook for user logout functionality.
+ *
+ * This hook uses React Query's useMutation to handle the logout process.
+ * It calls the logout endpoint which clears the HTTP-only cookie on the server.
+ *
+ * @returns A mutation object that can be used to trigger the logout process
+ * and monitor its state.
+ */
+export const usePostLogout = () => {
+  const { logout } = useAuth();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: async () => {
+      return await authService.postLogout();
+    },
+    onSuccess: () => {
+      logout();
+      toast.success('Logout successful');
+      router.navigate({ to: '/login' });
+    },
+    onError: (error) => {
+      logout();
+      toast.error('Logout failed');
+      console.error('Error during logout:', error);
+      router.navigate({ to: '/login' });
     },
   });
 };

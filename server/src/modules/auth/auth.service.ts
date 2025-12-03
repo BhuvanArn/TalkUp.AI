@@ -4,12 +4,16 @@ import {
   ConflictException,
   Injectable,
   UnauthorizedException,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 
+import { Logger } from "@nestjs/common";
+
 import { CreateUserDto } from "./dto/createUser.dto";
+import { EditUserDto } from "./dto/editUser.dto";
 
 import { user, user_password, user_email } from "@entities/user.entity";
 
@@ -17,6 +21,8 @@ import { hashPassword } from "@common/utils/passwordHasher";
 
 @Injectable()
 export class AuthService {
+  logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(user) private userRepository: Repository<user>,
     @InjectRepository(user_password)
@@ -99,7 +105,7 @@ export class AuthService {
    */
   async validateUser(email: string, password: string): Promise<user> {
     const emailEntity = await this.userEmailRepository.findOne({
-      where: { email: email },
+      where: { email },
     });
 
     if (!emailEntity) {
@@ -141,5 +147,81 @@ export class AuthService {
     return {
       accessToken: await this.jwtService.signAsync(payload),
     };
+  }
+
+  /**
+   *Upadate some information from the user account
+   * @param userId -It is the current user Id
+   * @param EditUserDto -There is all the information that user whant to update in his/her account
+   * @returns  A message if the user is upadte succesfully or not
+   */
+  async editUser(userId: string, EditUserDto: EditUserDto) {
+    const user = await this.userRepository.findOneByOrFail({
+      user_id: userId,
+    });
+    try {
+      if (EditUserDto.username) user.username = EditUserDto.username;
+      // This part will be uncommented when those arguments will be added in the user's infos
+      // if (EditUserDto.phone) user.phone = EditUserDto.phone;
+      // if (EditUserDto.profilePicture) user.profilePicture = EditUserDto.profilePicture;
+      // if (EditUserDto.cv) user.cv = EditUserDto.cv;
+      // if (EditUserDto.activitySector) user.activitySector = EditUserDto.activitySector;
+      if (EditUserDto.email) {
+        const emailEntity = await this.userEmailRepository.findOne({
+          where: { user_id: userId },
+        });
+        if (emailEntity) {
+          emailEntity.email = EditUserDto.email;
+          await this.userEmailRepository.save(emailEntity);
+        }
+      }
+      return await this.userRepository.save(user);
+    } catch {
+      throw new InternalServerErrorException(
+        "Internal server error while editing the user's info.",
+      );
+    }
+  }
+
+  async getUserById(userId: string): Promise<user | null> {
+    return this.userRepository.findOne({
+      where: { user_id: userId },
+    });
+  }
+
+  /**
+   * Verifies a JWT access token and returns the associated user.
+   *
+   * This method performs the following steps:
+   * 1. Verifies the JWT token is valid and not expired.
+   * 2. Extracts the userId from the token payload.
+   * 3. Retrieves the user entity from the database.
+   * 4. Throws an `UnauthorizedException` if the token is invalid or the user is not found.
+   *
+   * @param token - The JWT access token to verify.
+   * @returns A promise that resolves to the user entity if verification succeeds.
+   * @throws {UnauthorizedException} If the token is invalid, expired, or the user is not found.
+   */
+  async verifyAccessToken(token: string): Promise<user> {
+    try {
+      const payload = await this.jwtService.verifyAsync(token);
+
+      if (!payload.userId) {
+        throw new UnauthorizedException("Invalid token payload");
+      }
+
+      const user = await this.getUserById(payload.userId);
+      if (!user) {
+        throw new UnauthorizedException("User not found");
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      this.logger.warn(`Access token verification failed:`, error);
+      throw new UnauthorizedException("Invalid or expired access token");
+    }
   }
 }

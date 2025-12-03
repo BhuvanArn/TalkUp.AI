@@ -71,6 +71,7 @@ describe("AuthService", () => {
     mockJwtService = {
       signAsync: jest.fn(),
       sign: jest.fn(),
+      verifyAsync: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -253,6 +254,97 @@ describe("AuthService", () => {
         userId: "different-user-id",
         username: "testuser",
       });
+    });
+  });
+
+  describe("getUserById", () => {
+    it("should return user when found", async () => {
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+
+      const result = await service.getUserById("test-user-id");
+
+      expect(result).toEqual(mockUser);
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: { user_id: "test-user-id" },
+      });
+    });
+
+    it("should return null when user not found", async () => {
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      const result = await service.getUserById("non-existent-id");
+
+      expect(result).toBeNull();
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: { user_id: "non-existent-id" },
+      });
+    });
+  });
+
+  describe("verifyAccessToken", () => {
+    const validToken = "valid-jwt-token";
+    const payload = { userId: "test-user-id", username: "testuser" };
+
+    it("should return user when token is valid and user exists", async () => {
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValue(payload);
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+
+      const result = await service.verifyAccessToken(validToken);
+
+      expect(result).toEqual(mockUser);
+      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith(validToken);
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: { user_id: "test-user-id" },
+      });
+    });
+
+    it("should throw UnauthorizedException when token is invalid", async () => {
+      mockJwtService.verifyAsync = jest
+        .fn()
+        .mockRejectedValue(new Error("Invalid token"));
+
+      await expect(service.verifyAccessToken("invalid-token")).rejects.toThrow(
+        new UnauthorizedException("Invalid or expired access token"),
+      );
+
+      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith("invalid-token");
+      expect(mockUserRepo.findOne).not.toHaveBeenCalled();
+    });
+
+    it("should throw UnauthorizedException when token payload is missing userId", async () => {
+      const invalidPayload = { username: "testuser" };
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValue(invalidPayload);
+
+      await expect(service.verifyAccessToken(validToken)).rejects.toThrow(
+        new UnauthorizedException("Invalid token payload"),
+      );
+
+      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith(validToken);
+      expect(mockUserRepo.findOne).not.toHaveBeenCalled();
+    });
+
+    it("should throw UnauthorizedException when user not found in database", async () => {
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValue(payload);
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(service.verifyAccessToken(validToken)).rejects.toThrow(
+        new UnauthorizedException("User not found"),
+      );
+
+      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith(validToken);
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: { user_id: "test-user-id" },
+      });
+    });
+
+    it("should throw UnauthorizedException when token is expired", async () => {
+      mockJwtService.verifyAsync = jest
+        .fn()
+        .mockRejectedValue(new Error("Token expired"));
+
+      await expect(service.verifyAccessToken(validToken)).rejects.toThrow(
+        new UnauthorizedException("Invalid or expired access token"),
+      );
     });
   });
 });
