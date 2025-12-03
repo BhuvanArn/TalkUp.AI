@@ -6,9 +6,13 @@
 ##
 
 import json
+import os
+import sys
+
 from network.protocol import Message, create_message
 from fastapi import WebSocket
 from starlette.websockets import WebSocketDisconnect
+
 
 class WebSocketMicroservice:
     def __init__(self, name: str, websocket: WebSocket, owner: object = None):
@@ -91,6 +95,6 @@ class WebSocketMicroservice:
                     print(f"[{self.service_name}] Failed to send error to client: {send_err}")
                     try:
                         await self.websocket.close()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[{self.service_name}] Failed to close websocket: {e}")
                 break
