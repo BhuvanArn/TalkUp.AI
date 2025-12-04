@@ -5,9 +5,10 @@
 ## This is the main.py of the speech-to-text microservice.
 ##
 
-from fastapi import FastAPI, WebSocket
 import threading
+import shutil, subprocess
 
+from fastapi import FastAPI, WebSocket
 from engine.sttServices import STT
 
 app = FastAPI()
@@ -27,6 +28,12 @@ async def websocket_endpoint(websocket: WebSocket):
         """
         stt = STT("fr", websocket)
 
+        print("Checking for ffprobe...")
+        if shutil.which("ffprobe") is None:
+            stt.n.send_notification("STT", 2, "ffprobe not found, please install ffmpeg." \
+            " STT service may not work properly.")
+        else:
+            subprocess.run(["ffprobe","-version"])
         thread = threading.Thread(target=stt.start_stt_process, daemon=True)
         thread.start()
         try:
