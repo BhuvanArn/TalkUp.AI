@@ -10,7 +10,9 @@
 /* Smooth theme transitions */
 :root {
   color-scheme: light dark;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 @theme {
@@ -66,15 +68,15 @@
   --color-weaker: #5f5f77;
   --color-weakest: #a4a4b2;
 
-  --color-surface-sidebar: #ECEDF6;
-  --color-surface-sidebar-hover: #E2E4F0;
-  --color-surface-sidebar-active: #E2E4F0;
+  --color-surface-sidebar: #ecedf6;
+  --color-surface-sidebar-hover: #e2e4f0;
+  --color-surface-sidebar-active: #e2e4f0;
 
   --color-border: #d9dbeb;
   --color-border-strong: #c8c8d4;
   --color-border-hover: #5f5f77;
 
-  --color-notification-banner: #F8F9FF;
+  --color-notification-banner: #f8f9ff;
 
   --color-success-weak: #def7e3;
   --color-success-weaker: #ebfbec;
@@ -161,7 +163,7 @@
   --color-text-idle: #a0a0a8;
   --color-text-active: #f0f0f0;
 
-  --color-idle: #9595A2;
+  --color-idle: #9595a2;
   --color-active: #f0f0f0;
   --color-hover: #e8e8e8;
   --color-weak: #b8b8c0;
@@ -169,8 +171,8 @@
   --color-weakest: #606068;
 
   --color-surface-sidebar: #232429;
-  --color-surface-sidebar-hover: #312F3D;
-  --color-surface-sidebar-active: #312F3D;
+  --color-surface-sidebar-hover: #312f3d;
+  --color-surface-sidebar-active: #312f3d;
 
   --color-border: #3a3a3a;
   --color-border-strong: #4a4a4a;
