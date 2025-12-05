@@ -44,6 +44,7 @@ class WebSocketMicroservice:
         print(f"[{self.service_name}] Client connected")
 
         while True:
+            services = [self.service_name]
             try:
                 raw = await self.websocket.receive_text()
                 try:
@@ -51,12 +52,11 @@ class WebSocketMicroservice:
                 except Exception as e:
                     await self.send(self.websocket, [self.service_name], "error", {"message": f"Invalid JSON: {str(e)}"})
                     continue
-
                 if "data" not in payload:
                     payload["data"] = None
-
                 try:
                     msg = Message(**payload)
+                    services = msg.services
                 except Exception as e:
                     services = payload.get("services", [self.service_name])
                     await self.send(self.websocket, services, "error", {"message": f"Invalid Message payload: {str(e)}"})
@@ -72,7 +72,6 @@ class WebSocketMicroservice:
                     else:
                         await self.on_stream_chunk(self.websocket, msg)
                     continue
-
                 if msg.type == "process_request":
                     if self.owner and hasattr(self.owner, "on_process_request"):
                         await self.owner.on_process_request(self.websocket, msg)
@@ -84,7 +83,6 @@ class WebSocketMicroservice:
                     {"message": f"Unknown message type: {msg.type}"})
 
             except Exception as e:
-                services = getattr(locals().get('msg', None), 'services', [self.service_name])
                 if isinstance(e, WebSocketDisconnect):
                     print(f"[{self.service_name}] Client disconnected (code={e.code})")
                     break
