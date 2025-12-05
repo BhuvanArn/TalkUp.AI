@@ -23,4 +23,6 @@ WORKDIR /app
 COPY --from=builder /app/build/talkup_ai_mic_server /app/talkup_ai_mic_server
 COPY --from=builder /app/services.json /app/services.json
 
+COPY --from=builder /app/.env /app/.env
+
 CMD ["./talkup_ai_mic_server"]
