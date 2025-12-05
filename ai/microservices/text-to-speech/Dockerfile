@@ -7,5 +7,6 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . .
-RUN pip install -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip pip install torch torchaudio
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 CMD ["python", "main.py"]
