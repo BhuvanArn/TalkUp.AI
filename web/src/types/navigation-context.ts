@@ -7,7 +7,7 @@ import { NavItem } from './navigation';
 export type NavigationContextType =
   | 'root' // Root level navigation (/, /applications, /cv)
   | 'application' // Inside a specific application
-  | 'public' // Public pages (login, signup)
+  | 'public' // Public pages (login, register)
   | 'settings'; // Settings pages
 
 /**

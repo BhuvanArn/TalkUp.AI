@@ -49,7 +49,7 @@ export function WebSocketDebugPanel({
         </h2>
         <InputMolecule
           label="Socket URL"
-          type="base"
+          inputType="base"
           value={inputUrl}
           onChange={(e) => onInputUrlChange?.(e.target.value)}
           disabled={isCallActive || !onInputUrlChange}

@@ -27,7 +27,7 @@ function Diary() {
       </p>
 
       <InputMolecule
-        type="base"
+        inputType="base"
         name="baseInputExample"
         id="baseInputExample"
         label="Your Name"
@@ -39,7 +39,7 @@ function Diary() {
       />
 
       <InputMolecule
-        type="textarea"
+        inputType="textarea"
         name="descriptionInput"
         id="descriptionInput"
         label="Project Description"
@@ -55,7 +55,7 @@ function Diary() {
       />
 
       <InputMolecule
-        type="selector"
+        inputType="selector"
         name="favoriteFruitSelector"
         id="favoriteFruitSelector"
         label="Choose Your Favorite Fruit"
@@ -72,7 +72,7 @@ function Diary() {
       />
 
       <InputMolecule
-        type="checkbox"
+        inputType="checkbox"
         name="newsletterSubscription"
         id="newsletterSubscription"
         label="Subscribe to our Newsletter"
@@ -84,7 +84,7 @@ function Diary() {
       />
 
       <InputMolecule
-        type="base"
+        inputType="base"
         name="phoneInput"
         id="phoneInput"
         helperText="Your phone number, including country code (e.g., +1234567890)."
@@ -94,7 +94,7 @@ function Diary() {
       />
 
       <InputMolecule
-        type="textarea"
+        inputType="textarea"
         name="feedbackInput"
         id="feedbackInput"
         label="Your Feedback"
@@ -106,7 +106,7 @@ function Diary() {
       />
 
       <InputMolecule
-        type="base"
+        inputType="base"
         name="disabledInput"
         id="disabledInput"
         label="Disabled Field"
@@ -116,7 +116,7 @@ function Diary() {
       />
 
       <InputMolecule
-        type="base"
+        inputType="base"
         name="readOnlyInput"
         id="readOnlyInput"
         label="Read-Only Field"

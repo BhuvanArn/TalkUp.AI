@@ -98,7 +98,7 @@
 
   --color-error-weak: #fbdedc;
   --color-error-weaker: #feebe8;
-  --color-error: #a32a15;
+  --color-error: #EF4444;
   --color-error-hover: #8b1f12;
   --color-error-active: #6e1610;
 
@@ -111,6 +111,7 @@
   /* Typography styles */
   --font-size-h1: 40px;
   --font-size-h2: 32px;
+  --font-size-h3: 28px;
   --font-size-h4: 24px;
   --font-size-h5: 20px;
   --font-size-h6: 18px;
@@ -225,6 +226,13 @@
     line-height: 1.2;
   }
 
+  .text-h3 {
+    font-family: var(--font-display);
+    font-size: var(--font-size-h3);
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
   .text-h4 {
     font-family: var(--font-display);
     font-size: var(--font-size-h4);
@@ -234,7 +242,6 @@
 
   .text-h5 {
     font-family: var(--font-display);
-    font-size: var(--font-size-h5);
     font-weight: 500;
     line-height: 1.4;
   }
@@ -257,6 +264,13 @@
     font-family: var(--font-body);
     font-size: var(--font-size-body-l);
     font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .text-body-l-strong {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-l);
+    font-weight: 700;
     line-height: 1.5;
   }
 
@@ -298,7 +312,7 @@
   .text-button-m {
     font-family: var(--font-display);
     font-size: var(--font-size-body-m);
-    font-weight: 500;
+    font-weight: 400;
     line-height: 1.5;
   }
 
