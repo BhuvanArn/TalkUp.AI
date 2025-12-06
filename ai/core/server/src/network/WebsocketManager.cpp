@@ -25,8 +25,8 @@ void talkup_network::WsManager::connection_type_manager(nlohmann::json &json, cr
 {
     try {
         std::string type = json["type"].get<std::string>();
-
         auto it = _type_handlers.find(type);
+
         if (it != _type_handlers.end()) {
             it->second(json, conn);
         } else {

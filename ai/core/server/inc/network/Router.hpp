@@ -11,6 +11,7 @@
 #include <crow.h>
 
 #include "MicroservicesManager.hpp"
+#include "WebsocketManager.hpp"
 
 namespace talkup_network {
     class Router {
@@ -52,5 +53,6 @@ namespace talkup_network {
                 KEY_NOT_SET = 500,
             };
             std::map<std::string, std::string> __env_variables;
+            WsManager _ws_manager;
     };
 }
