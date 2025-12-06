@@ -7,14 +7,6 @@
 
 #include "MicroservicesManager.hpp"
 
-#include <boost/beast/core.hpp>
-#include <boost/beast/websocket.hpp>
-#include <boost/asio/connect.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <sys/poll.h>
-#include <cerrno>
-#include <cstring>
-
 void talkup_network::MicroservicesManager::load_microservices_info(
     const std::string &file_path)
 {
@@ -56,15 +48,23 @@ void talkup_network::MicroservicesManager::send_to_stt_microservice(
             {"timestamp", std::time(nullptr)},
             {"data", nlohmann::json::object()}
         };
-        nlohmann::json audio_json = {
-            {"services", {"STT"}},
-            {"type", "stream_chunk"},
-            {"timestamp", std::time(nullptr)},
-            {"data", {
-                {"chunk", chunk_val},
-                {"eof", true}
-            }}
-        };
+
+        try {
+            if (data.is_string()) {
+                std::string s = data.get<std::string>();
+                std::cout << "[MicroservicesManager] Incoming data is string, length=" << s.size() << "\n";
+            } else if (data.is_object() && data.contains("data") && data["data"].is_string()) {
+                std::string s = data["data"].get<std::string>();
+                std::cout << "[MicroservicesManager] Incoming data.data is string, length=" << s.size() << "\n";
+            } else if (data.is_object() && data.contains("chunk") && data["chunk"].is_string()) {
+                std::string s = data["chunk"].get<std::string>();
+                std::cout << "[MicroservicesManager] Incoming chunk is string, length=" << s.size() << "\n";
+            } else {
+                std::cout << "[MicroservicesManager] Incoming data shape: " << data.dump() << "\n";
+            }
+        } catch (const std::exception &e) {
+            std::cerr << "[MicroservicesManager] Debug logging failed: " << e.what() << std::endl;
+        }
 
         if (data.is_string()) {
             chunk_val = data.get<std::string>();
@@ -84,11 +84,36 @@ void talkup_network::MicroservicesManager::send_to_stt_microservice(
 
         auto const results = resolver.resolve(__services_list["stt"]["Ip"], __services_list["stt"]["Port"]);
         boost::beast::get_lowest_layer(ws).connect(results);
+        // Defensive check: ensure the underlying TCP socket is open after connect
+        if (!boost::beast::get_lowest_layer(ws).socket().is_open()) {
+            std::cout << "[MicroservicesManager] TCP socket not open after connect to STT" << std::endl;
+            return;
+        } else {
+            std::cout << "[MicroservicesManager] TCP socket successfully opened with STT at "
+                      << __services_list["stt"]["Ip"] << ":" << __services_list["stt"]["Port"] << std::endl;
+        }
+
         std::cout << "RouteWS: " << __services_list["stt"]["RouteWs"] << std::endl;
         ws.handshake(__services_list["stt"]["Ip"], __services_list["stt"]["RouteWs"]);
+        // Verify websocket is open after handshake
+        if (!ws.is_open()) {
+            std::cout << "[MicroservicesManager] WebSocket not open after handshake with STT" << std::endl;
+            try { ws.close(boost::beast::websocket::close_code::normal); } catch(...) {}
+            return;
+        } else {
+            std::cout << "[MicroservicesManager] WebSocket successfully opened with STT at "
+                      << __services_list["stt"]["Ip"] << __services_list["stt"]["RouteWs"] << std::endl;
+        }
+
         ws.write(boost::asio::buffer(ping_json.dump()));
         boost::beast::flat_buffer buffer;
         ws.read(buffer);
+        // Ensure the connection remained open after read
+        if (!ws.is_open()) {
+            std::cout << "[MicroservicesManager] WebSocket closed unexpectedly after reading pong" << std::endl;
+            return;
+        }
+        std::cout << "buffer contents: " << boost::beast::buffers_to_string(buffer.data()) << std::endl;
         std::string pong_msg = boost::beast::buffers_to_string(buffer.data());
         nlohmann::json pong_json = nlohmann::json::parse(pong_msg);
         if (pong_json["type"] != "pong") {
@@ -97,6 +122,15 @@ void talkup_network::MicroservicesManager::send_to_stt_microservice(
 
         std::cout << "[MicroservicesManager] STT microservice is reachable." << std::endl; // Debug log - will be removed later
 
+        nlohmann::json audio_json = {
+            {"services", {"STT"}},
+            {"type", "stream_chunk"},
+            {"timestamp", std::time(nullptr)},
+            {"data", {
+                {"chunk", chunk_val},
+                {"eof", true}
+            }}
+        };
         ws.write(boost::asio::buffer(audio_json.dump()));
         boost::beast::flat_buffer resp_buf;
         const int timeout_ms = 10000; // 10 seconds timeout
