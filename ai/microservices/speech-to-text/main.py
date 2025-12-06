@@ -28,7 +28,6 @@ async def websocket_endpoint(websocket: WebSocket):
         """
         stt = STT("fr", websocket)
 
-        print("Checking for ffprobe...")
         if shutil.which("ffprobe") is None:
             stt.n.send_notification("STT", 2, "ffprobe not found, please install ffmpeg." \
             " STT service may not work properly.")
