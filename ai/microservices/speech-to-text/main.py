@@ -13,10 +13,10 @@ from engine.sttServices import STT
 
 app = FastAPI()
 
-
 @app.websocket("/ws/stt")
 async def websocket_endpoint(websocket: WebSocket):
-        """WebSocket entry for the STT microservice.
+        """
+        WebSocket entry for the STT microservice.
 
         Flow:
         - Instantiate STT with the live `websocket` connection.

@@ -32,21 +32,34 @@ class STT():
         self.q: queue.Queue = queue.Queue(maxsize=50)
         self.STTWsMicroservice = WebSocketMicroservice("STT", websocket, owner=self)
         self.n: Notifications = Notifications()
-        self.model: str = Model(lang=model_type)
         self.running: bool = True
         self._worker_thread: Optional[threading.Thread] = None
+        self.loop: Optional[asyncio.AbstractEventLoop] = None
+        self.send_queue: Optional[asyncio.Queue] = None
+        self._send_consumer_task: Optional[asyncio.Task] = None
+
+        model_path = os.environ.get("VOSK_MODEL_PATH")
+        try:
+            if model_path and os.path.isdir(model_path):
+                self.model: Model = Model(model_path)
+                self.n.send_notification(enumMcs.MicroservicesNames.STT, 0,
+                    f"Loaded Vosk model from path: {model_path}")
+            else:
+                self.model: Model = Model(lang=model_type)
+        except Exception as e:
+            self.n.send_notification(enumMcs.MicroservicesNames.STT, 2,
+                f"Failed to load Vosk model: {e}. Ensure model is pre-downloaded or VOSK_MODEL_PATH is set.")
+            raise
 
         try:
             self.loop = asyncio.get_running_loop()
         except RuntimeError:
             self.loop = None
 
-        self.send_queue: Optional[asyncio.Queue] = None
-        self.send_consumer_task: Optional[asyncio.Task] = None
         if self.loop is not None:
             def _setup_send_queue():
                 self.send_queue = asyncio.Queue()
-                self.send_consumer_task = self.loop.create_task(self.send_consumer())
+                self._send_consumer_task = self.loop.create_task(self.send_consumer())
             self.loop.call_soon_threadsafe(_setup_send_queue)
 
         env_sr = os.environ.get("STT_SAMPLERATE")
@@ -212,10 +225,22 @@ class STT():
                 self.loop.call_soon_threadsafe(self.send_queue.put_nowait, None)
             except Exception:
                 pass
+
         if self._worker_thread and self._worker_thread.is_alive():
             self._worker_thread.join(timeout=1.0)
-        if self.send_consumer_task and not self.send_consumer_task.done():
-            self.send_consumer_task.cancel()
+        if self.loop and self._send_consumer_task:
+            if not self._send_consumer_task.done():
+                def _cancel_task():
+                    self._send_consumer_task.cancel()
+                self.loop.call_soon_threadsafe(_cancel_task)
+                try:
+                    asyncio.run_coroutine_threadsafe(
+                        asyncio.shield(self._send_consumer_task),
+                        self.loop
+                    ).result(timeout=1.0)
+                except Exception:
+                    pass
+
         self.n.send_notification(enumMcs.MicroservicesNames.STT, 0,
             "Service stopped successfully!")
 
