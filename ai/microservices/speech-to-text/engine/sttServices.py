@@ -13,6 +13,7 @@ import base64
 import subprocess
 import engine.enumMcs as enumMcs
 import asyncio
+import threading
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -28,22 +29,24 @@ class STT():
         """
         Class constructor
         """
-        self.q: queue = queue.Queue()
+        self.q: queue.Queue = queue.Queue(maxsize=50)
         self.STTWsMicroservice = WebSocketMicroservice("STT", websocket, owner=self)
         self.n: Notifications = Notifications()
         self.model: str = Model(lang=model_type)
         self.running: bool = True
+        self._worker_thread: Optional[threading.Thread] = None
 
         try:
             self.loop = asyncio.get_running_loop()
         except RuntimeError:
             self.loop = None
+
         self.send_queue: Optional[asyncio.Queue] = None
-        self._send_consumer_task: Optional[asyncio.Task] = None
+        self.send_consumer_task: Optional[asyncio.Task] = None
         if self.loop is not None:
             def _setup_send_queue():
                 self.send_queue = asyncio.Queue()
-                self._send_consumer_task = self.loop.create_task(self._send_consumer())
+                self.send_consumer_task = self.loop.create_task(self.send_consumer())
             self.loop.call_soon_threadsafe(_setup_send_queue)
 
         env_sr = os.environ.get("STT_SAMPLERATE")
@@ -59,11 +62,14 @@ class STT():
         else:
             self.samplerate: int = 16000
 
-    async def on_stream_chunk(self, ws: WebSocket, msg: Message):
+    async def on_stream_chunk(self, ws: WebSocket, msg: Message) -> None:
         """
         This method processes stream chunks received via WebSocket.
         It decodes the base64-encoded audio data, converts it to PCM16 format,
         and puts the resulting bytes into a queue for further processing.
+        Args:
+            ws: The WebSocket connection.
+            msg: The incoming message containing the audio chunk.
         """
         try:
             audio_b64 = None
@@ -90,25 +96,17 @@ class STT():
                     self.n.send_notification(enumMcs.MicroservicesNames.STT, 1,
                         f"Incoming audio sample rate {probe_sr}Hz differs from configured {self.samplerate}Hz; resampling")
 
-            ffmpeg_cmd = [
-                "ffmpeg", "-hide_banner", "-loglevel", "error",
-                "-i", "pipe:0",
-                "-f", "s16le", "-acodec", "pcm_s16le",
-                "-ac", "1",
-            ]
-            if probe_sr is None or probe_sr != self.samplerate:
-                ffmpeg_cmd += ["-ar", str(self.samplerate)]
-            ffmpeg_cmd += ["pipe:1"]
-
-            proc = subprocess.run(ffmpeg_cmd, input=container_bytes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if proc.returncode != 0:
-                err = proc.stderr.decode(errors="ignore")
-                await self.STTWsMicroservice.send(ws, msg.services, "error", {"message": "ffmpeg decode error", "detail": err})
+            try:
+                pcm_bytes = await asyncio.to_thread(self.decode_audio, container_bytes, probe_sr)
+            except Exception as err:
+                await self.STTWsMicroservice.send(ws, msg.services, "error", {"message": "ffmpeg decode error", "detail": str(err)})
                 return
-            pcm_bytes = proc.stdout
-            self.q.put(pcm_bytes)
+
+            if not self.enqueue_audio(pcm_bytes):
+                await self.STTWsMicroservice.send(ws, msg.services, "error", {"message": "Audio queue full, dropping chunk"})
+                return
             if eof:
-                self.q.put(None)
+                self.enqueue_audio(None)
 
         except Exception as e:
             await self.STTWsMicroservice.send(ws, msg.services, "error", {"message": str(e)})
@@ -117,6 +115,10 @@ class STT():
         """
         Probe an audio blob with ffprobe and return the sample_rate in Hz if available.
         Returns none if probing fails or ffprobe is not available.
+        Args:
+            data: The input audio data in a container format.
+        Returns:
+            The sample rate in Hz, or None if not found.
         """
         try:
             cmd = [
@@ -140,13 +142,15 @@ class STT():
         except Exception:
             return None
 
-    async def on_process_request(self, ws: WebSocket, msg: Message):
-        """Override for processing requests."""
+    async def on_process_request(self, ws: WebSocket, msg: Message) -> None:
+        """
+        Override for processing requests.
+        """
         pass
 
-    async def _send_consumer(self) -> None:
-        """Consume send requests from `self.send_queue` and perform websocket sends on the event loop.
-
+    async def send_consumer(self) -> None:
+        """
+        Consume send requests from `self.send_queue` and perform websocket sends on the event loop.
         Each queue item is expected to be a tuple: (services, msg_type, data). A `None` item is
         used as sentinel to stop the consumer.
         """
@@ -184,39 +188,50 @@ class STT():
 
         self.n.send_notification(enumMcs.MicroservicesNames.STT, 0, "Send consumer stopped")
 
-    def callback(self, indata, frames, time, status) -> None:
+    def callback(self, inData, frames, time, status) -> None:
         """
         This is called (from a separate thread) for each audio block.
+        Args:
+            inData: The input audio data.
+            frames: The number of frames.
+            time: The time information.
+            status: The status of the audio stream.
         """
         if status:
             print(status, file=sys.stderr)
-        self.q.put(bytes(indata))
+        self.q.put(bytes(inData))
 
     def stop_stt_process(self) -> None:
         """
         Stop the speech-to-text process.
         """
         self.running = False
-        self.q.put(None)
+        self.enqueue_audio(None)
         if self.loop and self.send_queue:
             try:
                 self.loop.call_soon_threadsafe(self.send_queue.put_nowait, None)
             except Exception:
                 pass
+        if self._worker_thread and self._worker_thread.is_alive():
+            self._worker_thread.join(timeout=1.0)
+        if self.send_consumer_task and not self.send_consumer_task.done():
+            self.send_consumer_task.cancel()
         self.n.send_notification(enumMcs.MicroservicesNames.STT, 0,
             "Service stopped successfully!")
 
     def start_stt_process(self) -> None:
         """
-        Process:
-        Start the speech-to-text process.
-        This function initializes the audio input stream and processes the audio data
-        using the Vosk speech recognition model.
-        It listens for audio input, converts it to text, and sends the recognized text
-        back to the client (the AI server) via WebSocket.
+        Start the speech-to-text process in a background thread to avoid blocking.
+        """
+        if self._worker_thread and self._worker_thread.is_alive():
+            return
+        self._worker_thread = threading.Thread(target=self.processing_loop, daemon=True)
+        self._worker_thread.start()
 
-        Exeptions:
-        If an error occurs, it prints the error message.
+    def processing_loop(self) -> None:
+        """
+        The main processing loop that consumes audio data from the queue,
+        performs speech-to-text recognition, and sends results back via WebSocket.
         """
         try:
             self.n.send_notification(enumMcs.MicroservicesNames.STT, 0,
@@ -236,22 +251,52 @@ class STT():
                         "stt_result",
                         {"text": token.get('text', '')}
                     )
-                    if self.loop and self.send_queue:
-                        try:
-                            self.loop.call_soon_threadsafe(self.send_queue.put_nowait, payload)
-                        except Exception as e:
-                            self.n.send_notification(enumMcs.MicroservicesNames.STT, 2, f"Failed to push to send_queue: {e}")
-                    else:
-                        try:
-                            asyncio.run(self.STTWsMicroservice.send(
-                                self.STTWsMicroservice.websocket,
-                                [self.STTWsMicroservice.service_name],
-                                "stt_result", {"text": token.get('text', '')}
-                            ))
-                        except Exception as e:
-                            self.n.send_notification(enumMcs.MicroservicesNames.STT, 2, f"Failed to send stt_result: {e}")
+                    try:
+                        self.loop.call_soon_threadsafe(self.send_queue.put_nowait, payload)
+                    except Exception as e:
+                        self.n.send_notification(enumMcs.MicroservicesNames.STT, 2, f"Failed to push to send_queue: {e}")
                 else:
                     pass
 
         except Exception as e:
             self.n.send_notification(enumMcs.MicroservicesNames.STT, 2, {str(e)})
+
+    def decode_audio(self, container_bytes: bytes, probe_sr: Optional[int]) -> bytes:
+        """
+        Decode input audio container bytes to PCM16 using ffmpeg.
+        Args:
+            container_bytes: The input audio data in a container format (e.g., webm, mp3).
+            probe_sr: The sample rate of the input audio if known, else None.
+        Returns:
+            PCM16 encoded audio bytes.
+        """
+        ffmpeg_cmd = [
+            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            "-i", "pipe:0",
+            "-f", "s16le", "-acodec", "pcm_s16le",
+            "-ac", "1",
+        ]
+        if probe_sr is None or probe_sr != self.samplerate:
+            ffmpeg_cmd += ["-ar", str(self.samplerate)]
+        ffmpeg_cmd += ["pipe:1"]
+
+        proc = subprocess.run(ffmpeg_cmd, input=container_bytes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if proc.returncode != 0:
+            err = proc.stderr.decode(errors="ignore")
+            raise RuntimeError(err)
+        return proc.stdout
+
+    def enqueue_audio(self, pcm_bytes: Optional[bytes]) -> bool:
+        """
+        Enqueue PCM16 audio bytes for processing.
+        Args:
+            pcm_bytes: The PCM16 audio bytes to enqueue. If None, signals end of stream.
+        Returns:
+            True if enqueued successfully, False if the queue is full.
+        """
+        try:
+            self.q.put_nowait(pcm_bytes)
+            return True
+        except queue.Full:
+            self.n.send_notification(enumMcs.MicroservicesNames.STT, 2, "Audio queue is full; dropping chunk")
+            return False
