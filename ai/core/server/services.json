@@ -10,28 +10,28 @@
     "Name": "BA",
     "Description": "Analyzes user behavior",
     "Port": "8003",
-    "Ip": "0.0.0.0",
+    "Ip": "behavior_analysis",
     "RouteWs": "/ws/ba"
   },
   "ea": {
     "Name": "EA",
     "Description": "Analyzes emotions of the user (visual)",
     "Port": "8004",
-    "Ip": "0.0.0.0",
+    "Ip": "emotion_analysis",
     "RouteWs": "/ws/ea"
   },
   "tts": {
     "Name": "TTS",
     "Description": "Converts text to audio",
     "Port": "8005",
-    "Ip": "0.0.0.0",
+    "Ip": "text_to_speech",
     "RouteWs": "/ws/tts"
   },
   "va": {
     "Name": "VA",
     "Description": "Analyzes verbal communication",
     "Port": "8006",
-    "Ip": "0.0.0.0",
+    "Ip": "verbal_analysis",
     "RouteWs": "/ws/va"
   }
 }
