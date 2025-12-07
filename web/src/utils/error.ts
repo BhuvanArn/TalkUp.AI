@@ -88,6 +88,7 @@ export const extractErrorMessage = (
 
   // Only use error.message if it looks like a user-friendly message
   if (hasMessage(error) && error.message) {
+    const message = error.message;
     const technicalPrefixes = [
       'Network Error',
       'Failed to fetch',
@@ -98,14 +99,14 @@ export const extractErrorMessage = (
     ];
 
     const isTechnicalError = technicalPrefixes.some((prefix) =>
-      error.message!.startsWith(prefix),
+      message.startsWith(prefix),
     );
 
     if (isTechnicalError) {
       return fallback;
     }
 
-    return error.message;
+    return message;
   }
 
   // Default to fallback
