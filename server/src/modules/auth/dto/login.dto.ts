@@ -13,18 +13,8 @@ export class LoginDto {
   })
   email: string;
 
-  @IsStrongPassword({
-    minLength: 8,
-    minLowercase: 1,
-    minUppercase: 1,
-    minNumbers: 1,
-    minSymbols: 1,
-  })
-  @Length(8, 50)
   @ApiProperty({
-    description:
-      "The user's password. It must be at least 8 characters long and include uppercase letters, lowercase letters, numbers, and symbols.",
-    minLength: 8,
+    description: "The user's password.",
     example: "Abcdefg1*",
   })
   password: string;
