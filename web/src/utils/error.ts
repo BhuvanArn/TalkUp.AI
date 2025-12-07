@@ -73,13 +73,33 @@ export const extractErrorMessage = (
     if (typeof data === 'object' && data !== null) {
       const dataObj = data as Record<string, unknown>;
 
-      if (typeof dataObj.message === 'string') {
-        return dataObj.message;
-      }
+      const formatMessage = (value: unknown): string | null => {
+        if (!value && value !== 0) return null;
+        if (typeof value === 'string') return value;
+        if (Array.isArray(value)) {
+          const parts = value.filter((v) => typeof v === 'string') as string[];
+          if (parts.length) return parts.join(', ');
+          return null;
+        }
+        if (typeof value === 'object' && value !== null) {
+          // try to extract nested message
+          const inner = (value as Record<string, unknown>).message;
+          if (typeof inner === 'string') return inner;
+          if (Array.isArray(inner)) {
+            const parts = inner.filter(
+              (v) => typeof v === 'string',
+            ) as string[];
+            if (parts.length) return parts.join(', ');
+          }
+        }
 
-      if (typeof dataObj.error === 'string') {
-        return dataObj.error;
-      }
+        return null;
+      };
+
+      // Prefer `message` (even when it's an array) over `error`.
+      const prioritized =
+        formatMessage(dataObj.message) ?? formatMessage(dataObj.error);
+      if (prioritized) return prioritized;
     }
 
     // Don't expose raw data structures - use fallback instead
