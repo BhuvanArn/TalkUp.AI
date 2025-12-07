@@ -5,6 +5,7 @@ import IconAction from '@/components/atoms/icon-action';
 import { TextArea } from '@/components/atoms/text-area';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import { useCalendarEventModal } from '@/hooks/calendar/useCalendarEventModal';
+import type { InputChangeEvent, TextAreaChangeEvent } from '@/types/events';
 import { EVENT_COLORS, EventColorName } from '@/utils/eventColors';
 
 /**
@@ -56,9 +57,12 @@ const CalendarModal = () => {
         <div className="flex flex-col gap-3 mb-3">
           <InputMolecule
             label="Event Title"
-            type="base"
+            inputType="base"
+            type="text"
             value={title}
-            onChange={(e) => handleChange('title', e.target.value)}
+            onChange={(e: InputChangeEvent) =>
+              handleChange('title', e.target.value)
+            }
             placeholder="Add title"
           />
 
@@ -72,7 +76,9 @@ const CalendarModal = () => {
             <TextArea
               id="event-modal-description-text-area"
               value={description}
-              onChange={(e) => handleChange('description', e.target.value)}
+              onChange={(e: TextAreaChangeEvent) =>
+                handleChange('description', e.target.value)
+              }
               placeholder="Add description"
               rows={3}
               className="w-full"
@@ -94,12 +100,16 @@ const CalendarModal = () => {
                 <BaseInput
                   type="date"
                   value={startDate}
-                  onChange={(e) => handleChange('startDate', e.target.value)}
+                  onChange={(e: InputChangeEvent) =>
+                    handleChange('startDate', e.target.value)
+                  }
                 />
                 <BaseInput
                   type="time"
                   value={startTime}
-                  onChange={(e) => handleChange('startTime', e.target.value)}
+                  onChange={(e: InputChangeEvent) =>
+                    handleChange('startTime', e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -114,12 +124,16 @@ const CalendarModal = () => {
                 <BaseInput
                   type="date"
                   value={endDate}
-                  onChange={(e) => handleChange('endDate', e.target.value)}
+                  onChange={(e: InputChangeEvent) =>
+                    handleChange('endDate', e.target.value)
+                  }
                 />
                 <BaseInput
                   type="time"
                   value={endTime}
-                  onChange={(e) => handleChange('endTime', e.target.value)}
+                  onChange={(e: InputChangeEvent) =>
+                    handleChange('endTime', e.target.value)
+                  }
                 />
               </div>
             </div>

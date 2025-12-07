@@ -1,4 +1,9 @@
 import { InputMolecule } from '@/components/molecules/input-molecule';
+import type {
+  InputChangeEvent,
+  SelectChangeEvent,
+  TextAreaChangeEvent,
+} from '@/types/events';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -33,8 +38,9 @@ function Diary() {
         label="Your Name"
         helperText="Please enter your full name."
         placeholder="John Doe"
+        type="text"
         value={baseValue}
-        onChange={(e) => setBaseValue((e.target as HTMLInputElement).value)}
+        onChange={(e: InputChangeEvent) => setBaseValue(e.target.value)}
         required
       />
 
@@ -46,9 +52,7 @@ function Diary() {
         helperText="Provide a brief description of your project (max 200 characters)."
         placeholder="Start typing here..."
         value={textareaValue}
-        onChange={(e) =>
-          setTextareaValue((e.target as HTMLTextAreaElement).value)
-        }
+        onChange={(e: TextAreaChangeEvent) => setTextareaValue(e.target.value)}
         rows={5}
         resize={true}
         maxLength={200}
@@ -61,9 +65,7 @@ function Diary() {
         label="Choose Your Favorite Fruit"
         helperText="Select one option from the dropdown list."
         value={selectorValue}
-        onChange={(e) =>
-          setSelectorValue((e.target as HTMLSelectElement).value)
-        }
+        onChange={(e: SelectChangeEvent) => setSelectorValue(e.target.value)}
         options={[
           { value: 'option1', label: 'Apple' },
           { value: 'option2', label: 'Banana' },
@@ -78,9 +80,7 @@ function Diary() {
         label="Subscribe to our Newsletter"
         helperText="Tick this box to receive email updates and promotions."
         value={checkboxValue}
-        onChange={(e) =>
-          setCheckboxValue((e.target as HTMLInputElement).checked)
-        }
+        onChange={(e: InputChangeEvent) => setCheckboxValue(e.target.checked)}
       />
 
       <InputMolecule
@@ -89,8 +89,9 @@ function Diary() {
         id="phoneInput"
         helperText="Your phone number, including country code (e.g., +1234567890)."
         placeholder="+1234567890"
+        type="tel"
         value={phoneValue}
-        onChange={(e) => setPhoneValue((e.target as HTMLInputElement).value)}
+        onChange={(e: InputChangeEvent) => setPhoneValue(e.target.value)}
       />
 
       <InputMolecule
@@ -100,9 +101,7 @@ function Diary() {
         label="Your Feedback"
         placeholder="Share your thoughts..."
         value={feedbackValue}
-        onChange={(e) =>
-          setFeedbackValue((e.target as HTMLTextAreaElement).value)
-        }
+        onChange={(e: TextAreaChangeEvent) => setFeedbackValue(e.target.value)}
       />
 
       <InputMolecule
@@ -111,6 +110,7 @@ function Diary() {
         id="disabledInput"
         label="Disabled Field"
         helperText="This field is disabled and cannot be edited."
+        type="text"
         value="You cannot edit this"
         disabled
       />
@@ -121,6 +121,7 @@ function Diary() {
         id="readOnlyInput"
         label="Read-Only Field"
         helperText="This field can be selected but not edited."
+        type="text"
         value="This text is read-only"
         readOnly
       />

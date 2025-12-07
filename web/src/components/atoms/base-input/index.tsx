@@ -4,6 +4,8 @@ import React, { useId, useState } from 'react';
 
 import type { BaseInputProps } from './types';
 
+export type { BaseInputProps };
+
 /**
  * A base input component for form elements.
  *

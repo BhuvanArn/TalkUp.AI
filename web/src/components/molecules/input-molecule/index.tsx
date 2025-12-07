@@ -77,7 +77,7 @@ export const InputMolecule: React.FC<InputMoleculeProps> = React.memo(
             required={props.required}
             placeholder={props.placeholder ?? ''}
             aria-describedby={helperTextId}
-            type={props.type}
+            type={props.type ?? 'text'}
           />
         )}
 
