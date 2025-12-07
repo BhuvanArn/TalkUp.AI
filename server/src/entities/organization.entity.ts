@@ -17,23 +17,11 @@ import { AuthProvider } from "@common/enums/AuthProvider";
     @Column({ nullable: false })
     Organization_name: string;
 
-    @Column({ nullable: false })
-    Organization_email: string;
-
-    @Column({ nullable: false })
-    Organization_password: string;
-
     @Column({
       nullable: true,
       comment: "organization's profile picture as a base64 string",
     })
     profile_picture: string;
-
-    @Column({
-      nullable: true,
-      comment: "used for password reset/verification code",
-    })
-    verification_code: string;
 
     @Column({ default: new Date() })
     created_at: Date;
@@ -43,15 +31,6 @@ import { AuthProvider } from "@common/enums/AuthProvider";
 
     @Column({ default: new Date() })
     updated_at: Date;
-
-    @Column({
-      enum: AuthProvider,
-      type: "enum",
-      nullable: false,
-      default: AuthProvider.MANUAL,
-      comment: "Authentication provider (e.g., manual, linkedin)",
-    })
-    provider: string;
 
     // ------ UUID manual generation to ensure V7 format ------ //
 

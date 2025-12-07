@@ -13,6 +13,8 @@ import * as bcrypt from "bcrypt";
 import { Logger } from "@nestjs/common";
 
 import { CreateOrganizationDto } from "./dto/createOrganization";
+import { CreateUserDto } from "../auth/dto/createUser.dto";
+import { AuthService } from "../auth/auth.service"
 
 import { Organization } from "@entities/organization.entity";
 
@@ -26,6 +28,8 @@ export class OrganizationService {
     @InjectRepository(Organization) private organizationRepository: Repository<Organization>,
 
     private jwtService: JwtService,
+
+    private readonly authService: AuthService
   ) {}
 
   /**
@@ -46,21 +50,28 @@ export class OrganizationService {
   async register(
     CreateOrganizationDto: CreateOrganizationDto,
   ): Promise<{ accessToken: string }> {
-    const emailExists = await this.organizationRepository.findOne({
-      where: { Organization_email: CreateOrganizationDto.OrganizationEmail },
+    const nameExists = await this.organizationRepository.findOne({
+      where: { Organization_name: CreateOrganizationDto.OrganizationName },
     });
 
-    if (emailExists) {
+    if (nameExists) {
       throw new ConflictException("An organization with this email already exists");
     }
 
     const newOrganization= this.organizationRepository.create({
         Organization_name: CreateOrganizationDto.OrganizationName,
-        Organization_password: await hashPassword(CreateOrganizationDto.OrganizationPassword),
-        Organization_email: CreateOrganizationDto.OrganizationEmail,
     });
 
     const savedOrganization = await this.organizationRepository.save(newOrganization);
+
+    const createUserDto: CreateUserDto = {
+        username: `${savedOrganization.Organization_name}_admin`,
+        email: `${CreateOrganizationDto.OrganizationEmail}`,
+        password: "helloworld",
+        userRole: "organizationAdmin",
+    };
+
+    await this.authService.register(createUserDto);
 
     const payload = {
       organizationId: savedOrganization.organization_id,

@@ -14,13 +14,14 @@ export class CreateOrganizationDto {
     })
     OrganizationId?: string;
 
-    @IsOptional()
+    @IsString()
     @ApiProperty({
         description: "The Organization's name",
         example: "AdminSys819",
     })
     OrganizationName: string;
 
+    @IsString()
     @IsEmail()
     @ApiProperty({
         description:
@@ -29,19 +30,4 @@ export class CreateOrganizationDto {
     })
     OrganizationEmail: string;
 
-    @IsStrongPassword({
-        minLength: 8,
-        minLowercase: 1,
-        minUppercase: 1,
-        minNumbers: 1,
-        minSymbols: 1,
-    })
-    @Length(8, 50)
-    @ApiProperty({
-        description:
-            "The Organization's password. It will be hashed before added to the database. It must be at least 8 characters long and include uppercase letters, lowercase letters, numbers, and symbols.",
-        minLength: 8,
-        example: "Abcdefg1*",
-    })
-    OrganizationPassword: string;
 }
