@@ -242,6 +242,7 @@
 
   .text-h5 {
     font-family: var(--font-display);
+    font-size: var(--font-size-h5);
     font-weight: 500;
     line-height: 1.4;
   }
