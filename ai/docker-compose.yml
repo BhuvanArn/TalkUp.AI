@@ -42,6 +42,7 @@ services:
       - PYTHONUNBUFFERED=1
       - STT_HOST=speech_to_text
       - STT_PORT=8002
+      - VOSK_MODEL_PATH=/app/models/vosk-fr
     ports:
       - "8002:8002"
 
