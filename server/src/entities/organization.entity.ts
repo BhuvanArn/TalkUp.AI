@@ -15,7 +15,13 @@ import { AuthProvider } from "@common/enums/AuthProvider";
     organization_id: string;
 
     @Column({ nullable: false })
-    Organizationname: string;
+    Organization_name: string;
+
+    @Column({ nullable: false })
+    Organization_email: string;
+
+    @Column({ nullable: false })
+    Organization_password: string;
 
     @Column({
       nullable: true,
