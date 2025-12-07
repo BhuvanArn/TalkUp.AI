@@ -51,7 +51,7 @@ export const RegisterForm = () => {
           password: value.password,
         },
         {
-          onError: (error: any) => {
+          onError: (error: unknown) => {
             setServerError(
               extractErrorMessage(
                 error,

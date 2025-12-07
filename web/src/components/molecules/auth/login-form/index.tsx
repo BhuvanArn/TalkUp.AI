@@ -48,7 +48,7 @@ export const LoginForm = () => {
           password: value.password,
         },
         {
-          onError: (error: any) => {
+          onError: (error: unknown) => {
             setServerError(
               extractErrorMessage(error, 'Login failed. Please try again.'),
             );
