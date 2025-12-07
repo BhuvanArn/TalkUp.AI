@@ -88,4 +88,28 @@ export class OrganizationService {
     }
     await this.organizationRepository.remove(nameExists);
   }
+
+  async updateOrganization(
+    currentName: string,
+    updateData: { newName?: string; newProfilePicture?: string },
+  ): Promise<void> {
+    const organization = await this.organizationRepository.findOne({
+      where: { Organization_name: currentName },
+    });
+
+    if (!organization) {
+      throw new ConflictException("An organization with this name doesn't exist");
+    }
+
+    if (updateData.newName) {
+      organization.Organization_name = updateData.newName;
+    }
+    if (updateData.newProfilePicture) {
+      organization.profile_picture = updateData.newProfilePicture;
+    }
+
+    await this.organizationRepository.save(organization);
+  }
+
+
 }

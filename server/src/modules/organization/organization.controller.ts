@@ -3,7 +3,8 @@ import {
     Controller,
     Post,
     Delete,
-    BadRequestException
+    BadRequestException,
+    Patch,
 } from "@nestjs/common";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
 
@@ -47,7 +48,6 @@ export class OrganizationController {
       return await this.OrganizationService.register(CreateOrganizationDto);
     }
 
-    
     @Delete("deleteOrganization")
     async deleteOrganization(
         @Body('name') OrganizationName: string
@@ -58,6 +58,26 @@ export class OrganizationController {
         return await this.OrganizationService.delete(OrganizationName);
     }
 
+    @Patch("updateOrganization")
+    @ApiCreatedResponse({
+        description: "The organization has been successfully updated.",
+    })
+    @ApiBadRequestResponse({
+        description: "Invalid input data.",
+    })
+    @ApiUnprocessableEntityResponse({
+        description: "The organization could not be updated.",
+    })
+    async updateOrganization(
+        @Body() updateData: { currentName: string; newName?: string; newProfilePicture?: string }
+    ) {
+        const { currentName, newName, newProfilePicture } = updateData;
 
+        if (!currentName || (!newName && !newProfilePicture)) {
+            throw new BadRequestException("Current name and at least one field to update are required.");
+        }
+
+        return await this.OrganizationService.updateOrganization(currentName, { newName, newProfilePicture });
+    }
 
 }
