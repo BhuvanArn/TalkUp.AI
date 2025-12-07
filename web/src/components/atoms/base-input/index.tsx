@@ -24,29 +24,31 @@ export type { BaseInputProps };
  * @param {string} [props.className] - Additional CSS classes to apply.
  * @returns {JSX.Element} The rendered input component.
  */
-export const BaseInput: React.FC<BaseInputProps> = ({
-  id,
-  name = 'input',
-  value = '',
-  type = 'text',
-  placeholder = 'Enter text',
-  disabled = false,
-  readOnly = false,
-  required = false,
-  onChange = () => {},
-  className,
-  ...rest
-}) => {
+export const BaseInput: React.FC<BaseInputProps> = (props) => {
+  const {
+    id,
+    name = 'input',
+    value = '',
+    type = 'text',
+    placeholder = 'Enter text',
+    disabled = false,
+    readOnly = false,
+    required = false,
+    onChange = () => {},
+    className,
+    ...rest
+  } = props as BaseInputProps;
   const generatedId = useId();
   const inputId = id || generatedId;
   const [showPassword, setShowPassword] = useState(false);
 
-  const isPasswordType = type === 'password';
+  const resolvedType = (type ?? 'text') as string;
+  const isPasswordType = resolvedType === 'password';
   const inputType = isPasswordType
     ? showPassword
       ? 'text'
       : 'password'
-    : type;
+    : resolvedType;
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
