@@ -118,12 +118,29 @@ bool talkup_network::MicroservicesManager::ping_service(
         }
         ws = it->second.ws;
     }
-
     try {
         nlohmann::json ping_json = {{"services", {service_id}}, {"type", "ping"}, {"timestamp", std::time(nullptr)},
             {"data", nlohmann::json::object()}};
         ws->write(boost::asio::buffer(ping_json.dump()));
+
         boost::beast::flat_buffer buffer;
+        const int timeout_ms = 5000; // 5 seconds timeout for ping
+        int fd = boost::beast::get_lowest_layer(*ws).socket().native_handle();
+        struct pollfd pfd;
+        pfd.fd = fd;
+        pfd.events = POLLIN;
+        pfd.revents = 0;
+
+        int poll_ret = ::poll(&pfd, 1, timeout_ms);
+        if (poll_ret <= 0) {
+            if (poll_ret == 0) {
+                std::cerr << "[MicroservicesManager] Ping timeout for service " << service_name << std::endl;
+            } else {
+                std::cerr << "[MicroservicesManager] Poll error while pinging " << service_name << ": " << std::strerror(errno) << std::endl;
+            }
+            return false;
+        }
+
         ws->read(buffer);
         std::string pong_msg = boost::beast::buffers_to_string(buffer.data());
         nlohmann::json pong_json = nlohmann::json::parse(pong_msg);
