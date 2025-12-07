@@ -5,8 +5,10 @@ import {
   OneToOne,
   JoinColumn,
   BeforeInsert,
+  ManyToOne,
 } from "typeorm";
 import { uuidv7 } from "uuidv7";
+import { Organization } from "./organization.entity";
 
 import { AuthProvider } from "@common/enums/AuthProvider";
 
@@ -47,6 +49,20 @@ export class user {
     comment: "Authentication provider (e.g., manual, linkedin)",
   })
   provider: string;
+
+  @ManyToOne(() => Organization, (organization) => organization.users, {
+    nullable: true,
+    onDelete: "SET NULL",
+  })
+  @JoinColumn({ name: "organization_id" })
+  organization_id: Organization;
+
+  @Column({
+    nullable: false,
+    default: "user",
+    comment: "the role of the user in the organization",
+  })
+  userRole: string;
 
   // ------ UUID manual generation to ensure V7 format ------ //
 

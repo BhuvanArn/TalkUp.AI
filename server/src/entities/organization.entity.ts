@@ -1,0 +1,59 @@
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    BeforeInsert,
+    OneToMany
+} from "typeorm";
+import { uuidv7 } from "uuidv7";
+import { user } from "./user.entity";
+import { AuthProvider } from "@common/enums/AuthProvider";
+
+@Entity()
+  export class Organization {
+    @PrimaryGeneratedColumn("uuid")
+    organization_id: string;
+
+    @Column({ nullable: false })
+    Organizationname: string;
+
+    @Column({
+      nullable: true,
+      comment: "organization's profile picture as a base64 string",
+    })
+    profile_picture: string;
+
+    @Column({
+      nullable: true,
+      comment: "used for password reset/verification code",
+    })
+    verification_code: string;
+
+    @Column({ default: new Date() })
+    created_at: Date;
+
+    @Column({ default: new Date() })
+    last_accessed_at: Date;
+
+    @Column({ default: new Date() })
+    updated_at: Date;
+
+    @Column({
+      enum: AuthProvider,
+      type: "enum",
+      nullable: false,
+      default: AuthProvider.MANUAL,
+      comment: "Authentication provider (e.g., manual, linkedin)",
+    })
+    provider: string;
+
+    // ------ UUID manual generation to ensure V7 format ------ //
+
+    @BeforeInsert()
+    generateUUIDv7() {
+      if (!this.organization_id) this.organization_id = uuidv7();
+    }
+
+    @OneToMany(() => user, (user) => user.organization_id)
+    users: user[];
+  }

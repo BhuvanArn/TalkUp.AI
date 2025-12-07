@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
-import { Length, IsEmail, IsStrongPassword } from "class-validator";
+import { Length, IsEmail, IsStrongPassword, IsOptional, IsString } from "class-validator";
 
 @ApiSchema({
   name: "CreateUserRequest",
@@ -38,4 +38,24 @@ export class CreateUserDto {
     example: "Abcdefg1*",
   })
   password: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({
+    description: "The id of the organization the user belongs to. This will be a UUID",
+    minLength: 1,
+    example: "AGBDUIJ178276889",
+  })
+  OrganizationId?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description: "The role of the user in the organization",
+    minLength: 4,
+    example: "user",
+    default: "user",
+  })
+  userRole: string = "user";
+
 }
