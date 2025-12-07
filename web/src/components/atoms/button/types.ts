@@ -10,7 +10,7 @@ export type ButtonColor =
   | 'error'
   | 'sidebar';
 
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {

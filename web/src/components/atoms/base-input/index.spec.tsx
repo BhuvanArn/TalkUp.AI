@@ -111,6 +111,6 @@ describe('BaseInput', () => {
 
     expect(inputElement).toBeInTheDocument();
     expect(inputElement).toHaveClass('extra-class');
-    expect(inputElement).toHaveClass('px-4 py-2');
+    expect(inputElement).toHaveClass('p-2');
   });
 });
