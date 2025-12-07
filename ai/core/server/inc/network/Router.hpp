@@ -10,6 +10,9 @@
 
 #include <crow.h>
 
+#include "MicroservicesManager.hpp"
+#include "WebsocketManager.hpp"
+
 namespace talkup_network {
     class Router {
         public:
@@ -32,7 +35,8 @@ namespace talkup_network {
              *
              * @param app
              */
-            void set_routes_definitions(crow::SimpleApp& app);
+            void set_routes_definitions(crow::SimpleApp& app,
+                std::shared_ptr<MicroservicesManager> microservices_manager);
 
             /**
              * @brief Get the environment key used by the server.
@@ -49,5 +53,6 @@ namespace talkup_network {
                 KEY_NOT_SET = 500,
             };
             std::map<std::string, std::string> __env_variables;
+            WsManager _ws_manager;
     };
 }
