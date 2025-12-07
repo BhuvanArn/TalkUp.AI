@@ -8,11 +8,12 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 import { Organization } from "@entities/organization.entity";
+import { AuthModule } from "../auth/auth.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Organization])],
+  imports: [TypeOrmModule.forFeature([Organization]), AuthModule],
   controllers: [OrganizationController],
   providers: [OrganizationService],
   exports: [OrganizationService],
 })
-export class AuthModule {}
+export class OrganizationModule {}

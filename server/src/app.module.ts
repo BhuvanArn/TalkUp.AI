@@ -14,6 +14,7 @@ import { LoggerMiddleware } from "@common/middleware/logger";
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { HealthController } from "./health.controller";
 import { AgendaModule } from "./modules/agenda/agenda.module";
+import { OrganizationModule } from "./modules/organization/organization.module";
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { AgendaModule } from "./modules/agenda/agenda.module";
       },
     }),
     AiModule,
+    OrganizationModule,
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
