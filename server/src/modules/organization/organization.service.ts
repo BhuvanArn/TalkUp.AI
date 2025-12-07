@@ -77,4 +77,15 @@ export class OrganizationService {
       },
       }
   }
+
+  async delete (organizationName: string): Promise<void> {
+    const nameExists = await this.organizationRepository.findOne({
+        where: { Organization_name: organizationName },
+    });
+
+    if (!nameExists) {
+        throw new ConflictException("An organization with this name doesn't exists");
+    }
+    await this.organizationRepository.remove(nameExists);
+  }
 }

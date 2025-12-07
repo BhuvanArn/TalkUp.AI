@@ -2,6 +2,8 @@ import {
     Body,
     Controller,
     Post,
+    Delete,
+    BadRequestException
 } from "@nestjs/common";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
 
@@ -44,5 +46,18 @@ export class OrganizationController {
     ) {
       return await this.OrganizationService.register(CreateOrganizationDto);
     }
+
+    
+    @Delete("deleteOrganization")
+    async deleteOrganization(
+        @Body('name') OrganizationName: string
+    ) {
+        if (!OrganizationName) {
+            throw new BadRequestException('Organization name is required');
+        }
+        return await this.OrganizationService.delete(OrganizationName);
+    }
+
+
 
 }
