@@ -36,63 +36,103 @@ class WebSocketMicroservice:
         """Override for processing requests."""
         pass
 
-    async def handle_incoming_message(self) -> Message:
+    async def _parse_message(self, raw: str) -> tuple[Message | None, list[str]]:
         """
-        Handle an incoming message from the WebSocket connection.
+        Parse a raw JSON string into a Message object.
+
+        Returns:
+            Tuple of (Message object or None, list of services)
+        """
+        services = [self.service_name]
+
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as e:
+            await self.send(self.websocket, services, "error", {"message": f"Invalid JSON: {str(e)}"})
+            return None, services
+
+        if "data" not in payload:
+            payload["data"] = None
+
+        try:
+            msg = Message(**payload)
+            return msg, msg.services
+        except Exception as e:
+            services = payload.get("services", [self.service_name])
+            await self.send(self.websocket, services, "error", {"message": f"Invalid Message payload: {str(e)}"})
+            return None, services
+
+    async def _route_message(self, msg: Message) -> None:
+        """
+        Route incoming message to appropriate handler based on message type.
+        """
+        match msg.type:
+            case "ping":
+                await self.send(self.websocket, msg.services, "pong", {"status": "active"})
+            case "stream_chunk":
+                handler = (
+                    self.owner.on_stream_chunk
+                    if self.owner and hasattr(self.owner, "on_stream_chunk")
+                    else self.on_stream_chunk
+                )
+                await handler(self.websocket, msg)
+            case "process_request":
+                handler = (
+                    self.owner.on_process_request
+                    if self.owner and hasattr(self.owner, "on_process_request")
+                    else self.on_process_request
+                )
+                await handler(self.websocket, msg)
+            case _:
+                await self.send(self.websocket, msg.services, "error", {"message": f"Unknown message type: {msg.type}"})
+
+    async def _handle_error(self, error: Exception, services: list[str]) -> bool:
+        """
+        Handle errors during message processing.
+
+        Returns:
+            True if connection should be closed, False otherwise
+        """
+        if isinstance(error, WebSocketDisconnect):
+            print(f"[{self.service_name}] Client disconnected (code={error.code})")
+            return True
+
+        try:
+            await self.send(self.websocket, services, "error", {"message": str(error)})
+        except Exception as send_err:
+            print(f"[{self.service_name}] Failed to send error to client: {send_err}")
+            try:
+                await self.websocket.close()
+            except Exception as close_err:
+                print(f"[{self.service_name}] Failed to close websocket: {close_err}")
+            return True
+
+        return False
+
+    async def handle_incoming_message(self) -> None:
+        """
+        Handle incoming messages from the WebSocket connection.
+        Accepts the connection and processes messages in a loop until disconnection.
         """
         await self.websocket.accept()
         print(f"[{self.service_name}] Client connected")
 
         while True:
-            services = [self.service_name]
+            services = [self.service_name] # default services
+
             try:
                 raw = await self.websocket.receive_text()
-                try:
-                    payload = json.loads(raw)
-                except Exception as e:
-                    await self.send(self.websocket, [self.service_name], "error", {"message": f"Invalid JSON: {str(e)}"})
+                msg, services = await self._parse_message(raw)
+
+                if msg is None:
                     continue
-                if "data" not in payload:
-                    payload["data"] = None
-                try:
-                    msg = Message(**payload)
-                    services = msg.services
-                except Exception as e:
-                    services = payload.get("services", [self.service_name])
-                    await self.send(self.websocket, services, "error", {"message": f"Invalid Message payload: {str(e)}"})
-                    continue
+
                 if self.service_name not in msg.services:
                     continue
-                if msg.type == "ping":
-                    await self.send(self.websocket, msg.services, "pong", {"status": "active"})
-                    continue
-                if msg.type == "stream_chunk":
-                    if self.owner and hasattr(self.owner, "on_stream_chunk"):
-                        await self.owner.on_stream_chunk(self.websocket, msg)
-                    else:
-                        await self.on_stream_chunk(self.websocket, msg)
-                    continue
-                if msg.type == "process_request":
-                    if self.owner and hasattr(self.owner, "on_process_request"):
-                        await self.owner.on_process_request(self.websocket, msg)
-                    else:
-                        await self.on_process_request(self.websocket, msg)
-                    continue
 
-                await self.send(self.websocket, msg.services, "error",
-                    {"message": f"Unknown message type: {msg.type}"})
+                await self._route_message(msg)
 
             except Exception as e:
-                if isinstance(e, WebSocketDisconnect):
-                    print(f"[{self.service_name}] Client disconnected (code={e.code})")
+                should_close = await self._handle_error(e, services)
+                if should_close:
                     break
-
-                try:
-                    await self.send(self.websocket, services, "error", {"message": str(e)})
-                except Exception as send_err:
-                    print(f"[{self.service_name}] Failed to send error to client: {send_err}")
-                    try:
-                        await self.websocket.close()
-                    except Exception as e:
-                        print(f"[{self.service_name}] Failed to close websocket: {e}")
-                break
