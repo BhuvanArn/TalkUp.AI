@@ -3,12 +3,9 @@ import { Repository } from "typeorm";
 import {
   ConflictException,
   Injectable,
-  UnauthorizedException,
-  InternalServerErrorException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { JwtService } from "@nestjs/jwt";
-import * as bcrypt from "bcrypt";
 
 import { Logger } from "@nestjs/common";
 
@@ -17,8 +14,6 @@ import { CreateUserDto } from "../auth/dto/createUser.dto";
 import { AuthService } from "../auth/auth.service"
 
 import { Organization } from "@entities/organization.entity";
-
-import { hashPassword } from "@common/utils/passwordHasher";
 
 @Injectable()
 export class OrganizationService {
@@ -44,18 +39,18 @@ export class OrganizationService {
    * 6. Generates and returns a JWT access token for the newly registered user.
    *
    * @param createUserDto - Data transfer object containing the user's registration details (username, password, email).
-   * @returns An object containing the generated JWT access token.
+   * @returns An object containing the admin user credentials.
    * @throws {ConflictException} If an account with the provided email already exists.
    */
   async register(
     CreateOrganizationDto: CreateOrganizationDto,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<{ message: string, adminUser: { username: string, email: string, password:  string} }> {
     const nameExists = await this.organizationRepository.findOne({
       where: { Organization_name: CreateOrganizationDto.OrganizationName },
     });
 
     if (nameExists) {
-      throw new ConflictException("An organization with this email already exists");
+      throw new ConflictException("An organization with this name already exists");
     }
 
     const newOrganization= this.organizationRepository.create({
@@ -73,13 +68,13 @@ export class OrganizationService {
 
     await this.authService.register(createUserDto);
 
-    const payload = {
-      organizationId: savedOrganization.organization_id,
-      username: savedOrganization.Organization_name,
-    };
-
     return {
-      accessToken: await this.jwtService.signAsync(payload),
-    };
+      message: "Creation successful",
+      adminUser: {
+        username: createUserDto.username,
+        email: createUserDto.email,
+        password: createUserDto.password,
+      },
+      }
   }
 }
