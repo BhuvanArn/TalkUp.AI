@@ -2,18 +2,7 @@ import { Icon } from '@/components/atoms/icon';
 import { cn } from '@/utils/cn';
 import React, { useId, useState } from 'react';
 
-export interface BaseInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
-  id?: string;
-  name?: string;
-  value?: string;
-  type?: string;
-  placeholder?: string;
-  disabled?: boolean;
-  readOnly?: boolean;
-  required?: boolean;
-  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-}
+import type { BaseInputProps } from './types';
 
 /**
  * A base input component for form elements.
