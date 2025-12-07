@@ -99,9 +99,9 @@ export const publicNavigationContext: NavigationContext = {
       order: 3,
     },
     {
-      to: '/signup',
-      label: 'Sign Up',
-      icon: 'sign-up',
+      to: '/register',
+      label: 'Register',
+      icon: 'register',
       showInNav: true,
       order: 4,
     },

@@ -18,7 +18,7 @@ describe('InputMolecule', () => {
     const handleChange = vi.fn();
     render(
       <InputMolecule
-        type="base"
+        inputType="base"
         name="testName"
         label="Test Label"
         value="initial value"
@@ -52,7 +52,7 @@ describe('InputMolecule', () => {
 
     render(
       <InputMolecule
-        type="selector"
+        inputType="selector"
         name="fruitSelector"
         label="Select Fruit"
         value="banana"
@@ -74,7 +74,7 @@ describe('InputMolecule', () => {
     const handleChange = vi.fn();
     render(
       <InputMolecule
-        type="textarea"
+        inputType="textarea"
         name="desc"
         label="Description"
         value="initial"
@@ -98,7 +98,7 @@ describe('InputMolecule', () => {
     const handleChange = vi.fn();
     render(
       <InputMolecule
-        type="checkbox"
+        inputType="checkbox"
         name="agree"
         label="Accept terms"
         value={true}

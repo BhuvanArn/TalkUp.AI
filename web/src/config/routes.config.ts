@@ -8,11 +8,10 @@ export const routeConfigs: RouteConfig[] = [
   // Public routes
   { path: '/', requiresAuth: false },
   { path: '/login', requiresAuth: false },
-  { path: '/signup', requiresAuth: false },
+  { path: '/register', requiresAuth: false },
   { path: '/about', requiresAuth: false },
 
   // Protected routes - Main pages
-  { path: '/dashboard', requiresAuth: true },
   { path: '/profile', requiresAuth: true },
   { path: '/cv-analysis', requiresAuth: true },
   { path: '/simulations', requiresAuth: true },

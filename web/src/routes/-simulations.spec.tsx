@@ -162,7 +162,7 @@ describe('Simulations', () => {
     expect(
       await screen.findByRole('heading', { name: /WebSocket Connection/i }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(/Socket URL/i)).toBeInTheDocument();
+    expect(screen.getByText(/Socket URL/i)).toBeInTheDocument();
   });
 
   it('renders WebSocket control buttons', async () => {

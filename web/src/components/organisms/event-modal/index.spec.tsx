@@ -4,9 +4,11 @@ import { vi } from 'vitest';
 
 // Mock child components to keep tests focused on the modal logic
 vi.mock('@/components/atoms/base-input', () => ({
-  BaseInput: (props: any) => (
-    <input data-testid={`base-input-${props.type}`} {...props} />
-  ),
+  BaseInput: (props: any) => {
+    // strip internal props that should not be forwarded to DOM elements
+    const { inputType: _inputType, ...rest } = props;
+    return <input data-testid={`base-input-${rest.type ?? ''}`} {...rest} />;
+  },
 }));
 
 vi.mock('@/components/atoms/button', () => ({
@@ -29,13 +31,17 @@ vi.mock('@/components/atoms/icon-action', () => ({
 }));
 
 vi.mock('@/components/atoms/text-area', () => ({
-  TextArea: (props: any) => <textarea data-testid="text-area" {...props} />,
+  TextArea: (props: any) => {
+    const { inputType: _inputType, ...rest } = props;
+    return <textarea data-testid="text-area" {...rest} />;
+  },
 }));
 
 vi.mock('@/components/molecules/input-molecule', () => ({
-  InputMolecule: (props: any) => (
-    <input data-testid="input-molecule" {...props} />
-  ),
+  InputMolecule: (props: any) => {
+    const { inputType: _inputType, ...rest } = props;
+    return <input data-testid="input-molecule" {...rest} />;
+  },
 }));
 
 // Helper to dynamically mock the hook and import the component after mocking

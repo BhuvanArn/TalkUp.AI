@@ -15,10 +15,21 @@ axiosInstance.defaults.headers.common['Accept'] = 'application/json';
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Don't redirect on 401 for auth status checks - they're expected to return 401 when not authenticated
-    const isAuthStatusCheck = error.config?.url?.includes('/auth/status');
+    const requestUrl = error.config?.url ?? '';
 
-    if (error.response?.status === 401 && !isAuthStatusCheck) {
+    // Allowlist of auth endpoints that should NOT trigger redirects on 401
+    const publicAuthEndpoints = [
+      '/auth/status',
+      '/auth/login',
+      '/auth/register',
+    ];
+
+    const isPublicAuthEndpoint = publicAuthEndpoints.some((endpoint) =>
+      requestUrl.includes(endpoint),
+    );
+
+    if (error.response?.status === 401 && !isPublicAuthEndpoint) {
+      // All other requests should redirect to /login on 401 (session expired or unauthorized)
       console.warn('Authentication failed. Redirecting to login...');
       window.location.href = '/login';
     }

@@ -25,15 +25,18 @@ interface InputMoleculeExtraProps {
  * additional attributes relevant to that specific input.
  */
 type InputMoleculeProps =
-  | ({ type: 'base' } & BaseInputProps & InputMoleculeExtraProps)
-  | ({ type: 'selector' } & SelectorInputProps & InputMoleculeExtraProps)
-  | ({ type: 'textarea' } & TextAreaProps & InputMoleculeExtraProps)
-  | ({ type: 'checkbox'; value?: boolean } & Omit<CheckboxInputProps, 'value'> &
+  | ({ inputType: 'base' } & BaseInputProps & InputMoleculeExtraProps)
+  | ({ inputType: 'selector' } & SelectorInputProps & InputMoleculeExtraProps)
+  | ({ inputType: 'textarea' } & TextAreaProps & InputMoleculeExtraProps)
+  | ({
+      inputType: 'checkbox';
+      value?: boolean;
+    } & Omit<CheckboxInputProps, 'value'> &
       InputMoleculeExtraProps);
 
 /**
  * InputMolecule is a polymorphic component that renders a flexible form input
- * based on the specified `type`. It supports:
+ * based on the specified `inputType`. It supports:
  * - `base`: a standard text input
  * - `selector`: a dropdown select input
  * - `textarea`: a multi-line text area
@@ -50,94 +53,71 @@ type InputMoleculeProps =
 export const InputMolecule: React.FC<InputMoleculeProps> = React.memo(
   (props) => {
     const generatedId = useId();
-    const {
-      id = generatedId,
-      type,
-      label,
-      helperText,
-      name,
-      value,
-      onChange,
-      disabled,
-      required,
-      ...rest
-    } = props;
+    const { id = generatedId, inputType, label, helperText } = props;
 
-    const readOnly = 'readOnly' in props ? props.readOnly : undefined;
-    const placeholder = 'placeholder' in props ? props.placeholder : undefined;
-
-    const getInputProps = () =>
-      rest as React.InputHTMLAttributes<HTMLInputElement>;
-    const getSelectProps = () =>
-      rest as React.SelectHTMLAttributes<HTMLSelectElement>;
-    const getTextareaProps = () =>
-      rest as React.TextareaHTMLAttributes<HTMLTextAreaElement>;
-
-    const shouldRenderExternalLabel = type !== 'checkbox' && label;
+    const shouldRenderExternalLabel = inputType !== 'checkbox' && label;
     const helperTextId = helperText ? `${id}-helper` : undefined;
 
     return (
-      <div className="flex flex-col gap-1 mb-4">
+      <div className="flex flex-col gap-1">
         {shouldRenderExternalLabel && (
           <label htmlFor={id} className="text-label-m text-idle">
             {label}
           </label>
         )}
 
-        {type === 'base' && (
+        {inputType === 'base' && (
           <BaseInput
-            {...getInputProps()}
             id={id}
-            name={name}
-            value={typeof value === 'string' ? value : ''}
-            onChange={onChange}
-            disabled={disabled}
-            readOnly={readOnly}
-            required={required}
-            placeholder={placeholder ?? ''}
+            name={props.name}
+            value={typeof props.value === 'string' ? props.value : ''}
+            onChange={props.onChange}
+            disabled={props.disabled}
+            readOnly={props.readOnly}
+            required={props.required}
+            placeholder={props.placeholder ?? ''}
             aria-describedby={helperTextId}
+            type={props.type ?? 'text'}
           />
         )}
 
-        {type === 'selector' && (
+        {inputType === 'selector' && (
           <SelectorInput
-            {...getSelectProps()}
             id={id}
-            name={name}
-            value={typeof value === 'string' ? value : ''}
-            onChange={onChange}
-            disabled={disabled}
-            required={required}
+            name={props.name}
+            value={typeof props.value === 'string' ? props.value : ''}
+            onChange={props.onChange}
+            disabled={props.disabled}
+            required={props.required}
             aria-describedby={helperTextId}
+            options={props.options}
           />
         )}
 
-        {type === 'textarea' && (
+        {inputType === 'textarea' && (
           <TextArea
-            {...getTextareaProps()}
             id={id}
-            name={name}
-            value={typeof value === 'string' ? value : ''}
-            onChange={onChange}
-            disabled={disabled}
-            readOnly={readOnly}
-            required={required}
-            placeholder={placeholder ?? ''}
+            name={props.name}
+            value={typeof props.value === 'string' ? props.value : ''}
+            onChange={props.onChange}
+            disabled={props.disabled}
+            readOnly={props.readOnly}
+            required={props.required}
+            placeholder={props.placeholder ?? ''}
             aria-describedby={helperTextId}
           />
         )}
 
-        {type === 'checkbox' && (
+        {inputType === 'checkbox' && (
           <div className="flex items-center gap-2">
             <CheckboxInput
-              {...getInputProps()}
               id={id}
-              name={name}
-              checked={!!value}
-              onChange={onChange}
-              disabled={disabled}
-              readOnly={readOnly}
-              required={required}
+              name={props.name}
+              checked={!!props.value}
+              onChange={props.onChange}
+              disabled={props.disabled}
+              readOnly={props.readOnly}
+              required={props.required}
               aria-describedby={helperTextId}
             />
             {label && (

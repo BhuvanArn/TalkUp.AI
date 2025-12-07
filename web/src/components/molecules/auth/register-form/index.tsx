@@ -1,11 +1,12 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import { InputMolecule } from '@/components/molecules/input-molecule';
-import { usePostLogin } from '@/hooks/auth/useServices';
+import { usePostRegister } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
 import {
   emailSchema,
-  loginPasswordSchema,
+  passwordSchema,
+  usernameSchema,
   validateWithSchema,
 } from '@/utils/validators';
 import { useForm } from '@tanstack/react-form';
@@ -13,44 +14,49 @@ import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 
 /**
- * A component that renders a login form with username and password fields.
+ * A component that renders a registration form with username, email, and password fields.
  *
  * This form uses a custom form hook that handles validation and submission.
- * It performs both client-side validation (checking for empty fields) and
- * potentially asynchronous validation through the validateLogin function.
+ * It performs both client-side validation and potentially asynchronous validation.
  *
  * The form includes:
+ * - Username input field with validation
  * - Email input field with validation
  * - Password input field with validation
  * - Form-level error messages
  * - Loading indicators during validation
  * - Submit button
  *
- * Visual styling is done with Tailwind CSS, creating a clean, shadowed card
- * with consistent spacing and typography.
+ * Visual styling is done with Tailwind CSS, creating a clean interface
+ * with consistent spacing and typography matching the login form.
  *
- * @returns A login form component with validation and styling
+ * @returns A register form component with validation and styling
  */
-export const LoginForm = () => {
-  const postLogin = usePostLogin();
+export const RegisterForm = () => {
+  const postRegister = usePostRegister();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
+      username: '',
       email: '',
       password: '',
     },
     onSubmit: ({ value }) => {
       setServerError(null);
-      postLogin.mutate(
+      postRegister.mutate(
         {
+          username: value.username,
           email: value.email,
           password: value.password,
         },
         {
           onError: (error: unknown) => {
             setServerError(
-              extractErrorMessage(error, 'Login failed. Please try again.'),
+              extractErrorMessage(
+                error,
+                'Registration failed. Please try again.',
+              ),
             );
           },
           onSuccess: () => setServerError(null),
@@ -62,8 +68,8 @@ export const LoginForm = () => {
   return (
     <div className="flex flex-col w-full gap-3 max-w-96">
       <header className="flex items-center justify-start gap-4">
-        <h2 className="text-h3 text-idle">Login</h2>
-        <p className="text-body-l text-idle mt-1">Get back to your account</p>
+        <h2 className="text-h3 text-idle">Register</h2>
+        <p className="text-body-l text-idle mt-1">Create your account</p>
       </header>
       <form
         className="flex flex-col gap-3"
@@ -73,6 +79,31 @@ export const LoginForm = () => {
           form.handleSubmit();
         }}
       >
+        <form.Field
+          name="username"
+          validators={{
+            onChange: ({ value }) => validateWithSchema(value, usernameSchema),
+          }}
+        >
+          {(field) => (
+            <div className="flex flex-col gap-2">
+              <InputMolecule
+                id="username"
+                inputType="base"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                placeholder="Choose a username"
+              />
+              {field.state.meta.errors.length > 0 && (
+                <span className="text-label-m text-error font-medium ml-1">
+                  {field.state.meta.errors}
+                </span>
+              )}
+            </div>
+          )}
+        </form.Field>
         <form.Field
           name="email"
           validators={{
@@ -88,7 +119,7 @@ export const LoginForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="What email did you use?"
+                placeholder="Your email address"
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
@@ -101,8 +132,7 @@ export const LoginForm = () => {
         <form.Field
           name="password"
           validators={{
-            onChange: ({ value }) =>
-              validateWithSchema(value, loginPasswordSchema),
+            onChange: ({ value }) => validateWithSchema(value, passwordSchema),
           }}
         >
           {(field) => (
@@ -114,7 +144,7 @@ export const LoginForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Please type your password"
+                placeholder="Create a secure password"
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
@@ -138,23 +168,22 @@ export const LoginForm = () => {
           </div>
         )}
         <Link
-          to="/register"
+          to="/about"
           className="text-idle text-label-m underline hover:text-active cursor-pointer"
-          disabled
         >
-          Forgot your password?
+          Learn about our Terms of Service
         </Link>
         <Button color="accent" type="submit">
-          <Icon icon="login" color="white" />
-          Log In
+          <Icon icon="register" color="white" />
+          Register
         </Button>
         <p className="text-idle text-label-m">
-          You do not have an account?{' '}
+          Already have an account?{' '}
           <Link
-            to="/register"
+            to="/login"
             className="underline hover:text-active cursor-pointer"
           >
-            Create one
+            Let's get you back in!
           </Link>
         </p>
       </form>
@@ -162,4 +191,4 @@ export const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default RegisterForm;
