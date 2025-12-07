@@ -79,7 +79,7 @@ export const InputMolecule: React.FC<InputMoleculeProps> = React.memo(
     return (
       <div className="flex flex-col gap-1 mb-4">
         {shouldRenderExternalLabel && (
-          <label htmlFor={id} className="text-sm font-semibold text-text">
+          <label htmlFor={id} className="text-label-m text-idle">
             {label}
           </label>
         )}

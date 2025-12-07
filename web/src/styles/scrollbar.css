@@ -1,0 +1,10 @@
+/* Hide scrollbar for Firefox */
+.custom-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Hide scrollbar for WebKit browsers */
+.custom-scrollbar::-webkit-scrollbar {
+  display: none;
+}
