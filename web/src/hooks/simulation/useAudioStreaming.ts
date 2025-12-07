@@ -1,16 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export interface AudioPacket {
-  type: 'audio';
-  data: string;
-  timestamp: number;
-  mimeType: string;
-  sequenceNumber: number;
-}
+import type { WebSocketPacket } from './useSimulationWebSocket';
 
 export interface UseAudioStreamingProps {
   stream: MediaStream | null;
-  onAudioPacket: (packet: AudioPacket) => void;
+  interviewID?: string | null;
+  onAudioPacket: (packet: WebSocketPacket) => void;
   isActive: boolean;
   timeSlice?: number;
   mimeType?: string;
@@ -35,14 +30,15 @@ export interface UseAudioStreamingReturn {
  *
  * @param props.stream - The MediaStream to capture audio from. If null or if the stream has no audio tracks,
  *                       the hook will set an appropriate error and will not start recording.
- * @param props.onAudioPacket - Callback invoked for each recorded audio chunk. The callback receives an
- *                              AudioPacket with the following shape:
+ * @param props.onAudioPacket - Callback invoked for each recorded audio chunk. The callback receives a
+ *                              WebSocketPacket with the following shape:
  *                                {
- *                                  type: 'audio',
+ *                                  type: 'stream_chunk',
  *                                  data: string,          // base64-encoded chunk
  *                                  timestamp: number,     // Date.now() when the chunk was processed
- *                                  mimeType: string,      // MIME type used by MediaRecorder
- *                                  sequenceNumber: number // increasing sequence number
+ *                                  key: string,           // websocket key from env
+ *                                  stream_id: string,     // interview ID
+ *                                  format: 'audio'        // format type
  *                                }
  *                              The hook captures the latest callback via a ref, so updates to the callback
  *                              are safe without restarting the recorder.
@@ -82,6 +78,7 @@ export interface UseAudioStreamingReturn {
  */
 export function useAudioStreaming({
   stream,
+  interviewID,
   onAudioPacket,
   isActive,
   timeSlice = 100,
@@ -95,7 +92,6 @@ export function useAudioStreaming({
   const [error, setError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const sequenceNumberRef = useRef(0);
   const onAudioPacketRef = useRef(onAudioPacket);
 
   useEffect(() => {
@@ -154,7 +150,6 @@ export function useAudioStreaming({
     try {
       setSupportedMimeType(selectedMimeType);
       setError(null);
-      sequenceNumberRef.current = 0;
       setPacketsSent(0);
 
       const audioStream = new MediaStream(audioTracks);
@@ -168,12 +163,13 @@ export function useAudioStreaming({
             const arrayBuffer = await event.data.arrayBuffer();
             const base64Data = arrayBufferToBase64(arrayBuffer);
 
-            const packet: AudioPacket = {
-              type: 'audio',
+            const packet: WebSocketPacket = {
+              type: 'stream_chunk',
               data: base64Data,
+              stream_id: interviewID || 'unknown',
+              key: import.meta.env.VITE_WEBSOCKET_KEY,
               timestamp: Date.now(),
-              mimeType: selectedMimeType,
-              sequenceNumber: sequenceNumberRef.current++,
+              format: 'audio',
             };
 
             onAudioPacketRef.current(packet);
@@ -204,7 +200,13 @@ export function useAudioStreaming({
       setError(`Failed to start recording: ${err}`);
       setIsRecording(false);
     }
-  }, [stream, getSupportedMimeType, arrayBufferToBase64, timeSlice]);
+  }, [
+    stream,
+    getSupportedMimeType,
+    arrayBufferToBase64,
+    timeSlice,
+    interviewID,
+  ]);
 
   const stopStreaming = useCallback(() => {
     if (
