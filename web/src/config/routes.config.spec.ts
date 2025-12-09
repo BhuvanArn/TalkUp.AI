@@ -44,9 +44,9 @@ describe('routes.config', () => {
 
   describe('getRouteConfig', () => {
     it('returns correct config for existing route', () => {
-      const config = getRouteConfig('/dashboard');
+      const config = getRouteConfig('/diary');
       expect(config).toBeDefined();
-      expect(config?.path).toBe('/dashboard');
+      expect(config?.path).toBe('/diary');
       expect(config?.requiresAuth).toBe(true);
     });
 
@@ -62,17 +62,17 @@ describe('routes.config', () => {
       expect(config?.requiresAuth).toBe(false);
     });
 
-    it('returns correct config for signup route', () => {
-      const config = getRouteConfig('/signup');
+    it('returns correct config for register route', () => {
+      const config = getRouteConfig('/register');
       expect(config).toBeDefined();
-      expect(config?.path).toBe('/signup');
+      expect(config?.path).toBe('/register');
       expect(config?.requiresAuth).toBe(false);
     });
   });
 
   describe('isProtectedRoute', () => {
     it('returns true for protected routes', () => {
-      expect(isProtectedRoute('/dashboard')).toBe(true);
+      expect(isProtectedRoute('/diary')).toBe(true);
       expect(isProtectedRoute('/profile')).toBe(true);
       expect(isProtectedRoute('/progression')).toBe(true);
       expect(isProtectedRoute('/simulations')).toBe(true);
@@ -80,7 +80,7 @@ describe('routes.config', () => {
 
     it('returns false for public routes', () => {
       expect(isProtectedRoute('/login')).toBe(false);
-      expect(isProtectedRoute('/signup')).toBe(false);
+      expect(isProtectedRoute('/register')).toBe(false);
     });
 
     it('returns false for non-existing routes', () => {
@@ -91,11 +91,11 @@ describe('routes.config', () => {
   describe('isPublicRoute', () => {
     it('returns true for public routes', () => {
       expect(isPublicRoute('/login')).toBe(true);
-      expect(isPublicRoute('/signup')).toBe(true);
+      expect(isPublicRoute('/register')).toBe(true);
     });
 
     it('returns false for protected routes', () => {
-      expect(isPublicRoute('/dashboard')).toBe(false);
+      expect(isPublicRoute('/diary')).toBe(false);
       expect(isPublicRoute('/profile')).toBe(false);
       expect(isPublicRoute('/progression')).toBe(false);
       expect(isPublicRoute('/simulations')).toBe(false);

@@ -8,11 +8,24 @@
 
 #pragma once
 
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <sys/poll.h>
+#include <cerrno>
+#include <cstring>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
 #include <iostream>
 #include <fstream>
+#include <thread>
+#include <mutex>
+#include <memory>
+#include <crow.h>
+
+#include "ExceptionManager.hpp"
 
 namespace talkup_network {
     class MicroservicesManager {
@@ -30,15 +43,6 @@ namespace talkup_network {
             ~MicroservicesManager() = default;
 
             /**
-             * @brief Get the URL of a microservice by its name.
-             * It's will allow the server to communicate with other microservices.
-             *
-             * @param service_name
-             * @return std::string
-             */
-            static std::string get_microservice_url(const std::string &service_name);
-
-            /**
              * @brief Load the microservices information from a JSON file.
              *
              * @param file_path
@@ -54,9 +58,56 @@ namespace talkup_network {
             static const std::unordered_map<std::string,
                 std::unordered_map<std::string, std::string>>& get_services_list();
 
+            /**
+             * @brief Send data to the STT microservice.
+             * This function will send audio data to the STT microservice for processing.
+             * It will first check if the STT microservice is registered in the services list.
+             * If it is, it will send a ping request to ensure the microservice is reachable. If the ping is successful,
+             * it will then send the audio data to the microservice.
+             *
+             * @param data Json data containing the audio information to be sent to the STT microservice.
+             */
+            static void send_to_stt_microservice(const nlohmann::json &data);
+
+            /**
+             * @brief Initialize WebSocket connections to all registered microservices.
+             * It's establishes persistent WebSocket connections to each microservice
+             * defined in the services list. It handles connection setup, error reporting,
+             * and maintains the connection state for future communications.
+             */
+            static void initialize_ws_service_connections();
+
+            /**
+             * @brief Extract chunk values from the provided data JSON.
+             * This function processes the input JSON to retrieve audio chunk data,
+             * handling various possible structures of the input.
+             *
+             * @param data The input JSON containing audio data.
+             * @return nlohmann::json The extracted chunk values.
+             */
+            static nlohmann::json get_chunks_val_from_data(const nlohmann::json &data);
+
+            /**
+             * @brief Ping a specific microservice to check its availability.
+             *
+             * @param service_name The name of the microservice to ping.
+             * @return true if the service responds to the ping, false otherwise.
+             */
+            static bool ping_service(const std::string &service_name);
+
         protected:
         private:
+            struct WebSocketConnection {
+                std::shared_ptr<boost::asio::io_context> io_context;
+                std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
+                std::thread io_thread;
+                bool is_connected = false;
+            };
+
             static inline std::unordered_map<std::string,
                 std::unordered_map<std::string, std::string>> __services_list;
+
+            static inline std::unordered_map<std::string, WebSocketConnection> __ws_connections;
+            static inline std::mutex __ws_mutex;
     };
 }

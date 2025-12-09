@@ -36,8 +36,10 @@
   --color-disabled: #c7c7c7;
 
   --color-background: #fff;
-  --color-surface: #fff;
-  --color-surface-raised: #fbfbfc;
+  --color-surface: #F8F9FF;
+  --color-surface-hover: #F0F4FA;
+  --color-surface-raised: #ECEDF6;
+  --color-surface-raised-hover: #dcddee;
 
   --color-note-card: #ecedf6;
   --color-note-card-hover: #dfe0e9;
@@ -96,7 +98,7 @@
 
   --color-error-weak: #fbdedc;
   --color-error-weaker: #feebe8;
-  --color-error: #a32a15;
+  --color-error: #EF4444;
   --color-error-hover: #8b1f12;
   --color-error-active: #6e1610;
 
@@ -109,8 +111,12 @@
   /* Typography styles */
   --font-size-h1: 40px;
   --font-size-h2: 32px;
+  --font-size-h3: 28px;
   --font-size-h4: 24px;
   --font-size-h5: 20px;
+  --font-size-h6: 18px;
+  --font-size-body-xl: 18px;
+  --font-size-body-l: 16px;
   --font-size-body-m: 14px;
   --font-size-body-s: 12px;
 }
@@ -140,6 +146,7 @@
   --color-background: #121212;
   --color-surface: #1e1e1e;
   --color-surface-raised: #2a2a2a;
+  --color-surface-raised-hover: #3a3a3a;
 
   --color-note-card: #2a2a3a;
   --color-note-card-hover: #35354a;
@@ -219,6 +226,13 @@
     line-height: 1.2;
   }
 
+  .text-h3 {
+    font-family: var(--font-display);
+    font-size: var(--font-size-h3);
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
   .text-h4 {
     font-family: var(--font-display);
     font-size: var(--font-size-h4);
@@ -233,10 +247,45 @@
     line-height: 1.4;
   }
 
+  .text-h6 {
+    font-family: var(--font-display);
+    font-size: var(--font-size-h6);
+    font-weight: 400;
+    line-height: 1.4;
+  }
+
+  .text-body-xl-strong {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-xl);
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  .text-body-l {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-l);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .text-body-l-strong {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-l);
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
   .text-body-m {
     font-family: var(--font-body);
     font-size: var(--font-size-body-m);
     font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .text-body-s-strong {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body-s);
+    font-weight: 700;
     line-height: 1.5;
   }
 
@@ -264,7 +313,7 @@
   .text-button-m {
     font-family: var(--font-display);
     font-size: var(--font-size-body-m);
-    font-weight: 500;
+    font-weight: 400;
     line-height: 1.5;
   }
 

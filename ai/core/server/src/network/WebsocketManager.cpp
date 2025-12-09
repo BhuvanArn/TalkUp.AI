@@ -17,15 +17,16 @@ talkup_network::WsManager::WsManager()
     _type_handlers["ping"] = [this](const nlohmann::json& json,
         crow::websocket::connection& conn){ handle_ping(json,conn); };
     _type_handlers["stream_chunk"] = [this](const nlohmann::json& json,
-        crow::websocket::connection& conn){ handle_stream_chunk(json,conn); };
+        crow::websocket::connection& conn){ handle_stream_chunk(json,conn, nullptr); };
 }
 
-void talkup_network::WsManager::connection_type_manager(nlohmann::json &json, crow::websocket::connection &conn)
+void talkup_network::WsManager::connection_type_manager(nlohmann::json &json, crow::websocket::connection &conn,
+    std::shared_ptr<MicroservicesManager> microservices_manager)
 {
     try {
         std::string type = json["type"].get<std::string>();
-
         auto it = _type_handlers.find(type);
+
         if (it != _type_handlers.end()) {
             it->second(json, conn);
         } else {
@@ -58,7 +59,8 @@ void talkup_network::WsManager::handle_ping(const nlohmann::json& json, crow::we
     conn.send_text(pong.dump());
 }
 
-void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, crow::websocket::connection& conn)
+void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, crow::websocket::connection& conn,
+    std::shared_ptr<MicroservicesManager> microservices_manager)
 {
     if (json["format"] == "audio") {
         conn.send_text(set_respond_json_format({
@@ -69,8 +71,7 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
             .timestamp = json["timestamp"].get<int64_t>(),
             .data = "audio chunk received"
         }).dump());
-
-            //call async microservice network manager to handle audio stream chunk
+        microservices_manager->send_to_stt_microservice(json);
     }
 }
 
