@@ -1,9 +1,6 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 import {
-  Length,
   IsEmail,
-  IsStrongPassword,
-  IsOptional,
   IsString,
 } from "class-validator";
 

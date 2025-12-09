@@ -7,7 +7,6 @@ import {
 } from "typeorm";
 import { uuidv7 } from "uuidv7";
 import { user } from "./user.entity";
-import { AuthProvider } from "@common/enums/AuthProvider";
 
 @Entity()
 export class Organization {

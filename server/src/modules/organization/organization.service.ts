@@ -40,9 +40,7 @@ export class OrganizationService {
    * @returns An object containing the admin user credentials.
    * @throws {ConflictException} If an account with the provided email already exists.
    */
-  async register(
-    CreateOrganizationDto: CreateOrganizationDto,
-  ): Promise<{
+  async register(CreateOrganizationDto: CreateOrganizationDto): Promise<{
     message: string;
     adminUser: { username: string; email: string; password: string };
   }> {

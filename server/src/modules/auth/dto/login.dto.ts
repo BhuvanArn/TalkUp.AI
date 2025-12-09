@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
-import { Length, IsEmail, IsStrongPassword } from "class-validator";
+import { IsEmail } from "class-validator";
 
 @ApiSchema({
   name: "User login",
