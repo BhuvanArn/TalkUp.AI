@@ -22,6 +22,8 @@
 #include <fstream>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
+#include <queue>
 #include <memory>
 #include <crow.h>
 
@@ -95,6 +97,11 @@ namespace talkup_network {
              */
             static bool ping_service(const std::string &service_name);
 
+            /**
+             * @brief Gracefully stop workers and close all WS connections.
+             */
+            static void shutdown();
+
         protected:
         private:
             struct WebSocketConnection {
@@ -102,6 +109,12 @@ namespace talkup_network {
                 std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
                 std::thread io_thread;
                 bool is_connected = false;
+                std::mutex io_mutex;
+                std::queue<nlohmann::json> job_queue;
+                std::thread worker_thread;
+                std::mutex queue_mutex;
+                std::condition_variable queue_cv;
+                bool worker_running = false;
             };
 
             static inline std::unordered_map<std::string,
@@ -109,5 +122,40 @@ namespace talkup_network {
 
             static inline std::unordered_map<std::string, WebSocketConnection> __ws_connections;
             static inline std::mutex __ws_mutex;
+
+            /**
+             * @brief Connect to a single microservice via WebSocket.
+             *
+             * @param service_name The name of the service to connect to.
+             * @param service_info The connection information (IP, Port, RouteWs).
+             * @return true if connection was successful, false otherwise.
+             */
+            static bool connect_to_service(
+                const std::string &service_name,
+                const std::unordered_map<std::string, std::string> &service_info);
+
+            /**
+             * @brief Create and start a worker thread for processing service jobs.
+             *
+             * @param service_name The name of the service.
+             */
+            static void create_service_worker(const std::string &service_name);
+
+            /**
+             * @brief Start a worker thread for a specific microservice.
+             */
+            static void start_service_worker(const std::string &service_name);
+
+            /**
+             * @brief Stop the worker thread for a specific microservice.
+             */
+            static void stop_service_worker(const std::string &service_name);
+
+            /**
+             * @brief Process a job for the STT microservice.
+             *
+             * @param data The JSON data containing the job information.
+             */
+            static void process_stt_job(const nlohmann::json &data);
     };
 }
