@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useSimulationWebSocket } from './useSimulationWebSocket';
 
+// Mock environment variables
+vi.stubEnv('VITE_WEBSOCKET_KEY', 'test-websocket-key');
+
 // Mock the useWebSocket hook
 const mockSendMessage = vi.fn();
 const mockSendJsonMessage = vi.fn();
