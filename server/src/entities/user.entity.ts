@@ -62,7 +62,7 @@ export class user {
     default: "user",
     comment: "the role of the user in the organization",
   })
-  userRole: string;
+  user_role: string;
 
   // ------ UUID manual generation to ensure V7 format ------ //
 

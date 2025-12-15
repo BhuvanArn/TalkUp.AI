@@ -1,6 +1,10 @@
 import { Repository } from "typeorm";
 
-import { ConflictException, Injectable } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { JwtService } from "@nestjs/jwt";
 
@@ -26,26 +30,27 @@ export class OrganizationService {
   ) {}
 
   /**
-   * Registers a new user with the provided credentials.
+   * Registers a new organization with the provided credentials.
    *
    * This method performs the following steps:
    * 1. Checks if the email already exists in the system.
    * 2. Throws a `ConflictException` if the email is already registered.
-   * 3. Creates a new user with the given username.
-   * 4. Hashes and stores the user's password.
-   * 5. Stores the user's email.
-   * 6. Generates and returns a JWT access token for the newly registered user.
+   * 3. Creates a new organization with the given information.
+   * 4. Save the new organization.
+   * 5. Register a new user as the admin of the organization.
    *
-   * @param createUserDto - Data transfer object containing the user's registration details (username, password, email).
+   * @param CreateOrganizationDto
    * @returns An object containing the admin user credentials.
-   * @throws {ConflictException} If an account with the provided email already exists.
+   * @throws {ConflictException} If an organization with the provided email already exists.
    */
-  async register(CreateOrganizationDto: CreateOrganizationDto): Promise<{
+  async registerOrganization(
+    CreateOrganizationDto: CreateOrganizationDto,
+  ): Promise<{
     message: string;
     adminUser: { username: string; email: string; password: string };
   }> {
     const nameExists = await this.organizationRepository.findOne({
-      where: { Organization_name: CreateOrganizationDto.OrganizationName },
+      where: { organization_name: CreateOrganizationDto.OrganizationName },
     });
 
     if (nameExists) {
@@ -55,17 +60,17 @@ export class OrganizationService {
     }
 
     const newOrganization = this.organizationRepository.create({
-      Organization_name: CreateOrganizationDto.OrganizationName,
+      organization_name: CreateOrganizationDto.OrganizationName,
     });
 
     const savedOrganization =
       await this.organizationRepository.save(newOrganization);
 
     const createUserDto: CreateUserDto = {
-      username: `${savedOrganization.Organization_name}_admin`,
+      username: `${savedOrganization.organization_name}_admin`,
       email: `${CreateOrganizationDto.OrganizationEmail}`,
       password: "helloworld",
-      userRole: "organizationAdmin",
+      user_role: "organizationAdmin",
     };
 
     await this.authService.register(createUserDto);
@@ -80,25 +85,50 @@ export class OrganizationService {
     };
   }
 
-  async delete(organizationName: string): Promise<void> {
+  /**
+   * Delete an organization with the provided name.
+   *
+   * This method performs the following steps:
+   * 1. Checks if the organization exists in the system.
+   * 2. Throws a `ConflictException` if the organization doesn't exist.
+   * 3. Deletes the organization.
+   *
+   * @param organizationName
+   * @returns
+   * @throws {ConflictException} If an account with the provided name doesn't exists.
+   */
+  async deleteOrganization(organizationName: string): Promise<void> {
     const nameExists = await this.organizationRepository.findOne({
-      where: { Organization_name: organizationName },
+      where: { organization_name: organizationName },
     });
 
     if (!nameExists) {
-      throw new ConflictException(
-        "An organization with this name doesn't exists",
+      throw new NotFoundException(
+        "An organization with this name doesn't exist",
       );
     }
     await this.organizationRepository.remove(nameExists);
   }
 
+  /**
+   * Update an organization informations with the provided credentials.
+   *
+   * This method performs the following steps:
+   * 1. Checks if the organization exist in the system.
+   * 2. Throws a `ConflictException` if the organization doesn't exist.
+   * 3. Updates the organization with the given information.
+   *
+   * @param currentName
+   * @param updateData
+   * @returns An object containing the admin user credentials.
+   * @throws {ConflictException} If an account with the provided name doesn't exists.
+   */
   async updateOrganization(
     currentName: string,
     updateData: { newName?: string; newProfilePicture?: string },
   ): Promise<void> {
     const organization = await this.organizationRepository.findOne({
-      where: { Organization_name: currentName },
+      where: { organization_name: currentName },
     });
 
     if (!organization) {
@@ -108,7 +138,7 @@ export class OrganizationService {
     }
 
     if (updateData.newName) {
-      organization.Organization_name = updateData.newName;
+      organization.organization_name = updateData.newName;
     }
     if (updateData.newProfilePicture) {
       organization.profile_picture = updateData.newProfilePicture;

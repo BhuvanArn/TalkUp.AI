@@ -51,9 +51,9 @@ export class CreateUserDto {
     description:
       "The id of the organization the user belongs to. This will be a UUID",
     minLength: 1,
-    example: "AGBDUIJ178276889",
+    example: "019b1c4a-467c-78a6-bf0f-9fd6f7aa50db",
   })
-  OrganizationId?: string;
+  organization_id?: string;
 
   @IsOptional()
   @IsString()
@@ -63,5 +63,5 @@ export class CreateUserDto {
     example: "user",
     default: "user",
   })
-  userRole: string = "user";
+  user_role: string = "user";
 }

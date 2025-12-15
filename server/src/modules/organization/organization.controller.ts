@@ -43,7 +43,9 @@ export class OrganizationController {
   @UsePipes(new PostValidationPipe())
   @Post("register")
   async register(@Body() CreateOrganizationDto: CreateOrganizationDto) {
-    return await this.OrganizationService.register(CreateOrganizationDto);
+    return await this.OrganizationService.registerOrganization(
+      CreateOrganizationDto,
+    );
   }
 
   @Delete("deleteOrganization")
@@ -51,7 +53,7 @@ export class OrganizationController {
     if (!OrganizationName) {
       throw new BadRequestException("Organization name is required");
     }
-    return await this.OrganizationService.delete(OrganizationName);
+    return await this.OrganizationService.deleteOrganization(OrganizationName);
   }
 
   @Patch("updateOrganization")

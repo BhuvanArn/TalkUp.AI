@@ -14,7 +14,7 @@ export class Organization {
   organization_id: string;
 
   @Column({ nullable: false })
-  Organization_name: string;
+  organization_name: string;
 
   @Column({
     nullable: true,

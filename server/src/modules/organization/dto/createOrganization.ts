@@ -12,7 +12,7 @@ export class CreateOrganizationDto {
     minLength: 1,
     example: "AGBDUIJ178276889",
   })
-  OrganizationId?: string;
+  organization_id?: string;
 
   @IsString()
   @ApiProperty({
