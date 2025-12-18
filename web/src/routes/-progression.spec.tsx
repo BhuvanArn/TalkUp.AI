@@ -48,7 +48,6 @@ const renderWithProviders = (component: React.ReactElement) => {
 
 /**
  * Test suite for the Progression component.
- * Verifies that the component renders its content correctly within a TanStack Router context.
  */
 describe('Progression', () => {
   beforeEach(async () => {
@@ -68,24 +67,23 @@ describe('Progression', () => {
 
   it('renders the descriptive paragraph correctly', async () => {
     renderWithProviders(<RouterProvider router={router} />);
-    const progressionParagraph = (
-      await screen.findAllByText(/Progression/i)
-    ).find((el) => el.tagName === 'P');
+    
+    const progressionParagraph = await screen.findByText(/Visualize your evolution/i);
+    
     expect(progressionParagraph).toBeInTheDocument();
+    expect(progressionParagraph.tagName).toBe('P');
   });
 
   it('renders both heading and paragraph in the document', async () => {
-    const { container } = renderWithProviders(
-      <RouterProvider router={router} />,
-    );
+    renderWithProviders(<RouterProvider router={router} />);
 
-    const progressionTexts = await screen.findAllByText(/Progression/i);
+    const heading = await screen.findByRole('heading', { name: /Progression/i });
+    expect(heading.tagName).toBe('H1');
 
-    expect(progressionTexts).toHaveLength(2);
+    const paragraph = screen.getByText(/Visualize your evolution/i);
+    expect(paragraph.tagName).toBe('P');
 
-    expect(progressionTexts[0].tagName).toBe('H1');
-    expect(progressionTexts[1].tagName).toBe('P');
-
-    expect(container.firstChild).toHaveClass('p-2');
+    const mainContainer = heading.closest('div')?.parentElement;
+    expect(mainContainer).toHaveClass('grid');
   });
 });
