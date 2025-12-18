@@ -3,7 +3,6 @@ import { Icon } from '@/components/atoms/icon';
 import GoalProgressCard from '@/components/molecules/goal-progress-card';
 import StatsCard from '@/components/molecules/stats-card';
 import SimulationHistoryTable from '@/components/organisms/simulation-history-table';
-import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
