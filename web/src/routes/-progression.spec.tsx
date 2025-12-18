@@ -72,7 +72,9 @@ describe('Progression', () => {
   it('renders both heading and paragraph in the document', async () => {
     renderWithProviders(<RouterProvider router={router} />);
 
-    const heading = await screen.findByRole('heading', { name: /Progression/i });
+    const heading = await screen.findByRole('heading', {
+      name: /Progression/i,
+    });
     expect(heading.tagName).toBe('H1');
 
     const paragraph = screen.getByText(/Visualize your evolution/i);
