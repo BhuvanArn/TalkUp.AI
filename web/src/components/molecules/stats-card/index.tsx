@@ -61,7 +61,6 @@ const StatsCard: React.FC<StatsCardProps> = ({
         
       `}
       style={{
-        // Le dégradé de fond est conservé pour la profondeur par couleur
         backgroundColor: '#f9fbfd',
         backgroundImage: 'linear-gradient(180deg, #ffffff 0%, #f4f7fa 100%)',
         borderColor: 'var(--color-border)',
