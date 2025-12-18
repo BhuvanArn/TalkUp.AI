@@ -83,7 +83,7 @@ describe('Progression', () => {
 
     expect(progressionTexts).toHaveLength(2);
 
-    expect(progressionTexts[0].tagName).toBe('H3');
+    expect(progressionTexts[0].tagName).toBe('H1');
     expect(progressionTexts[1].tagName).toBe('P');
 
     expect(container.firstChild).toHaveClass('p-2');
