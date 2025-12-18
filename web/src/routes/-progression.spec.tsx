@@ -46,9 +46,6 @@ const renderWithProviders = (component: React.ReactElement) => {
   );
 };
 
-/**
- * Test suite for the Progression component.
- */
 describe('Progression', () => {
   beforeEach(async () => {
     router.history.push('/progression');
@@ -67,11 +64,9 @@ describe('Progression', () => {
 
   it('renders the descriptive paragraph correctly', async () => {
     renderWithProviders(<RouterProvider router={router} />);
-    
-    const progressionParagraph = await screen.findByText(/Visualize your evolution/i);
-    
-    expect(progressionParagraph).toBeInTheDocument();
-    expect(progressionParagraph.tagName).toBe('P');
+    const paragraph = await screen.findByText(/Visualize your evolution/i);
+    expect(paragraph).toBeInTheDocument();
+    expect(paragraph.tagName).toBe('P');
   });
 
   it('renders both heading and paragraph in the document', async () => {
@@ -83,7 +78,8 @@ describe('Progression', () => {
     const paragraph = screen.getByText(/Visualize your evolution/i);
     expect(paragraph.tagName).toBe('P');
 
-    const mainContainer = heading.closest('div')?.parentElement;
+    const mainContainer = heading.closest('.grid');
+    expect(mainContainer).toBeInTheDocument();
     expect(mainContainer).toHaveClass('grid');
   });
 });
