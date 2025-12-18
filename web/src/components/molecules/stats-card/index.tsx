@@ -59,7 +59,6 @@ const StatsCard: React.FC<StatsCardProps> = ({
         // La bordure supérieure colorée est conservée
         border-t-4 ${classes.topBorder}
         
-        // Suppression de transition-all, shadow-sm, hover:shadow-xl, hover:scale-[1.01], hover:bg-accent-weaker et cursor-pointer
       `}
       style={{
         // Le dégradé de fond est conservé pour la profondeur par couleur
