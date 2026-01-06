@@ -9,10 +9,14 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/agenda')({
-  beforeLoad: createAuthGuard('/agenda'),
+  // beforeLoad: createAuthGuard('/agenda'),
   component: Agenda,
 });
 
+/**
+ * Component to handle OAuth connections for external agendas.
+ * UI states are ready for backend integration.
+ */
 interface ExternalAppConnectorProps {
   isGoogleConnected: boolean;
   onConnectGoogle: () => void;
@@ -31,30 +35,34 @@ const ExternalAppConnector = ({
       Connections
     </h3>
     <div className="space-y-2">
-      {/* Google Button */}
+      {/* Google Connector */}
       <Button
         variant={isGoogleConnected ? 'text' : 'outlined'}
-        className={`w-full flex justify-start items-center transition-all ${isGoogleConnected ? 'bg-green-50 border-green-200' : 'border-gray-200'}`}
+        className={`w-full flex justify-start items-center transition-all ${
+          isGoogleConnected ? 'bg-green-50 border-green-200' : 'border-gray-200'
+        }`}
         onClick={onConnectGoogle}
       >
         <Icon icon="google" className="mr-3" />
         <span className="text-button-s text-idle">
-          {isGoogleConnected ? 'Google Connected' : 'Google Calendar'}
+          {isGoogleConnected ? 'Google Connected' : 'Connect Google'}
         </span>
         {isGoogleConnected && (
           <Icon icon="check" className="ml-auto text-green-600 w-4 h-4" />
         )}
       </Button>
 
-      {/* iOS Button */}
+      {/* Apple Connector */}
       <Button
         variant={isAppleConnected ? 'text' : 'outlined'}
-        className={`w-full flex justify-start items-center transition-all ${isAppleConnected ? 'bg-blue-50 border-blue-200' : 'border-gray-200'}`}
+        className={`w-full flex justify-start items-center transition-all ${
+          isAppleConnected ? 'bg-blue-50 border-blue-200' : 'border-gray-200'
+        }`}
         onClick={onConnectApple}
       >
         <Icon icon="apple" className="mr-3" />
         <span className="text-button-s text-idle">
-          {isAppleConnected ? 'iOS Connected' : 'iOS Calendar'}
+          {isAppleConnected ? 'iOS Connected' : 'Connect Apple'}
         </span>
         {isAppleConnected && (
           <Icon icon="check" className="ml-auto text-blue-600 w-4 h-4" />
@@ -68,26 +76,31 @@ function Agenda() {
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isAppleConnected, setIsAppleConnected] = useState(false);
 
-  // Google
+  /**
+   * TODO: Replace with real backend OAuth flow
+   * Currently simulates the toggle for UI/UX validation
+   */
   const handleConnectGoogle = () => {
     if (isGoogleConnected) {
       setIsGoogleConnected(false);
     } else {
-      setTimeout(() => setIsGoogleConnected(true), 600);
+      // Simulate API call delay
+      setTimeout(() => setIsGoogleConnected(true), 500);
     }
   };
 
-  // iOS
   const handleConnectApple = () => {
     if (isAppleConnected) {
       setIsAppleConnected(false);
     } else {
-      setTimeout(() => setIsAppleConnected(true), 600);
+      // Simulate API call delay
+      setTimeout(() => setIsAppleConnected(true), 500);
     }
   };
 
   return (
     <div className="grid grid-rows-[96px_minmax(0,1fr)] px-4 sm:px-8 md:px-16 pt-11 pb-12 gap-11 h-screen w-full min-w-0">
+      {/* Header Section */}
       <div className="w-full min-w-0 flex flex-col justify-center">
         <div className="flex justify-between items-center w-full min-w-0 flex-wrap gap-4">
           <div className="flex items-center gap-4">
@@ -105,16 +118,19 @@ function Agenda() {
         <p className="text-idle mt-2 text-h6">Plan and Organize your journey</p>
       </div>
 
+      {/* Main Content Grid */}
       <div className="bg-surface-raised p-8 rounded-[20px] grid grid-cols-[1fr_300px] gap-6 h-full">
+        {/* Calendar Column */}
         <div className="bg-white rounded-[10px] px-6 py-3 h-full flex flex-col gap-3 overflow-hidden">
           <CalendarControlBar />
-
           <div className="flex-1 min-h-0">
+            {/* CalendarContainer will eventually receive isGoogleConnected to fetch external events */}
             <CalendarContainer />
           </div>
         </div>
 
-        <div className="flex flex-col space-y-6">
+        {/* Sidebar Column */}
+        <div className="flex flex-col space-y-6 overflow-y-auto pr-1">
           <MiniCalendar />
 
           <ExternalAppConnector
@@ -130,4 +146,5 @@ function Agenda() {
     </div>
   );
 }
+
 export default Agenda;
