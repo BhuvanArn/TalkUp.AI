@@ -96,6 +96,7 @@ import {
   PiWallet,
   PiWarning,
   PiX,
+  PiAppleLogoFill,
 } from 'react-icons/pi';
 
 export const iconMap = {
@@ -212,6 +213,7 @@ export const iconMap = {
   // Miscellaneous icons
   google: FcGoogle,
   linkedin: FaLinkedin,
+  apple: PiAppleLogoFill,
 } as const;
 
 export type IconName = keyof typeof iconMap;

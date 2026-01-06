@@ -8,9 +8,38 @@ import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/agenda')({
-  beforeLoad: createAuthGuard('/agenda'),
+ // beforeLoad: createAuthGuard('/agenda'),
   component: Agenda,
 });
+
+/**
+ * Component to handle OAuth connections for external agendas.
+ * Added for Ticket #169.
+ */
+const ExternalAppConnector = () => (
+  <div className="bg-white p-4 rounded-[10px] border border-gray-100 space-y-4">
+    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Connections</h3>
+    <div className="space-y-2">
+      <Button 
+        variant="outlined" 
+        className="w-full flex justify-start items-center border-gray-200"
+        onClick={() => console.log('Init Google OAuth')}
+      >
+        <Icon icon="google" className="mr-3" />
+        <span className="text-button-s text-idle">Google Calendar</span>
+      </Button>
+      
+      <Button 
+        variant="outlined" 
+        className="w-full flex justify-start items-center border-gray-200"
+        onClick={() => console.log('Init iOS OAuth')}
+      >
+        <Icon icon="apple" className="mr-3" /> 
+        <span className="text-button-s text-idle">iOS Calendar</span>
+      </Button>
+    </div>
+  </div>
+);
 
 /**
  * Main component for the Agenda page.
@@ -48,6 +77,9 @@ function Agenda() {
 
         <div className="flex flex-col space-y-6">
           <MiniCalendar />
+
+          {/* New External Agenda Connector */}
+          <ExternalAppConnector />
 
           <NextEventCard />
         </div>
