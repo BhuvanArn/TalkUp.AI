@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import CalendarControlBar from '@/components/molecules/calendar-control-bar';
@@ -7,12 +6,12 @@ import NextEventCard from '@/components/molecules/next-event-card';
 import CalendarContainer from '@/components/organisms/calendar-container';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 
 export const Route = createFileRoute('/agenda')({
- // beforeLoad: createAuthGuard('/agenda'),
+  beforeLoad: createAuthGuard('/agenda'),
   component: Agenda,
 });
-
 
 interface ExternalAppConnectorProps {
   isGoogleConnected: boolean;
@@ -21,18 +20,20 @@ interface ExternalAppConnectorProps {
   onConnectApple: () => void;
 }
 
-const ExternalAppConnector = ({ 
-  isGoogleConnected, 
-  onConnectGoogle, 
-  isAppleConnected, 
-  onConnectApple 
+const ExternalAppConnector = ({
+  isGoogleConnected,
+  onConnectGoogle,
+  isAppleConnected,
+  onConnectApple,
 }: ExternalAppConnectorProps) => (
   <div className="bg-white p-4 rounded-[10px] border border-gray-100 space-y-4 shadow-sm">
-    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Connections</h3>
+    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+      Connections
+    </h3>
     <div className="space-y-2">
       {/* Google Button */}
-      <Button 
-        variant={isGoogleConnected ? "text" : "outlined"} 
+      <Button
+        variant={isGoogleConnected ? 'text' : 'outlined'}
         className={`w-full flex justify-start items-center transition-all ${isGoogleConnected ? 'bg-green-50 border-green-200' : 'border-gray-200'}`}
         onClick={onConnectGoogle}
       >
@@ -40,20 +41,24 @@ const ExternalAppConnector = ({
         <span className="text-button-s text-idle">
           {isGoogleConnected ? 'Google Connected' : 'Google Calendar'}
         </span>
-        {isGoogleConnected && <Icon icon="check" className="ml-auto text-green-600 w-4 h-4" />}
+        {isGoogleConnected && (
+          <Icon icon="check" className="ml-auto text-green-600 w-4 h-4" />
+        )}
       </Button>
-      
+
       {/* iOS Button */}
-      <Button 
-        variant={isAppleConnected ? "text" : "outlined"} 
+      <Button
+        variant={isAppleConnected ? 'text' : 'outlined'}
         className={`w-full flex justify-start items-center transition-all ${isAppleConnected ? 'bg-blue-50 border-blue-200' : 'border-gray-200'}`}
         onClick={onConnectApple}
       >
-        <Icon icon="apple" className="mr-3" /> 
+        <Icon icon="apple" className="mr-3" />
         <span className="text-button-s text-idle">
           {isAppleConnected ? 'iOS Connected' : 'iOS Calendar'}
         </span>
-        {isAppleConnected && <Icon icon="check" className="ml-auto text-blue-600 w-4 h-4" />}
+        {isAppleConnected && (
+          <Icon icon="check" className="ml-auto text-blue-600 w-4 h-4" />
+        )}
       </Button>
     </div>
   </div>
@@ -112,7 +117,7 @@ function Agenda() {
         <div className="flex flex-col space-y-6">
           <MiniCalendar />
 
-          <ExternalAppConnector 
+          <ExternalAppConnector
             isGoogleConnected={isGoogleConnected}
             onConnectGoogle={handleConnectGoogle}
             isAppleConnected={isAppleConnected}

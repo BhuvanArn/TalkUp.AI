@@ -23,6 +23,7 @@ import {
 import { FcGoogle } from 'react-icons/fc';
 import { HiOutlineSquaresPlus } from 'react-icons/hi2';
 import {
+  PiAppleLogoFill,
   PiArrowClockwise,
   PiArrowCounterClockwise,
   PiArrowDown,
@@ -96,7 +97,6 @@ import {
   PiWallet,
   PiWarning,
   PiX,
-  PiAppleLogoFill,
 } from 'react-icons/pi';
 
 export const iconMap = {
