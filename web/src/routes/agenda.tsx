@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import CalendarControlBar from '@/components/molecules/calendar-control-bar';
@@ -12,41 +13,74 @@ export const Route = createFileRoute('/agenda')({
   component: Agenda,
 });
 
-/**
- * Component to handle OAuth connections for external agendas.
- * Added for Ticket #169.
- */
-const ExternalAppConnector = () => (
-  <div className="bg-white p-4 rounded-[10px] border border-gray-100 space-y-4">
+
+interface ExternalAppConnectorProps {
+  isGoogleConnected: boolean;
+  onConnectGoogle: () => void;
+  isAppleConnected: boolean;
+  onConnectApple: () => void;
+}
+
+const ExternalAppConnector = ({ 
+  isGoogleConnected, 
+  onConnectGoogle, 
+  isAppleConnected, 
+  onConnectApple 
+}: ExternalAppConnectorProps) => (
+  <div className="bg-white p-4 rounded-[10px] border border-gray-100 space-y-4 shadow-sm">
     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Connections</h3>
     <div className="space-y-2">
+      {/* Google Button */}
       <Button 
-        variant="outlined" 
-        className="w-full flex justify-start items-center border-gray-200"
-        onClick={() => console.log('Init Google OAuth')}
+        variant={isGoogleConnected ? "text" : "outlined"} 
+        className={`w-full flex justify-start items-center transition-all ${isGoogleConnected ? 'bg-green-50 border-green-200' : 'border-gray-200'}`}
+        onClick={onConnectGoogle}
       >
         <Icon icon="google" className="mr-3" />
-        <span className="text-button-s text-idle">Google Calendar</span>
+        <span className="text-button-s text-idle">
+          {isGoogleConnected ? 'Google Connected' : 'Google Calendar'}
+        </span>
+        {isGoogleConnected && <Icon icon="check" className="ml-auto text-green-600 w-4 h-4" />}
       </Button>
       
+      {/* iOS Button */}
       <Button 
-        variant="outlined" 
-        className="w-full flex justify-start items-center border-gray-200"
-        onClick={() => console.log('Init iOS OAuth')}
+        variant={isAppleConnected ? "text" : "outlined"} 
+        className={`w-full flex justify-start items-center transition-all ${isAppleConnected ? 'bg-blue-50 border-blue-200' : 'border-gray-200'}`}
+        onClick={onConnectApple}
       >
         <Icon icon="apple" className="mr-3" /> 
-        <span className="text-button-s text-idle">iOS Calendar</span>
+        <span className="text-button-s text-idle">
+          {isAppleConnected ? 'iOS Connected' : 'iOS Calendar'}
+        </span>
+        {isAppleConnected && <Icon icon="check" className="ml-auto text-blue-600 w-4 h-4" />}
       </Button>
     </div>
   </div>
 );
 
-/**
- * Main component for the Agenda page.
- * Displays the main calendar view, a mini-calendar, and the next upcoming event.
- * @returns {JSX.Element} The Agenda page component.
- */
 function Agenda() {
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isAppleConnected, setIsAppleConnected] = useState(false);
+
+  // Google
+  const handleConnectGoogle = () => {
+    if (isGoogleConnected) {
+      setIsGoogleConnected(false);
+    } else {
+      setTimeout(() => setIsGoogleConnected(true), 600);
+    }
+  };
+
+  // iOS
+  const handleConnectApple = () => {
+    if (isAppleConnected) {
+      setIsAppleConnected(false);
+    } else {
+      setTimeout(() => setIsAppleConnected(true), 600);
+    }
+  };
+
   return (
     <div className="grid grid-rows-[96px_minmax(0,1fr)] px-4 sm:px-8 md:px-16 pt-11 pb-12 gap-11 h-screen w-full min-w-0">
       <div className="w-full min-w-0 flex flex-col justify-center">
@@ -78,8 +112,12 @@ function Agenda() {
         <div className="flex flex-col space-y-6">
           <MiniCalendar />
 
-          {/* New External Agenda Connector */}
-          <ExternalAppConnector />
+          <ExternalAppConnector 
+            isGoogleConnected={isGoogleConnected}
+            onConnectGoogle={handleConnectGoogle}
+            isAppleConnected={isAppleConnected}
+            onConnectApple={handleConnectApple}
+          />
 
           <NextEventCard />
         </div>
@@ -87,3 +125,4 @@ function Agenda() {
     </div>
   );
 }
+export default Agenda;
