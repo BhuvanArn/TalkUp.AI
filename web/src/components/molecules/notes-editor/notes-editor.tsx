@@ -46,7 +46,7 @@ const NotesEditor = () => {
                 </div>
                 <Button
                   variant="text"
-                  size="s"
+                  size="sm"
                   onClick={() => setIsOpen(false)}
                 >
                   <Icon icon="times" />
@@ -67,13 +67,13 @@ const NotesEditor = () => {
                 <Button
                   variant="text"
                   color="error"
-                  size="s"
+                  size="sm"
                   onClick={handleClearNotes}
                 >
                   <Icon icon="delete" />
                 </Button>
 
-                <Button variant="outlined" size="s" onClick={handleSaveNotes}>
+                <Button variant="outlined" size="sm" onClick={handleSaveNotes}>
                   <Icon icon="check" className="mr-2" />
                   Save
                 </Button>
