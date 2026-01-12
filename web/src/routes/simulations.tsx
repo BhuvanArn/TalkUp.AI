@@ -16,7 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReadyState } from 'react-use-websocket';
 
 export const Route = createFileRoute('/simulations')({
-  //beforeLoad: createAuthGuard('/simulations'),
+  beforeLoad: createAuthGuard('/simulations'),
   component: Simulations,
 });
 
