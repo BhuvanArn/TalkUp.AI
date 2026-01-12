@@ -6,7 +6,6 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { JwtService } from "@nestjs/jwt";
 
 import { Logger } from "@nestjs/common";
 
@@ -24,8 +23,6 @@ export class OrganizationService {
     @InjectRepository(Organization)
     private organizationRepository: Repository<Organization>,
 
-    private jwtService: JwtService,
-
     private readonly authService: AuthService,
   ) {}
 
@@ -41,7 +38,7 @@ export class OrganizationService {
    *
    * @param CreateOrganizationDto
    * @returns An object containing the admin user credentials.
-   * @throws {ConflictException} If an organization with the provided email already exists.
+   * @throws {NotFoundException} If an organization with the provided email already exists.
    */
   async registerOrganization(
     CreateOrganizationDto: CreateOrganizationDto,
@@ -54,7 +51,7 @@ export class OrganizationService {
     });
 
     if (nameExists) {
-      throw new ConflictException(
+      throw new NotFoundException(
         "An organization with this name already exists",
       );
     }
@@ -95,7 +92,7 @@ export class OrganizationService {
    *
    * @param organizationName
    * @returns
-   * @throws {ConflictException} If an account with the provided name doesn't exists.
+   * @throws {NotFoundException} If an account with the provided name doesn't exists.
    */
   async deleteOrganization(organizationName: string): Promise<void> {
     const nameExists = await this.organizationRepository.findOne({
@@ -121,7 +118,7 @@ export class OrganizationService {
    * @param currentName
    * @param updateData
    * @returns An object containing the admin user credentials.
-   * @throws {ConflictException} If an account with the provided name doesn't exists.
+   * @throws {NotFoundException} If an account with the provided name doesn't exists.
    */
   async updateOrganization(
     currentName: string,
@@ -132,7 +129,7 @@ export class OrganizationService {
     });
 
     if (!organization) {
-      throw new ConflictException(
+      throw new NotFoundException(
         "An organization with this name doesn't exist",
       );
     }
