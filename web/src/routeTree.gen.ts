@@ -14,6 +14,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ProgressionRouteImport } from './routes/progression'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DiaryRouteImport } from './routes/diary'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CvAnalysisRouteImport } from './routes/cv-analysis'
@@ -57,6 +58,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiaryRoute = DiaryRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/cv-analysis': typeof CvAnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/diary': typeof DiaryRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/cv-analysis': typeof CvAnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/diary': typeof DiaryRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/cv-analysis': typeof CvAnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/diary': typeof DiaryRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/cv-analysis'
     | '/dashboard'
     | '/diary'
+    | '/forgot-password'
     | '/login'
     | '/profile'
     | '/progression'
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
     | '/cv-analysis'
     | '/dashboard'
     | '/diary'
+    | '/forgot-password'
     | '/login'
     | '/profile'
     | '/progression'
@@ -300,6 +311,7 @@ export interface FileRouteTypes {
     | '/cv-analysis'
     | '/dashboard'
     | '/diary'
+    | '/forgot-password'
     | '/login'
     | '/profile'
     | '/progression'
@@ -327,6 +339,7 @@ export interface RootRouteChildren {
   CvAnalysisRoute: typeof CvAnalysisRoute
   DashboardRoute: typeof DashboardRoute
   DiaryRoute: typeof DiaryRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
   ProgressionRoute: typeof ProgressionRoute
@@ -381,6 +394,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/diary': {
@@ -527,6 +547,7 @@ const rootRouteChildren: RootRouteChildren = {
   CvAnalysisRoute: CvAnalysisRoute,
   DashboardRoute: DashboardRoute,
   DiaryRoute: DiaryRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
   ProgressionRoute: ProgressionRoute,
