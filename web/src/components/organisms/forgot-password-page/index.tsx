@@ -1,25 +1,31 @@
 import React, { useState } from 'react';
 
 /**
- * Page de récupération de mot de passe TalkUp.
- * Structure : 2 colonnes (Formulaire à gauche, Branding à droite).
+ * ForgotPasswordPage Component
+ * * Provides a user interface for password recovery.
+ * Layout: 2-column split (Form on the left, Branding/Quote on the right).
+ * * @returns {React.ReactElement} The rendered password recovery page.
  */
 const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
 
+  /**
+   * Handles the password reset form submission.
+   * @param {React.FormEvent} e - The form submission event.
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Envoi du lien à :", email);
-    // Logique d'appel API ici
+    console.log("Sending reset link to:", email);
+    // TODO: Implement API call logic here
   };
 
   return (
     <div className="flex min-h-screen bg-white font-sans">
       
-      {/* --- Section GAUCHE : Formulaire --- */}
+      {/* --- LEFT SECTION: Form --- */}
       <div className="w-full lg:w-[60%] flex flex-col p-8 lg:p-16 relative justify-center">
         
-        {/* Formulaire Central */}
+        {/* Central Form Container */}
         <div className="flex flex-col justify-center items-center max-w-md mx-auto w-full">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Forgot password?</h1>
           <p className="text-gray-500 text-center mb-8">
@@ -55,9 +61,10 @@ const ForgotPasswordPage: React.FC = () => {
         </div>
       </div>
 
-      {/* --- Section DROITE : Branding/Quote --- */}
+      {/* --- RIGHT SECTION: Branding/Quote --- */}
       <div className="hidden lg:flex lg:w-[40%] bg-blue-500 flex-col justify-center items-center text-center p-12 relative overflow-hidden">
         
+        {/* Decorative background shapes */}
         <div className="absolute top-[-19%] right-[-10%] w-64 h-64 bg-blue-400 rounded-full opacity-20"></div>
         <div className="absolute bottom-[-5%] left-[-5%] w-48 h-48 bg-blue-400 rounded-full opacity-20"></div>
 
@@ -66,6 +73,7 @@ const ForgotPasswordPage: React.FC = () => {
             The best way to predict the future is to create it. Secure your journey with TalkUp today.!
           </h2>
           
+          {/* Slider/Progress Indicators */}
           <div className="flex justify-center gap-2 mt-8">
             <div className="w-8 h-1 bg-white rounded-full opacity-100"></div>
             <div className="w-8 h-1 bg-white rounded-full opacity-40"></div>
