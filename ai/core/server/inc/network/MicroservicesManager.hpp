@@ -27,6 +27,8 @@
 
 #include "ExceptionManager.hpp"
 
+using ResponseCallback = std::function<void(const nlohmann::json&)>;
+
 namespace talkup_network {
     class MicroservicesManager {
         public:
@@ -67,7 +69,7 @@ namespace talkup_network {
              *
              * @param data Json data containing the audio information to be sent to the STT microservice.
              */
-            static void send_to_stt_microservice(const nlohmann::json &data);
+            static void send_to_stt_microservice(const nlohmann::json &data, ResponseCallback callback);
 
             /**
              * @brief Initialize WebSocket connections to all registered microservices.
