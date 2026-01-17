@@ -34,7 +34,6 @@ const ForgotPasswordPage: React.FC = () => {
 
     setError(false);
     console.log('Sending reset link to:', email);
-    // TODO: Integrate with Authentication API
   };
 
   return (
