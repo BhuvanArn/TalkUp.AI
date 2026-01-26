@@ -55,7 +55,7 @@ export class user {
     onDelete: "SET NULL",
   })
   @JoinColumn({ name: "organization_id" })
-  organization_id: Organization;
+  organization_id?: Organization | null;
 
   @Column({
     nullable: false,

@@ -63,5 +63,5 @@ export class CreateUserDto {
     example: "user",
     default: "user",
   })
-  user_role: string = "user";
+  user_role?: string = "user";
 }

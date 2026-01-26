@@ -30,6 +30,8 @@ describe("AuthService", () => {
     profile_picture: "",
     provider: "",
     verification_code: "",
+    organization_id: null,
+    user_role: "user",
     last_accessed_at: new Date(),
     created_at: new Date(),
     updated_at: new Date(),
