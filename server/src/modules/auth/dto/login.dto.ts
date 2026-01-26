@@ -29,11 +29,9 @@ export class LoginDto {
     minNumbers: 1,
     minSymbols: 1,
   })
-
   @ApiProperty({
     description: "The user's password.",
     example: "Abcdefg1*",
   })
   password: string;
 }
-
