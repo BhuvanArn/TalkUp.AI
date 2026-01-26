@@ -159,9 +159,9 @@ bool talkup_network::MicroservicesManager::ping_service(
 }
 
 void talkup_network::MicroservicesManager::send_to_stt_microservice(
-    const nlohmann::json &data)
+    const nlohmann::json &data, ResponseCallback callback)
 {
-    std::thread([data]() {
+    std::thread([data, callback]() {
         try {
             nlohmann::json chunk_val = get_chunks_val_from_data(data);
             std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
@@ -170,20 +170,25 @@ void talkup_network::MicroservicesManager::send_to_stt_microservice(
                 auto it = __ws_connections.find("stt");
                 if (it == __ws_connections.end() || !it->second.is_connected) {
                     std::cerr << "[MicroservicesManager] STT connection not available" << std::endl;
+                    callback(nlohmann::json{{"error", "STT connection not available"}});
                     return;
                 }
                 if (!it->second.ws || !it->second.ws->is_open()) {
                     std::cerr << "[MicroservicesManager] STT WebSocket connection is closed" << std::endl;
                     it->second.is_connected = false;
+                    callback(nlohmann::json{{"error", "STT connection closed"}});
                     return;
                 }
                 ws = it->second.ws;
             }
 
-            if (!ping_service("stt"))
+            if (!ping_service("stt")) {
+                callback(nlohmann::json{{"error", "STT service ping failed"}});
                 return;
+            }
             if (!ws || !ws->is_open()) {
                 std::cerr << "[MicroservicesManager] STT WebSocket connection lost after ping" << std::endl;
+                callback(nlohmann::json{{"error", "STT connection lost after ping"}});
                 return;
             }
 
@@ -205,16 +210,21 @@ void talkup_network::MicroservicesManager::send_to_stt_microservice(
                 try {
                     nlohmann::json resp_json = nlohmann::json::parse(resp_msg);
                     std::cout << "[MicroservicesManager] Received response: " << resp_json.dump() << std::endl;
+                    callback(resp_json);
                 } catch (const std::exception &e) {
                     std::cerr << "[MicroservicesManager] Failed to parse response as JSON: " << e.what() << " ; raw=" << resp_msg << std::endl;
+                    callback(nlohmann::json{{"error", std::string("Parse error: ") + e.what()}});
                 }
             } else if (poll_ret == 0) {
                 std::cerr << "[MicroservicesManager] Read timed out after " << timeout_ms << " ms" << std::endl;
+                callback(nlohmann::json{{"error", "Read timeout"}});
             } else {
                 std::cerr << "[MicroservicesManager] poll() error: " << std::strerror(errno) << std::endl;
+                callback(nlohmann::json{{"error", std::string("Poll error: ") + std::strerror(errno)}});
             }
         } catch (const std::exception &e) {
             std::cerr << "[MicroservicesManager] Exception: " << e.what() << std::endl;
+            callback(nlohmann::json{{"error", std::string("Exception: ") + e.what()}});
         }
     }).detach();
 }
