@@ -29,6 +29,8 @@
 
 #include "ExceptionManager.hpp"
 
+using ResponseCallback = std::function<void(const nlohmann::json&)>;
+
 namespace talkup_network {
     class MicroservicesManager {
         public:
@@ -69,7 +71,7 @@ namespace talkup_network {
              *
              * @param data Json data containing the audio information to be sent to the STT microservice.
              */
-            static void send_to_stt_microservice(const nlohmann::json &data);
+            static void send_to_stt_microservice(const nlohmann::json &data, ResponseCallback callback);
 
             /**
              * @brief Initialize WebSocket connections to all registered microservices.
@@ -105,12 +107,17 @@ namespace talkup_network {
         protected:
         private:
             struct WebSocketConnection {
+                struct SttJob {
+                    nlohmann::json data;
+                    ResponseCallback callback;
+                };
+
                 std::shared_ptr<boost::asio::io_context> io_context;
                 std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
                 std::thread io_thread;
                 bool is_connected = false;
                 std::mutex io_mutex;
-                std::queue<nlohmann::json> job_queue;
+                std::queue<SttJob> job_queue;
                 std::thread worker_thread;
                 std::mutex queue_mutex;
                 std::condition_variable queue_cv;
@@ -156,6 +163,6 @@ namespace talkup_network {
              *
              * @param data The JSON data containing the job information.
              */
-            static void process_stt_job(const nlohmann::json &data);
+            static void process_stt_job(const nlohmann::json &data, ResponseCallback callback);
     };
 }

@@ -93,7 +93,7 @@ void talkup_network::MicroservicesManager::create_service_worker(
             }
             if (!conn_ptr) break;
 
-            nlohmann::json job;
+            talkup_network::MicroservicesManager::WebSocketConnection::SttJob job;
             {
                 std::unique_lock<std::mutex> qlock(conn_ptr->queue_mutex);
                 if (!conn_ptr->queue_cv.wait_for(qlock, std::chrono::seconds(5), 
@@ -111,7 +111,7 @@ void talkup_network::MicroservicesManager::create_service_worker(
                 conn_ptr->job_queue.pop();
             }
             try {
-                process_stt_job(job);
+                process_stt_job(job.data, std::move(job.callback));
             } catch (const std::exception &e) {
                 std::cerr << "[MicroservicesManager] Worker error for service " 
                           << service_name << ": " << e.what() << std::endl;
@@ -230,100 +230,134 @@ bool talkup_network::MicroservicesManager::ping_service(
 }
 
 void talkup_network::MicroservicesManager::send_to_stt_microservice(
-    const nlohmann::json &data)
+    const nlohmann::json &data, ResponseCallback callback)
 {
+    nlohmann::json err_response;
+    bool enqueue_ok = false;
+
     {
         std::lock_guard<std::mutex> lock(__ws_mutex);
         auto it = __ws_connections.find("stt");
         if (it == __ws_connections.end() || !it->second.is_connected) {
             std::cerr << "[MicroservicesManager] STT connection not available" << std::endl;
-            return;
+            err_response = {{"error", "STT connection not available"}};
+        } else {
+            {
+                std::lock_guard<std::mutex> qlock(it->second.queue_mutex);
+                it->second.job_queue.push({data, std::move(callback)});
+            }
+            it->second.queue_cv.notify_one();
+            enqueue_ok = true;
         }
-        {
-            std::lock_guard<std::mutex> qlock(it->second.queue_mutex);
-            it->second.job_queue.push(data);
-        }
-        it->second.queue_cv.notify_one();
+    }
+
+    if (!enqueue_ok && callback) {
+        callback(err_response);
     }
 }
 
-void talkup_network::MicroservicesManager::process_stt_job(const nlohmann::json &data)
+void talkup_network::MicroservicesManager::process_stt_job(const nlohmann::json &data, ResponseCallback callback)
 {
-    nlohmann::json chunk_val = get_chunks_val_from_data(data);
-    std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
-    std::mutex *io_mutex = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(__ws_mutex);
-        auto it = __ws_connections.find("stt");
-        if (it == __ws_connections.end() || !it->second.is_connected) {
-            std::cerr << "[MicroservicesManager] STT connection not available" << std::endl;
+    try {
+        nlohmann::json chunk_val = get_chunks_val_from_data(data);
+        std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
+        std::mutex *io_mutex = nullptr;
+        {
+            std::lock_guard<std::mutex> lock(__ws_mutex);
+            auto it = __ws_connections.find("stt");
+            if (it == __ws_connections.end() || !it->second.is_connected) {
+                std::cerr << "[MicroservicesManager] STT connection not available" << std::endl;
+                if (callback)
+                    callback(nlohmann::json{{"error", "STT connection not available"}});
+                return;
+            }
+            if (!it->second.ws || !it->second.ws->is_open()) {
+                std::cerr << "[MicroservicesManager] STT WebSocket connection is closed" << std::endl;
+                it->second.is_connected = false;
+                if (callback)
+                    callback(nlohmann::json{{"error", "STT connection closed"}});
+                return;
+            }
+            ws = it->second.ws;
+            io_mutex = &it->second.io_mutex;
+        }
+
+        if (!ping_service("stt")) {
+            if (callback)
+                callback(nlohmann::json{{"error", "STT service ping failed"}});
             return;
         }
-        if (!it->second.ws || !it->second.ws->is_open()) {
-            std::cerr << "[MicroservicesManager] STT WebSocket connection is closed" << std::endl;
-            it->second.is_connected = false;
+        if (!ws || !ws->is_open()) {
+            std::cerr << "[MicroservicesManager] STT WebSocket connection lost after ping" << std::endl;
+            if (callback)
+                callback(nlohmann::json{{"error", "STT connection lost after ping"}});
             return;
         }
-        ws = it->second.ws;
-        io_mutex = &it->second.io_mutex;
-    }
 
-    if (!ping_service("stt"))
-        return;
-    if (!ws || !ws->is_open()) {
-        std::cerr << "[MicroservicesManager] STT WebSocket connection lost after ping" << std::endl;
-        return;
-    }
+        std::unique_lock<std::mutex> io_lock(*io_mutex);
+        nlohmann::json audio_json = {{"services", {"STT"}}, {"type", "stream_chunk"}, {"timestamp", std::time(nullptr)},
+            {"data", {{"chunk", chunk_val}, {"eof", true}}}};
+        ws->write(boost::asio::buffer(audio_json.dump()));
+        int fd = boost::beast::get_lowest_layer(*ws).socket().native_handle();
+        struct pollfd pfd;
+        pfd.fd = fd;
+        pfd.events = POLLIN;
 
-    std::unique_lock<std::mutex> io_lock(*io_mutex);
-    nlohmann::json audio_json = {{"services", {"STT"}}, {"type", "stream_chunk"}, {"timestamp", std::time(nullptr)},
-        {"data", {{"chunk", chunk_val}, {"eof", true}}}};
-    ws->write(boost::asio::buffer(audio_json.dump()));
-    int fd = boost::beast::get_lowest_layer(*ws).socket().native_handle();
-    struct pollfd pfd;
-    pfd.fd = fd;
-    pfd.events = POLLIN;
-
-    while (true) {
-        pfd.revents = 0;
-        int poll_ret = ::poll(&pfd, 1, 100);
-        if (poll_ret > 0 && (pfd.revents & POLLIN)) {
-            boost::beast::flat_buffer temp_buf;
-            ws->read(temp_buf);
-            std::string msg = boost::beast::buffers_to_string(temp_buf.data());
-            try {
-                nlohmann::json msg_json = nlohmann::json::parse(msg);
-                if (msg_json["type"] != "pong") {
-                    std::cout << "[MicroservicesManager] Received response: " << msg_json.dump() << std::endl;
+        while (true) {
+            pfd.revents = 0;
+            int poll_ret = ::poll(&pfd, 1, 100);
+            if (poll_ret > 0 && (pfd.revents & POLLIN)) {
+                boost::beast::flat_buffer temp_buf;
+                ws->read(temp_buf);
+                std::string msg = boost::beast::buffers_to_string(temp_buf.data());
+                try {
+                    nlohmann::json msg_json = nlohmann::json::parse(msg);
+                    if (msg_json["type"] != "pong") {
+                        std::cout << "[MicroservicesManager] Received STT result: " << msg_json.dump() << std::endl;
+                        if (callback)
+                            callback(msg_json);
+                        return;
+                    }
+                    std::cout << "[MicroservicesManager] Discarding pong message" << std::endl;
+                } catch (...) {
                     break;
                 }
-                std::cout << "[MicroservicesManager] Discarding pong message" << std::endl;
-            } catch (...) {
+            } else {
                 break;
             }
+        }
+
+        boost::beast::flat_buffer resp_buf;
+        const int timeout_ms = 15000;
+        pfd.revents = 0;
+
+        int poll_ret = ::poll(&pfd, 1, timeout_ms);
+        if (poll_ret > 0 && (pfd.revents & POLLIN)) {
+            ws->read(resp_buf);
+            std::string resp_msg = boost::beast::buffers_to_string(resp_buf.data());
+            try {
+                nlohmann::json resp_json = nlohmann::json::parse(resp_msg);
+                std::cout << "[MicroservicesManager] Received STT result: " << resp_json.dump() << std::endl;
+                if (callback)
+                    callback(resp_json);
+            } catch (const std::exception &e) {
+                std::cerr << "[MicroservicesManager] Failed to parse response as JSON: " << e.what() << " ; raw=" << resp_msg << std::endl;
+                if (callback)
+                    callback(nlohmann::json{{"error", std::string("Parse error: ") + e.what()}});
+            }
+        } else if (poll_ret == 0) {
+            std::cerr << "[MicroservicesManager] Read timed out after " << timeout_ms << " ms" << std::endl;
+            if (callback)
+                callback(nlohmann::json{{"error", "Read timeout"}});
         } else {
-            break;
+            std::cerr << "[MicroservicesManager] poll() error: " << std::strerror(errno) << std::endl;
+            if (callback)
+                callback(nlohmann::json{{"error", std::string("Poll error: ") + std::strerror(errno)}});
         }
-    }
-
-    boost::beast::flat_buffer resp_buf;
-    const int timeout_ms = 15000;
-    pfd.revents = 0;
-
-    int poll_ret = ::poll(&pfd, 1, timeout_ms);
-    if (poll_ret > 0 && (pfd.revents & POLLIN)) {
-        ws->read(resp_buf);
-        std::string resp_msg = boost::beast::buffers_to_string(resp_buf.data());
-        try {
-            nlohmann::json resp_json = nlohmann::json::parse(resp_msg);
-            std::cout << "[MicroservicesManager] Received STT result: " << resp_json.dump() << std::endl;
-        } catch (const std::exception &e) {
-            std::cerr << "[MicroservicesManager] Failed to parse response as JSON: " << e.what() << " ; raw=" << resp_msg << std::endl;
-        }
-    } else if (poll_ret == 0) {
-        std::cerr << "[MicroservicesManager] Read timed out after " << timeout_ms << " ms" << std::endl;
-    } else {
-        std::cerr << "[MicroservicesManager] poll() error: " << std::strerror(errno) << std::endl;
+    } catch (const std::exception &e) {
+        std::cerr << "[MicroservicesManager] Exception: " << e.what() << std::endl;
+        if (callback)
+            callback(nlohmann::json{{"error", std::string("Exception: ") + e.what()}});
     }
 }
 
@@ -348,7 +382,7 @@ void talkup_network::MicroservicesManager::start_service_worker(const std::strin
             }
             if (!conn_ptr) break;
 
-            nlohmann::json job;
+            talkup_network::MicroservicesManager::WebSocketConnection::SttJob job;
             {
                 std::unique_lock<std::mutex> qlock(conn_ptr->queue_mutex);
                 if (!conn_ptr->queue_cv.wait_for(qlock, std::chrono::seconds(5), [conn_ptr]{ return !conn_ptr->worker_running 
@@ -366,7 +400,7 @@ void talkup_network::MicroservicesManager::start_service_worker(const std::strin
                 conn_ptr->job_queue.pop();
             }
             try {
-                process_stt_job(job);
+                process_stt_job(job.data, std::move(job.callback));
             } catch (const std::exception &e) {
                 std::cerr << "[MicroservicesManager] Worker error for service " << service_name << ": " << e.what() << std::endl;
             }
