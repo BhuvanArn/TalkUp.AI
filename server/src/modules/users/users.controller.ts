@@ -1,5 +1,16 @@
-import { Body, Controller, Put } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Req,
+  Res,
+  BadRequestException,
+  UseInterceptors,
+  Put,
+  Post,
+} from "@nestjs/common";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
+import type { Request, Response } from "express";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 import {
   ApiTags,
@@ -31,5 +42,31 @@ export class UsersController {
   @Put("password")
   async updatePassword(@Body() body: UpdatePasswordDto) {
     return this.usersService.changeUserPassword(body.email, body.newPassword);
+  }
+
+  @ApiOkResponse({
+    description: "The CV has successfully uploaded",
+    type: String,
+  })
+  @ApiBadRequestResponse({
+    description:
+      "Invalid request data in body (e.g., missing file or incorrect format)",
+  })
+  @UsePipes(new PostValidationPipe())
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype === "application/pdf") {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException("Only PDF files are accepted"), false);
+        }
+      },
+    }),
+  )
+  @Post("uploadCV")
+  async uploadCV(@Req() req: Request, @Res() res: Response) {
+    return this.usersService.uploadCV(req, res);
   }
 }

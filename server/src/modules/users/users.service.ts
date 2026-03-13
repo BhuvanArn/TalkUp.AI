@@ -8,6 +8,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { user_password, user_email } from "@entities/user.entity";
 import { hashPassword } from "@common/utils/passwordHasher";
+import * as pdf from "pdf-parse";
+import type { Request, Response } from "express";
 
 @Injectable()
 export class UsersService {
@@ -77,4 +79,76 @@ export class UsersService {
       );
     }
   }
+
+  async uploadCV(req: Request, res: Response) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Upload a PDF file." });
+      }
+
+      const pdf = require("pdf-parse-debugging-disabled");
+      const pdfData = await pdf(req.file.buffer);
+      const rawText = pdfData.text;
+
+      if (rawText.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "The PDF file is empty or could not be parsed." });
+      } else {
+        console.log("Raw text extracted from PDF:", rawText);
+        res.status(200).json({
+          message: "CV analysé avec succès",
+        });
+      }
+    } catch (error) {
+      console.error("Parsing error:", error);
+      res.status(500).json({ message: "Error processing the CV file." });
+    }
+  }
 }
+
+// router.post('/upload-cv', upload.single('cv'), async (req, res) => {
+//   try {
+//     if (!req.file) {
+//       return res.status(400).json({ error: "Aucun fichier téléchargé" });
+//     }
+
+//     // ÉTAPE A : Extraire le texte brut du PDF
+//     const pdfData = await pdf(req.file.buffer);
+//     const rawText = pdfData.text;
+
+//     // ÉTAPE B : Envoyer le texte à Claude pour analyse
+//     const msg = await anthropic.messages.create({
+//       model: "claude-3-5-sonnet-20240620",
+//       max_tokens: 1500,
+//       temperature: 0, // 0 pour une réponse constante et précise
+//       system: "Tu es un parseur de CV expert. Ton rôle est d'extraire les données au format JSON strict.",
+//       messages: [
+//         {
+//           role: "user",
+//           content: `Extrais les informations suivantes de ce texte de CV :
+//           nom, poste_actuel, experiences (liste avec dates, poste, entreprise),
+//           competences_techniques (liste), et diplomes.
+
+//           Réponds uniquement avec le JSON, sans texte avant ou après.
+
+//           Texte du CV : ${rawText}`
+//         }
+//       ],
+//     });
+
+//     // ÉTAPE C : Parser la réponse de Claude
+//     const textResponse = msg.content[0].text;
+//     const extractedData = JSON.parse(textResponse);
+
+//     // ÉTAPE D : Réponse au front
+//     res.status(200).json({
+//       message: "CV analysé avec succès",
+//       data: extractedData
+//     });
+
+//   } catch (error) {
+//     console.error("Erreur parsing CV:", error);
+//     res.status(500).json({ error: "Erreur lors du traitement du CV" });
+//   }
+// });
