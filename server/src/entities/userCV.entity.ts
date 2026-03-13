@@ -18,8 +18,8 @@ export class user_cv {
   @Column({ nullable: false })
   user_id: string;
 
-// This part will establish a one-to-one relationship between the user_cv and user entities, allowing us to easily access the user associated with a given CV. 
-// The onDelete: "CASCADE" option ensures that if a user is deleted, their associated CV will also be automatically removed from the database.
+  // This part will establish a one-to-one relationship between the user_cv and user entities, allowing us to easily access the user associated with a given CV.
+  // The onDelete: "CASCADE" option ensures that if a user is deleted, their associated CV will also be automatically removed from the database.
   @OneToOne(() => user, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
   user: user;
