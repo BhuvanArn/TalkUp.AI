@@ -7,6 +7,8 @@ import { AuthService } from "./auth.service";
 import { CreateUserDto } from "./dto/createUser.dto";
 import { LoginDto } from "./dto/login.dto";
 import { AccessTokenGuard } from "@common/guards/accessToken.guard";
+import { UserStatus } from "@common/enums/UserStatus";
+import { OtpPurpose } from "@common/enums/OtpPurpose";
 
 describe("AuthController", () => {
   let controller: AuthController;
@@ -18,6 +20,7 @@ describe("AuthController", () => {
     profile_picture: "",
     provider: "",
     verification_code: "",
+    status: UserStatus.ACTIVE,
     last_accessed_at: new Date(),
     created_at: new Date(),
     updated_at: new Date(),
@@ -26,6 +29,8 @@ describe("AuthController", () => {
   beforeEach(async () => {
     mockAuthService = {
       register: jest.fn(),
+      verifyEmail: jest.fn(),
+      resendOtp: jest.fn(),
       validateUser: jest.fn(),
       login: jest.fn(),
       getUserById: jest.fn(),
@@ -60,21 +65,13 @@ describe("AuthController", () => {
     };
 
     it("should successfully register a new user", async () => {
-      const serviceResponse = { accessToken: "jwt-token-123" };
-      mockAuthService.register = jest.fn().mockResolvedValue(serviceResponse);
+      mockAuthService.register = jest.fn().mockResolvedValue(undefined);
 
-      const mockResponse: any = { cookie: jest.fn() };
+      const result = await controller.register(createUserDto);
 
-      const result = await controller.register(createUserDto, mockResponse);
-
-      expect(result).toEqual({ message: "Registration successful" });
+      expect(result).toEqual({ message: "Verification email sent" });
       expect(mockAuthService.register).toHaveBeenCalledWith(createUserDto);
       expect(mockAuthService.register).toHaveBeenCalledTimes(1);
-      expect(mockResponse.cookie).toHaveBeenCalledWith(
-        "accessToken",
-        serviceResponse.accessToken,
-        expect.objectContaining({ httpOnly: true }),
-      );
     });
 
     it("should throw ConflictException when email already exists", async () => {
@@ -83,11 +80,9 @@ describe("AuthController", () => {
       );
       mockAuthService.register = jest.fn().mockRejectedValue(conflictError);
 
-      const mockResponse: any = { cookie: jest.fn() };
-
-      await expect(
-        controller.register(createUserDto, mockResponse),
-      ).rejects.toThrow(conflictError);
+      await expect(controller.register(createUserDto)).rejects.toThrow(
+        conflictError,
+      );
 
       expect(mockAuthService.register).toHaveBeenCalledWith(createUserDto);
       expect(mockAuthService.register).toHaveBeenCalledTimes(1);
@@ -97,13 +92,53 @@ describe("AuthController", () => {
       const serviceError = new Error("Database connection failed");
       mockAuthService.register = jest.fn().mockRejectedValue(serviceError);
 
-      const mockResponse: any = { cookie: jest.fn() };
-
-      await expect(
-        controller.register(createUserDto, mockResponse),
-      ).rejects.toThrow(serviceError);
+      await expect(controller.register(createUserDto)).rejects.toThrow(
+        serviceError,
+      );
 
       expect(mockAuthService.register).toHaveBeenCalledWith(createUserDto);
+    });
+  });
+
+  describe("verifyEmail", () => {
+    it("should verify email and return token payload", async () => {
+      mockAuthService.verifyEmail = jest.fn().mockResolvedValue({
+        accessToken: "access-token",
+        refreshToken: "refresh-token",
+      });
+
+      const mockResponse: any = { cookie: jest.fn() };
+      const result = await controller.verifyEmail(
+        { email: "testuser@example.com", otpCode: "123456" },
+        mockResponse,
+      );
+
+      expect(result).toEqual({
+        accessToken: "access-token",
+        refreshToken: "refresh-token",
+      });
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        "accessToken",
+        "access-token",
+        expect.objectContaining({ httpOnly: true }),
+      );
+    });
+  });
+
+  describe("resendOtp", () => {
+    it("should resend OTP", async () => {
+      mockAuthService.resendOtp = jest.fn().mockResolvedValue(undefined);
+
+      const result = await controller.resendOtp({
+        email: "testuser@example.com",
+        purpose: OtpPurpose.REGISTER,
+      });
+
+      expect(result).toEqual({ message: "Verification email sent" });
+      expect(mockAuthService.resendOtp).toHaveBeenCalledWith(
+        "testuser@example.com",
+        OtpPurpose.REGISTER,
+      );
     });
   });
 

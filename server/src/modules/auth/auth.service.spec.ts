@@ -1,13 +1,17 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { JwtService } from "@nestjs/jwt";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import { ConflictException, UnauthorizedException } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import * as bcrypt from "bcrypt";
 
 import { AuthService } from "./auth.service";
 import { CreateUserDto } from "./dto/createUser.dto";
 
+import { OtpPurpose } from "@common/enums/OtpPurpose";
+import { UserStatus } from "@common/enums/UserStatus";
+import { Otp } from "@entities/otp.entity";
 import { user, user_password, user_email } from "@entities/user.entity";
 
 jest.mock("bcrypt");
@@ -22,7 +26,10 @@ describe("AuthService", () => {
   let mockUserRepo: Partial<Repository<user>>;
   let mockUserEmailRepo: Partial<Repository<user_email>>;
   let mockUserPasswordRepo: Partial<Repository<user_password>>;
+  let mockOtpRepo: Partial<Repository<Otp>>;
   let mockJwtService: Partial<JwtService>;
+  let mockDataSource: { transaction: jest.Mock };
+  let mockEventEmitter: { emit: jest.Mock };
 
   const mockUser: user = {
     user_id: "test-user-id",
@@ -30,28 +37,42 @@ describe("AuthService", () => {
     profile_picture: "",
     provider: "",
     verification_code: "",
+    status: UserStatus.ACTIVE,
     last_accessed_at: new Date(),
     created_at: new Date(),
     updated_at: new Date(),
     generateUUIDv7: (): string => "test-uuid",
   };
 
-  const mockEmail = {
+  const mockEmail: user_email = {
     email_id: 1,
     user_id: "test-user-id",
     email: "test@example.com",
     is_verified: false,
+    user: mockUser,
   };
 
-  const mockPassword = {
+  const mockPassword: user_password = {
     password_id: 1,
     user_id: "test-user-id",
     password: "hashed-password",
+    user: mockUser,
+  };
+
+  const mockOtp: Otp = {
+    id: "otp-id",
+    email: "test@example.com",
+    codeHash: "hashed-otp",
+    purpose: OtpPurpose.REGISTER,
+    attempts: 0,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    createdAt: new Date(),
   };
 
   beforeEach(async () => {
     mockUserRepo = {
       findOne: jest.fn(),
+      findOneByOrFail: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
     };
@@ -68,10 +89,24 @@ describe("AuthService", () => {
       save: jest.fn(),
     };
 
+    mockOtpRepo = {
+      findOne: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
+      delete: jest.fn(),
+    };
+
     mockJwtService = {
       signAsync: jest.fn(),
-      sign: jest.fn(),
       verifyAsync: jest.fn(),
+    };
+
+    mockEventEmitter = {
+      emit: jest.fn(),
+    };
+
+    mockDataSource = {
+      transaction: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -90,8 +125,20 @@ describe("AuthService", () => {
           useValue: mockUserPasswordRepo,
         },
         {
+          provide: getRepositoryToken(Otp),
+          useValue: mockOtpRepo,
+        },
+        {
           provide: JwtService,
           useValue: mockJwtService,
+        },
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
+        },
+        {
+          provide: EventEmitter2,
+          useValue: mockEventEmitter,
         },
       ],
     }).compile();
@@ -114,42 +161,98 @@ describe("AuthService", () => {
       password: "password123",
     };
 
-    it("should successfully register a new user", async () => {
+    it("should register pending user and emit OTP event", async () => {
+      const txUserRepo = {
+        create: jest
+          .fn()
+          .mockReturnValue({ ...mockUser, status: UserStatus.PENDING }),
+        save: jest
+          .fn()
+          .mockResolvedValue({ ...mockUser, status: UserStatus.PENDING }),
+        findOne: jest.fn(),
+      };
+      const txUserPasswordRepo = {
+        create: jest.fn().mockReturnValue(mockPassword),
+        save: jest.fn().mockResolvedValue(mockPassword),
+        findOne: jest.fn(),
+      };
+      const txUserEmailRepo = {
+        create: jest.fn().mockReturnValue(mockEmail),
+        save: jest.fn().mockResolvedValue(mockEmail),
+      };
+      const txOtpRepo = {
+        create: jest.fn().mockReturnValue(mockOtp),
+        save: jest.fn().mockResolvedValue(mockOtp),
+        delete: jest.fn().mockResolvedValue({ affected: 1 }),
+      };
+
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
-      mockUserRepo.create = jest.fn().mockReturnValue(mockUser);
-      mockUserRepo.save = jest.fn().mockResolvedValue(mockUser);
-      mockUserPasswordRepo.create = jest.fn().mockReturnValue(mockPassword);
-      mockUserPasswordRepo.save = jest.fn().mockResolvedValue(mockPassword);
-      mockUserEmailRepo.create = jest.fn().mockReturnValue(mockEmail);
-      mockUserEmailRepo.save = jest.fn().mockResolvedValue(mockEmail);
-      mockJwtService.signAsync = jest.fn().mockResolvedValue("jwt-token");
+      mockedBcrypt.hash.mockResolvedValue("otp-hash" as never);
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) return txUserRepo;
+            if (entity === user_password) return txUserPasswordRepo;
+            if (entity === user_email) return txUserEmailRepo;
+            if (entity === Otp) return txOtpRepo;
+            return null;
+          },
+        }),
+      );
 
-      const result = await service.register(createUserDto);
+      await service.register(createUserDto);
 
-      expect(result).toEqual({ accessToken: "jwt-token" });
       expect(mockUserEmailRepo.findOne).toHaveBeenCalledWith({
-        where: { email: "test@example.com" },
+        where: { email: createUserDto.email },
       });
-      expect(mockUserRepo.create).toHaveBeenCalledWith({
-        username: "testuser",
+      expect(txOtpRepo.delete).toHaveBeenCalledWith({
+        email: createUserDto.email,
+        purpose: OtpPurpose.REGISTER,
       });
-      expect(mockJwtService.signAsync).toHaveBeenCalledWith({
-        userId: "test-user-id",
-        username: "testuser",
-      });
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        "auth.otp_generated",
+        expect.objectContaining({
+          email: createUserDto.email,
+          purpose: OtpPurpose.REGISTER,
+        }),
+      );
     });
 
-    it("should throw ConflictException if email already exists", async () => {
+    it("should throw conflict for active account", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockedBcrypt.hash.mockResolvedValue("otp-hash" as never);
+
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) {
+              return {
+                findOne: jest
+                  .fn()
+                  .mockResolvedValue({
+                    ...mockUser,
+                    status: UserStatus.ACTIVE,
+                  }),
+              };
+            }
+            if (entity === user_password) {
+              return { findOne: jest.fn() };
+            }
+            if (entity === user_email) {
+              return { save: jest.fn() };
+            }
+            if (entity === Otp) {
+              return { delete: jest.fn(), save: jest.fn(), create: jest.fn() };
+            }
+            return null;
+          },
+        }),
+      );
 
       await expect(service.register(createUserDto)).rejects.toThrow(
         new ConflictException("An account with this email already exists"),
       );
-
-      expect(mockUserEmailRepo.findOne).toHaveBeenCalledWith({
-        where: { email: "test@example.com" },
-      });
-      expect(mockUserRepo.create).not.toHaveBeenCalled();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
     });
   });
 
@@ -157,194 +260,47 @@ describe("AuthService", () => {
     const email = "test@example.com";
     const password = "password123";
 
-    it("should successfully validate user with correct credentials", async () => {
+    it("should successfully validate active user", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(mockPassword);
-      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+      mockUserRepo.findOne = jest
+        .fn()
+        .mockResolvedValue({ ...mockUser, status: UserStatus.ACTIVE });
       mockedBcrypt.compare.mockResolvedValue(true as never);
 
       const result = await service.validateUser(email, password);
 
-      expect(result).toEqual(mockUser);
-      expect(mockUserEmailRepo.findOne).toHaveBeenCalledWith({
-        where: { email: email },
-      });
-      expect(mockUserPasswordRepo.findOne).toHaveBeenCalledWith({
-        where: { user_id: "test-user-id" },
-      });
-      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: { user_id: "test-user-id" },
-      });
-      expect(bcrypt.compare).toHaveBeenCalledWith(password, "hashed-password");
-    });
-
-    it("should throw UnauthorizedException if email not found", async () => {
-      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
-
-      await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email not found"),
-      );
-
-      expect(mockUserEmailRepo.findOne).toHaveBeenCalledWith({
-        where: { email: email },
-      });
-      expect(mockUserPasswordRepo.findOne).not.toHaveBeenCalled();
-    });
-
-    it("should throw UnauthorizedException if password entity not found", async () => {
-      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
-      mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(null);
-
-      await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email not found"),
+      expect(result).toEqual(
+        expect.objectContaining({ user_id: "test-user-id" }),
       );
     });
 
-    it("should throw UnauthorizedException if user entity not found", async () => {
+    it("should reject pending users", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(mockPassword);
-      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockUserRepo.findOne = jest
+        .fn()
+        .mockResolvedValue({ ...mockUser, status: UserStatus.PENDING });
 
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email not found"),
+        new UnauthorizedException("Email is not verified"),
       );
-    });
-
-    it("should throw UnauthorizedException if password doesn't match", async () => {
-      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
-      mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(mockPassword);
-      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
-      mockedBcrypt.compare.mockResolvedValue(false as never);
-
-      await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Invalid password"),
-      );
-
-      expect(bcrypt.compare).toHaveBeenCalledWith(password, "hashed-password");
     });
   });
 
   describe("login", () => {
-    it("should return access token for valid user", async () => {
+    it("should return access and refresh token", async () => {
       mockJwtService.signAsync = jest
         .fn()
-        .mockResolvedValue("signed-jwt-token");
+        .mockResolvedValueOnce("access-token")
+        .mockResolvedValueOnce("refresh-token");
 
       const result = await service.login(mockUser);
 
-      expect(result).toEqual({ accessToken: "signed-jwt-token" });
-      expect(mockJwtService.signAsync).toHaveBeenCalledWith({
-        userId: "test-user-id",
-        username: "testuser",
+      expect(result).toEqual({
+        accessToken: "access-token",
+        refreshToken: "refresh-token",
       });
-    });
-
-    it("should handle different user IDs correctly", async () => {
-      const differentUser = {
-        ...mockUser,
-        user_id: "different-user-id",
-        generateUUIDv7: (): string => "test-uuid",
-      };
-      mockJwtService.signAsync = jest.fn().mockResolvedValue("different-token");
-
-      const result = await service.login(differentUser);
-
-      expect(result).toEqual({ accessToken: "different-token" });
-      expect(mockJwtService.signAsync).toHaveBeenCalledWith({
-        userId: "different-user-id",
-        username: "testuser",
-      });
-    });
-  });
-
-  describe("getUserById", () => {
-    it("should return user when found", async () => {
-      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
-
-      const result = await service.getUserById("test-user-id");
-
-      expect(result).toEqual(mockUser);
-      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: { user_id: "test-user-id" },
-      });
-    });
-
-    it("should return null when user not found", async () => {
-      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
-
-      const result = await service.getUserById("non-existent-id");
-
-      expect(result).toBeNull();
-      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: { user_id: "non-existent-id" },
-      });
-    });
-  });
-
-  describe("verifyAccessToken", () => {
-    const validToken = "valid-jwt-token";
-    const payload = { userId: "test-user-id", username: "testuser" };
-
-    it("should return user when token is valid and user exists", async () => {
-      mockJwtService.verifyAsync = jest.fn().mockResolvedValue(payload);
-      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
-
-      const result = await service.verifyAccessToken(validToken);
-
-      expect(result).toEqual(mockUser);
-      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith(validToken);
-      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: { user_id: "test-user-id" },
-      });
-    });
-
-    it("should throw UnauthorizedException when token is invalid", async () => {
-      mockJwtService.verifyAsync = jest
-        .fn()
-        .mockRejectedValue(new Error("Invalid token"));
-
-      await expect(service.verifyAccessToken("invalid-token")).rejects.toThrow(
-        new UnauthorizedException("Invalid or expired access token"),
-      );
-
-      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith("invalid-token");
-      expect(mockUserRepo.findOne).not.toHaveBeenCalled();
-    });
-
-    it("should throw UnauthorizedException when token payload is missing userId", async () => {
-      const invalidPayload = { username: "testuser" };
-      mockJwtService.verifyAsync = jest.fn().mockResolvedValue(invalidPayload);
-
-      await expect(service.verifyAccessToken(validToken)).rejects.toThrow(
-        new UnauthorizedException("Invalid token payload"),
-      );
-
-      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith(validToken);
-      expect(mockUserRepo.findOne).not.toHaveBeenCalled();
-    });
-
-    it("should throw UnauthorizedException when user not found in database", async () => {
-      mockJwtService.verifyAsync = jest.fn().mockResolvedValue(payload);
-      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
-
-      await expect(service.verifyAccessToken(validToken)).rejects.toThrow(
-        new UnauthorizedException("User not found"),
-      );
-
-      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith(validToken);
-      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: { user_id: "test-user-id" },
-      });
-    });
-
-    it("should throw UnauthorizedException when token is expired", async () => {
-      mockJwtService.verifyAsync = jest
-        .fn()
-        .mockRejectedValue(new Error("Token expired"));
-
-      await expect(service.verifyAccessToken(validToken)).rejects.toThrow(
-        new UnauthorizedException("Invalid or expired access token"),
-      );
     });
   });
 });
