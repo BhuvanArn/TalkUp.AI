@@ -3,5 +3,8 @@ CLAUDE.md
 .vercel
 .env
 
+.vscode/
+.github/agents
+
 # WebSocket test server tool recordings
 recordings/
