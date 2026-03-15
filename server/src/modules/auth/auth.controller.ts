@@ -7,6 +7,7 @@ import {
   Patch,
   UseGuards,
   HttpCode,
+  HttpStatus,
 } from "@nestjs/common";
 import { AccessTokenGuard } from "@common/guards/accessToken.guard";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
@@ -15,7 +16,7 @@ import { Response, CookieOptions } from "express";
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
-  ApiCreatedResponse,
+  ApiAcceptedResponse,
   ApiUnprocessableEntityResponse,
   ApiTags,
   ApiOkResponse,
@@ -25,6 +26,8 @@ import {
 import { CreateUserDto } from "./dto/createUser.dto";
 import { LoginDto } from "./dto/login.dto";
 import { EditUserDto } from "./dto/editUser.dto";
+import { VerifyEmailDto } from "./dto/verifyEmail.dto";
+import { ResendOtpDto } from "./dto/resendOtp.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { UserId } from "@common/decorators/userId.decorator";
@@ -53,9 +56,8 @@ const BASE_COOKIE_OPTIONS: CookieOptions = {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiCreatedResponse({
-    description: "The user has been successfully created.",
-    type: CreateUserDto,
+  @ApiAcceptedResponse({
+    description: "Verification email sent.",
   })
   @ApiBadRequestResponse({
     description: "Badly formatted parameter.",
@@ -68,18 +70,44 @@ export class AuthController {
   })
   @UsePipes(new PostValidationPipe())
   @Post("register")
-  async register(
-    @Body() createUserDto: CreateUserDto,
+  @HttpCode(HttpStatus.ACCEPTED)
+  async register(@Body() createUserDto: CreateUserDto) {
+    await this.authService.register(createUserDto);
+
+    return { message: "Verification email sent" };
+  }
+
+  @ApiOkResponse({
+    description: "Email successfully verified.",
+    type: String,
+  })
+  @UsePipes(new PostValidationPipe())
+  @Post("verify-email")
+  @HttpCode(200)
+  async verifyEmail(
+    @Body() verifyEmailDto: VerifyEmailDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.authService.register(createUserDto);
+    const result = await this.authService.verifyEmail(verifyEmailDto);
 
     response.cookie(COOKIE_NAME, result.accessToken, {
       ...BASE_COOKIE_OPTIONS,
       maxAge: COOKIE_MAX_AGE,
     });
 
-    return { message: "Registration successful" };
+    return { message: "Email verified" };
+  }
+
+  @ApiAcceptedResponse({
+    description: "OTP resent.",
+  })
+  @UsePipes(new PostValidationPipe())
+  @Post("resend-otp")
+  @HttpCode(HttpStatus.ACCEPTED)
+  async resendOtp(@Body() resendOtpDto: ResendOtpDto) {
+    await this.authService.resendOtp(resendOtpDto.email, resendOtpDto.purpose);
+
+    return { message: "Verification email sent" };
   }
 
   @ApiOkResponse({

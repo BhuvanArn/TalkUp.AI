@@ -1,0 +1,5 @@
+export enum OtpPurpose {
+  REGISTER = "REGISTER",
+  RESET_PASSWORD = "RESET_PASSWORD",
+  NEW_DEVICE = "NEW_DEVICE",
+}

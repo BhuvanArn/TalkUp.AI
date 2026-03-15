@@ -13,10 +13,11 @@ import { AuthService } from "../auth/auth.service";
 import { user } from "@entities/user.entity";
 import { user_email } from "@entities/user.entity";
 import { user_password } from "@entities/user.entity";
+import { Otp } from "@entities/otp.entity";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([agenda_event, user, user_email, user_password]),
+    TypeOrmModule.forFeature([agenda_event, user, user_email, user_password, Otp]),
   ],
   controllers: [AgendaController],
   providers: [AgendaService, AccessTokenGuard, AuthService],

@@ -16,6 +16,7 @@ import { AuthService } from "../auth/auth.service";
 // dependencies of the AuthService
 import { user_email } from "@entities/user.entity";
 import { user_password } from "@entities/user.entity";
+import { Otp } from "@entities/otp.entity";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { user_password } from "@entities/user.entity";
       user,
       user_email,
       user_password,
+      Otp,
     ]),
     HttpModule.register({
       timeout: 5000,
