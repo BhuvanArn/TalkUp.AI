@@ -10,30 +10,10 @@ import { Repository } from "typeorm";
 
 import { user } from "@entities/user.entity";
 
-/**
- * Guard that verifies the presence and validity of an access token in cookies.
- * If valid, it attaches the userId to the request object.
- *
- * Throws UnauthorizedException if the token is missing, malformed, or invalid.
- *
- * Usage:
- * ```
- * import { UseGuards } from "@nestjs/common";
- * import { AccessTokenGuard } from "./path/to/accessToken.guard";
- *
- * export class SomeProtectedController {
- *
- * @UseGuards(AccessTokenGuard)
- * someProtectedRoute() {
- *   // This route is protected by the AccessTokenGuard.
- * }
- * }
- * ```
- *
- * This guard can be applied to routes that require authentication.
- */
+const PASSWORD_RESET_PURPOSE = "PASSWORD_RESET_AUTHORIZED";
+
 @Injectable()
-export class AccessTokenGuard implements CanActivate {
+export class ResetTokenGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     @InjectRepository(user)
@@ -43,11 +23,11 @@ export class AccessTokenGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
 
-    const token = req.cookies?.accessToken;
+    const token = req.cookies?.resetToken;
 
     if (!token || typeof token !== "string") {
       throw new UnauthorizedException(
-        "Authentication token missing or malformed",
+        "Reset password token missing or malformed",
       );
     }
 
@@ -59,14 +39,15 @@ export class AccessTokenGuard implements CanActivate {
         unknown
       >;
     } catch {
-      throw new UnauthorizedException("Invalid or expired access token");
+      throw new UnauthorizedException("Invalid or expired reset token");
     }
 
+    const purpose = payload.purpose;
     const userId =
-      typeof payload.userId === "string"
-        ? payload.userId
-        : typeof payload.sub === "string"
-          ? payload.sub
+      typeof payload.sub === "string"
+        ? payload.sub
+        : typeof payload.userId === "string"
+          ? payload.userId
           : null;
     const tokenVersion =
       typeof payload.tv === "number"
@@ -75,8 +56,12 @@ export class AccessTokenGuard implements CanActivate {
           ? Number(payload.tv)
           : NaN;
 
-    if (!userId || Number.isNaN(tokenVersion)) {
-      throw new UnauthorizedException("Invalid token payload");
+    if (
+      purpose !== PASSWORD_RESET_PURPOSE ||
+      !userId ||
+      Number.isNaN(tokenVersion)
+    ) {
+      throw new UnauthorizedException("Invalid reset token payload");
     }
 
     const foundUser = await this.userRepository.findOne({
@@ -84,7 +69,7 @@ export class AccessTokenGuard implements CanActivate {
     });
 
     if (!foundUser || (foundUser.tokenVersion ?? 1) !== tokenVersion) {
-      throw new UnauthorizedException("Session is no longer valid");
+      throw new UnauthorizedException("Reset token is no longer valid");
     }
 
     req.userId = foundUser.user_id;

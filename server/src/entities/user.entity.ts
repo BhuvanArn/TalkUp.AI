@@ -40,6 +40,9 @@ export class user {
   @Column({ default: new Date() })
   updated_at!: Date;
 
+  @Column({ type: "int", default: 1 })
+  tokenVersion?: number;
+
   @Column({
     enum: UserStatus,
     type: "enum",

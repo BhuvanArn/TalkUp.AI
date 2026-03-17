@@ -34,7 +34,6 @@ describe("AuthController", () => {
       validateUser: jest.fn(),
       login: jest.fn(),
       getUserById: jest.fn(),
-      verifyAccessToken: jest.fn(),
     };
 
     const moduleBuilder = Test.createTestingModule({
