@@ -20,6 +20,9 @@ async function bootstrap() {
     const port = process.env.PORT ?? process.env.SERVER_PORT ?? 3000;
     process.stdout.write(`Using port: ${port}\n`);
 
+    // Trust proxy settings for correct client IP detection (important for CORS and rate limiting)
+    app.getHttpAdapter().getInstance().set("trust proxy", true);
+
     app.useGlobalPipes(new ValidationPipe());
     app.use(cookieParser());
     app.setGlobalPrefix("v1/api");
@@ -89,9 +92,9 @@ async function bootstrap() {
       }
     };
 
-    process.on("SIGINT", () => shutdown("SIGINT"));
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
-    process.on("SIGUSR2", () => shutdown("SIGUSR2"));
+    process.on("SIGINT", async () => await shutdown("SIGINT"));
+    process.on("SIGTERM", async () => await shutdown("SIGTERM"));
+    process.on("SIGUSR2", async () => await shutdown("SIGUSR2"));
 
     // Log unhandled errors
     process.on("uncaughtException", (error) => {
