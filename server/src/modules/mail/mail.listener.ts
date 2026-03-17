@@ -14,6 +14,15 @@ export class MailListener {
 
   @OnEvent("auth.otp_generated", { async: true })
   async onOtpGenerated(payload: OtpGeneratedEvent) {
+    await this.sendOtpMail(payload);
+  }
+
+  @OnEvent("auth.reset_password_requested", { async: true })
+  async onPasswordResetRequested(payload: OtpGeneratedEvent) {
+    await this.sendOtpMail(payload);
+  }
+
+  private async sendOtpMail(payload: OtpGeneratedEvent) {
     const { subject, heading } = this.resolveTemplate(payload.purpose);
 
     const html = `

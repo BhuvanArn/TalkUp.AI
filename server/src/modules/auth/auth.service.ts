@@ -15,11 +15,11 @@ import { JwtService } from "@nestjs/jwt";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import * as bcrypt from "bcrypt";
 
-import { Logger } from "@nestjs/common";
-
 import { CreateUserDto } from "./dto/createUser.dto";
 import { EditUserDto } from "./dto/editUser.dto";
 import { VerifyEmailDto } from "./dto/verifyEmail.dto";
+import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
+import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
 
 import { OtpPurpose } from "@common/enums/OtpPurpose";
 import { UserStatus } from "@common/enums/UserStatus";
@@ -34,15 +34,21 @@ type AuthTokens = {
   refreshToken: string;
 };
 
+type PasswordResetVerifyResult = {
+  isValid: boolean;
+  userId?: string;
+};
+
 const OTP_EXPIRATION_MINUTES = 15;
 const MAX_OTP_ATTEMPTS = 5;
 const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 const DUMMY_OTP_HASH = bcrypt.hashSync("000000", 10);
+const PASSWORD_RESET_AUTHORIZED_PURPOSE = "PASSWORD_RESET_AUTHORIZED";
+const GENERIC_RESET_VERIFY_ERROR = "Invalid or expired verification code";
+const PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS = 120;
 
 @Injectable()
 export class AuthService {
-  logger = new Logger(AuthService.name);
-
   constructor(
     @InjectRepository(user) private userRepository: Repository<user>,
     @InjectRepository(user_password)
@@ -207,12 +213,12 @@ export class AuthService {
     );
 
     if (!otpEntity) {
-      throw new BadRequestException("Invalid verification code");
+      throw new UnauthorizedException("Invalid verification code");
     }
 
     if (otpEntity.expiresAt.getTime() < Date.now()) {
       await this.otpRepository.delete({ id: otpEntity.id });
-      throw new BadRequestException("Verification code expired");
+      throw new UnauthorizedException("Verification code expired");
     }
 
     if (!otpIsValid) {
@@ -242,7 +248,7 @@ export class AuthService {
     });
 
     if (!emailEntity) {
-      throw new BadRequestException("Invalid verification request");
+      throw new UnauthorizedException("Invalid verification code");
     }
 
     const userEntity = await this.userRepository.findOne({
@@ -250,7 +256,7 @@ export class AuthService {
     });
 
     if (!userEntity) {
-      throw new BadRequestException("Invalid verification request");
+      throw new UnauthorizedException("Invalid verification request");
     }
 
     const userForTokens = await this.dataSource.transaction(async (manager) => {
@@ -262,12 +268,12 @@ export class AuthService {
       });
 
       if (!lockedOtp) {
-        throw new BadRequestException("Verification code already used");
+        throw new UnauthorizedException("Verification code already used");
       }
 
       if (lockedOtp.expiresAt.getTime() < Date.now()) {
         await otpRepo.delete({ id: lockedOtp.id });
-        throw new BadRequestException("Verification code expired");
+        throw new UnauthorizedException("Verification code expired");
       }
 
       const userUpdate = await manager.update(
@@ -281,7 +287,10 @@ export class AuthService {
         { is_verified: true },
       );
 
-      if ((userUpdate.affected ?? 0) === 0 || (emailUpdate.affected ?? 0) === 0) {
+      if (
+        (userUpdate.affected ?? 0) === 0 ||
+        (emailUpdate.affected ?? 0) === 0
+      ) {
         throw new BadRequestException("Invalid verification request");
       }
 
@@ -370,6 +379,168 @@ export class AuthService {
     this.eventEmitter.emit("auth.otp_generated", event);
   }
 
+  async passwordResetRequest(
+    passwordResetRequestDto: PasswordResetRequestDto,
+  ): Promise<void> {
+    const startedAt = Date.now();
+    const emailEntity = await this.userEmailRepository.findOne({
+      where: { email: passwordResetRequestDto.email },
+    });
+
+    if (!emailEntity) {
+      // Keep timing consistent for unknown emails.
+      await bcrypt.hash("dummy", 10);
+      await this.applyMinimumResetRequestDuration(startedAt);
+      return;
+    }
+
+    const plainOtp = this.generateOtpCode();
+    const codeHash = await bcrypt.hash(plainOtp, 10);
+
+    await this.dataSource.transaction(async (manager) => {
+      const otpRepo = manager.getRepository(Otp);
+
+      await otpRepo.delete({
+        email: passwordResetRequestDto.email,
+        purpose: OtpPurpose.RESET_PASSWORD,
+      });
+
+      await otpRepo.save(
+        otpRepo.create({
+          email: passwordResetRequestDto.email,
+          codeHash,
+          purpose: OtpPurpose.RESET_PASSWORD,
+          expiresAt: this.generateOtpExpiration(),
+        }),
+      );
+    });
+
+    const event: OtpGeneratedEvent = {
+      email: passwordResetRequestDto.email,
+      plainOtp,
+      purpose: OtpPurpose.RESET_PASSWORD,
+    };
+
+    this.eventEmitter.emit("auth.reset_password_requested", event);
+    await this.applyMinimumResetRequestDuration(startedAt);
+  }
+
+  async passwordResetVerify(
+    passwordResetVerifyDto: PasswordResetVerifyDto,
+  ): Promise<string> {
+    if (passwordResetVerifyDto.purpose !== OtpPurpose.RESET_PASSWORD) {
+      throw new BadRequestException(GENERIC_RESET_VERIFY_ERROR);
+    }
+
+    const emailEntity = await this.userEmailRepository.findOne({
+      where: { email: passwordResetVerifyDto.email },
+    });
+
+    if (!emailEntity) {
+      await bcrypt.compare(passwordResetVerifyDto.code, DUMMY_OTP_HASH);
+      throw new BadRequestException(GENERIC_RESET_VERIFY_ERROR);
+    }
+
+    const userEntity = await this.userRepository.findOne({
+      where: { user_id: emailEntity.user_id },
+    });
+
+    if (!userEntity) {
+      await bcrypt.compare(passwordResetVerifyDto.code, DUMMY_OTP_HASH);
+      throw new BadRequestException(GENERIC_RESET_VERIFY_ERROR);
+    }
+
+    const verifyResult = await this.dataSource.transaction(
+      async (manager): Promise<PasswordResetVerifyResult> => {
+        const otpRepo = manager.getRepository(Otp);
+        const otpEntity = await otpRepo
+          .createQueryBuilder("otp")
+          .setLock("pessimistic_write")
+          .where("otp.email = :email", { email: passwordResetVerifyDto.email })
+          .andWhere("otp.purpose = :purpose", {
+            purpose: OtpPurpose.RESET_PASSWORD,
+          })
+          .getOne();
+
+        if (
+          !otpEntity ||
+          otpEntity.attempts >= MAX_OTP_ATTEMPTS ||
+          otpEntity.expiresAt.getTime() < Date.now()
+        ) {
+          return { isValid: false };
+        }
+
+        const otpIsValid = await bcrypt.compare(
+          passwordResetVerifyDto.code,
+          otpEntity.codeHash,
+        );
+
+        if (!otpIsValid) {
+          otpEntity.attempts += 1;
+          await otpRepo.save(otpEntity);
+          return { isValid: false };
+        }
+
+        await otpRepo.delete({ id: otpEntity.id });
+
+        return {
+          isValid: true,
+          userId: userEntity.user_id,
+        };
+      },
+    );
+
+    if (!verifyResult.isValid || !verifyResult.userId) {
+      throw new BadRequestException(GENERIC_RESET_VERIFY_ERROR);
+    }
+
+    return this.jwtService.sign(
+      {
+        userId: verifyResult.userId,
+        purpose: PASSWORD_RESET_AUTHORIZED_PURPOSE,
+        tv: userEntity.tokenVersion ?? 1,
+      },
+      { expiresIn: "15m" },
+    );
+  }
+
+  async passwordUpdate(userId: string, newPassword: string): Promise<void> {
+    const hashedPassword = await hashPassword(newPassword);
+
+    await this.dataSource.transaction(async (manager) => {
+      const userRepo = manager.getRepository(user);
+      const passwordRepo = manager.getRepository(user_password);
+
+      const foundUser = await userRepo.findOne({ where: { user_id: userId } });
+      if (!foundUser) {
+        throw new BadRequestException("Invalid password update request");
+      }
+
+      const passwordEntity = await passwordRepo.findOne({
+        where: { user_id: userId },
+      });
+
+      if (!passwordEntity) {
+        await passwordRepo.save(
+          passwordRepo.create({
+            user_id: userId,
+            password: hashedPassword,
+          }),
+        );
+      } else {
+        passwordEntity.password = hashedPassword;
+        await passwordRepo.save(passwordEntity);
+      }
+
+      await userRepo
+        .createQueryBuilder()
+        .update(user)
+        .set({ tokenVersion: () => `"tokenVersion" + 1` })
+        .where("user_id = :userId", { userId })
+        .execute();
+    });
+  }
+
   async validateUser(email: string, password: string): Promise<user> {
     const emailEntity = await this.userEmailRepository.findOne({
       where: { email },
@@ -441,33 +612,11 @@ export class AuthService {
     });
   }
 
-  async verifyAccessToken(token: string): Promise<user> {
-    try {
-      const payload = await this.jwtService.verifyAsync(token);
-
-      if (!payload.userId) {
-        throw new UnauthorizedException("Invalid token payload");
-      }
-
-      const user = await this.getUserById(payload.userId);
-      if (!user) {
-        throw new UnauthorizedException("User not found");
-      }
-
-      return user;
-    } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      this.logger.warn(`Access token verification failed:`, error);
-      throw new UnauthorizedException("Invalid or expired access token");
-    }
-  }
-
   private async createAuthTokens(userEntity: user): Promise<AuthTokens> {
     const payload = {
       userId: userEntity.user_id,
       username: userEntity.username,
+      tv: userEntity.tokenVersion ?? 1,
     };
 
     const accessToken = await this.jwtService.signAsync(payload);
@@ -496,5 +645,16 @@ export class AuthService {
 
   private generateOtpExpiration(): Date {
     return new Date(Date.now() + OTP_EXPIRATION_MINUTES * 60 * 1000);
+  }
+
+  private async applyMinimumResetRequestDuration(
+    startedAt: number,
+  ): Promise<void> {
+    const elapsed = Date.now() - startedAt;
+    const remaining = PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS - elapsed;
+
+    if (remaining > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remaining));
+    }
   }
 }

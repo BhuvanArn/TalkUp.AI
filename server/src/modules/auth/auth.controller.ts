@@ -8,10 +8,13 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UsePipes,
 } from "@nestjs/common";
-import { AccessTokenGuard } from "@common/guards/accessToken.guard";
-import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { Response, CookieOptions } from "express";
+
+import { AccessTokenGuard } from "@common/guards/accessToken.guard";
+import { ResetTokenGuard } from "@common/guards/resetToken.guard";
 
 import {
   ApiBadRequestResponse,
@@ -28,6 +31,9 @@ import { LoginDto } from "./dto/login.dto";
 import { EditUserDto } from "./dto/editUser.dto";
 import { VerifyEmailDto } from "./dto/verifyEmail.dto";
 import { ResendOtpDto } from "./dto/resendOtp.dto";
+import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
+import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
+import { PasswordUpdateDto } from "./dto/passwordUpdate.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { UserId } from "@common/decorators/userId.decorator";
@@ -166,6 +172,76 @@ export class AuthController {
   @Get("status")
   async getAuthStatus() {
     return { authenticated: true };
+  }
+
+  @ApiAcceptedResponse({
+    description: "If the account exists, a reset OTP request is processed.",
+  })
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @UsePipes(new PostValidationPipe())
+  @Post("password-reset-request")
+  @HttpCode(HttpStatus.ACCEPTED)
+  async passwordResetRequest(
+    @Body() passwordResetRequestDto: PasswordResetRequestDto,
+  ) {
+    await this.authService.passwordResetRequest(passwordResetRequestDto);
+
+    return {
+      message: "If the account exists, a password reset code will be sent",
+    };
+  }
+
+  @ApiOkResponse({
+    description: "OTP verified and reset token issued.",
+  })
+  @UsePipes(new PostValidationPipe())
+  @Post("password-reset-verify")
+  @HttpCode(HttpStatus.OK)
+  async passwordResetVerify(
+    @Body() passwordResetVerifyDto: PasswordResetVerifyDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const resetToken = await this.authService.passwordResetVerify(
+      passwordResetVerifyDto,
+    );
+
+    response.cookie("resetToken", resetToken, {
+      ...BASE_COOKIE_OPTIONS,
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    return { resetToken };
+  }
+
+  @ApiOkResponse({
+    description: "Password updated successfully.",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Reset token is missing, invalid, or expired.",
+  })
+  @UseGuards(ResetTokenGuard)
+  @UsePipes(new PostValidationPipe())
+  @Patch("password-update")
+  @HttpCode(HttpStatus.OK)
+  async passwordUpdate(
+    @UserId() userId: string,
+    @Body() passwordUpdateDto: PasswordUpdateDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.authService.passwordUpdate(
+      userId,
+      passwordUpdateDto.newPassword,
+    );
+
+    // remove resetToken cookie after successful password update
+    response.cookie("resetToken", "", {
+      ...BASE_COOKIE_OPTIONS,
+      maxAge: 0,
+      expires: new Date(0),
+    });
+
+    return { message: "Password updated successfully" };
   }
 
   @Patch("editUser")
