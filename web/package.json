@@ -5,27 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-
     "preview": "vite preview",
-
     "build": "vite build",
-
     "lint": "oxlint --fix --react-plugin --jsx-a11y-plugin --import-plugin --promise-plugin src/",
     "lint:check": "oxlint --react-plugin --jsx-a11y-plugin --import-plugin --promise-plugin src/",
-
     "format": "prettier --write \"./**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"./**/*.{ts,tsx}\"",
-
     "tsc": "tsc -b",
     "tsc:check": "tsc -b --noEmit",
-
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
-
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
-
     "playwright:install": "playwright install --with-deps",
     "playwright:install-deps": "playwright install-deps"
   },

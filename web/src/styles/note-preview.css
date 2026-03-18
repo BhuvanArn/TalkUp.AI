@@ -98,7 +98,10 @@
   margin-top: 0.1em;
 }
 
-.note-preview-content li[data-type='taskItem'] > label > input[type='checkbox'] {
+.note-preview-content
+  li[data-type='taskItem']
+  > label
+  > input[type='checkbox'] {
   width: 10px;
   height: 10px;
   margin: 0;
