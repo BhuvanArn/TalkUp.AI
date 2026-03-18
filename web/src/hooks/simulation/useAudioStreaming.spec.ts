@@ -21,6 +21,9 @@ describe('useAudioStreaming', () => {
       getTracks: vi.fn(() => [mockAudioTrack]),
     } as any;
 
+    // Mock import.meta.env
+    vi.stubEnv('VITE_WEBSOCKET_KEY', 'test-key-123');
+
     // Mock MediaRecorder - minimal mock that doesn't require full lifecycle
     global.MediaRecorder = vi.fn() as any;
     (global.MediaRecorder as any).isTypeSupported = vi.fn((mimeType: string) =>
@@ -40,6 +43,7 @@ describe('useAudioStreaming', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
   });
 
   describe('Hook Interface', () => {
@@ -48,6 +52,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: null,
+          interviewID: null,
           onAudioPacket,
           isActive: false,
         }),
@@ -69,6 +74,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: null,
+          interviewID: null,
           onAudioPacket,
           isActive: false,
         }),
@@ -87,6 +93,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: null,
+          interviewID: null,
           onAudioPacket,
           isActive: true,
         }),
@@ -110,6 +117,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: streamWithoutAudio,
+          interviewID: null,
           onAudioPacket,
           isActive: true,
         }),
@@ -126,6 +134,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: null,
+          interviewID: null,
           onAudioPacket,
           isActive: false,
         }),
@@ -152,6 +161,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: true,
         }),
@@ -181,6 +191,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: true,
           mimeType: 'audio/mp4',
@@ -199,6 +210,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: true,
         }),
@@ -220,6 +232,7 @@ describe('useAudioStreaming', () => {
         renderHook(() =>
           useAudioStreaming({
             stream: mockMediaStream,
+            interviewID: 'test-interview-id',
             onAudioPacket,
             isActive: false,
             timeSlice: 500,
@@ -236,6 +249,7 @@ describe('useAudioStreaming', () => {
         renderHook(() =>
           useAudioStreaming({
             stream: mockMediaStream,
+            interviewID: 'test-interview-id',
             onAudioPacket,
             isActive: false,
             mimeType: 'audio/mp4',
@@ -255,6 +269,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: true,
         }),
@@ -271,6 +286,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: false,
         }),
@@ -288,6 +304,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: false,
         }),
@@ -308,6 +325,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: false,
         }),
@@ -328,6 +346,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: null,
+          interviewID: null,
           onAudioPacket,
           isActive: false,
         }),
@@ -363,6 +382,7 @@ describe('useAudioStreaming', () => {
         ({ stream }: { stream: MediaStream | null }) =>
           useAudioStreaming({
             stream,
+            interviewID: 'test-interview-id',
             onAudioPacket,
             isActive: false,
           }),
@@ -396,6 +416,7 @@ describe('useAudioStreaming', () => {
         renderHook(() =>
           useAudioStreaming({
             stream: mockMediaStream,
+            interviewID: 'test-interview-id',
             onAudioPacket,
             isActive: true,
           }),
@@ -410,6 +431,7 @@ describe('useAudioStreaming', () => {
         renderHook(() =>
           useAudioStreaming({
             stream: mockMediaStream,
+            interviewID: 'test-interview-id',
             onAudioPacket,
             isActive: true,
             timeSlice: 250,
@@ -425,6 +447,7 @@ describe('useAudioStreaming', () => {
         renderHook(() =>
           useAudioStreaming({
             stream: mockMediaStream,
+            interviewID: 'test-interview-id',
             onAudioPacket,
             isActive: true,
             mimeType: 'audio/webm',
@@ -441,6 +464,7 @@ describe('useAudioStreaming', () => {
         ({ callback }: { callback: typeof callback1 }) =>
           useAudioStreaming({
             stream: mockMediaStream,
+            interviewID: 'test-interview-id',
             onAudioPacket: callback,
             isActive: false,
           }),
@@ -457,6 +481,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: false,
         }),
@@ -470,6 +495,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: false,
         }),
@@ -483,6 +509,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: false,
         }),
@@ -496,6 +523,7 @@ describe('useAudioStreaming', () => {
       const { result } = renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
+          interviewID: 'test-interview-id',
           onAudioPacket,
           isActive: false,
         }),

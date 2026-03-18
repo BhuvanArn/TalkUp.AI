@@ -66,6 +66,11 @@ void talkup_network::WsManager::handle_ping(const nlohmann::json& json, crow::we
 void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, crow::websocket::connection& conn,
     std::shared_ptr<MicroservicesManager> microservices_manager)
 {
+    std::string key = json["key"].get<std::string>();
+    std::string stream_id = json["stream_id"].get<std::string>();
+    std::string format = json["format"].get<std::string>();
+    int64_t timestamp = json["timestamp"].get<int64_t>();
+
     if (json["format"] == "audio") {
         if (!microservices_manager) {
             conn.send_text(set_respond_json_format({
