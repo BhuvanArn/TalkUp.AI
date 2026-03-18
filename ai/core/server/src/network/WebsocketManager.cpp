@@ -15,9 +15,13 @@
 talkup_network::WsManager::WsManager()
 {
     _type_handlers["ping"] = [this](const nlohmann::json& json,
-        crow::websocket::connection& conn){ handle_ping(json,conn); };
+        crow::websocket::connection& conn, std::shared_ptr<MicroservicesManager>) {
+            handle_ping(json, conn);
+        };
     _type_handlers["stream_chunk"] = [this](const nlohmann::json& json,
-        crow::websocket::connection& conn){ handle_stream_chunk(json,conn, nullptr); };
+        crow::websocket::connection& conn, std::shared_ptr<MicroservicesManager> microservices_manager) {
+            handle_stream_chunk(json, conn, microservices_manager);
+        };
 }
 
 void talkup_network::WsManager::connection_type_manager(nlohmann::json &json, crow::websocket::connection &conn,
@@ -28,7 +32,7 @@ void talkup_network::WsManager::connection_type_manager(nlohmann::json &json, cr
         auto it = _type_handlers.find(type);
 
         if (it != _type_handlers.end()) {
-            it->second(json, conn);
+            it->second(json, conn, microservices_manager);
         } else {
             nlohmann::json err;
             err["type"] = "error";
@@ -63,6 +67,19 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
     std::shared_ptr<MicroservicesManager> microservices_manager)
 {
     if (json["format"] == "audio") {
+        if (!microservices_manager) {
+            conn.send_text(set_respond_json_format({
+                .type = "error",
+                .key = json.value("key", ""),
+                .stream_id = json.value("stream_id", ""),
+                .format = "text",
+                .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count(),
+                .data = "microservices manager unavailable"
+            }).dump());
+            return;
+        }
+
         std::string key = json["key"].get<std::string>();
         std::string stream_id = json["stream_id"].get<std::string>();
         std::string format = json["format"].get<std::string>();
@@ -76,17 +93,51 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
             .timestamp = timestamp,
             .data = "audio chunk received"
         }).dump());
-        microservices_manager->send_to_stt_microservice(json, [this, &conn, key, stream_id](const nlohmann::json& resp) {
-            conn.send_text(set_respond_json_format({
-                .type = "stt_result",
-                .key = key,
-                .stream_id = stream_id,
-                .format = "text",
-                .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
-                    std::chrono::system_clock::now().time_since_epoch()).count(),
-                .data = resp.dump()
-            }).dump());
-        });
+        microservices_manager->send_to_stt_microservice(json,
+            [this, &conn, key, stream_id, microservices_manager](const nlohmann::json& stt_resp) {
+                if (stt_resp.contains("error") ||
+                    (stt_resp.contains("type") && stt_resp["type"].is_string() && stt_resp["type"] == "error")) {
+                    conn.send_text(set_respond_json_format({
+                        .type = "error",
+                        .key = key,
+                        .stream_id = stream_id,
+                        .format = "text",
+                        .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                            std::chrono::system_clock::now().time_since_epoch()).count(),
+                        .data = stt_resp.dump()
+                    }).dump());
+                    return;
+                }
+
+                microservices_manager->end_to_tts_microservice(stt_resp,
+                    [this, &conn, key, stream_id](const nlohmann::json& tts_resp) {
+                        if (tts_resp.contains("error") ||
+                            (tts_resp.contains("type") && tts_resp["type"].is_string() && tts_resp["type"] == "error")) {
+                            conn.send_text(set_respond_json_format({
+                                .type = "error",
+                                .key = key,
+                                .stream_id = stream_id,
+                                .format = "text",
+                                .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                                    std::chrono::system_clock::now().time_since_epoch()).count(),
+                                .data = tts_resp.dump()
+                            }).dump());
+                            return;
+                        }
+
+                        conn.send_text(set_respond_json_format({
+                            .type = "tts_result",
+                            .key = key,
+                            .stream_id = stream_id,
+                            .format = "audio",
+                            .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                                std::chrono::system_clock::now().time_since_epoch()).count(),
+                            .data = tts_resp.dump()
+                        }).dump());
+                    }
+                );
+            }
+        );
     }
 }
 
