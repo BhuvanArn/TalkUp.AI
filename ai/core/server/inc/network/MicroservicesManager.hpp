@@ -123,7 +123,6 @@ namespace talkup_network {
 
                 std::shared_ptr<boost::asio::io_context> io_context;
                 std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
-                std::shared_ptr<std::mutex> io_mutex;
                 std::thread io_thread;
                 bool is_connected = false;
                 std::mutex io_mutex;
