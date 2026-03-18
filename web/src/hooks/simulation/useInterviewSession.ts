@@ -31,6 +31,8 @@ export interface UseInterviewSessionReturn {
   isCallActive: boolean;
   /** WebSocket URL for the current interview session */
   inputUrl: string;
+  /** ID of the current interview session, if any */
+  interviewID: string | null;
   /** Function to toggle interview streaming on/off */
   handleStreamToggle: (streaming: boolean) => Promise<void>;
 }
@@ -63,6 +65,7 @@ export function useInterviewSession({
   onResumeStream,
 }: UseInterviewSessionProps): UseInterviewSessionReturn {
   const [inputUrl, setInputUrl] = useState('');
+  const [interviewID, setInterviewID] = useState<string | null>(null);
   const [isCallActive, setIsCallActive] = useState(false);
   const processingRef = useRef(false);
   const hasResumedRef = useRef(false);
@@ -79,6 +82,7 @@ export function useInterviewSession({
     if (savedInterviewID && savedInterviewURL) {
       console.log('Resuming interrupted interview:', savedInterviewID);
       setInputUrl(savedInterviewURL);
+      setInterviewID(savedInterviewID);
       setIsCallActive(true);
       onConnect(savedInterviewURL);
 
@@ -103,6 +107,7 @@ export function useInterviewSession({
             type: 'technical',
             language: 'English',
           });
+          setInterviewID(interviewID);
           localStorage.setItem(STORAGE_KEYS.INTERVIEW_ID, interviewID);
           localStorage.setItem(STORAGE_KEYS.INTERVIEW_URL, entrypoint);
           localStorage.setItem(STORAGE_KEYS.IS_STREAMING, 'true');
@@ -144,6 +149,7 @@ export function useInterviewSession({
   return {
     isCallActive,
     inputUrl,
+    interviewID,
     handleStreamToggle,
   };
 }

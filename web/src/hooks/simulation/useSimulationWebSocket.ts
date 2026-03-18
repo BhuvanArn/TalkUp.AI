@@ -1,14 +1,18 @@
 import { useCallback, useState } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
-export interface WebSocketMessage {
+export interface WebSocketPacket {
   type: string;
-  payload?: unknown;
-  timestamp?: string;
+  key: string;
+  stream_id: string;
+  format: string;
+  data: string;
+  timestamp: number | string;
 }
 
 export interface UseSimulationWebSocketProps {
   defaultUrl?: string;
+  interviewID?: string | null;
   onOpen?: () => void;
   onClose?: (event: CloseEvent) => void;
   onMessage?: (message: MessageEvent) => void;
@@ -87,9 +91,18 @@ export interface UseSimulationWebSocketReturn {
  * }, [connect, disconnect]);
  */
 export function useSimulationWebSocket(
-  props: UseSimulationWebSocketProps = {},
+  props: UseSimulationWebSocketProps = {
+    interviewID: null,
+  },
 ): UseSimulationWebSocketReturn {
-  const { defaultUrl = '', onOpen, onClose, onMessage, onError } = props;
+  const {
+    defaultUrl = '',
+    interviewID = null,
+    onOpen,
+    onClose,
+    onMessage,
+    onError,
+  } = props;
 
   const [socketUrl, setSocketUrl] = useState<string | null>(null);
 
@@ -126,23 +139,20 @@ export function useSimulationWebSocket(
     [getWebSocket],
   );
 
-  const sendPing = useCallback(
-    (payload?: unknown) => {
-      if (readyState !== ReadyState.OPEN) return;
+  const sendPing = useCallback(() => {
+    if (readyState !== ReadyState.OPEN) return;
 
-      const pingMessage: WebSocketMessage = {
-        type: 'ping',
-        timestamp: new Date().toISOString(),
-      };
+    const pingMessage: WebSocketPacket = {
+      key: import.meta.env.VITE_WEBSOCKET_KEY,
+      stream_id: interviewID ?? 'unknown',
+      format: '',
+      data: '',
+      type: 'ping',
+      timestamp: Date.now(),
+    };
 
-      if (payload !== undefined) {
-        pingMessage.payload = payload;
-      }
-
-      sendJsonMessage(pingMessage);
-    },
-    [readyState, sendJsonMessage],
-  );
+    sendJsonMessage(pingMessage);
+  }, [readyState, sendJsonMessage, interviewID]);
 
   return {
     isConnected: readyState === ReadyState.OPEN,
