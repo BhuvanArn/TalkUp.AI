@@ -1,4 +1,5 @@
 import InfoBox from '@/components/molecules/info-box';
+import NotesEditor from '@/components/molecules/notes-editor/notes-editor';
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
 import SimulationVideoArea from '@/components/organisms/simulation-video-area';
@@ -169,6 +170,7 @@ function Simulations() {
           <img src="/avatarworking.png" alt="Avatar Working" />
         </div>
       </div>
+      <NotesEditor />
     </div>
   );
 }
