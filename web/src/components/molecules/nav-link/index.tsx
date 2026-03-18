@@ -30,7 +30,7 @@ import { NavLinkProps } from './types';
  *
  * Example:
  * @example
- * <NavLink to="/dashboard" label="Dashboard" icon="home" isActive={true} isCollapsed={false} />
+ * <NavLink to="/register" label="Register" icon="register" isActive={true} isCollapsed={false} />
  */
 const NavLink = ({
   to,

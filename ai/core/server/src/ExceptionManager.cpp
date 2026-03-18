@@ -51,3 +51,8 @@ const char *ExceptionManager::NetworkEmptyBodyException::what() const noexcept
 {
     return "Empty body received in network message.";
 }
+
+const char *ExceptionManager::MicroserviceNotRegisteredException::what() const noexcept
+{
+    return "The requested microservice is not registered.";
+}

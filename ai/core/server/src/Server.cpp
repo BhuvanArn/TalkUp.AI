@@ -12,6 +12,7 @@ talkup_network::Server::Server(const std::string &server_name,
     const std::string &server_version, int port) : __server_name(server_name),
     __server_version(server_version), __port(port)
 {
+    __microservices_manager = std::make_shared<talkup_network::MicroservicesManager>();
     __console_notification = true;
     router = std::make_shared<talkup_network::Router>();
 }
@@ -33,9 +34,8 @@ bool talkup_network::Server::start_server(crow::SimpleApp &app)
         if(is_running) {
             throw ExceptionManager::ServerAlreadyRunningException();
         }
-        router->set_routes_definitions(app);
-        talkup_network::MicroservicesManager::load_microservices_info(
-            "services.json");
+        __microservices_manager->load_microservices_info("services.json");
+        router->set_routes_definitions(app, __microservices_manager);
         if (__console_notification) {
             talkup_network::Notifications::send_start_notification();
         }

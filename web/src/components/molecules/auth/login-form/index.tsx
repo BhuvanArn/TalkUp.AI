@@ -1,5 +1,16 @@
+import { Button } from '@/components/atoms/button';
+import { Icon } from '@/components/atoms/icon';
+import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostLogin } from '@/hooks/auth/useServices';
+import { extractErrorMessage } from '@/utils/error';
+import {
+  emailSchema,
+  loginPasswordSchema,
+  validateWithSchema,
+} from '@/utils/validators';
 import { useForm } from '@tanstack/react-form';
+import { Link } from '@tanstack/react-router';
+import { useState } from 'react';
 
 /**
  * A component that renders a login form with username and password fields.
@@ -21,7 +32,8 @@ import { useForm } from '@tanstack/react-form';
  * @returns A login form component with validation and styling
  */
 export const LoginForm = () => {
-  const { mutate: postLogin } = usePostLogin();
+  const postLogin = usePostLogin();
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -29,82 +41,83 @@ export const LoginForm = () => {
       password: '',
     },
     onSubmit: ({ value }) => {
-      postLogin({
-        email: value.email,
-        password: value.password,
-      });
-    },
-    validators: {
-      onSubmit: ({ value }) => {
-        if (!value.email && !value.password) {
-          return 'Email and password are required';
-        }
-        if (!value.email) {
-          return 'Email is required';
-        }
-        if (!value.password) {
-          return 'Password is required';
-        }
-      },
+      setServerError(null);
+      postLogin.mutate(
+        {
+          email: value.email,
+          password: value.password,
+        },
+        {
+          onError: (error: unknown) => {
+            setServerError(
+              extractErrorMessage(error, 'Login failed. Please try again.'),
+            );
+          },
+          onSuccess: () => setServerError(null),
+        },
+      );
     },
   });
+
   return (
-    <div className="flex flex-col w-full gap-4 px-6 py-8 bg-white rounded-md shadow-lg max-w-92">
-      <header className="flex flex-col items-center justify-between mb-2">
-        <h2 className="text-2xl font-bold text-gray-800">Login</h2>
-        <p className="text-sm font-semibold text-gray-500">
-          Login to your account
-        </p>
+    <div className="flex flex-col w-full gap-3 max-w-96">
+      <header className="flex items-center justify-start gap-4">
+        <h2 className="text-h3 text-idle">Login</h2>
+        <p className="text-body-l text-idle mt-1">Get back to your account</p>
       </header>
-      <form className="flex flex-col gap-4">
-        <form.Field name="email">
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          form.handleSubmit();
+        }}
+      >
+        <form.Field
+          name="email"
+          validators={{
+            onChange: ({ value }) => validateWithSchema(value, emailSchema),
+          }}
+        >
           {(field) => (
             <div className="flex flex-col gap-2">
-              <label
-                htmlFor="email"
-                className="text-sm font-semibold text-gray-500"
-              >
-                Email
-              </label>
-              <div className="relative">
-                <input
-                  id="email"
-                  type="email"
-                  value={field.state.value}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Your email address"
-                />
-              </div>
-              {field.state.meta.errors && (
-                <span className="text-sm text-red-500">
+              <InputMolecule
+                id="email"
+                inputType="base"
+                type="email"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                placeholder="What email did you use?"
+              />
+              {field.state.meta.errors.length > 0 && (
+                <span className="text-label-m text-error font-medium ml-1">
                   {field.state.meta.errors}
                 </span>
               )}
             </div>
           )}
         </form.Field>
-        <form.Field name="password">
+        <form.Field
+          name="password"
+          validators={{
+            onChange: ({ value }) =>
+              validateWithSchema(value, loginPasswordSchema),
+          }}
+        >
           {(field) => (
             <div className="flex flex-col gap-2">
-              <label
-                htmlFor="password"
-                className="text-sm font-semibold text-gray-500"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type="password"
-                  value={field.state.value}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Your password"
-                />
-              </div>
-              {field.state.meta.errors && (
-                <span className="text-sm text-red-500">
+              <InputMolecule
+                id="password"
+                inputType="base"
+                type="password"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                placeholder="Please type your password"
+              />
+              {field.state.meta.errors.length > 0 && (
+                <span className="text-label-m text-error font-medium ml-1">
                   {field.state.meta.errors}
                 </span>
               )}
@@ -112,16 +125,39 @@ export const LoginForm = () => {
           )}
         </form.Field>
         <form.Subscribe selector={(state) => state.errors}>
-          {(errors) => <span className="text-sm text-red-500">{errors}</span>}
+          {(errors) =>
+            errors.length > 0 && (
+              <span className="text-sm text-red-500 text-center">{errors}</span>
+            )
+          }
         </form.Subscribe>
+
+        {serverError && (
+          <div className="text-sm text-red-600 text-center" role="alert">
+            {serverError}
+          </div>
+        )}
+        <Link
+          to="/register"
+          className="text-idle text-label-m underline hover:text-active cursor-pointer"
+          disabled
+        >
+          Forgot your password?
+        </Link>
+        <Button color="accent" type="submit">
+          <Icon icon="login" color="white" />
+          Log In
+        </Button>
+        <p className="text-idle text-label-m">
+          You do not have an account?{' '}
+          <Link
+            to="/register"
+            className="underline hover:text-active cursor-pointer"
+          >
+            Create one
+          </Link>
+        </p>
       </form>
-      <button
-        className="p-2 text-white rounded-md cursor-pointer bg-primary"
-        type="submit"
-        onClick={() => form.handleSubmit()}
-      >
-        Login
-      </button>
     </div>
   );
 };

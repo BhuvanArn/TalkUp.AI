@@ -17,14 +17,14 @@ describe('NavLink', () => {
   });
 
   it('renders the label and forwards `to` as href on the Link', () => {
-    render(<NavLink to="/dashboard" label="Dashboard" />);
+    render(<NavLink to="/register" label="Dashboard" />);
 
     const button = screen.getByRole('button', { name: 'Dashboard' });
     expect(button).toBeInTheDocument();
 
     const anchor = button.closest('a');
     expect(anchor).toBeInTheDocument();
-    expect(anchor).toHaveAttribute('href', '/dashboard');
+    expect(anchor).toHaveAttribute('href', '/register');
     expect(anchor).toHaveClass('w-full');
   });
 

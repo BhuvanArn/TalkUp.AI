@@ -35,7 +35,7 @@ export const usePostRegister = () => {
     onSuccess: () => {
       login();
       toast.success('Registration successful');
-      router.navigate({ to: '/dashboard' });
+      router.navigate({ to: '/' });
     },
     onError: (error) => {
       toast.error('Registration failed');
@@ -73,7 +73,7 @@ export const usePostLogin = () => {
       toast.success('Login successful');
 
       const search = new URLSearchParams(window.location.search);
-      const redirectTo = search.get('redirect') || '/dashboard';
+      const redirectTo = search.get('redirect') || '/';
       router.navigate({ to: redirectTo });
     },
     onError: (error) => {
