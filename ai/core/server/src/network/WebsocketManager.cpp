@@ -68,6 +68,11 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
     int64_t timestamp = json["timestamp"].get<int64_t>();
 
     if (json["format"] == "audio") {
+        std::string key = json["key"].get<std::string>();
+        std::string stream_id = json["stream_id"].get<std::string>();
+        std::string format = json["format"].get<std::string>();
+        int64_t timestamp = json["timestamp"].get<int64_t>();
+
         conn.send_text(set_respond_json_format({
             .type = "acknowledge",
             .key = key,
