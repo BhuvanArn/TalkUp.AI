@@ -107,7 +107,7 @@ describe('navigation-contexts', () => {
       expect(labels).toContain('Home');
       expect(labels).toContain('About');
       expect(labels).toContain('Login');
-      expect(labels).toContain('Sign Up');
+      expect(labels).toContain('Register');
     });
 
     it('should have all items visible in navigation', () => {
@@ -121,7 +121,7 @@ describe('navigation-contexts', () => {
       expect(routes).toContain('/');
       expect(routes).toContain('/about');
       expect(routes).toContain('/login');
-      expect(routes).toContain('/signup');
+      expect(routes).toContain('/register');
     });
   });
 

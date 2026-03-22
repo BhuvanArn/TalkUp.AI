@@ -72,6 +72,11 @@ const ExternalAppConnector = ({
   </div>
 );
 
+/**
+ * Main component for the Agenda page.
+ * Displays the main calendar view, a mini-calendar, and the next upcoming event.
+ * @returns {JSX.Element} The Agenda page component.
+ */
 function Agenda() {
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isAppleConnected, setIsAppleConnected] = useState(false);

@@ -6,7 +6,7 @@ import { NavigationProps } from './types';
 /**
  * Public navigation section
  *
- * Shows navigation items for unauthenticated users: Home, About, Login, Sign Up
+ * Shows navigation items for unauthenticated users: Home, About, Login, Register
  */
 export const PublicNavigation = ({ isCollapsed = false }: NavigationProps) => {
   const publicContext = navigationContexts['public'];

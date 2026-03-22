@@ -71,18 +71,18 @@ export const createAuthGuard = (routePath: string) => {
 };
 
 /**
- * Creates a guard function for public routes such as '/login' and '/signup'.
- * If the user is already authenticated, they are redirected to '/dashboard'.
+ * Creates a guard function for public routes such as '/login' and '/register'.
+ * If the user is already authenticated, they are redirected to '/'.
  * Otherwise, the route is accessible.
  *
- * @param routePath - The path of the route to guard (e.g., '/login', '/signup').
+ * @param routePath - The path of the route to guard (e.g., '/login', '/register').
  * @returns An asynchronous guard function to be used in route protection.
  *
- * @throws Redirects to '/dashboard' if the user is already authenticated.
+ * @throws Redirects to '/' if the user is already authenticated.
  */
 export const createPublicRouteGuard = (routePath: string) => {
   return async () => {
-    if (routePath !== '/login' && routePath !== '/signup') {
+    if (routePath !== '/login' && routePath !== '/register') {
       return;
     }
 
@@ -90,7 +90,7 @@ export const createPublicRouteGuard = (routePath: string) => {
 
     if (isAuthenticated) {
       throw redirect({
-        to: '/dashboard',
+        to: '/',
       });
     }
   };

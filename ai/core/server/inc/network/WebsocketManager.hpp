@@ -12,6 +12,9 @@
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <crow.h>
+#include <memory>
+
+#include "MicroservicesManager.hpp"
 
 namespace talkup_network {
     class WsManager {
@@ -49,7 +52,8 @@ namespace talkup_network {
              * @param j The JSON object containing the message data.
              * @param conn The WebSocket connection object.
              */
-            void connection_type_manager(nlohmann::json &json, crow::websocket::connection& conn);
+            void connection_type_manager(nlohmann::json &json, crow::websocket::connection& conn,
+                std::shared_ptr<MicroservicesManager> microservices_manager);
 
             /**
              * @brief With the given parameters, it will set the respond JSON format and return it.
@@ -79,10 +83,11 @@ namespace talkup_network {
              * @param json The JSON object containing the stream chunk message.
              * @param conn The WebSocket connection object.
              */
-            void handle_stream_chunk(const nlohmann::json& json, crow::websocket::connection& conn);
+            void handle_stream_chunk(const nlohmann::json& json, crow::websocket::connection& conn,
+                std::shared_ptr<MicroservicesManager> microservices_manager);
 
         private:
             std::unordered_map<std::string, std::function<void(const nlohmann::json&,
-                crow::websocket::connection&)>> _type_handlers;
+                crow::websocket::connection&, std::shared_ptr<MicroservicesManager>)>> _type_handlers;
     };
 }

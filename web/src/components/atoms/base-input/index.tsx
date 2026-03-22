@@ -1,18 +1,10 @@
+import { Icon } from '@/components/atoms/icon';
 import { cn } from '@/utils/cn';
-import React, { useId } from 'react';
+import React, { useId, useState } from 'react';
 
-export interface BaseInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
-  id?: string;
-  name?: string;
-  value?: string;
-  type?: string;
-  placeholder?: string;
-  disabled?: boolean;
-  readOnly?: boolean;
-  required?: boolean;
-  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-}
+import type { BaseInputProps } from './types';
+
+export type { BaseInputProps };
 
 /**
  * A base input component for form elements.
@@ -32,21 +24,35 @@ export interface BaseInputProps
  * @param {string} [props.className] - Additional CSS classes to apply.
  * @returns {JSX.Element} The rendered input component.
  */
-export const BaseInput: React.FC<BaseInputProps> = ({
-  id,
-  name = 'input',
-  value = '',
-  type = 'text',
-  placeholder = 'Enter text',
-  disabled = false,
-  readOnly = false,
-  required = false,
-  onChange = () => {},
-  className,
-  ...rest
-}) => {
+export const BaseInput: React.FC<BaseInputProps> = (props) => {
+  const {
+    id,
+    name = 'input',
+    value = '',
+    type = 'text',
+    placeholder = 'Enter text',
+    disabled = false,
+    readOnly = false,
+    required = false,
+    onChange = () => {},
+    className,
+    ...rest
+  } = props as BaseInputProps;
   const generatedId = useId();
   const inputId = id || generatedId;
+  const [showPassword, setShowPassword] = useState(false);
+
+  const resolvedType = (type ?? 'text') as string;
+  const isPasswordType = resolvedType === 'password';
+  const inputType = isPasswordType
+    ? showPassword
+      ? 'text'
+      : 'password'
+    : resolvedType;
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
 
   return (
     <input

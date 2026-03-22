@@ -1,27 +1,37 @@
 {
   "stt": {
-    "Name": "Speech To Text",
+    "Name": "STT",
     "Description": "Converts audio to text",
-    "Url": "http://localhost:5053/"
+    "Port": "8002",
+    "Ip": "speech_to_text",
+    "RouteWs": "/ws/stt"
   },
   "ba": {
-    "Name": "Behavior Analyzer",
+    "Name": "BA",
     "Description": "Analyzes user behavior",
-    "Url": "http://localhost:5051/"
+    "Port": "8003",
+    "Ip": "behavior_analysis",
+    "RouteWs": "/ws/ba"
   },
   "ea": {
-    "Name": "Emotion Analyzer",
+    "Name": "EA",
     "Description": "Analyzes emotions of the user (visual)",
-    "Url": "http://localhost:5052/"
+    "Port": "8004",
+    "Ip": "emotion_analysis",
+    "RouteWs": "/ws/ea"
   },
   "tts": {
-    "Name": "Text To Speech",
+    "Name": "TTS",
     "Description": "Converts text to audio",
-    "Url": "http://localhost:5054/"
+    "Port": "8005",
+    "Ip": "text_to_speech",
+    "RouteWs": "/ws/tts"
   },
   "va": {
-    "Name": "Verbal Analyzer",
+    "Name": "VA",
     "Description": "Analyzes verbal communication",
-    "Url": "http://localhost:5055/"
+    "Port": "8006",
+    "Ip": "verbal_analysis",
+    "RouteWs": "/ws/va"
   }
 }

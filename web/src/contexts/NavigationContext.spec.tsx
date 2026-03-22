@@ -59,8 +59,8 @@ describe('NavigationContext', () => {
       });
     });
 
-    it('should update context when route changes to signup', async () => {
-      (useRouterState as Mock).mockReturnValue('/signup');
+    it('should update context when route changes to register', async () => {
+      (useRouterState as Mock).mockReturnValue('/register');
 
       const { result } = renderHook(() => useNavigation(), {
         wrapper: ({ children }) => (
@@ -369,8 +369,8 @@ describe('NavigationContext', () => {
       expect(result.current.contextType).toBe('public');
     });
 
-    it('should return "public" for /signup', () => {
-      (useRouterState as Mock).mockReturnValue('/signup');
+    it('should return "public" for /register', () => {
+      (useRouterState as Mock).mockReturnValue('/register');
 
       const { result } = renderHook(() => useNavigation(), {
         wrapper: ({ children }) => (
