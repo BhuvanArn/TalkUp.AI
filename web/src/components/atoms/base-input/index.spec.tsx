@@ -304,19 +304,20 @@ describe('BaseInput', () => {
       expect(toggleButton).toHaveAttribute('aria-label', 'Show password');
     });
 
-  it('renders as required when required prop is true', () => {
-    render(<BaseInput required />);
-    const inputElement = screen.getByRole('textbox', { name: 'input' });
-    expect(inputElement).toHaveAttribute('required');
-    expect(inputElement).toHaveAttribute('aria-required', 'true');
-  });
+    it('renders as required when required prop is true', () => {
+      render(<BaseInput required />);
+      const inputElement = screen.getByRole('textbox', { name: 'input' });
+      expect(inputElement).toHaveAttribute('required');
+      expect(inputElement).toHaveAttribute('aria-required', 'true');
+    });
 
-  it('passes additional HTML attributes to the input element', () => {
-    render(<BaseInput data-testid="custom-input" className="extra-class" />);
-    const inputElement = screen.getByTestId('custom-input');
+    it('passes additional HTML attributes to the input element', () => {
+      render(<BaseInput data-testid="custom-input" className="extra-class" />);
+      const inputElement = screen.getByTestId('custom-input');
 
-    expect(inputElement).toBeInTheDocument();
-    expect(inputElement).toHaveClass('extra-class');
-    expect(inputElement).toHaveClass('p-2');
+      expect(inputElement).toBeInTheDocument();
+      expect(inputElement).toHaveClass('extra-class');
+      expect(inputElement).toHaveClass('p-2');
+    });
   });
 });

@@ -1,6 +1,5 @@
-import { Icon } from '@/components/atoms/icon';
 import { cn } from '@/utils/cn';
-import React, { useId, useState } from 'react';
+import React, { useId } from 'react';
 
 import type { BaseInputProps } from './types';
 
@@ -40,19 +39,6 @@ export const BaseInput: React.FC<BaseInputProps> = (props) => {
   } = props as BaseInputProps;
   const generatedId = useId();
   const inputId = id || generatedId;
-  const [showPassword, setShowPassword] = useState(false);
-
-  const resolvedType = (type ?? 'text') as string;
-  const isPasswordType = resolvedType === 'password';
-  const inputType = isPasswordType
-    ? showPassword
-      ? 'text'
-      : 'password'
-    : resolvedType;
-
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
-  };
 
   return (
     <input
