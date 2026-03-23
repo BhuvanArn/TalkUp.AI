@@ -12,9 +12,9 @@ import { CalendarListDayHeaderProps } from './types';
 const CalendarListDayHeader = ({
   dayName,
   date,
-  isToday,
   fullDate,
   calendarViewMode,
+  hasEvents,
   onDayClick,
   onCreateEvent,
 }: CalendarListDayHeaderProps) => {
@@ -30,10 +30,7 @@ const CalendarListDayHeader = ({
       )}
       <div className="pl-2 grid grid-cols-[100px_100px_1fr] items-center justify-center">
         <span className="text-body-m text-idle">{dayName}</span>
-        <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-body-xl-strong 
-            ${isToday ? 'bg-accent text-white' : 'text-idle'}`}
-        >
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-body-xl-strong`}>
           <span>{date}</span>
         </div>
       </div>
@@ -41,7 +38,9 @@ const CalendarListDayHeader = ({
       <IconAction
         onClick={() => onCreateEvent(fullDate)}
         className={`opacity-0 hover:bg-surface-raised z-10 mr-1 rounded-full p-1 ${
-          calendarViewMode === 'day'
+          hasEvents
+            ? 'hidden'
+            : calendarViewMode === 'day'
             ? 'opacity-100'
             : 'group-hover:opacity-100 focus:opacity-100'
         }`}

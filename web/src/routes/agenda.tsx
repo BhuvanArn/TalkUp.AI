@@ -4,11 +4,13 @@ import CalendarControlBar from '@/components/molecules/calendar-control-bar';
 import MiniCalendar from '@/components/molecules/mini-calendar';
 import NextEventCard from '@/components/molecules/next-event-card';
 import CalendarContainer from '@/components/organisms/calendar-container';
+import { useCalendarStore } from '@/stores/useCalendarStore';
+import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/agenda')({
-  // beforeLoad: createAuthGuard('/agenda'),
+  beforeLoad: createAuthGuard('/agenda'),
   component: Agenda,
 });
 
@@ -77,8 +79,13 @@ const ExternalAppConnector = ({
  * @returns {JSX.Element} The Agenda page component.
  */
 function Agenda() {
+  const { fetchEvents, isLoading, error } = useCalendarStore();
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isAppleConnected, setIsAppleConnected] = useState(false);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   /**
    * TODO: Replace with real backend OAuth flow
@@ -127,6 +134,12 @@ function Agenda() {
         {/* Calendar Column */}
         <div className="bg-white rounded-[10px] px-6 py-3 h-full flex flex-col gap-3 overflow-hidden">
           <CalendarControlBar />
+          {isLoading && (
+            <p className="text-body-s text-gray-500" role="status">
+              Loading agenda events...
+            </p>
+          )}
+          {error && <p className="text-body-s text-red-500">{error}</p>}
           <div className="flex-1 min-h-0">
             {/* CalendarContainer will eventually receive isGoogleConnected to fetch external events */}
             <CalendarContainer />

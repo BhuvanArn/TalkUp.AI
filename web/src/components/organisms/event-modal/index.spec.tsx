@@ -32,6 +32,16 @@ vi.mock('@/components/atoms/text-area', () => ({
   TextArea: (props: any) => <textarea data-testid="text-area" {...props} />,
 }));
 
+vi.mock('@/components/atoms/time-combobox', () => ({
+  TimeComboBox: (props: any) => (
+    <input
+      data-testid="time-combobox"
+      value={props.value}
+      onChange={(e) => props.onChange(e.target.value)}
+    />
+  ),
+}));
+
 vi.mock('@/components/molecules/input-molecule', () => ({
   InputMolecule: (props: any) => (
     <input data-testid="input-molecule" {...props} />
@@ -166,9 +176,15 @@ describe('CalendarModal / event-modal', () => {
     // Error message shown
     expect(screen.getByText('Some error')).toBeInTheDocument();
 
-    // Delete button present and wired
+    // First delete click opens the confirmation modal
     const deleteBtn = screen.getByText('Delete');
     fireEvent.click(deleteBtn);
+    expect(handleDelete).not.toHaveBeenCalled();
+    expect(screen.getByText('Delete Event')).toBeInTheDocument();
+
+    // Confirm delete in the confirmation modal
+    const confirmDeleteBtn = screen.getAllByText('Delete')[1];
+    fireEvent.click(confirmDeleteBtn);
     expect(handleDelete).toHaveBeenCalled();
 
     // Submit button enabled because title has text and shows 'Update'
