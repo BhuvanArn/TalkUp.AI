@@ -80,7 +80,8 @@ const CalendarListDayGroup = ({
         </div>
       )}
 
-      {(calendarViewMode === 'day' || (calendarViewMode === 'week' && hasEvents)) && (
+      {(calendarViewMode === 'day' ||
+        (calendarViewMode === 'week' && hasEvents)) && (
         <div
           className={`grid grid-cols-[180px_1fr] gap-3 items-start overflow-hidden transition-all duration-300 ease-out origin-top ${
             calendarViewMode === 'week'
@@ -90,7 +91,9 @@ const CalendarListDayGroup = ({
         >
           <div aria-hidden="true" />
           <div className="py-1">
-            <CalendarListAddButton onClick={() => onCreateEvent(day.fullDate)} />
+            <CalendarListAddButton
+              onClick={() => onCreateEvent(day.fullDate)}
+            />
           </div>
         </div>
       )}

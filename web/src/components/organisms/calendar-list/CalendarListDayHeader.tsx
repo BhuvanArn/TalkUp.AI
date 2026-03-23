@@ -30,7 +30,9 @@ const CalendarListDayHeader = ({
       )}
       <div className="pl-2 grid grid-cols-[100px_100px_1fr] items-center justify-center">
         <span className="text-body-m text-idle">{dayName}</span>
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-body-xl-strong`}>
+        <div
+          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-body-xl-strong`}
+        >
           <span>{date}</span>
         </div>
       </div>
@@ -41,8 +43,8 @@ const CalendarListDayHeader = ({
           hasEvents
             ? 'hidden'
             : calendarViewMode === 'day'
-            ? 'opacity-100'
-            : 'group-hover:opacity-100 focus:opacity-100'
+              ? 'opacity-100'
+              : 'group-hover:opacity-100 focus:opacity-100'
         }`}
         title="Add event"
         icon="plus"

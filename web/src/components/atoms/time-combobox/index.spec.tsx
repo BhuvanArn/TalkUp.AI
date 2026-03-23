@@ -52,4 +52,3 @@ describe('TimeComboBox', () => {
     expect(onChange).toHaveBeenCalledWith('14:00');
   });
 });
-

@@ -82,8 +82,12 @@ const getFetchQueryRange = (
 
   // Week view fetches current week plus one week around it to reduce refetch churn.
   return {
-    start_at: startOfWeek(subDays(currentDate, 7), { weekStartsOn: 1 }).toISOString(),
-    end_at: endOfWeek(addDays(currentDate, 7), { weekStartsOn: 1 }).toISOString(),
+    start_at: startOfWeek(subDays(currentDate, 7), {
+      weekStartsOn: 1,
+    }).toISOString(),
+    end_at: endOfWeek(addDays(currentDate, 7), {
+      weekStartsOn: 1,
+    }).toISOString(),
   };
 };
 
