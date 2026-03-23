@@ -52,6 +52,8 @@ export interface CalendarListDayHeaderProps {
   onDayClick: (date: Date) => void;
   /** Callback function triggered when the add event button is clicked. */
   onCreateEvent: (date: Date) => void;
+  /** Indicates if there are events for this day, used for styling. */
+  hasEvents?: boolean;
 }
 
 /**

@@ -1,7 +1,7 @@
 import { CalendarEvent, useCalendarStore } from '@/stores/useCalendarStore';
 import { format, getDay, isSameDay, parse, startOfWeek } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { dateFnsLocalizer } from 'react-big-calendar';
 import { withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop';
 
@@ -15,7 +15,6 @@ export const useCalendarTable = () => {
     openModalForCreation,
     openModalForEdit,
     updateEvent,
-    fetchEvents,
     currentDate,
     setCurrentDate,
     calendarViewMode,
@@ -33,10 +32,6 @@ export const useCalendarTable = () => {
       }),
     [],
   );
-
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
 
   const onEventResize: withDragAndDropProps['onEventResize'] = (data) => {
     const { event, start, end } = data;

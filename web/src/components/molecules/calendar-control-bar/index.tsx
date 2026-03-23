@@ -10,16 +10,30 @@ import { useCalendarStore } from '@/stores/useCalendarStore';
  */
 const CalendarControlBar = () => {
   const {
+    currentDate,
     calendarViewMode,
     setCalendarViewMode,
     calendarLayoutMode,
     setCalendarLayoutMode,
+    openModalForCreation,
   } = useCalendarStore();
+
+  const handleCreateEvent = () => {
+    const start = new Date(currentDate);
+    start.setHours(9, 0, 0, 0);
+    const end = new Date(start);
+    end.setHours(10, 0, 0, 0);
+    openModalForCreation(start, end);
+  };
 
   return (
     <div className="flex items-center justify-between">
       <h2 className="text-h5 text-idle">Calendar</h2>
       <div className="flex gap-4 items-center">
+        <Button color="accent" size="xs" onClick={handleCreateEvent}>
+          Create Event
+          <Icon icon="plus" />
+        </Button>
         <Button variant="outlined" color="sidebar" size="xs">
           Filters
           <Icon icon="settings" />
