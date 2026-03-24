@@ -14,6 +14,7 @@ import subprocess
 import engine.enumMcs as enumMcs
 import asyncio
 import threading
+import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -331,19 +332,36 @@ class STT():
                     break
                 if not data:
                     continue
-                if rec.AcceptWaveform(data): # expects bytes of PCM16
-                    token = json.loads(rec.FinalResult())
-                    payload = (
-                        [self.STTWsMicroservice.service_name],
-                        "stt_result",
-                        {"text": token.get('text', '')}
-                    )
-                    try:
-                        self.loop.call_soon_threadsafe(self.send_queue.put_nowait, payload)
-                    except Exception as e:
-                        self.n.send_notification(enumMcs.MicroservicesNames.STT, 2, f"Failed to push to send_queue: {e}")
-                else:
-                    pass
+
+                # Slice payload into 4000-byte chunks (~125ms)
+                # this prevents Vosk from locking thread and crashing the ws
+                chunk_size = 4000
+                for i in range(0, len(data), chunk_size):
+                    audio_chunk = data[i : i + chunk_size]
+
+                    if rec.AcceptWaveform(audio_chunk): # expects bytes of PCM16
+                        token = json.loads(rec.Result())
+                        text = token.get('text', '')
+                        if text:
+                            print(f"[{time.strftime('%X')}] 🟢 Recognized sentence: {text}")
+                            payload = (
+                                [self.STTWsMicroservice.service_name],
+                                "stt_result",
+                                {"text": text}
+                            )
+                            try:
+                                self.loop.call_soon_threadsafe(self.send_queue.put_nowait, payload)
+                            except Exception as e:
+                                self.n.send_notification(enumMcs.MicroservicesNames.STT, 2, f"Failed to push: {e}")
+                    else:
+                        partial = json.loads(rec.PartialResult())
+                        partial_text = partial.get('partial', '')
+                        if partial_text: # Debug log partial results (not a full sentence of vosk)
+                            print(f"[{time.strftime('%X')}] 🟡 Partial: {partial_text}")
+
+                    # Forces the thread to sleep for 1 millisecond.
+                    # This gives asyncio the breathing room to answer AI server pings
+                    time.sleep(0.001)
 
         except Exception as e:
             self.n.send_notification(enumMcs.MicroservicesNames.STT, 2, {str(e)})
