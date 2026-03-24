@@ -25,6 +25,51 @@ from vosk import Model, KaldiRecognizer
 from typing import Optional
 
 class STT():
+
+    @staticmethod
+    def _is_vosk_model_dir(path: str) -> bool:
+        """
+        SETUP FUNCTION FOR VOSK MODEL PATH RESOLUTION :
+        Return True when `path` looks like a Vosk model directory.
+        """
+        if not os.path.isdir(path):
+            return False
+        # Common Vosk model layout markers
+        required_entries = ["am", "conf", "graph", "ivector"]
+        return all(os.path.exists(os.path.join(path, entry)) for entry in required_entries)
+
+    @classmethod
+    def _resolve_model_path(cls, configured_path: Optional[str]) -> Optional[str]:
+        """
+        SETUP FUNCTION FOR VOSK MODEL PATH RESOLUTION :
+
+        Resolve a usable model directory from a configured path.
+
+        Supports:
+        - exact model folder path
+        - parent folder containing one or many Vosk model directories
+        """
+        if not configured_path:
+            return None
+
+        if cls._is_vosk_model_dir(configured_path):
+            return configured_path
+
+        if not os.path.isdir(configured_path):
+            return None
+
+        candidates = []
+        for entry in os.listdir(configured_path):
+            entry_path = os.path.join(configured_path, entry)
+            if cls._is_vosk_model_dir(entry_path):
+                candidates.append(entry_path)
+
+        if not candidates:
+            return None
+
+        # Keep deterministic selection when multiple model folders exist.
+        return sorted(candidates)[0]
+
     def __init__(self, model_type: str, websocket: WebSocket, samplerate: Optional[int] = None) -> None:
         """
         Class constructor
@@ -39,11 +84,17 @@ class STT():
         self._send_consumer_task: Optional[asyncio.Task] = None
 
         model_path = os.environ.get("VOSK_MODEL_PATH")
+        resolved_model_path = self._resolve_model_path(model_path) # use vosk helper to find valid model path env var (if set)
+
         try:
-            if model_path and os.path.isdir(model_path):
-                self.model: Model = Model(model_path)
+            if resolved_model_path:
+                self.model: Model = Model(resolved_model_path)
                 self.n.send_notification(enumMcs.MicroservicesNames.STT, 0,
-                    f"Loaded Vosk model from path: {model_path}")
+                    f"Loaded Vosk model from path: {resolved_model_path}")
+            elif model_path:
+                self.n.send_notification(enumMcs.MicroservicesNames.STT, 1,
+                    f"Configured VOSK_MODEL_PATH '{model_path}' is not a valid model folder; falling back to language download")
+                self.model: Model = Model(lang=model_type)
             else:
                 self.model: Model = Model(lang=model_type)
         except Exception as e:
