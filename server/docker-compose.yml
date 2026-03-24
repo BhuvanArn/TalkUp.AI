@@ -10,6 +10,9 @@ services:
       - "${SERVER_PORT}:${SERVER_PORT}"
     environment:
       - DOCKER_RUN=true
+    # Allow server to access AI microservices on the host machine (if the AI is running on same machine)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres_db:
         condition: service_healthy
