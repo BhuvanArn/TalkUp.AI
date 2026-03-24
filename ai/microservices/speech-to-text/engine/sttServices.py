@@ -151,6 +151,17 @@ class STT():
             else:
                 container_bytes = audio_b64
 
+            # ==========================================
+            # DEBUG: Put the base64-decoded container bytes to in a file to inspect the incoming audio format and content.
+            # ==========================================
+            # debug_file = f"debug_raw_frontend_{int(time.time() * 1000)}.webm"
+            # with open(debug_file, "wb") as f:
+            #     f.write(container_bytes)
+
+            # self.n.send_notification(enumMcs.MicroservicesNames.STT, 0,
+            #     f"💾 Debug payload saved to disk: {debug_file} ({len(container_bytes)} bytes)")
+            # ==========================================
+
             probe_sr = self.probe_sample_rate(container_bytes)
             if probe_sr is None:
                 self.n.send_notification(enumMcs.MicroservicesNames.STT, 1,
