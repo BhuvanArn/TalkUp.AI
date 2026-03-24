@@ -1,0 +1,23 @@
+# Keep build context tiny for services using ai/ as build context
+*
+
+# Allow only files used by speech-to-text and text-to-speech builds
+!microservices/
+microservices/*
+!microservices/speech-to-text/
+!microservices/speech-to-text/**
+!microservices/text-to-speech/
+!microservices/text-to-speech/**
+!microservices/network/
+!microservices/network/**
+
+# Exclude common local artifacts inside allowed folders
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.venv/
+**/venv/
+**/tmp/
