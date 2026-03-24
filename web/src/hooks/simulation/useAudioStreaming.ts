@@ -55,6 +55,10 @@ export function useAudioStreaming({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const onAudioPacketRef = useRef(onAudioPacket);
 
+  // Track the timeout and active state to prevent memory leaks and race conditions
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isStreamingRef = useRef(false);
+
   useEffect(() => {
     onAudioPacketRef.current = onAudioPacket;
   }, [onAudioPacket]);
@@ -112,51 +116,65 @@ export function useAudioStreaming({
       setSupportedMimeType(selectedMimeType);
       setError(null);
       setPacketsSent(0);
+      isStreamingRef.current = true;
 
       const audioStream = new MediaStream(audioTracks);
-      const mediaRecorder = new MediaRecorder(audioStream, {
-        mimeType: selectedMimeType,
-      });
 
-      mediaRecorder.ondataavailable = async (event: BlobEvent) => {
-        if (event.data && event.data.size > 0) {
-          try {
-            const arrayBuffer = await event.data.arrayBuffer();
-            const base64Data = arrayBufferToBase64(arrayBuffer);
+      // Recursive function to continuously chain new MediaRecorders
+      const startRecorderChunk = () => {
+        if (!isStreamingRef.current) return;
 
-            const packet: WebSocketPacket = {
-              type: 'stream_chunk',
-              data: base64Data,
-              stream_id: interviewID || 'unknown',
-              key: import.meta.env.VITE_WEBSOCKET_KEY,
-              timestamp: Date.now(),
-              format: 'audio',
-            };
+        const mediaRecorder = new MediaRecorder(audioStream, {
+          mimeType: selectedMimeType,
+        });
 
-            onAudioPacketRef.current(packet);
-            setPacketsSent((prev) => prev + 1);
-          } catch {
-            setError('Error processing audio chunk');
+        mediaRecorder.ondataavailable = async (event: BlobEvent) => {
+          if (event.data && event.data.size > 0) {
+            try {
+              const arrayBuffer = await event.data.arrayBuffer();
+              const base64Data = arrayBufferToBase64(arrayBuffer);
+
+              const packet: WebSocketPacket = {
+                type: 'stream_chunk',
+                data: base64Data,
+                stream_id: interviewID || 'unknown',
+                key: import.meta.env.VITE_WEBSOCKET_KEY,
+                timestamp: Date.now(),
+                format: 'audio',
+              };
+
+              onAudioPacketRef.current(packet);
+              setPacketsSent((prev) => prev + 1);
+            } catch {
+              setError('Error processing audio chunk');
+            }
           }
-        }
+        };
+
+        mediaRecorder.onerror = () => {
+          setError('MediaRecorder error occurred');
+          setIsRecording(false);
+        };
+
+        mediaRecorder.onstart = () => {
+          setIsRecording(true);
+        };
+
+        // Start without timeSlice to prevent header stripping
+        mediaRecorder.start();
+        mediaRecorderRef.current = mediaRecorder;
+
+        // Schedule the next chunk
+        timeoutRef.current = setTimeout(() => {
+          if (mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+          }
+          startRecorderChunk(); // Instantly spawn the next recorder
+        }, timeSlice);
       };
 
-      mediaRecorder.onerror = () => {
-        setError('MediaRecorder error occurred');
-        setIsRecording(false);
-      };
+      startRecorderChunk();
 
-      mediaRecorder.onstop = () => {
-        setIsRecording(false);
-        mediaRecorderRef.current = null;
-      };
-
-      mediaRecorder.onstart = () => {
-        setIsRecording(true);
-      };
-
-      mediaRecorder.start(timeSlice);
-      mediaRecorderRef.current = mediaRecorder;
     } catch (err) {
       setError(`Failed to start recording: ${err}`);
       setIsRecording(false);
@@ -170,12 +188,20 @@ export function useAudioStreaming({
   ]);
 
   const stopStreaming = useCallback(() => {
+    isStreamingRef.current = false;
+
+    // Clear the recursion timer
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    // Stop the currently active recorder
     if (
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state !== 'inactive'
     ) {
       try {
-        mediaRecorderRef.current.requestData();
         mediaRecorderRef.current.stop();
       } catch {
         setError('Error stopping recording');
@@ -194,11 +220,12 @@ export function useAudioStreaming({
     return () => {
       stopStreaming();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive, stream]);
+  }, [isActive, stream, startStreaming, stopStreaming]);
 
   useEffect(() => {
     return () => {
+      isStreamingRef.current = false;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (mediaRecorderRef.current) {
         try {
           mediaRecorderRef.current.stop();
