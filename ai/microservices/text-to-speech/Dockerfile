@@ -9,11 +9,13 @@ RUN apt-get update \
 	   libasound2-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
+# Install deps before copying the app to leverage Docker layer caching
+COPY microservices/text-to-speech/requirements.txt /tmp/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip pip install torch torchaudio
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r /tmp/requirements.txt
+
 COPY microservices/text-to-speech /app
 COPY microservices/network /app/network
-
-RUN --mount=type=cache,target=/root/.cache/pip pip install torch torchaudio
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
 RUN chmod +x /app/entryPoint.sh
 ENTRYPOINT ["/app/entryPoint.sh"]
