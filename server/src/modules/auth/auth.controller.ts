@@ -211,7 +211,7 @@ export class AuthController {
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
-    return { resetToken };
+    return { message: "Verification successful" };
   }
 
   @ApiOkResponse({
