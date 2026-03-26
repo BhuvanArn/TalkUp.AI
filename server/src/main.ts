@@ -20,8 +20,15 @@ async function bootstrap() {
     const port = process.env.PORT ?? process.env.SERVER_PORT ?? 3000;
     process.stdout.write(`Using port: ${port}\n`);
 
-    // Trust proxy settings for correct client IP detection (important for CORS and rate limiting)
-    app.getHttpAdapter().getInstance().set("trust proxy", true);
+    // Use explicit proxy trust configuration to avoid spoofed client IPs.
+    const trustProxyValue = process.env.TRUST_PROXY;
+    const trustProxy =
+      trustProxyValue === "true"
+        ? true
+        : trustProxyValue === "false" || !trustProxyValue
+          ? false
+          : trustProxyValue;
+    app.getHttpAdapter().getInstance().set("trust proxy", trustProxy);
 
     app.useGlobalPipes(new ValidationPipe());
     app.use(cookieParser());
@@ -29,7 +36,16 @@ async function bootstrap() {
 
     const corsOrigin = process.env.CORS_ORIGIN;
     const allowedOrigins =
-      corsOrigin === "*" ? null : (corsOrigin?.split(",") ?? []);
+      corsOrigin === "*"
+        ? null
+        : new Set(
+            (corsOrigin ?? "")
+              .split(",")
+              .map((origin) => origin.trim())
+              .filter(Boolean),
+          );
+    const localhostPattern = /^localhost$|^127\.0\.0\.1$|^\[::1\]$/;
+    const vercelPreviewPattern = /^[a-zA-Z0-9-]+\.talk-up-ai\.vercel\.app$/;
 
     app.enableCors({
       origin: (
@@ -40,13 +56,22 @@ async function bootstrap() {
 
         if (corsOrigin === "*") return callback(null, true);
 
-        if (allowedOrigins?.includes(origin)) return callback(null, true);
+        if (allowedOrigins?.has(origin)) return callback(null, true);
 
-        if (origin.includes("talk-up-ai") && origin.endsWith(".vercel.app")) {
-          return callback(null, true);
+        try {
+          const parsedOrigin = new URL(origin);
+          const hostname = parsedOrigin.hostname.toLowerCase();
+
+          if (localhostPattern.test(hostname)) {
+            return callback(null, true);
+          }
+
+          if (vercelPreviewPattern.test(hostname)) {
+            return callback(null, true);
+          }
+        } catch {
+          return callback(new Error("Invalid origin format"), false);
         }
-
-        if (origin.includes("localhost")) return callback(null, true);
 
         callback(new Error("Not allowed by CORS"), false);
       },
