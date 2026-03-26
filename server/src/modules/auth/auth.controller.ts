@@ -89,6 +89,8 @@ export class AuthController {
   })
   @UsePipes(new PostValidationPipe())
   @Post("verify-email")
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(200)
   async verifyEmail(
     @Body() verifyEmailDto: VerifyEmailDto,
@@ -109,6 +111,8 @@ export class AuthController {
   })
   @UsePipes(new PostValidationPipe())
   @Post("resend-otp")
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.ACCEPTED)
   async resendOtp(@Body() resendOtpDto: ResendOtpDto) {
     await this.authService.resendOtp(resendOtpDto.email, resendOtpDto.purpose);
@@ -122,6 +126,8 @@ export class AuthController {
   })
   @UsePipes(new PostValidationPipe())
   @Post("login")
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(200)
   async login(
     @Body() loginDto: LoginDto,
@@ -197,6 +203,8 @@ export class AuthController {
   })
   @UsePipes(new PostValidationPipe())
   @Post("password-reset-verify")
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async passwordResetVerify(
     @Body() passwordResetVerifyDto: PasswordResetVerifyDto,
