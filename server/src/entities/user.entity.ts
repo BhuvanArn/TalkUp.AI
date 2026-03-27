@@ -21,15 +21,17 @@ export class user {
 
   @Column({
     nullable: true,
+    default: null,
     comment: "user's profile picture as a base64 string",
   })
-  profile_picture!: string;
+  profile_picture?: string;
 
   @Column({
     nullable: true,
+    default: null,
     comment: "used for password reset/verification code",
   })
-  verification_code!: string;
+  verification_code?: string;
 
   @Column({ default: new Date() })
   created_at!: Date;
@@ -85,17 +87,17 @@ export class user_oauth {
   @Column({ nullable: false })
   access_token!: string;
 
-  @Column({ nullable: true })
-  refresh_token!: string;
+  @Column({ nullable: true, default: null })
+  refresh_token?: string;
 
-  @Column({ nullable: true })
-  expires_in!: string;
+  @Column({ nullable: true, default: null })
+  expires_in?: string;
 
-  @Column({ nullable: true })
-  refresh_token_expires_in!: string;
+  @Column({ nullable: true, default: null })
+  refresh_token_expires_in?: string;
 
-  @Column({ nullable: true })
-  scope!: string; // Scopes granted by oauth
+  @Column({ nullable: true, default: null })
+  scope?: string; // Scopes granted by oauth
 
   @OneToOne(() => user, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
