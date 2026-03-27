@@ -1,14 +1,18 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ConflictException, UnauthorizedException } from "@nestjs/common";
-import { applyMockAccessTokenGuard } from "@src/test/utils/mock-guards";
+import { ThrottlerGuard } from "@nestjs/throttler";
+
+import { applyMockAccessTokenGuard } from "../../test/utils/mock-guards";
 
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { CreateUserDto } from "./dto/createUser.dto";
 import { LoginDto } from "./dto/login.dto";
-import { AccessTokenGuard } from "@common/guards/accessToken.guard";
-import { UserStatus } from "@common/enums/UserStatus";
-import { OtpPurpose } from "@common/enums/OtpPurpose";
+
+import { AccessTokenGuard } from "../../common/guards/accessToken.guard";
+import { ResetTokenGuard } from "../../common/guards/resetToken.guard";
+import { UserStatus } from "../../common/enums/UserStatus";
+import { OtpPurpose } from "../../common/enums/OtpPurpose";
 
 describe("AuthController", () => {
   let controller: AuthController;
@@ -46,6 +50,10 @@ describe("AuthController", () => {
       ],
     })
       .overrideGuard(AccessTokenGuard)
+      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
+      .overrideGuard(ResetTokenGuard)
+      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
+      .overrideGuard(ThrottlerGuard)
       .useValue({ canActivate: jest.fn().mockReturnValue(true) });
     const module: TestingModule =
       await applyMockAccessTokenGuard(moduleBuilder).compile();
@@ -100,7 +108,7 @@ describe("AuthController", () => {
   });
 
   describe("verifyEmail", () => {
-    it("should verify email and return token payload", async () => {
+    it("should verify email and return success message", async () => {
       mockAuthService.verifyEmail = jest.fn().mockResolvedValue({
         accessToken: "access-token",
         refreshToken: "refresh-token",
@@ -112,10 +120,7 @@ describe("AuthController", () => {
         mockResponse,
       );
 
-      expect(result).toEqual({
-        accessToken: "access-token",
-        refreshToken: "refresh-token",
-      });
+      expect(result).toEqual({ message: "Email verified" });
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         "accessToken",
         "access-token",

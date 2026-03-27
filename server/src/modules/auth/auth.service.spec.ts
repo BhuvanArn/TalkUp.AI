@@ -177,6 +177,7 @@ describe("AuthService", () => {
         findOne: jest.fn(),
       };
       const txUserEmailRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockReturnValue(mockEmail),
         save: jest.fn().mockResolvedValue(mockEmail),
       };
@@ -184,9 +185,15 @@ describe("AuthService", () => {
         create: jest.fn().mockReturnValue(mockOtp),
         save: jest.fn().mockResolvedValue(mockOtp),
         delete: jest.fn().mockResolvedValue({ affected: 1 }),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(null),
+        }),
       };
 
-      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
       mockedBcrypt.hash.mockResolvedValue("otp-hash" as never);
       mockDataSource.transaction.mockImplementation(async (cb: any) =>
         cb({
@@ -202,13 +209,10 @@ describe("AuthService", () => {
 
       await service.register(createUserDto);
 
-      expect(mockUserEmailRepo.findOne).toHaveBeenCalledWith({
+      expect(txUserEmailRepo.findOne).toHaveBeenCalledWith({
         where: { email: createUserDto.email },
       });
-      expect(txOtpRepo.delete).toHaveBeenCalledWith({
-        email: createUserDto.email,
-        purpose: OtpPurpose.REGISTER,
-      });
+      expect(txOtpRepo.save).toHaveBeenCalled();
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(
         "auth.otp_generated",
         expect.objectContaining({
@@ -219,27 +223,34 @@ describe("AuthService", () => {
     });
 
     it("should throw conflict for active account", async () => {
-      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockedBcrypt.hash.mockResolvedValue("otp-hash" as never);
+
+      const txEmailRepo = {
+        findOne: jest.fn().mockResolvedValue(mockEmail),
+        save: jest.fn(),
+      };
+      const txUserRepo = {
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue({
+            ...mockUser,
+            status: UserStatus.ACTIVE,
+          }),
+        }),
+      };
 
       mockDataSource.transaction.mockImplementation(async (cb: any) =>
         cb({
           getRepository: (entity: unknown) => {
             if (entity === user) {
-              return {
-                findOne: jest
-                  .fn()
-                  .mockResolvedValue({
-                    ...mockUser,
-                    status: UserStatus.ACTIVE,
-                  }),
-              };
+              return txUserRepo;
             }
             if (entity === user_password) {
               return { findOne: jest.fn() };
             }
             if (entity === user_email) {
-              return { save: jest.fn() };
+              return txEmailRepo;
             }
             if (entity === Otp) {
               return { delete: jest.fn(), save: jest.fn(), create: jest.fn() };
@@ -252,6 +263,10 @@ describe("AuthService", () => {
       await expect(service.register(createUserDto)).rejects.toThrow(
         new ConflictException("An account with this email already exists"),
       );
+      expect(txEmailRepo.findOne).toHaveBeenCalledWith({
+        where: { email: createUserDto.email },
+      });
+      expect(txUserRepo.createQueryBuilder).toHaveBeenCalledWith("user");
       expect(mockEventEmitter.emit).not.toHaveBeenCalled();
     });
   });
