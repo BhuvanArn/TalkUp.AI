@@ -2,12 +2,21 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { JwtService } from "@nestjs/jwt";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
-import { ConflictException, UnauthorizedException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  HttpStatus,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import * as bcrypt from "bcrypt";
 
 import { AuthService } from "./auth.service";
 import { CreateUserDto } from "./dto/createUser.dto";
+import { EditUserDto } from "./dto/editUser.dto";
+import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
+import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
 
 import { OtpPurpose } from "@common/enums/OtpPurpose";
 import { UserStatus } from "@common/enums/UserStatus";
@@ -99,6 +108,7 @@ describe("AuthService", () => {
     mockJwtService = {
       signAsync: jest.fn(),
       verifyAsync: jest.fn(),
+      sign: jest.fn().mockReturnValue("reset-jwt"),
     };
 
     mockEventEmitter = {
@@ -316,6 +326,270 @@ describe("AuthService", () => {
         accessToken: "access-token",
         refreshToken: "refresh-token",
       });
+    });
+  });
+
+  describe("getUserById", () => {
+    it("returns user when found", async () => {
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+      const result = await service.getUserById("test-user-id");
+      expect(result).toEqual(mockUser);
+    });
+
+    it("returns null when not found", async () => {
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
+      const result = await service.getUserById("missing");
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("validateUser", () => {
+    const email = "test@example.com";
+    const password = "password123";
+
+    it("throws when email entity missing", async () => {
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
+      await expect(service.validateUser(email, password)).rejects.toThrow(
+        new UnauthorizedException("Email not found"),
+      );
+    });
+
+    it("throws when password or user entity missing", async () => {
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+      await expect(service.validateUser(email, password)).rejects.toThrow(
+        new UnauthorizedException("Email not found"),
+      );
+    });
+
+    it("throws when password does not match", async () => {
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(mockPassword);
+      mockUserRepo.findOne = jest
+        .fn()
+        .mockResolvedValue({ ...mockUser, status: UserStatus.ACTIVE });
+      mockedBcrypt.compare.mockResolvedValue(false as never);
+      await expect(service.validateUser(email, password)).rejects.toThrow(
+        new UnauthorizedException("Invalid password"),
+      );
+    });
+  });
+
+  describe("passwordResetRequest", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("returns silently when email is unknown (timing-safe)", async () => {
+      mockedBcrypt.hash.mockResolvedValue("dummy-hash" as never);
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      const dto: PasswordResetRequestDto = { email: "ghost@example.com" };
+      const promise = service.passwordResetRequest(dto);
+      await jest.runAllTimersAsync();
+      await promise;
+
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("passwordResetVerify", () => {
+    it("rejects wrong purpose", async () => {
+      const dto = {
+        email: "a@b.com",
+        code: "123456",
+        purpose: OtpPurpose.REGISTER,
+      } as unknown as PasswordResetVerifyDto;
+      await expect(service.passwordResetVerify(dto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it("throws when OTP verification fails in transaction", async () => {
+      const dto: PasswordResetVerifyDto = {
+        email: "test@example.com",
+        code: "123456",
+        purpose: OtpPurpose.RESET_PASSWORD,
+      };
+
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: () => ({
+            createQueryBuilder: jest.fn().mockReturnValue({
+              setLock: jest.fn().mockReturnThis(),
+              where: jest.fn().mockReturnThis(),
+              andWhere: jest.fn().mockReturnThis(),
+              getOne: jest.fn().mockResolvedValue(null),
+            }),
+            delete: jest.fn(),
+            save: jest.fn(),
+          }),
+        }),
+      );
+
+      await expect(service.passwordResetVerify(dto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it("returns signed reset token when OTP valid", async () => {
+      const dto: PasswordResetVerifyDto = {
+        email: "test@example.com",
+        code: "123456",
+        purpose: OtpPurpose.RESET_PASSWORD,
+      };
+
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserRepo.findOne = jest
+        .fn()
+        .mockResolvedValue({ ...mockUser, tokenVersion: 2 });
+
+      const otpEntity = {
+        id: "otp-1",
+        codeHash: "hash",
+        attempts: 0,
+        expiresAt: new Date(Date.now() + 60000),
+      };
+
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: () => ({
+            createQueryBuilder: jest.fn().mockReturnValue({
+              setLock: jest.fn().mockReturnThis(),
+              where: jest.fn().mockReturnThis(),
+              andWhere: jest.fn().mockReturnThis(),
+              getOne: jest.fn().mockResolvedValue(otpEntity),
+            }),
+            delete: jest.fn(),
+            save: jest.fn(),
+          }),
+        }),
+      );
+
+      mockedBcrypt.compare.mockResolvedValue(true as never);
+
+      const token = await service.passwordResetVerify(dto);
+      expect(token).toBe("reset-jwt");
+      expect(mockJwtService.sign).toHaveBeenCalled();
+    });
+  });
+
+  describe("passwordUpdate", () => {
+    it("updates password in transaction", async () => {
+      const userRepo = {
+        findOne: jest.fn().mockResolvedValue(mockUser),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          update: jest.fn().mockReturnThis(),
+          set: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          execute: jest.fn().mockResolvedValue({ affected: 1 }),
+        }),
+      };
+      const passwordRepo = {
+        findOne: jest.fn().mockResolvedValue(mockPassword),
+        save: jest.fn().mockResolvedValue(mockPassword),
+        create: jest.fn(),
+      };
+
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) return userRepo;
+            if (entity === user_password) return passwordRepo;
+            return {};
+          },
+        }),
+      );
+
+      await expect(
+        service.passwordUpdate("test-user-id", "Newpass1!"),
+      ).resolves.toBeUndefined();
+      expect(passwordRepo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe("resendOtp", () => {
+    it("throws 429 when within cooldown", async () => {
+      const recent = new Date(Date.now() - 1000);
+      mockOtpRepo.findOne = jest.fn().mockResolvedValue({
+        ...mockOtp,
+        createdAt: recent,
+      });
+      mockedBcrypt.compare.mockResolvedValue(true as never);
+
+      await expect(
+        service.resendOtp("test@example.com", OtpPurpose.REGISTER),
+      ).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
+    });
+
+    it("throws when email not found", async () => {
+      mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockedBcrypt.compare.mockResolvedValue(true as never);
+
+      await expect(
+        service.resendOtp("missing@example.com", OtpPurpose.REGISTER),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("emits event when resend succeeds", async () => {
+      mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserRepo.findOne = jest
+        .fn()
+        .mockResolvedValue({ ...mockUser, status: UserStatus.PENDING });
+      mockedBcrypt.hash.mockResolvedValue("h" as never);
+
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: () => ({
+            delete: jest.fn().mockResolvedValue({ affected: 1 }),
+            create: jest.fn().mockReturnValue(mockOtp),
+            save: jest.fn().mockResolvedValue(mockOtp),
+          }),
+        }),
+      );
+
+      await service.resendOtp("test@example.com", OtpPurpose.REGISTER);
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        "auth.otp_generated",
+        expect.objectContaining({ email: "test@example.com" }),
+      );
+    });
+  });
+
+  describe("editUser", () => {
+    it("updates username and email", async () => {
+      mockUserRepo.findOneByOrFail = jest.fn().mockResolvedValue({
+        ...mockUser,
+      });
+      mockUserRepo.save = jest.fn().mockResolvedValue(mockUser);
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+
+      const dto: EditUserDto = {
+        username: "newname",
+        email: "new@example.com",
+      };
+
+      const result = await service.editUser("test-user-id", dto);
+      expect(result).toBeDefined();
+      expect(mockUserEmailRepo.save).toHaveBeenCalled();
+    });
+
+    it("wraps unexpected errors", async () => {
+      mockUserRepo.findOneByOrFail = jest.fn().mockResolvedValue(mockUser);
+      mockUserRepo.save = jest.fn().mockRejectedValue(new Error("db"));
+
+      await expect(
+        service.editUser("test-user-id", { username: "x" } as EditUserDto),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 });

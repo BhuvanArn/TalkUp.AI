@@ -81,4 +81,81 @@ describe("AccessTokenGuard (unit)", () => {
       guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
     ).rejects.toThrow(UnauthorizedException);
   });
+
+  it("resolves userId from sub when userId missing", async () => {
+    const reqObj: any = { cookies: { accessToken: "token" } };
+    mockJwtService.verifyAsync.mockResolvedValueOnce({
+      sub: "u-sub",
+      tv: 1,
+    });
+    mockUserRepo.findOne.mockResolvedValueOnce({
+      user_id: "u-sub",
+      tokenVersion: 1,
+    });
+
+    const res = await guard.canActivate({
+      switchToHttp: () => ({ getRequest: () => reqObj }),
+    } as any);
+
+    expect(res).toBe(true);
+    expect(reqObj.userId).toBe("u-sub");
+  });
+
+  it("accepts tv as numeric string", async () => {
+    const reqObj: any = { cookies: { accessToken: "token" } };
+    mockJwtService.verifyAsync.mockResolvedValueOnce({
+      userId: "u1",
+      tv: "2",
+    });
+    mockUserRepo.findOne.mockResolvedValueOnce({
+      user_id: "u1",
+      tokenVersion: 2,
+    });
+
+    await guard.canActivate({
+      switchToHttp: () => ({ getRequest: () => reqObj }),
+    } as any);
+
+    expect(reqObj.userId).toBe("u1");
+  });
+
+  it("throws when userId cannot be resolved", async () => {
+    mockJwtService.verifyAsync.mockResolvedValueOnce({ tv: 1 });
+    await expect(
+      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it("throws when tv is NaN", async () => {
+    mockJwtService.verifyAsync.mockResolvedValueOnce({
+      userId: "u1",
+      tv: "bad",
+    });
+    await expect(
+      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it("throws when user not found", async () => {
+    mockJwtService.verifyAsync.mockResolvedValueOnce({ userId: "u1", tv: 1 });
+    mockUserRepo.findOne.mockResolvedValueOnce(null);
+    await expect(
+      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it("uses tokenVersion 1 when user has undefined tokenVersion", async () => {
+    const reqObj: any = { cookies: { accessToken: "token" } };
+    mockJwtService.verifyAsync.mockResolvedValueOnce({ userId: "u1", tv: 1 });
+    mockUserRepo.findOne.mockResolvedValueOnce({
+      user_id: "u1",
+      tokenVersion: undefined,
+    });
+
+    await guard.canActivate({
+      switchToHttp: () => ({ getRequest: () => reqObj }),
+    } as any);
+
+    expect(reqObj.userId).toBe("u1");
+  });
 });
