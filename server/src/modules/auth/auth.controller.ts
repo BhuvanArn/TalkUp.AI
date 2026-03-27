@@ -85,7 +85,12 @@ export class AuthController {
 
   @ApiOkResponse({
     description: "Email successfully verified.",
-    type: String,
+    schema: {
+      type: "object",
+      properties: {
+        message: { type: "string", example: "Email verified" },
+      },
+    },
   })
   @UsePipes(new PostValidationPipe())
   @Post("verify-email")
