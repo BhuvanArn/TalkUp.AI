@@ -57,7 +57,10 @@ describe("AccessTokenGuard (unit)", () => {
       findOne: jest.fn().mockResolvedValue({ user_id: "u1", tokenVersion: 1 }),
     };
 
-    const localGuard = new AccessTokenGuard(localJwt as any, localUserRepo as any);
+    const localGuard = new AccessTokenGuard(
+      localJwt as any,
+      localUserRepo as any,
+    );
 
     const ctx = { switchToHttp: () => ({ getRequest: () => reqObj }) };
 
@@ -69,7 +72,10 @@ describe("AccessTokenGuard (unit)", () => {
 
   it("throws when token version mismatches", async () => {
     mockJwtService.verifyAsync.mockResolvedValueOnce({ userId: "u1", tv: 2 });
-    mockUserRepo.findOne.mockResolvedValueOnce({ user_id: "u1", tokenVersion: 1 });
+    mockUserRepo.findOne.mockResolvedValueOnce({
+      user_id: "u1",
+      tokenVersion: 1,
+    });
 
     await expect(
       guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),

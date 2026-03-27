@@ -14,14 +14,17 @@ export class MailService {
       options = {
         service,
         auth: {
-            user: this.configService.get<string>("SMTP_USER"),
-            pass: this.configService.get<string>("SMTP_PASS"),
+          user: this.configService.get<string>("SMTP_USER"),
+          pass: this.configService.get<string>("SMTP_PASS"),
         },
       };
     } else {
-       options = {
+      options = {
         host: this.configService.get<string>("SMTP_HOST"),
-        port: parseInt(this.configService.get<string>("SMTP_PORT") ?? "587", 10),
+        port: parseInt(
+          this.configService.get<string>("SMTP_PORT") ?? "587",
+          10,
+        ),
         secure: this.configService.get<string>("SMTP_SECURE") === "true",
         auth: {
           user: this.configService.get<string>("SMTP_USER"),
