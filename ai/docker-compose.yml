@@ -48,12 +48,15 @@ services:
 
   text_to_speech:
     build:
-      context: ./microservices/text-to-speech
+      context: .
+      dockerfile: ./microservices/text-to-speech/Dockerfile
     container_name: text_to_speech_services
     environment:
       - PYTHONUNBUFFERED=1
+      - TTS_HOST=text_to_speech
+      - TTS_PORT=8005
     ports:
-      - "5054:5000"
+      - "8005:8005"
 
   verbal_analyzer:
     build:

@@ -1,6 +1,5 @@
-import { Icon } from '@/components/atoms/icon';
 import { cn } from '@/utils/cn';
-import React, { useId, useState } from 'react';
+import React, { useId } from 'react';
 
 import type { BaseInputProps } from './types';
 
@@ -40,54 +39,28 @@ export const BaseInput: React.FC<BaseInputProps> = (props) => {
   } = props as BaseInputProps;
   const generatedId = useId();
   const inputId = id || generatedId;
-  const [showPassword, setShowPassword] = useState(false);
-
-  const resolvedType = (type ?? 'text') as string;
-  const isPasswordType = resolvedType === 'password';
-  const inputType = isPasswordType
-    ? showPassword
-      ? 'text'
-      : 'password'
-    : resolvedType;
-
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
-  };
 
   return (
-    <div className="relative w-full">
-      <input
-        {...rest}
-        id={inputId}
-        name={name}
-        type={inputType}
-        role="textbox"
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-        aria-disabled={disabled}
-        readOnly={readOnly}
-        aria-readonly={readOnly}
-        required={required}
-        aria-label={name}
-        aria-required={required}
-        className={cn(
-          'w-full p-2 text-body-m font-normal transition-colors duration-200 ease-in-out border rounded-sm border-border-strong placeholder:text font-display focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:cursor-not-allowed disabled:bg-disabled disabled:opacity-50',
-          isPasswordType ? 'pr-10' : '',
-          className,
-        )}
-      />
-      {isPasswordType && (
-        <button
-          type="button"
-          onClick={togglePasswordVisibility}
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-idle hover:text-active focus:outline-none cursor-pointer"
-          aria-label={showPassword ? 'Hide password' : 'Show password'}
-        >
-          <Icon icon={showPassword ? 'eye-slash' : 'eye'} size="md" />
-        </button>
+    <input
+      {...rest}
+      id={inputId}
+      name={name}
+      type={type}
+      role="textbox"
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      aria-disabled={disabled}
+      readOnly={readOnly}
+      aria-readonly={readOnly}
+      required={required}
+      aria-label={name}
+      aria-required={required}
+      className={cn(
+        'p-2 text-body-m font-normal transition-colors duration-200 ease-in-out border rounded-sm border-border-strong placeholder:text font-display focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:cursor-not-allowed disabled:bg-disabled disabled:opacity-50 ',
+        className,
       )}
-    </div>
+    />
   );
 };

@@ -88,6 +88,6 @@ namespace talkup_network {
 
         private:
             std::unordered_map<std::string, std::function<void(const nlohmann::json&,
-                crow::websocket::connection&)>> _type_handlers;
+                crow::websocket::connection&, std::shared_ptr<MicroservicesManager>)>> _type_handlers;
     };
 }
