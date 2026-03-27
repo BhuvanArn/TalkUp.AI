@@ -205,6 +205,9 @@ export class AuthService {
         email: verifyEmailDto.email,
         purpose: OtpPurpose.REGISTER,
       },
+      order: {
+        createdAt: "DESC",
+      },
     });
 
     const otpIsValid = await bcrypt.compare(

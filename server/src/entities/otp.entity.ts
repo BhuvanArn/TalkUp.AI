@@ -4,11 +4,13 @@ import {
   Entity,
   Index,
   PrimaryGeneratedColumn,
+  Unique,
 } from "typeorm";
 
 import { OtpPurpose } from "@common/enums/OtpPurpose";
 
 @Entity()
+@Unique("UQ_otp_email_purpose", ["email", "purpose"])
 export class Otp {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
