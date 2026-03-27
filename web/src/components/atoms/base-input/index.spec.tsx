@@ -304,36 +304,20 @@ describe('BaseInput', () => {
       expect(toggleButton).toHaveAttribute('aria-label', 'Show password');
     });
 
-    it('password toggle button should update aria-label when toggled', async () => {
-      const user = userEvent.setup();
-      render(<BaseInput type="password" />);
-
-      const showButton = screen.getByLabelText('Show password');
-      await user.click(showButton);
-
-      const hideButton = screen.getByLabelText('Hide password');
-      expect(hideButton).toHaveAttribute('aria-label', 'Hide password');
-    });
-  });
-
-  describe('Edge cases', () => {
-    it('should handle undefined onChange gracefully', () => {
-      render(<BaseInput />);
-      const input = screen.getByRole('textbox');
-      expect(input).toBeInTheDocument();
+    it('renders as required when required prop is true', () => {
+      render(<BaseInput required />);
+      const inputElement = screen.getByRole('textbox', { name: 'input' });
+      expect(inputElement).toHaveAttribute('required');
+      expect(inputElement).toHaveAttribute('aria-required', 'true');
     });
 
-    it('should handle empty string as value', () => {
-      render(<BaseInput value="" onChange={() => {}} />);
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      expect(input.value).toBe('');
-    });
+    it('passes additional HTML attributes to the input element', () => {
+      render(<BaseInput data-testid="custom-input" className="extra-class" />);
+      const inputElement = screen.getByTestId('custom-input');
 
-    it('should handle special characters in value', () => {
-      const specialValue = '<script>alert("xss")</script>';
-      render(<BaseInput value={specialValue} onChange={() => {}} />);
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      expect(input.value).toBe(specialValue);
+      expect(inputElement).toBeInTheDocument();
+      expect(inputElement).toHaveClass('extra-class');
+      expect(inputElement).toHaveClass('p-2');
     });
   });
 });

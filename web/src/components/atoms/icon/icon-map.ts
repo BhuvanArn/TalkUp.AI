@@ -21,6 +21,7 @@ import {
 import { FcGoogle } from 'react-icons/fc';
 import { HiOutlineSquaresPlus } from 'react-icons/hi2';
 import {
+  PiAppleLogoFill,
   PiArrowClockwise,
   PiArrowCounterClockwise,
   PiArrowDown,
@@ -212,6 +213,7 @@ export const iconMap = {
   // Miscellaneous icons
   google: FcGoogle,
   linkedin: FaLinkedin,
+  apple: PiAppleLogoFill,
 } as const;
 
 export type IconName = keyof typeof iconMap;

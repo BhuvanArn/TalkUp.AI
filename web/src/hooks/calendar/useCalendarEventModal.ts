@@ -156,10 +156,7 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
   };
 
   const handleDelete = async () => {
-    if (
-      modalEventToEdit &&
-      confirm('Are you sure you want to delete this event?')
-    ) {
+    if (modalEventToEdit) {
       await deleteEvent(modalEventToEdit.id);
     }
   };

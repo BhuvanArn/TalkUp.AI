@@ -1,10 +1,11 @@
 import InfoBox from '@/components/molecules/info-box';
+import NotesEditor from '@/components/molecules/notes-editor/notes-editor';
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
 import SimulationVideoArea from '@/components/organisms/simulation-video-area';
 import { WebSocketDebugPanel } from '@/components/organisms/websocket-debug-panel';
 import {
-  AudioPacket,
+  WebSocketPacket,
   useAudioStreaming,
   useInterviewSession,
   useSimulationWebSocket,
@@ -23,6 +24,7 @@ function Simulations() {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [wsError, setWsError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const [interviewID, setInterviewID] = useState<string | null>(null);
   const videoStreamToggleRef = useRef<(() => void) | null>(null);
 
   const {
@@ -36,10 +38,11 @@ function Simulations() {
     disconnect,
   } = useSimulationWebSocket({
     defaultUrl: '',
+    interviewID,
     onOpen: () => {
       setWsError(null);
       setConnectionAttempts(0);
-      sendPing({ message: 'Ping from client' });
+      sendPing();
     },
     onClose: (event) => {
       if (event.code !== 1000 && event.code !== 1001) {
@@ -62,11 +65,20 @@ function Simulations() {
     }
   }, []);
 
-  const { isCallActive, inputUrl, handleStreamToggle } = useInterviewSession({
+  const {
+    isCallActive,
+    inputUrl,
+    interviewID: sessionInterviewID,
+    handleStreamToggle,
+  } = useInterviewSession({
     onConnect: connect,
     onDisconnect: disconnect,
     onResumeStream: handleResumeStream,
   });
+
+  useEffect(() => {
+    setInterviewID(sessionInterviewID);
+  }, [sessionInterviewID]);
 
   const sendJsonMessageRef = useRef(sendJsonMessage);
   const readyStateRef = useRef(readyState);
@@ -76,7 +88,7 @@ function Simulations() {
     readyStateRef.current = readyState;
   }, [sendJsonMessage, readyState]);
 
-  const handleAudioPacket = useCallback((packet: AudioPacket) => {
+  const handleAudioPacket = useCallback((packet: WebSocketPacket) => {
     if (readyStateRef.current === ReadyState.OPEN) {
       sendJsonMessageRef.current(packet);
     }
@@ -89,9 +101,10 @@ function Simulations() {
     error: audioError,
   } = useAudioStreaming({
     stream: mediaStream,
+    interviewID,
     onAudioPacket: handleAudioPacket,
     isActive: isCallActive && readyState === ReadyState.OPEN,
-    timeSlice: 1000,
+    timeSlice: 10000,
   });
 
   const staticTranscriptions: TranscriptionProps[] = [
@@ -169,6 +182,7 @@ function Simulations() {
           <img src="/avatarworking.png" alt="Avatar Working" />
         </div>
       </div>
+      <NotesEditor />
     </div>
   );
 }
