@@ -4,6 +4,8 @@ import {
   PrimaryGeneratedColumn,
   BeforeInsert,
   OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from "typeorm";
 import { uuidv7 } from "uuidv7";
 import { user } from "./user.entity";
@@ -22,13 +24,16 @@ export class Organization {
   })
   profile_picture: string;
 
-  @Column({ default: new Date() })
+  @CreateDateColumn({
+    type: "timestamptz",
+    default: () => "CURRENT_TIMESTAMP",
+  })
   created_at: Date;
 
-  @Column({ default: new Date() })
-  last_accessed_at: Date;
-
-  @Column({ default: new Date() })
+  @UpdateDateColumn({
+    type: "timestamptz",
+    default: () => "CURRENT_TIMESTAMP",
+  })
   updated_at: Date;
 
   // ------ UUID manual generation to ensure V7 format ------ //
