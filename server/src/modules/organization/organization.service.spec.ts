@@ -1,7 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { NotFoundException } from "@nestjs/common";
+import { ConflictException, NotFoundException } from "@nestjs/common";
 
 import { OrganizationService } from "./organization.service";
 import { Organization } from "@entities/organization.entity";
@@ -75,20 +75,26 @@ describe("OrganizationService", () => {
         organization_name: dto.OrganizationName,
       });
 
-      expect(authService.register).toHaveBeenCalledWith({
-        username: "TestOrg_admin",
-        email: "admin@test.com",
-        password: "helloworld",
-        user_role: "organizationAdmin",
-      });
-
-      expect(result).toEqual({
-        message: "Creation successful",
-        adminUser: {
+      expect(authService.register).toHaveBeenCalledWith(
+        expect.objectContaining({
           username: "TestOrg_admin",
           email: "admin@test.com",
-          password: "helloworld",
-        },
+          user_role: "admin",
+          organization_id: "org-id",
+        }),
+      );
+
+      const registerArg = (authService.register as jest.Mock).mock.calls[0][0];
+      expect(registerArg.password).toMatch(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/,
+      );
+      expect(registerArg.password.length).toBeGreaterThanOrEqual(20);
+
+      expect(result.message).toBe("Creation successful");
+      expect(result.adminUser).toEqual({
+        username: "TestOrg_admin",
+        email: "admin@test.com",
+        password: registerArg.password,
       });
     });
 
@@ -96,7 +102,7 @@ describe("OrganizationService", () => {
       (repo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
 
       await expect(service.registerOrganization(dto as any)).rejects.toThrow(
-        new NotFoundException("An organization with this name already exists"),
+        new ConflictException("An organization with this name already exists"),
       );
 
       expect(repo.create).not.toHaveBeenCalled();
@@ -109,10 +115,10 @@ describe("OrganizationService", () => {
       (repo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
       (repo.remove as jest.Mock).mockResolvedValue(undefined);
 
-      await service.deleteOrganization("TestOrg");
+      await service.deleteOrganization("org-id");
 
       expect(repo.findOne).toHaveBeenCalledWith({
-        where: { organization_name: "TestOrg" },
+        where: { organization_id: "org-id" },
       });
       expect(repo.remove).toHaveBeenCalledWith(mockOrganization);
     });
@@ -120,8 +126,8 @@ describe("OrganizationService", () => {
     it("should throw if organization does not exist", async () => {
       (repo.findOne as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.deleteOrganization("UnknownOrg")).rejects.toThrow(
-        new NotFoundException("An organization with this name doesn't exist"),
+      await expect(service.deleteOrganization("unknown-id")).rejects.toThrow(
+        new NotFoundException("Organization not found."),
       );
 
       expect(repo.remove).not.toHaveBeenCalled();
@@ -135,7 +141,7 @@ describe("OrganizationService", () => {
       (repo.findOne as jest.Mock).mockResolvedValue(org);
       (repo.save as jest.Mock).mockResolvedValue(org);
 
-      await service.updateOrganization("TestOrg", {
+      await service.updateOrganization("org-id", {
         newName: "NewName",
         newProfilePicture: "pic.png",
       });
@@ -150,7 +156,7 @@ describe("OrganizationService", () => {
 
       (repo.findOne as jest.Mock).mockResolvedValue(org);
 
-      await service.updateOrganization("TestOrg", {
+      await service.updateOrganization("org-id", {
         newName: "OnlyName",
       });
 
@@ -163,7 +169,7 @@ describe("OrganizationService", () => {
 
       (repo.findOne as jest.Mock).mockResolvedValue(org);
 
-      await service.updateOrganization("TestOrg", {
+      await service.updateOrganization("org-id", {
         newProfilePicture: "onlypic.png",
       });
 
@@ -175,10 +181,8 @@ describe("OrganizationService", () => {
       (repo.findOne as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        service.updateOrganization("UnknownOrg", { newName: "X" }),
-      ).rejects.toThrow(
-        new NotFoundException("An organization with this name doesn't exist"),
-      );
+        service.updateOrganization("unknown-id", { newName: "X" }),
+      ).rejects.toThrow(new NotFoundException("Organization not found."));
 
       expect(repo.save).not.toHaveBeenCalled();
     });
