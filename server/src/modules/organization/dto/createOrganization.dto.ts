@@ -8,16 +8,8 @@ import { IsEmail, IsString } from "class-validator";
 export class CreateOrganizationDto {
   @IsString()
   @ApiProperty({
-    description: "The id of the organization. This will be a UUID",
-    minLength: 1,
-    example: "AGBDUIJ178276889",
-  })
-  organization_id?: string;
-
-  @IsString()
-  @ApiProperty({
     description: "The Organization's name",
-    example: "AdminSys819",
+    example: "TalkUp",
   })
   OrganizationName: string;
 
