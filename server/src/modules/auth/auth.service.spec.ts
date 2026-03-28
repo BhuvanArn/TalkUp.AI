@@ -134,6 +134,8 @@ describe("AuthService", () => {
       });
       expect(mockUserRepo.create).toHaveBeenCalledWith({
         username: "testuser",
+        organization_id: null,
+        user_role: "user",
       });
       expect(mockJwtService.signAsync).toHaveBeenCalledWith({
         userId: "test-user-id",

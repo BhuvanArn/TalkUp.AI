@@ -61,6 +61,10 @@ export class AuthService {
 
     const newUser = this.userRepository.create({
       username: createUserDto.username,
+      organization_id: createUserDto.organization_id
+        ? { organization_id: createUserDto.organization_id }
+        : null,
+      user_role: createUserDto.user_role ?? "user",
     });
 
     const savedUser = await this.userRepository.save(newUser);
