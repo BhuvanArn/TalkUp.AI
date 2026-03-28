@@ -47,47 +47,22 @@ describe("OrganizationController", () => {
   });
 
   describe("deleteOrganization", () => {
-    it("should throw BadRequestException if name missing", async () => {
-      await expect(controller.deleteOrganization("" as any)).rejects.toThrow(
-        new BadRequestException("Organization name is required"),
-      );
-
-      expect(service.deleteOrganization).not.toHaveBeenCalled();
-    });
-
-    it("should call service.deleteOrganization when name provided", async () => {
+    it("should call service.deleteOrganization with id", async () => {
       (service.deleteOrganization as jest.Mock).mockResolvedValue(undefined);
 
-      await controller.deleteOrganization("TestOrg");
+      await controller.deleteOrganization("org-id");
 
-      expect(service.deleteOrganization).toHaveBeenCalledWith("TestOrg");
+      expect(service.deleteOrganization).toHaveBeenCalledWith("org-id");
     });
   });
 
   describe("updateOrganization", () => {
-    it("should throw if currentName missing", async () => {
-      await expect(
-        controller.updateOrganization({
-          currentName: "",
-          newName: "NewName",
-        }),
-      ).rejects.toThrow(
-        new BadRequestException(
-          "Current name and at least one field to update are required.",
-        ),
-      );
-
-      expect(service.updateOrganization).not.toHaveBeenCalled();
-    });
-
     it("should throw if no fields to update", async () => {
       await expect(
-        controller.updateOrganization({
-          currentName: "TestOrg",
-        } as any),
+        controller.updateOrganization("org-id", {}),
       ).rejects.toThrow(
         new BadRequestException(
-          "Current name and at least one field to update are required.",
+          "At least one field to update are required.",
         ),
       );
 
@@ -95,37 +70,34 @@ describe("OrganizationController", () => {
     });
 
     it("should call service.updateOrganization with newName only", async () => {
-      await controller.updateOrganization({
-        currentName: "TestOrg",
+      await controller.updateOrganization("org-id", {
         newName: "NewName",
       });
 
-      expect(service.updateOrganization).toHaveBeenCalledWith("TestOrg", {
+      expect(service.updateOrganization).toHaveBeenCalledWith("org-id", {
         newName: "NewName",
         newProfilePicture: undefined,
       });
     });
 
     it("should call service.updateOrganization with newProfilePicture only", async () => {
-      await controller.updateOrganization({
-        currentName: "TestOrg",
+      await controller.updateOrganization("org-id", {
         newProfilePicture: "pic.png",
       });
 
-      expect(service.updateOrganization).toHaveBeenCalledWith("TestOrg", {
+      expect(service.updateOrganization).toHaveBeenCalledWith("org-id", {
         newName: undefined,
         newProfilePicture: "pic.png",
       });
     });
 
     it("should call service.updateOrganization with both fields", async () => {
-      await controller.updateOrganization({
-        currentName: "TestOrg",
+      await controller.updateOrganization("org-id", {
         newName: "NewName",
         newProfilePicture: "pic.png",
       });
 
-      expect(service.updateOrganization).toHaveBeenCalledWith("TestOrg", {
+      expect(service.updateOrganization).toHaveBeenCalledWith("org-id", {
         newName: "NewName",
         newProfilePicture: "pic.png",
       });
