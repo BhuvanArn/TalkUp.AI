@@ -13,15 +13,15 @@ export default function initSwagger(app: INestApplication) {
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle("TalkUp API")
-    .addBearerAuth(
+    .addApiKey(
       {
-        type: "http",
-        scheme: "bearer",
-        bearerFormat: "JWT",
+        type: "apiKey",
         in: "header",
-        description: "Enter your JWT token",
+        name: "x-org-provisioning-secret",
+        description:
+          "Internal-only secret for creating an organization (POST /organization). Must match server env ORG_PROVISIONING_SECRET. End-user routes use the httpOnly accessToken cookie from login/register, not this header.",
       },
-      "access-token", // This name here is important as it is used in @ApiBearerAuth() decorator
+      "org-provisioning",
     )
     .setDescription("This is the API documentation of Talkup's backend")
     .setVersion(version || "1.0.0")
