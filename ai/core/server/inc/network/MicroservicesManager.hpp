@@ -74,6 +74,15 @@ namespace talkup_network {
             static void send_to_stt_microservice(const nlohmann::json &data, ResponseCallback callback);
 
             /**
+             * @brief Send STT output text to the TTS microservice.
+             * This function validates the STT payload, checks TTS availability via ping,
+             * then requests speech synthesis and returns the TTS response through callback.
+             *
+             * @param data Json data containing STT output (expected to include text).
+             */
+            static void end_to_tts_microservice(const nlohmann::json &data, ResponseCallback callback);
+
+            /**
              * @brief Initialize WebSocket connections to all registered microservices.
              * It's establishes persistent WebSocket connections to each microservice
              * defined in the services list. It handles connection setup, error reporting,
@@ -123,6 +132,8 @@ namespace talkup_network {
                 std::condition_variable queue_cv;
                 bool worker_running = false;
             };
+
+            static bool reconnect_service_connection(const std::string& service_name);
 
             static inline std::unordered_map<std::string,
                 std::unordered_map<std::string, std::string>> __services_list;

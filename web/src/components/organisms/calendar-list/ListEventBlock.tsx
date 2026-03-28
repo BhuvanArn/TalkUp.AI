@@ -20,19 +20,16 @@ const ListEventBlock = ({
   const colors = getEventColorData(color);
 
   return (
-    <div className="grid grid-cols-[100px_1fr] overflow-hidden rounded-[5px] hover:bg-surface">
-      <div className="flex flex-col justify-center items-center py-2 text-center w-16 shrink-0">
-        <span className="text-body-s-strong text-idle">{startTime}</span>
-        <span className="text-body-s text-idle/50">{endTime}</span>
-      </div>
-
-      <div
-        className="p-3 flex flex-col justify-center border-l-2"
-        style={{
-          backgroundColor: colors.background,
-          borderLeftColor: colors.border,
-        }}
-      >
+    <div className="relative -full overflow-hidden rounded-[5px] hover:bg-surface">
+      <span
+        className="absolute left-0 top-3 bottom-3 w-[3px]"
+        style={{ backgroundColor: colors.border }}
+        aria-hidden="true"
+      />
+      <div className="py-3 pr-3 pl-6 flex flex-col justify-center">
+        <p className="text-body-s text-idle/70 mb-1">
+          {startTime} to {endTime}
+        </p>
         <h4 className="text-body-s-strong text-idle">{title}</h4>
         {subtitle && (
           <p className="text-body-s text-idle/50 leading-snug line-clamp-2">

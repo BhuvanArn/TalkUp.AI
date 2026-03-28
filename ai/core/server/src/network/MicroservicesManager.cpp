@@ -7,6 +7,30 @@
 
 #include "MicroservicesManager.hpp"
 
+namespace {
+    nlohmann::json extract_text_from_stt_response(const nlohmann::json &data)
+    {
+        if (data.is_string()) {
+            return data.get<std::string>();
+        }
+
+        if (data.is_object() && data.contains("text") && data["text"].is_string()) {
+            return data["text"];
+        }
+
+        if (data.is_object() && data.contains("data") && data["data"].is_object() &&
+            data["data"].contains("text") && data["data"]["text"].is_string()) {
+            return data["data"]["text"];
+        }
+
+        if (data.is_object() && data.contains("data") && data["data"].is_string()) {
+            return data["data"];
+        }
+
+        return "";
+    }
+}
+
 void talkup_network::MicroservicesManager::load_microservices_info(
     const std::string &file_path)
 {
@@ -422,4 +446,96 @@ void talkup_network::MicroservicesManager::stop_service_worker(const std::string
     }
     conn.queue_cv.notify_all();
     if (conn.worker_thread.joinable()) conn.worker_thread.join();
+}
+
+void talkup_network::MicroservicesManager::end_to_tts_microservice(
+    const nlohmann::json &data, ResponseCallback callback)
+{
+    std::thread([data, callback]() {
+        try {
+            if (data.contains("error") ||
+                (data.contains("type") && data["type"].is_string() && data["type"] == "error")) {
+                callback(nlohmann::json{{"error", "Invalid STT response for TTS chaining"}, {"details", data}});
+                return;
+            }
+
+            nlohmann::json text_val = extract_text_from_stt_response(data);
+            if (!text_val.is_string() || text_val.get<std::string>().empty()) {
+                std::cerr << "[MicroservicesManager] STT response does not contain usable text for TTS: "
+                          << data.dump() << std::endl;
+                callback(nlohmann::json{{"error", "No text found in STT response"}});
+                return;
+            }
+
+            std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
+            {
+                std::lock_guard<std::mutex> lock(__ws_mutex);
+                auto it = __ws_connections.find("tts");
+                if (it == __ws_connections.end() || !it->second.is_connected) {
+                    std::cerr << "[MicroservicesManager] TTS connection not available" << std::endl;
+                    callback(nlohmann::json{{"error", "TTS connection not available"}});
+                    return;
+                }
+                if (!it->second.ws || !it->second.ws->is_open()) {
+                    std::cerr << "[MicroservicesManager] TTS WebSocket connection is closed" << std::endl;
+                    it->second.is_connected = false;
+                    callback(nlohmann::json{{"error", "TTS connection closed"}});
+                    return;
+                }
+                ws = it->second.ws;
+            }
+
+            if (!ping_service("tts")) {
+                callback(nlohmann::json{{"error", "TTS service ping failed"}});
+                return;
+            }
+
+            if (!ws || !ws->is_open()) {
+                std::cerr << "[MicroservicesManager] TTS WebSocket connection lost after ping" << std::endl;
+                callback(nlohmann::json{{"error", "TTS connection lost after ping"}});
+                return;
+            }
+
+            nlohmann::json tts_json = {
+                {"services", {"TTS"}},
+                {"type", "stream_chunk"},
+                {"timestamp", std::time(nullptr)},
+                {"data", {{"chunk", text_val}, {"eof", true}}}
+            };
+
+            ws->write(boost::asio::buffer(tts_json.dump()));
+
+            boost::beast::flat_buffer resp_buf;
+            const int timeout_ms = 10000;
+            int fd = boost::beast::get_lowest_layer(*ws).socket().native_handle();
+            struct pollfd pfd;
+            pfd.fd = fd;
+            pfd.events = POLLIN;
+            pfd.revents = 0;
+
+            int poll_ret = ::poll(&pfd, 1, timeout_ms);
+            if (poll_ret > 0 && (pfd.revents & POLLIN)) {
+                ws->read(resp_buf);
+                std::string resp_msg = boost::beast::buffers_to_string(resp_buf.data());
+                try {
+                    nlohmann::json resp_json = nlohmann::json::parse(resp_msg);
+                    std::cout << "[MicroservicesManager] Received TTS response: " << resp_json.dump() << std::endl;
+                    callback(resp_json);
+                } catch (const std::exception &e) {
+                    std::cerr << "[MicroservicesManager] Failed to parse TTS response as JSON: "
+                              << e.what() << " ; raw=" << resp_msg << std::endl;
+                    callback(nlohmann::json{{"error", std::string("Parse error: ") + e.what()}});
+                }
+            } else if (poll_ret == 0) {
+                std::cerr << "[MicroservicesManager] TTS read timed out after " << timeout_ms << " ms" << std::endl;
+                callback(nlohmann::json{{"error", "Read timeout"}});
+            } else {
+                std::cerr << "[MicroservicesManager] TTS poll() error: " << std::strerror(errno) << std::endl;
+                callback(nlohmann::json{{"error", std::string("Poll error: ") + std::strerror(errno)}});
+            }
+        } catch (const std::exception &e) {
+            std::cerr << "[MicroservicesManager] Exception while sending to TTS: " << e.what() << std::endl;
+            callback(nlohmann::json{{"error", std::string("Exception: ") + e.what()}});
+        }
+    }).detach();
 }
