@@ -24,5 +24,12 @@
       "@src/*": ["./src/*"]
     }
   },
-  "exclude": ["node_modules", "dist", "test", "**/*spec.ts", "**/*test.ts", "src/test"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "**/*spec.ts",
+    "**/*test.ts",
+    "src/test"
+  ]
 }

@@ -9,6 +9,7 @@ import { AuthService } from "./auth.service";
 import { CreateUserDto } from "./dto/createUser.dto";
 
 import { user, user_password, user_email } from "@entities/user.entity";
+import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 
 jest.mock("bcrypt");
 const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
@@ -30,6 +31,8 @@ describe("AuthService", () => {
     profile_picture: "",
     provider: "",
     verification_code: "",
+    organization_id: null,
+    user_role: "none",
     last_accessed_at: new Date(),
     created_at: new Date(),
     updated_at: new Date(),
@@ -132,10 +135,38 @@ describe("AuthService", () => {
       });
       expect(mockUserRepo.create).toHaveBeenCalledWith({
         username: "testuser",
+        organization_id: null,
+        user_role: OrganizationUserRole.NONE,
       });
       expect(mockJwtService.signAsync).toHaveBeenCalledWith({
         userId: "test-user-id",
         username: "testuser",
+      });
+    });
+
+    it("should apply org and role when trusted", async () => {
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockUserRepo.create = jest.fn().mockReturnValue(mockUser);
+      mockUserRepo.save = jest.fn().mockResolvedValue(mockUser);
+      mockUserPasswordRepo.create = jest.fn().mockReturnValue(mockPassword);
+      mockUserPasswordRepo.save = jest.fn().mockResolvedValue(mockPassword);
+      mockUserEmailRepo.create = jest.fn().mockReturnValue(mockEmail);
+      mockUserEmailRepo.save = jest.fn().mockResolvedValue(mockEmail);
+      mockJwtService.signAsync = jest.fn().mockResolvedValue("jwt-token");
+
+      await service.register(
+        {
+          ...createUserDto,
+          organization_id: "org-uuid",
+          user_role: OrganizationUserRole.ADMIN,
+        },
+        true,
+      );
+
+      expect(mockUserRepo.create).toHaveBeenCalledWith({
+        username: "testuser",
+        organization_id: { organization_id: "org-uuid" },
+        user_role: OrganizationUserRole.ADMIN,
       });
     });
 

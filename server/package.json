@@ -15,10 +15,10 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "oxlint --fix --jest-plugin --promise-plugin --node-plugin src/ test/",
     "lint:check": "oxlint --jest-plugin --promise-plugin --node-plugin src/ test/",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test": "jest --maxWorkers=4",
+    "test:watch": "jest --watch --maxWorkers=4",
+    "test:coverage": "jest --coverage --maxWorkers=4",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --maxWorkers=4",
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
@@ -102,6 +102,7 @@
       "^@entities/(.*)$": "<rootDir>/entities/$1",
       "^@common/(.*)$": "<rootDir>/common/$1",
       "^@src/(.*)$": "<rootDir>/$1"
-    }
+    },
+    "workerIdleMemoryLimit": "512MB"
   }
 }
