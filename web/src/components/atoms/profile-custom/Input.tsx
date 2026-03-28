@@ -1,39 +1,138 @@
-interface ToggleProps {
-    enabled: boolean;
-    onToggle: () => void;
-    accentColor?: string;
-  }
-  
-  export const Toggle = ({ enabled, onToggle, accentColor = "#2B70C9" }: ToggleProps) => {
-    return (
-      <button
-        onClick={onToggle}
+import React from "react";
+
+// ─── Input ────────────────────────────────────────────────────────────────────
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  accentColor?: string;
+}
+
+export const Input = ({ accentColor = "#2B70C9", style, ...props }: InputProps) => {
+  return (
+    <input
+      style={{
+        width: "100%",
+        padding: "8px 11px",
+        fontSize: "13px",
+        borderRadius: "8px",
+        border: "0.5px solid var(--color-border-secondary)",
+        background: "var(--color-background-primary)",
+        color: "var(--color-text-primary)",
+        outline: "none",
+        fontFamily: "inherit",
+        transition: "border-color 0.15s, box-shadow 0.15s",
+        ...style,
+      }}
+      onFocus={(e) => {
+        e.currentTarget.style.borderColor = accentColor;
+        e.currentTarget.style.boxShadow = `0 0 0 3px ${accentColor}22`;
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.borderColor = "var(--color-border-secondary)";
+        e.currentTarget.style.boxShadow = "none";
+        props.onBlur?.(e);
+      }}
+      {...props}
+    />
+  );
+};
+
+// ─── Textarea ─────────────────────────────────────────────────────────────────
+
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  accentColor?: string;
+}
+
+export const Textarea = ({ accentColor = "#2B70C9", style, ...props }: TextareaProps) => {
+  return (
+    <textarea
+      style={{
+        width: "100%",
+        padding: "8px 11px",
+        fontSize: "13px",
+        borderRadius: "8px",
+        border: "0.5px solid var(--color-border-secondary)",
+        background: "var(--color-background-primary)",
+        color: "var(--color-text-primary)",
+        outline: "none",
+        fontFamily: "inherit",
+        resize: "vertical",
+        minHeight: "80px",
+        transition: "border-color 0.15s, box-shadow 0.15s",
+        ...style,
+      }}
+      onFocus={(e) => {
+        e.currentTarget.style.borderColor = accentColor;
+        e.currentTarget.style.boxShadow = `0 0 0 3px ${accentColor}22`;
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.borderColor = "var(--color-border-secondary)";
+        e.currentTarget.style.boxShadow = "none";
+        props.onBlur?.(e);
+      }}
+      {...props}
+    />
+  );
+};
+
+// ─── Select ───────────────────────────────────────────────────────────────────
+
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  accentColor?: string;
+}
+
+export const Select = ({ accentColor = "#2B70C9", style, children, ...props }: SelectProps) => {
+  return (
+    <select
+      style={{
+        width: "100%",
+        padding: "8px 11px",
+        fontSize: "13px",
+        borderRadius: "8px",
+        border: "0.5px solid var(--color-border-secondary)",
+        background: "var(--color-background-primary)",
+        color: "var(--color-text-primary)",
+        outline: "none",
+        fontFamily: "inherit",
+        cursor: "pointer",
+        ...style,
+      }}
+      {...props}
+    >
+      {children}
+    </select>
+  );
+};
+
+// ─── Field wrapper ────────────────────────────────────────────────────────────
+
+interface FieldProps {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}
+
+export const Field = ({ label, hint, children }: FieldProps) => {
+  return (
+    <div style={{ marginBottom: "14px" }}>
+      <label
         style={{
-          width: 36,
-          height: 20,
-          borderRadius: 10,
-          background: enabled ? accentColor : "var(--color-background-secondary)",
-          border: `0.5px solid ${enabled ? accentColor : "var(--color-border-secondary)"}`,
-          position: "relative",
-          cursor: "pointer",
-          flexShrink: 0,
-          transition: "background 0.2s",
+          display: "block",
+          fontSize: "12px",
+          fontWeight: 500,
+          color: "var(--color-text-secondary)",
+          marginBottom: "5px",
         }}
-        aria-checked={enabled}
-        role="switch"
       >
-        <div
-          style={{
-            width: 14,
-            height: 14,
-            borderRadius: "50%",
-            background: "white",
-            position: "absolute",
-            top: 2,
-            left: enabled ? 18 : 2,
-            transition: "left 0.2s",
-          }}
-        />
-      </button>
-    );
-  };
+        {label}
+      </label>
+      {children}
+      {hint && (
+        <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", marginTop: "4px" }}>
+          {hint}
+        </div>
+      )}
+    </div>
+  );
+};

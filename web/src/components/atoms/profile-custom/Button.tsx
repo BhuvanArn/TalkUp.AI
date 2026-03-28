@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "ghost";
@@ -6,14 +6,13 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
 
-export const Button = ({ 
-  variant = "primary", 
-  accentColor = "#2B70C9", 
-  children, 
-  style, 
-  ...props 
+export const Button = ({
+  variant = "primary",
+  accentColor = "#2B70C9",
+  children,
+  style,
+  ...props
 }: ButtonProps) => {
-  
   const baseStyle: React.CSSProperties = {
     padding: "5px 12px",
     fontSize: "12px",
@@ -21,10 +20,13 @@ export const Button = ({
     cursor: "pointer",
     fontWeight: 500,
     transition: "all 0.2s",
-    ...style
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "5px",
+    ...style,
   };
 
-  const variants = {
+  const variants: Record<string, React.CSSProperties> = {
     primary: {
       background: accentColor,
       color: "white",
@@ -34,14 +36,11 @@ export const Button = ({
       background: "transparent",
       color: "var(--color-text-secondary)",
       border: "0.5px solid var(--color-border-secondary)",
-    }
+    },
   };
 
   return (
-    <button 
-      style={{ ...baseStyle, ...variants[variant] }} 
-      {...props}
-    >
+    <button style={{ ...baseStyle, ...variants[variant] }} {...props}>
       {children}
     </button>
   );

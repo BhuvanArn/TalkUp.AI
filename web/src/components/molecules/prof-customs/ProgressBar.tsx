@@ -1,5 +1,5 @@
 interface ProgressBarProps {
-    progress: number; // 0 à 100
+    progress: number;
     color: string;
 }
 
