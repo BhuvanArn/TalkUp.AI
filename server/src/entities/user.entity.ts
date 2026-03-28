@@ -59,7 +59,7 @@ export class user {
 
   @Column({
     nullable: false,
-    default: "user",
+    default: "none",
     comment: "the role of the user in the organization",
   })
   user_role: string;

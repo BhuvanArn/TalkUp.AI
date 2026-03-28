@@ -58,10 +58,10 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   @ApiProperty({
-    description: "The role of the user in the organization",
+    description:
+      "Ignored on public signup; set only by trusted internal flows (org bootstrap, member creation).",
     minLength: 4,
     example: "user",
-    default: "user",
   })
-  user_role?: string = "user";
+  user_role?: string;
 }
