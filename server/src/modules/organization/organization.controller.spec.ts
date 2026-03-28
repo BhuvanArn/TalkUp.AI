@@ -1,24 +1,41 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { BadRequestException } from "@nestjs/common";
 
 import { OrganizationController } from "./organization.controller";
 import { OrganizationService } from "./organization.service";
+import { OrganizationProvisioningGuard } from "@common/guards/organizationProvisioning.guard";
+import applyMockAccessTokenGuard from "@src/test/utils/mock-guards";
+
+import { user } from "@entities/user.entity";
 
 describe("OrganizationController", () => {
   let controller: OrganizationController;
   let service: Partial<OrganizationService>;
+
+  const mockUser = {
+    user_id: "u1",
+    username: "admin",
+    user_role: "admin",
+  } as user;
 
   beforeEach(async () => {
     service = {
       registerOrganization: jest.fn(),
       deleteOrganization: jest.fn(),
       updateOrganization: jest.fn(),
+      getMyOrganizationForUser: jest.fn(),
+      createOrganizationMember: jest.fn(),
+      removeOrganizationMember: jest.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [OrganizationController],
-      providers: [{ provide: OrganizationService, useValue: service }],
-    }).compile();
+    const module: TestingModule = await applyMockAccessTokenGuard(
+      Test.createTestingModule({
+        controllers: [OrganizationController],
+        providers: [{ provide: OrganizationService, useValue: service }],
+      }),
+    )
+      .overrideGuard(OrganizationProvisioningGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<OrganizationController>(OrganizationController);
   });
@@ -47,60 +64,102 @@ describe("OrganizationController", () => {
   });
 
   describe("deleteOrganization", () => {
-    it("should call service.deleteOrganization with id", async () => {
+    it("should call service.deleteOrganization with id and user", async () => {
       (service.deleteOrganization as jest.Mock).mockResolvedValue(undefined);
 
-      await controller.deleteOrganization("org-id");
+      await controller.deleteOrganization("org-id", mockUser);
 
-      expect(service.deleteOrganization).toHaveBeenCalledWith("org-id");
+      expect(service.deleteOrganization).toHaveBeenCalledWith(
+        "org-id",
+        mockUser,
+      );
     });
   });
 
   describe("updateOrganization", () => {
-    it("should throw if no fields to update", async () => {
-      await expect(
-        controller.updateOrganization("org-id", {}),
-      ).rejects.toThrow(
-        new BadRequestException(
-          "At least one field to update are required.",
-        ),
+    it("should call service.updateOrganization with name only", async () => {
+      await controller.updateOrganization("org-id", mockUser, {
+        OrganizationName: "NewName",
+      });
+
+      expect(service.updateOrganization).toHaveBeenCalledWith(
+        "org-id",
+        mockUser,
+        {
+          OrganizationName: "NewName",
+        },
       );
-
-      expect(service.updateOrganization).not.toHaveBeenCalled();
-    });
-
-    it("should call service.updateOrganization with newName only", async () => {
-      await controller.updateOrganization("org-id", {
-        newName: "NewName",
-      });
-
-      expect(service.updateOrganization).toHaveBeenCalledWith("org-id", {
-        newName: "NewName",
-        newProfilePicture: undefined,
-      });
-    });
-
-    it("should call service.updateOrganization with newProfilePicture only", async () => {
-      await controller.updateOrganization("org-id", {
-        newProfilePicture: "pic.png",
-      });
-
-      expect(service.updateOrganization).toHaveBeenCalledWith("org-id", {
-        newName: undefined,
-        newProfilePicture: "pic.png",
-      });
     });
 
     it("should call service.updateOrganization with both fields", async () => {
-      await controller.updateOrganization("org-id", {
-        newName: "NewName",
-        newProfilePicture: "pic.png",
+      await controller.updateOrganization("org-id", mockUser, {
+        OrganizationName: "NewName",
+        OrganizationProfilePicture: "pic.png",
       });
 
-      expect(service.updateOrganization).toHaveBeenCalledWith("org-id", {
-        newName: "NewName",
-        newProfilePicture: "pic.png",
-      });
+      expect(service.updateOrganization).toHaveBeenCalledWith(
+        "org-id",
+        mockUser,
+        {
+          OrganizationName: "NewName",
+          OrganizationProfilePicture: "pic.png",
+        },
+      );
+    });
+  });
+
+  describe("getMyOrganization", () => {
+    it("should call getMyOrganizationForUser", async () => {
+      const payload = { organization_id: "org-id" };
+      (service.getMyOrganizationForUser as jest.Mock).mockResolvedValue(
+        payload,
+      );
+
+      const result = await controller.getMyOrganization(mockUser);
+
+      expect(service.getMyOrganizationForUser).toHaveBeenCalledWith(mockUser);
+      expect(result).toBe(payload);
+    });
+  });
+
+  describe("removeMember", () => {
+    it("should call removeOrganizationMember", async () => {
+      const out = { message: "Member removed from the organization" };
+      (service.removeOrganizationMember as jest.Mock).mockResolvedValue(out);
+
+      const result = await controller.removeMember(
+        "org-id",
+        "member-id",
+        mockUser,
+      );
+
+      expect(service.removeOrganizationMember).toHaveBeenCalledWith(
+        "org-id",
+        "member-id",
+        mockUser,
+      );
+      expect(result).toBe(out);
+    });
+  });
+
+  describe("createMember", () => {
+    it("should call createOrganizationMember", async () => {
+      const body = {
+        username: "new",
+        email: "n@test.com",
+        role: "user" as const,
+      };
+      const out = { message: "Member created" };
+      (service.createOrganizationMember as jest.Mock).mockResolvedValue(out);
+
+      const result = await controller.createMember("org-id", body, mockUser);
+
+      expect(service.createOrganizationMember).toHaveBeenCalledWith(
+        "org-id",
+        body,
+        mockUser,
+      );
+      expect(result).toBe(out);
     });
   });
 });

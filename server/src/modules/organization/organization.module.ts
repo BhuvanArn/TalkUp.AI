@@ -8,12 +8,19 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 import { Organization } from "@entities/organization.entity";
+import { user } from "@entities/user.entity";
 import { AuthModule } from "../auth/auth.module";
+import { AccessTokenGuard } from "@common/guards/accessToken.guard";
+import { OrganizationProvisioningGuard } from "@common/guards/organizationProvisioning.guard";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Organization]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Organization, user]), AuthModule],
   controllers: [OrganizationController],
-  providers: [OrganizationService],
+  providers: [
+    OrganizationService,
+    AccessTokenGuard,
+    OrganizationProvisioningGuard,
+  ],
   exports: [OrganizationService],
 })
 export class OrganizationModule {}

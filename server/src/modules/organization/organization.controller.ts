@@ -3,9 +3,9 @@ import {
   Controller,
   Post,
   Delete,
-  BadRequestException,
   Patch,
   Get,
+  UseGuards,
 } from "@nestjs/common";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
 
@@ -13,22 +13,33 @@ import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
-  ApiUnprocessableEntityResponse,
   ApiTags,
+  ApiSecurity,
+  ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
 } from "@nestjs/swagger";
 
 import { CreateOrganizationDto } from "./dto/createOrganization.dto";
+import { CreateOrganizationMemberDto } from "./dto/createOrganizationMember.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { ParamId } from "@common/decorators/paramId.decorator";
+import { CurrentUser } from "@common/decorators/currentUser.decorator";
+import { AccessTokenGuard } from "@common/guards/accessToken.guard";
+import { OrganizationProvisioningGuard } from "@common/guards/organizationProvisioning.guard";
 
 import { OrganizationService } from "./organization.service";
+
+import { user } from "@entities/user.entity";
+import { UpdateOrganizationDto } from "./dto/updateOrganization.dto";
 
 @ApiTags("Organization")
 @Controller("organization")
 export class OrganizationController {
-  constructor(private readonly OrganizationService: OrganizationService) {}
+  constructor(private readonly organizationService: OrganizationService) {}
 
   @ApiCreatedResponse({
     description: "The organization has been successfully created.",
@@ -43,23 +54,31 @@ export class OrganizationController {
   @ApiUnprocessableEntityResponse({
     description: "Missing parameter in request.",
   })
+  @ApiUnauthorizedResponse({
+    description: "Invalid or missing organization provisioning secret.",
+  })
+  @ApiSecurity("org-provisioning")
+  @UseGuards(OrganizationProvisioningGuard)
   @UsePipes(new PostValidationPipe())
   @Post()
-  async register(@Body() CreateOrganizationDto: CreateOrganizationDto) {
-    return await this.OrganizationService.registerOrganization(
-      CreateOrganizationDto,
+  async register(@Body() createOrganizationDto: CreateOrganizationDto) {
+    return await this.organizationService.registerOrganization(
+      createOrganizationDto,
     );
   }
 
   @ApiOkResponse({
     description: "The organization has been successfully deleted.",
   })
-  @ApiBadRequestResponse({
-    description: "Organization ID is required",
-  })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Not an organization administrator." })
+  @UseGuards(AccessTokenGuard)
   @Delete(":id")
-  async deleteOrganization(@ParamId() id: string) {
-    return await this.OrganizationService.deleteOrganization(id);
+  async deleteOrganization(
+    @ParamId() id: string,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.deleteOrganization(id, currentUser);
   }
 
   @ApiOkResponse({
@@ -71,40 +90,81 @@ export class OrganizationController {
   @ApiUnprocessableEntityResponse({
     description: "The organization could not be updated.",
   })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Not an organization administrator." })
+  @UseGuards(AccessTokenGuard)
   @Patch(":id")
   async updateOrganization(
     @ParamId() id: string,
-    @Body()
-    updateData: {
-      newName?: string;
-      newProfilePicture?: string;
-    },
+    @CurrentUser() currentUser: user,
+    @Body() updateOrganizationDto: UpdateOrganizationDto,
   ) {
-    const { newName, newProfilePicture } = updateData;
-
-    if (!newName && !newProfilePicture) {
-      throw new BadRequestException(
-        "At least one field to update are required.",
-      );
-    }
-
-    return await this.OrganizationService.updateOrganization(id, {
-      newName,
-      newProfilePicture,
-    });
+    return await this.organizationService.updateOrganization(
+      id,
+      currentUser,
+      updateOrganizationDto,
+    );
   }
 
   @ApiOkResponse({
     description: "The organization has been successfully found.",
   })
+  @ApiNotFoundResponse({
+    description:
+      "The user has no organization (e.g. role `none` or unaffiliated account).",
+  })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Insufficient permissions." })
+  @UseGuards(AccessTokenGuard)
+  @Get()
+  async getMyOrganization(@CurrentUser() currentUser: user) {
+    return await this.organizationService.getMyOrganizationForUser(
+      currentUser,
+    );
+  }
+
+  @ApiCreatedResponse({
+    description: "A new member was created for the organization.",
+  })
   @ApiBadRequestResponse({
-    description: "Invalid input data.",
+    description: "Badly formatted parameter.",
   })
-  @ApiUnprocessableEntityResponse({
-    description: "The organization could not be found.",
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Insufficient permissions." })
+  @UseGuards(AccessTokenGuard)
+  @UsePipes(new PostValidationPipe())
+  @Post(":id/members")
+  async createMember(
+    @ParamId() id: string,
+    @Body() body: CreateOrganizationMemberDto,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.createOrganizationMember(
+      id,
+      body,
+      currentUser,
+    );
+  }
+
+  @ApiOkResponse({
+    description: "The member was removed from the organization.",
   })
-  @Get(":id")
-  async findOne(@ParamId() id: string) {
-    return await this.OrganizationService.findOne(id);
+  @ApiNotFoundResponse({
+    description: "Organization or target member not in this organization.",
+  })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Insufficient permissions." })
+  @UseGuards(AccessTokenGuard)
+  @Delete(":id/members/:memberUserId")
+  async removeMember(
+    @ParamId() id: string,
+    @ParamId("memberUserId") memberUserId: string,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.removeOrganizationMember(
+      id,
+      memberUserId,
+      currentUser,
+    );
   }
 }
