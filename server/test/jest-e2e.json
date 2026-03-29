@@ -4,12 +4,17 @@
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": "<rootDir>/tsconfig.e2e.json"
+      }
+    ]
   },
   "moduleNameMapper": {
-    "^@config/(.*)$": "<rootDir>/src/config/$1",
-    "^@common/(.*)$": "<rootDir>/src/common/$1",
-    "^@entities/(.*)$": "<rootDir>/src/entities/$1",
-    "^@src/(.*)$": "<rootDir>/src/$1"
+    "^@config/(.*)$": "<rootDir>/../src/config/$1",
+    "^@common/(.*)$": "<rootDir>/../src/common/$1",
+    "^@entities/(.*)$": "<rootDir>/../src/entities/$1",
+    "^@src/(.*)$": "<rootDir>/../src/$1"
   }
 }
