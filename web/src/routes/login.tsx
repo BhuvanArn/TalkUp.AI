@@ -9,7 +9,7 @@ export const Route = createFileRoute('/login')({
 function Login() {
   return (
     <div className="grid grid-cols-[1fr_512px] min-h-screen">
-      <div className="flex justify-center w-full pt-30">
+      <div className="flex flex-col items-center w-full pt-30 px-4">
         <LoginForm />
       </div>
       <ConvincingBanner />
