@@ -59,6 +59,7 @@ const NotesEditor = () => {
                 placeholder="Type here..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
+                autoFocus
               />
 
               {/* Bottom Actions */}

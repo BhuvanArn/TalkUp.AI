@@ -138,9 +138,8 @@ export const LoginForm = () => {
           </div>
         )}
         <Link
-          to="/register"
+          to="/forgot-password"
           className="text-idle text-label-m underline hover:text-active cursor-pointer"
-          disabled
         >
           Forgot your password?
         </Link>
