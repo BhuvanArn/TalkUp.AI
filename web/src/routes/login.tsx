@@ -1,4 +1,5 @@
 import LoginForm from '@/components/molecules/auth/login-form';
+import ConvincingBanner from '@/components/molecules/convincing-banner';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/login')({
@@ -7,8 +8,11 @@ export const Route = createFileRoute('/login')({
 
 function Login() {
   return (
-    <div className="flex flex-col items-center w-full gap-4 p-2">
-      <LoginForm />
+    <div className="grid grid-cols-[1fr_512px] min-h-screen">
+      <div className="flex justify-center w-full pt-30">
+        <LoginForm />
+      </div>
+      <ConvincingBanner />
     </div>
   );
 }

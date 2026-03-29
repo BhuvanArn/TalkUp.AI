@@ -1,0 +1,202 @@
+/* Calendar component overrides */
+.rbc-calendar {
+  font-family: var(--font-body);
+  color: var(--color-text);
+  height: 100% !important; /* Ensure it fills the container */
+  width: 100% !important;
+  overflow: hidden !important; /* Prevent outer scroll */
+}
+
+/* Header (Day names) */
+.rbc-header {
+  padding: 12px 0;
+  font-weight: 600;
+  color: var(--color-text-idle);
+  border-bottom: none !important; /* Remove header bottom border */
+  text-transform: uppercase;
+  font-size: 12px; /* text-label-s */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rbc-header + .rbc-header {
+  border-left: none !important; /* Remove vertical dividers in header */
+}
+
+/* Remove default borders */
+.rbc-month-view, .rbc-time-view, .rbc-agenda-view {
+  border: none !important;
+}
+
+/* Grid lines */
+.rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid var(--color-surface-raised) !important; /* Keep vertical day separators subtle */
+}
+
+/* Time slots and rows */
+.rbc-timeslot-group {
+  border-bottom: none !important;
+}
+
+/* Remove slot borders */
+.rbc-time-slot {
+  border-top: none !important;
+  border-right: none !important;
+}
+
+/* Remove top border of time content */
+.rbc-time-content {
+  border-top: none !important;
+}
+
+/* Remove bottom border of time header */
+.rbc-time-view .rbc-header {
+  border-bottom: none !important;
+}
+
+/* Hide all day row */
+.rbc-time-view .rbc-allday-cell {
+  display: none !important;
+}
+
+/* Time Gutter */
+.rbc-time-gutter, .rbc-time-header-gutter {
+  border-right: none !important;
+  width: 52px !important;
+  min-width: 52px !important;
+  max-width: 52px !important;
+  flex: 0 0 52px !important;
+}
+
+.rbc-time-gutter.rbc-time-column {
+  border-right: 1px solid var(--color-surface-raised) !important;
+}
+
+.rbc-label {
+  color: var(--color-text-idle);
+  font-size: 12px;
+  padding: 0 !important;
+  font-weight: 500;
+  text-align: left !important;
+  width: 100% !important;
+  display: block !important;
+}
+
+/* Today column */
+.rbc-today {
+  background-color: transparent !important;
+}
+
+/* Event styling overrides */
+.rbc-event {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  width: 100% !important;
+  left: 0 !important;
+}
+
+/* Event content to fill the event box */
+.rbc-event-content {
+  width: 100%;
+  height: 100%;
+}
+
+/* Remove focus outline */
+.rbc-event:focus {
+  outline: none !important;
+}
+
+/* Hide event labels */
+.rbc-event-label {
+  display: none !important;
+}
+
+/* Current time indicator */
+.rbc-current-time-indicator {
+  background-color: red !important;
+  height: 2px;
+  position: absolute;
+  width: 100%;
+  border-left: none !important;
+}
+
+/* Triangle at the start of the current time indicator */
+.rbc-current-time-indicator::before {
+  content: '';
+  position: absolute;
+  left: 0px;
+  top: -4px;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid red;
+}
+
+/* Force the time view to fit the container and scroll internally */
+.rbc-time-view {
+  height: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border: none !important;
+}
+
+/* Time header and content layout */
+.rbc-time-header {
+  flex: 0 0 auto !important;
+  margin-right: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* Remove bottom border of time header */
+.rbc-time-header-content {
+  border-left: none !important;
+  border-bottom: 1px solid var(--color-surface-raised) !important;
+}
+
+/* Make time content fill remaining space and scroll internally */
+.rbc-time-content {
+  flex: 1 1 0% !important;
+  height: auto !important; /* Let flex handle height */
+  min-height: 0 !important; /* Critical for scrolling in flex container */
+  overflow-y: auto !important; /* Enable scroll on content only */
+  border-top: none !important;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Hide scrollbar for WebKit browsers */
+.rbc-time-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Make the slots taller to show only ~6 hours on screen */
+.rbc-timeslot-group {
+  min-height: 100px !important;
+  border-left: none !important;
+}
+
+/* Events container adjustments */
+.rbc-events-container {
+  margin-right: 0 !important;
+  border-right: 1px solid var(--color-surface-raised) !important;
+}
+
+/* Prevent background slots from dimming, but allow events to dim */
+.rbc-day-slot .rbc-time-slot {
+  opacity: 1 !important;
+}
+
+/* Drag and Drop resize handle styling */
+.rbc-addons-dnd-resize-ns-icon {
+  color: var(--color-text-active);
+  background-color: var(--color-surface);
+}

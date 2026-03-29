@@ -7,12 +7,12 @@ import {
   FaComments,
   FaDownload,
   FaEdit,
-  FaEye,
-  FaEyeSlash,
   FaHeart,
   FaLinkedin,
   FaLock,
+  FaSave,
   FaSearch,
+  FaTag,
   FaTrash,
   FaUnlock,
   FaUpload,
@@ -21,6 +21,7 @@ import {
 import { FcGoogle } from 'react-icons/fc';
 import { HiOutlineSquaresPlus } from 'react-icons/hi2';
 import {
+  PiAppleLogoFill,
   PiArrowClockwise,
   PiArrowCounterClockwise,
   PiArrowDown,
@@ -33,12 +34,15 @@ import {
   PiBookmarkSimpleFill,
   PiCalendar,
   PiCaretDown,
+  PiCaretLeft,
   PiCaretRight,
   PiCaretUpDown,
   PiChartDonut,
   PiChartLine,
   PiClock,
   PiDotsThreeVertical,
+  PiEye,
+  PiEyeSlash,
   PiFingerprint,
   PiGear,
   PiHighlighter,
@@ -111,8 +115,8 @@ export const iconMap = {
   'arrow-up': PiArrowUp,
   'arrow-down': PiArrowDown,
   'arrow-right-up': PiArrowUpRight,
-  eye: FaEye,
-  'eye-slash': FaEyeSlash,
+  eye: PiEye,
+  'eye-slash': PiEyeSlash,
   lock: FaLock,
   unlock: FaUnlock,
   download: FaDownload,
@@ -121,6 +125,8 @@ export const iconMap = {
   help: PiQuestion,
   progression: PiChartLine,
   schedule: FaCalendarAlt,
+  tag: FaTag,
+  save: FaSave,
 
   // Sidebar icons
   'collapse-sidebar': PiSidebarSimple,
@@ -129,6 +135,7 @@ export const iconMap = {
   applications: HiOutlineSquaresPlus,
   'caret-down': PiCaretDown,
   'caret-right': PiCaretRight,
+  'caret-left': PiCaretLeft,
   cv: PiReadCvLogo,
   notes: PiNote,
   agenda: PiCalendar,
@@ -145,7 +152,7 @@ export const iconMap = {
   'caret-up-down': PiCaretUpDown,
   home: PiHouse,
   login: PiLock,
-  'sign-up': PiUser,
+  register: PiUser,
   about: PiInfo,
 
   // Global Icons
@@ -206,6 +213,7 @@ export const iconMap = {
   // Miscellaneous icons
   google: FcGoogle,
   linkedin: FaLinkedin,
+  apple: PiAppleLogoFill,
 } as const;
 
 export type IconName = keyof typeof iconMap;

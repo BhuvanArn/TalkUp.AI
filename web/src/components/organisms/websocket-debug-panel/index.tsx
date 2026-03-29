@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { InputMolecule } from '@/components/molecules/input-molecule';
+import type { InputChangeEvent } from '@/types/events';
 import { cn } from '@/utils/cn';
 import { ReadyState } from 'react-use-websocket';
 
@@ -49,9 +50,10 @@ export function WebSocketDebugPanel({
         </h2>
         <InputMolecule
           label="Socket URL"
-          type="base"
+          inputType="base"
+          type="text"
           value={inputUrl}
-          onChange={(e) => onInputUrlChange?.(e.target.value)}
+          onChange={(e: InputChangeEvent) => onInputUrlChange?.(e.target.value)}
           disabled={isCallActive || !onInputUrlChange}
         />
         <div className="flex items-center gap-2 text-sm">

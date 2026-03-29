@@ -1,5 +1,11 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
-import { Length, IsEmail, IsStrongPassword } from "class-validator";
+import {
+  Length,
+  IsEmail,
+  IsStrongPassword,
+  IsOptional,
+  IsString,
+} from "class-validator";
 
 @ApiSchema({
   name: "CreateUserRequest",
@@ -38,4 +44,24 @@ export class CreateUserDto {
     example: "Abcdefg1*",
   })
   password: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({
+    description:
+      "The id of the organization the user belongs to. This will be a UUID",
+    minLength: 1,
+    example: "019b1c4a-467c-78a6-bf0f-9fd6f7aa50db",
+  })
+  organization_id?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description:
+      "Ignored on public signup; set only by trusted internal flows (org bootstrap, member creation).",
+    minLength: 4,
+    example: "user",
+  })
+  user_role?: string;
 }

@@ -35,21 +35,28 @@ services:
 
   speech_to_text:
     build:
-      context: ./microservices/speech-to-text
+      context: .
+      dockerfile: ./microservices/speech-to-text/Dockerfile
     container_name: speech_to_text_services
     environment:
       - PYTHONUNBUFFERED=1
+      - STT_HOST=speech_to_text
+      - STT_PORT=8002
+      - VOSK_MODEL_PATH=/app/models/vosk-fr
     ports:
-      - "5053:5000"
+      - "8002:8002"
 
   text_to_speech:
     build:
-      context: ./microservices/text-to-speech
+      context: .
+      dockerfile: ./microservices/text-to-speech/Dockerfile
     container_name: text_to_speech_services
     environment:
       - PYTHONUNBUFFERED=1
+      - TTS_HOST=text_to_speech
+      - TTS_PORT=8005
     ports:
-      - "5054:5000"
+      - "8005:8005"
 
   verbal_analyzer:
     build:

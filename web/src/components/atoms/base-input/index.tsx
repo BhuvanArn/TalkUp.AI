@@ -1,18 +1,9 @@
 import { cn } from '@/utils/cn';
 import React, { useId } from 'react';
 
-export interface BaseInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
-  id?: string;
-  name?: string;
-  value?: string;
-  type?: string;
-  placeholder?: string;
-  disabled?: boolean;
-  readOnly?: boolean;
-  required?: boolean;
-  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-}
+import type { BaseInputProps } from './types';
+
+export type { BaseInputProps };
 
 /**
  * A base input component for form elements.
@@ -32,19 +23,20 @@ export interface BaseInputProps
  * @param {string} [props.className] - Additional CSS classes to apply.
  * @returns {JSX.Element} The rendered input component.
  */
-export const BaseInput: React.FC<BaseInputProps> = ({
-  id,
-  name = 'input',
-  value = '',
-  type = 'text',
-  placeholder = 'Enter text',
-  disabled = false,
-  readOnly = false,
-  required = false,
-  onChange = () => {},
-  className,
-  ...rest
-}) => {
+export const BaseInput: React.FC<BaseInputProps> = (props) => {
+  const {
+    id,
+    name = 'input',
+    value = '',
+    type = 'text',
+    placeholder = 'Enter text',
+    disabled = false,
+    readOnly = false,
+    required = false,
+    onChange = () => {},
+    className,
+    ...rest
+  } = props as BaseInputProps;
   const generatedId = useId();
   const inputId = id || generatedId;
 
@@ -66,7 +58,7 @@ export const BaseInput: React.FC<BaseInputProps> = ({
       aria-label={name}
       aria-required={required}
       className={cn(
-        'px-4 py-2 text-sm font-normal transition-colors duration-200 ease-in-out border rounded-sm border-border-strong placeholder:text font-display focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:cursor-not-allowed disabled:bg-disabled disabled:opacity-50 ',
+        'p-2 text-body-m font-normal transition-colors duration-200 ease-in-out border rounded-sm border-border-strong placeholder:text font-display focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:cursor-not-allowed disabled:bg-disabled disabled:opacity-50 ',
         className,
       )}
     />

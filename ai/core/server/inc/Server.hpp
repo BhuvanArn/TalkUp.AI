@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "network/MicroservicesManager.hpp"
 #include "IServer.hpp"
 
 namespace talkup_network {
@@ -80,6 +81,8 @@ namespace talkup_network {
 
         protected:
         private:
+            std::shared_ptr<MicroservicesManager> __microservices_manager;
+
             std::string __server_name;
             std::string __server_version;
 

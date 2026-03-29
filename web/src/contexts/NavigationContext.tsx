@@ -29,7 +29,7 @@ const NavigationContext = createContext<NavigationContextValue | undefined>(
  */
 function getContextFromRoute(pathname: string): NavigationContextType {
   // Public routes
-  if (pathname === '/login' || pathname === '/signup') {
+  if (pathname === '/login' || pathname === '/register') {
     return 'public';
   }
 

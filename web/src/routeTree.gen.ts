@@ -10,13 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SimulationsRouteImport } from './routes/simulations'
-import { Route as SignupRouteImport } from './routes/signup'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProgressionRouteImport } from './routes/progression'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DiaryRouteImport } from './routes/diary'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CvAnalysisRouteImport } from './routes/cv-analysis'
 import { Route as AiChatRouteImport } from './routes/ai-chat'
 import { Route as AgendaRouteImport } from './routes/agenda'
@@ -40,9 +39,9 @@ const SimulationsRoute = SimulationsRouteImport.update({
   path: '/simulations',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProgressionRoute = ProgressionRouteImport.update({
@@ -68,11 +67,6 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const DiaryRoute = DiaryRouteImport.update({
   id: '/diary',
   path: '/diary',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CvAnalysisRoute = CvAnalysisRouteImport.update({
@@ -171,13 +165,12 @@ export interface FileRoutesByFullPath {
   '/agenda': typeof AgendaRoute
   '/ai-chat': typeof AiChatRoute
   '/cv-analysis': typeof CvAnalysisRoute
-  '/dashboard': typeof DashboardRoute
   '/diary': typeof DiaryRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
-  '/signup': typeof SignupRoute
+  '/register': typeof RegisterRoute
   '/simulations': typeof SimulationsRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/settings/billing': typeof SettingsBillingRoute
@@ -198,13 +191,12 @@ export interface FileRoutesByTo {
   '/agenda': typeof AgendaRoute
   '/ai-chat': typeof AiChatRoute
   '/cv-analysis': typeof CvAnalysisRoute
-  '/dashboard': typeof DashboardRoute
   '/diary': typeof DiaryRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
-  '/signup': typeof SignupRoute
+  '/register': typeof RegisterRoute
   '/simulations': typeof SimulationsRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/settings/billing': typeof SettingsBillingRoute
@@ -226,13 +218,12 @@ export interface FileRoutesById {
   '/agenda': typeof AgendaRoute
   '/ai-chat': typeof AiChatRoute
   '/cv-analysis': typeof CvAnalysisRoute
-  '/dashboard': typeof DashboardRoute
   '/diary': typeof DiaryRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
-  '/signup': typeof SignupRoute
+  '/register': typeof RegisterRoute
   '/simulations': typeof SimulationsRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/settings/billing': typeof SettingsBillingRoute
@@ -255,13 +246,12 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/ai-chat'
     | '/cv-analysis'
-    | '/dashboard'
     | '/diary'
     | '/forgot-password'
     | '/login'
     | '/profile'
     | '/progression'
-    | '/signup'
+    | '/register'
     | '/simulations'
     | '/notes/$noteId'
     | '/settings/billing'
@@ -282,13 +272,12 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/ai-chat'
     | '/cv-analysis'
-    | '/dashboard'
     | '/diary'
     | '/forgot-password'
     | '/login'
     | '/profile'
     | '/progression'
-    | '/signup'
+    | '/register'
     | '/simulations'
     | '/notes/$noteId'
     | '/settings/billing'
@@ -309,13 +298,12 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/ai-chat'
     | '/cv-analysis'
-    | '/dashboard'
     | '/diary'
     | '/forgot-password'
     | '/login'
     | '/profile'
     | '/progression'
-    | '/signup'
+    | '/register'
     | '/simulations'
     | '/notes/$noteId'
     | '/settings/billing'
@@ -337,13 +325,12 @@ export interface RootRouteChildren {
   AgendaRoute: typeof AgendaRoute
   AiChatRoute: typeof AiChatRoute
   CvAnalysisRoute: typeof CvAnalysisRoute
-  DashboardRoute: typeof DashboardRoute
   DiaryRoute: typeof DiaryRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
   ProgressionRoute: typeof ProgressionRoute
-  SignupRoute: typeof SignupRoute
+  RegisterRoute: typeof RegisterRoute
   SimulationsRoute: typeof SimulationsRoute
   NotesNoteIdRoute: typeof NotesNoteIdRoute
   SettingsBillingRoute: typeof SettingsBillingRoute
@@ -368,11 +355,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SimulationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/progression': {
@@ -408,13 +395,6 @@ declare module '@tanstack/react-router' {
       path: '/diary'
       fullPath: '/diary'
       preLoaderRoute: typeof DiaryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cv-analysis': {
@@ -545,13 +525,12 @@ const rootRouteChildren: RootRouteChildren = {
   AgendaRoute: AgendaRoute,
   AiChatRoute: AiChatRoute,
   CvAnalysisRoute: CvAnalysisRoute,
-  DashboardRoute: DashboardRoute,
   DiaryRoute: DiaryRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
   ProgressionRoute: ProgressionRoute,
-  SignupRoute: SignupRoute,
+  RegisterRoute: RegisterRoute,
   SimulationsRoute: SimulationsRoute,
   NotesNoteIdRoute: NotesNoteIdRoute,
   SettingsBillingRoute: SettingsBillingRoute,
