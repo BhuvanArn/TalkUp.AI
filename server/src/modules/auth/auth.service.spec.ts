@@ -22,6 +22,7 @@ import { OtpPurpose } from "@common/enums/OtpPurpose";
 import { UserStatus } from "@common/enums/UserStatus";
 import { Otp } from "@entities/otp.entity";
 import { user, user_password, user_email } from "@entities/user.entity";
+import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 
 jest.mock("bcrypt");
 const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
@@ -47,6 +48,9 @@ describe("AuthService", () => {
     provider: "",
     verification_code: "",
     status: UserStatus.ACTIVE,
+    organization_id: null,
+    user_role: OrganizationUserRole.NONE,
+    tokenVersion: 1,
     last_accessed_at: new Date(),
     created_at: new Date(),
     updated_at: new Date(),
@@ -222,12 +226,85 @@ describe("AuthService", () => {
       expect(txUserEmailRepo.findOne).toHaveBeenCalledWith({
         where: { email: createUserDto.email },
       });
+      expect(txUserRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          username: createUserDto.username,
+          status: UserStatus.PENDING,
+          organization_id: null,
+          user_role: OrganizationUserRole.NONE,
+        }),
+      );
       expect(txOtpRepo.save).toHaveBeenCalled();
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(
         "auth.otp_generated",
         expect.objectContaining({
           email: createUserDto.email,
           purpose: OtpPurpose.REGISTER,
+        }),
+      );
+    });
+
+    it("should apply org and role when trusted", async () => {
+      const txUserRepo = {
+        create: jest
+          .fn()
+          .mockReturnValue({ ...mockUser, status: UserStatus.PENDING }),
+        save: jest
+          .fn()
+          .mockResolvedValue({ ...mockUser, status: UserStatus.PENDING }),
+        findOne: jest.fn(),
+      };
+      const txUserPasswordRepo = {
+        create: jest.fn().mockReturnValue(mockPassword),
+        save: jest.fn().mockResolvedValue(mockPassword),
+        findOne: jest.fn(),
+      };
+      const txUserEmailRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockReturnValue(mockEmail),
+        save: jest.fn().mockResolvedValue(mockEmail),
+      };
+      const txOtpRepo = {
+        create: jest.fn().mockReturnValue(mockOtp),
+        save: jest.fn().mockResolvedValue(mockOtp),
+        delete: jest.fn().mockResolvedValue({ affected: 1 }),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(null),
+        }),
+      };
+
+      mockedBcrypt.hash.mockResolvedValue("otp-hash" as never);
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) return txUserRepo;
+            if (entity === user_password) return txUserPasswordRepo;
+            if (entity === user_email) return txUserEmailRepo;
+            if (entity === Otp) return txOtpRepo;
+            return null;
+          },
+        }),
+      );
+
+      await service.register(
+        {
+          ...createUserDto,
+          organization_id: "org-uuid",
+          user_role: OrganizationUserRole.ADMIN,
+        },
+        true,
+      );
+
+      expect(txUserRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          username: "testuser",
+          status: UserStatus.PENDING,
+          organization_id: { organization_id: "org-uuid" },
+          user_role: OrganizationUserRole.ADMIN,
         }),
       );
     });

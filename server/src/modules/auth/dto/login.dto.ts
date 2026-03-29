@@ -1,5 +1,11 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
-import { Length, IsEmail, IsStrongPassword } from "class-validator";
+import {
+  IsEmail,
+  IsString,
+  IsNotEmpty,
+  IsStrongPassword,
+  Length,
+} from "class-validator";
 
 @ApiSchema({
   name: "User login",
@@ -13,6 +19,9 @@ export class LoginDto {
   })
   email: string;
 
+  @IsString()
+  @IsNotEmpty()
+  @Length(8, 50)
   @IsStrongPassword({
     minLength: 8,
     minLowercase: 1,
@@ -20,11 +29,8 @@ export class LoginDto {
     minNumbers: 1,
     minSymbols: 1,
   })
-  @Length(8, 50)
   @ApiProperty({
-    description:
-      "The user's password. It must be at least 8 characters long and include uppercase letters, lowercase letters, numbers, and symbols.",
-    minLength: 8,
+    description: "The user's password.",
     example: "Abcdefg1*",
   })
   password: string;

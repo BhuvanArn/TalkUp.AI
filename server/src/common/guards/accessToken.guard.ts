@@ -12,7 +12,7 @@ import { user } from "@entities/user.entity";
 
 /**
  * Guard that verifies the presence and validity of an access token in cookies.
- * If valid, it attaches the userId to the request object.
+ * If valid, it attaches the userId and full user entity to the request object.
  *
  * Throws UnauthorizedException if the token is missing, malformed, or invalid.
  *
@@ -88,6 +88,7 @@ export class AccessTokenGuard implements CanActivate {
     }
 
     req.userId = foundUser.user_id;
+    req.user = foundUser;
 
     return true;
   }

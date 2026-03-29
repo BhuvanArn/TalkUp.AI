@@ -45,8 +45,13 @@ describe("AccessTokenGuard (unit)", () => {
     ).rejects.toThrow(UnauthorizedException);
   });
 
-  it("returns true and sets req.userId when ok", async () => {
-    const reqObj: any = { cookies: { accessToken: "token" }, userId: null };
+  it("returns true and sets req.userId and req.user when ok", async () => {
+    const mockUser = { user_id: "u1", username: "test" };
+    const reqObj: any = {
+      cookies: { accessToken: "token" },
+      userId: null,
+      user: undefined,
+    };
 
     const localJwt = {
       verifyAsync: jest
@@ -54,7 +59,7 @@ describe("AccessTokenGuard (unit)", () => {
         .mockResolvedValue({ userId: "u1", tv: 1, purpose: "ACCESS" }),
     };
     const localUserRepo = {
-      findOne: jest.fn().mockResolvedValue({ user_id: "u1", tokenVersion: 1 }),
+      findOne: jest.fn().mockResolvedValue(mockUser),
     };
 
     const localGuard = new AccessTokenGuard(
@@ -68,6 +73,7 @@ describe("AccessTokenGuard (unit)", () => {
 
     expect(res).toBe(true);
     expect(reqObj.userId).toBe("u1");
+    expect(reqObj.user).toEqual(mockUser);
   });
 
   it("throws when token version mismatches", async () => {

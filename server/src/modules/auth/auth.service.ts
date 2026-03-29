@@ -28,6 +28,8 @@ import { user, user_password, user_email } from "@entities/user.entity";
 
 import { OtpGeneratedEvent } from "./events/otp-generated.event";
 import { hashPassword } from "@common/utils/passwordHasher";
+import { OrganizationUserRole } from "@common/enums/organizationUserRole";
+import { Organization } from "@entities/organization.entity";
 
 type AuthTokens = {
   accessToken: string;
@@ -62,8 +64,21 @@ export class AuthService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async register(createUserDto: CreateUserDto): Promise<void> {
+  /**
+   * @param trusted - When false (default), public signup ignores `organization_id`
+   * and `user_role`, creating a standalone user with role `none`. When true, used by
+   * organization bootstrap / member creation with full DTO semantics.
+   */
+  async register(
+    createUserDto: CreateUserDto,
+    trusted = false,
+  ): Promise<void> {
     let otpEvent: OtpGeneratedEvent | null = null;
+
+    const { organizationId, userRole } = this.resolveRegistrationOrgFields(
+      createUserDto,
+      trusted,
+    );
 
     // Retry once when a concurrent registration causes a unique-key race.
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -82,6 +97,10 @@ export class AuthService {
             const newUser = userRepo.create({
               username: createUserDto.username,
               status: UserStatus.PENDING,
+              organization_id: organizationId
+                ? ({ organization_id: organizationId } as Organization)
+                : null,
+              user_role: userRole,
             });
             const savedUser = await userRepo.save(newUser);
 
@@ -635,6 +654,28 @@ export class AuthService {
 
   private generateOtpCode(): string {
     return randomInt(100000, 1000000).toString();
+  }
+
+  private resolveRegistrationOrgFields(
+    createUserDto: CreateUserDto,
+    trusted: boolean,
+  ): { organizationId: string | undefined; userRole: string } {
+    if (!trusted) {
+      return {
+        organizationId: undefined,
+        userRole: OrganizationUserRole.NONE,
+      };
+    }
+    if (createUserDto.organization_id) {
+      return {
+        organizationId: createUserDto.organization_id,
+        userRole: createUserDto.user_role ?? OrganizationUserRole.USER,
+      };
+    }
+    return {
+      organizationId: undefined,
+      userRole: createUserDto.user_role ?? OrganizationUserRole.NONE,
+    };
   }
 
   private isPgUniqueViolation(error: unknown): boolean {
