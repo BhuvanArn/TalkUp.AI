@@ -11,15 +11,15 @@ import { CalendarListAddButtonProps } from './types';
  */
 const CalendarListAddButton = ({ onClick }: CalendarListAddButtonProps) => {
   return (
-    <button
-      onClick={onClick}
-      className="mt-3 overflow-hidden rounded-[5px] group/add-btn cursor-pointer transition-colors"
-    >
-      <div className="p-3 flex gap-2 items-center justify-center border border-border rounded-[5px] h-12 text-idle hover:text-active bg-surface hover:bg-surface-raised">
+    <div className="flex justify-start w-full py-1">
+      <button
+        onClick={onClick}
+        className="group flex items-center gap-2 px-3 py-2 rounded-[5px] border border-dashed border-border bg-transparent hover:bg-surface hover:border-idle/50 text-idle/70 hover:text-idle transition-colors cursor-pointer"
+      >
         <Icon icon="plus" />
-        <span className="text-button-m">Add Event</span>
-      </div>
-    </button>
+        <span className="text-body-s-strong">Add Event</span>
+      </button>
+    </div>
   );
 };
 

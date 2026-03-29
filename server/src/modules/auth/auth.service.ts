@@ -18,6 +18,7 @@ import { EditUserDto } from "./dto/editUser.dto";
 import { user, user_password, user_email } from "@entities/user.entity";
 
 import { hashPassword } from "@common/utils/passwordHasher";
+import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 
 @Injectable()
 export class AuthService {
@@ -48,8 +49,14 @@ export class AuthService {
    * @returns An object containing the generated JWT access token.
    * @throws {ConflictException} If an account with the provided email already exists.
    */
+  /**
+   * @param trusted - When false (default), public `POST /auth/register`: ignores
+   * `organization_id` and `user_role`, always creates a standalone `none` user.
+   * When true, used by org bootstrap / member creation with full DTO semantics.
+   */
   async register(
     createUserDto: CreateUserDto,
+    trusted = false,
   ): Promise<{ accessToken: string }> {
     const emailExists = await this.userEmailRepository.findOne({
       where: { email: createUserDto.email },
@@ -59,8 +66,26 @@ export class AuthService {
       throw new ConflictException("An account with this email already exists");
     }
 
+    let organizationId: string | undefined;
+    let userRole: string;
+
+    if (!trusted) {
+      organizationId = undefined;
+      userRole = OrganizationUserRole.NONE;
+    } else if (createUserDto.organization_id) {
+      organizationId = createUserDto.organization_id;
+      userRole = createUserDto.user_role ?? OrganizationUserRole.USER;
+    } else {
+      organizationId = undefined;
+      userRole = createUserDto.user_role ?? OrganizationUserRole.NONE;
+    }
+
     const newUser = this.userRepository.create({
       username: createUserDto.username,
+      organization_id: organizationId
+        ? { organization_id: organizationId }
+        : null,
+      user_role: userRole,
     });
 
     const savedUser = await this.userRepository.save(newUser);

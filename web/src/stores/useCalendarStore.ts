@@ -7,9 +7,17 @@ import {
 import {
   AgendaEvent,
   CreateEventDto,
+  GetEventsQueryDto,
   UpdateEventDto,
 } from '@/services/agenda/types';
-import { addWeeks, startOfWeek, subWeeks } from 'date-fns';
+import {
+  addDays,
+  endOfDay,
+  endOfWeek,
+  startOfDay,
+  startOfWeek,
+  subDays,
+} from 'date-fns';
 import { create } from 'zustand';
 
 /**
@@ -60,6 +68,29 @@ interface CalendarState {
   getNextUpcomingEvent: () => CalendarEvent | undefined;
 }
 
+const getFetchQueryRange = (
+  currentDate: Date,
+  viewMode: 'week' | 'day',
+): GetEventsQueryDto => {
+  if (viewMode === 'day') {
+    // Day view fetches a tight range with a small buffer to keep nearby events available.
+    return {
+      start_at: startOfDay(subDays(currentDate, 1)).toISOString(),
+      end_at: endOfDay(addDays(currentDate, 1)).toISOString(),
+    };
+  }
+
+  // Week view fetches current week plus one week around it to reduce refetch churn.
+  return {
+    start_at: startOfWeek(subDays(currentDate, 7), {
+      weekStartsOn: 1,
+    }).toISOString(),
+    end_at: endOfWeek(addDays(currentDate, 7), {
+      weekStartsOn: 1,
+    }).toISOString(),
+  };
+};
+
 const mapAgendaEventToCalendarEvent = (event: AgendaEvent): CalendarEvent => ({
   ...event,
   id: event.event_id,
@@ -100,10 +131,9 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   fetchEvents: async () => {
     set({ isLoading: true, error: null });
     try {
-      const start = subWeeks(get().currentDate, 4).toISOString();
-      const end = addWeeks(get().currentDate, 4).toISOString();
-
-      const agendaEvents = await getEvents({ start_at: start, end_at: end });
+      const { currentDate, calendarViewMode } = get();
+      const query = getFetchQueryRange(currentDate, calendarViewMode);
+      const agendaEvents = await getEvents(query);
       const calendarEvents = agendaEvents.map(mapAgendaEventToCalendarEvent);
 
       set({ events: calendarEvents, isLoading: false });

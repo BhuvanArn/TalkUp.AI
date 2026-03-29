@@ -9,7 +9,7 @@ import { AuthService } from "../../modules/auth/auth.service";
 
 /**
  * Guard that verifies the presence and validity of an access token in cookies.
- * If valid, it attaches the userId to the request object.
+ * If valid, it attaches the userId and full user entity to the request object.
  *
  * Throws UnauthorizedException if the token is missing, malformed, or invalid.
  *
@@ -47,6 +47,7 @@ export class AccessTokenGuard implements CanActivate {
     const user = await this.authService.verifyAccessToken(token);
 
     req.userId = user.user_id;
+    req.user = user;
 
     return true;
   }

@@ -43,11 +43,16 @@ describe("AccessTokenGuard (unit)", () => {
     ).rejects.toThrow(UnauthorizedException);
   });
 
-  it("returns true and sets req.userId when ok", async () => {
-    const reqObj: any = { cookies: { accessToken: "token" }, userId: null };
+  it("returns true and sets req.userId and req.user when ok", async () => {
+    const mockUser = { user_id: "u1", username: "test" };
+    const reqObj: any = {
+      cookies: { accessToken: "token" },
+      userId: null,
+      user: undefined,
+    };
 
     const localAuth = {
-      verifyAccessToken: jest.fn().mockResolvedValue({ user_id: "u1" }),
+      verifyAccessToken: jest.fn().mockResolvedValue(mockUser),
     };
 
     const localGuard = new AccessTokenGuard(localAuth as any);
@@ -58,5 +63,6 @@ describe("AccessTokenGuard (unit)", () => {
 
     expect(res).toBe(true);
     expect(reqObj.userId).toBe("u1");
+    expect(reqObj.user).toEqual(mockUser);
   });
 });
