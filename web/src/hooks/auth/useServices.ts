@@ -17,7 +17,6 @@ const authService = new AuthService();
  * and monitor its state.
  */
 export const usePostRegister = () => {
-  const { login } = useAuth();
   const router = useRouter();
 
   return useMutation({
@@ -32,14 +31,98 @@ export const usePostRegister = () => {
     }) => {
       return await authService.postRegister(username, email, password);
     },
-    onSuccess: () => {
-      login();
-      toast.success('Registration successful');
-      router.navigate({ to: '/' });
+    onSuccess: (_data, variables) => {
+      toast.success('Check your email for a verification code');
+      router.navigate({
+        to: '/verify-email',
+        search: { email: variables.email, redirect: '/' },
+      });
     },
     onError: (error) => {
       toast.error('Registration failed');
       console.error('Error during registration:', error);
+    },
+  });
+};
+
+/**
+ * Confirms email with OTP; server sets HttpOnly cookies on success.
+ */
+export const usePostVerifyEmail = () => {
+  const { login } = useAuth();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: async ({
+      email,
+      otpCode,
+      redirectTo,
+    }: {
+      email: string;
+      otpCode: string;
+      redirectTo: string;
+    }) => {
+      await authService.postVerifyEmail(email, otpCode);
+      return { redirectTo };
+    },
+    onSuccess: (data) => {
+      login();
+      toast.success('Email verified');
+      router.navigate({ to: data.redirectTo });
+    },
+  });
+};
+
+export const usePostResendOtp = () => {
+  return useMutation({
+    mutationFn: async ({
+      email,
+      purpose,
+    }: {
+      email: string;
+      purpose: 'REGISTER' | 'RESET_PASSWORD' | 'NEW_DEVICE';
+    }) => {
+      return await authService.postResendOtp(email, purpose);
+    },
+    onSuccess: () => {
+      toast.success('A new code has been sent');
+    },
+  });
+};
+
+/**
+ * Step 1 of password reset: request OTP email (navigate to /reset-password in onSuccess from the form).
+ */
+export const usePostPasswordResetRequest = () => {
+  return useMutation({
+    mutationFn: async ({ email }: { email: string }) => {
+      return await authService.postPasswordResetRequest(email);
+    },
+  });
+};
+
+/**
+ * Step 2: verify OTP (sets resetToken cookie) then set new password.
+ */
+export const usePasswordResetComplete = () => {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: async ({
+      email,
+      otpCode,
+      newPassword,
+    }: {
+      email: string;
+      otpCode: string;
+      newPassword: string;
+    }) => {
+      await authService.postPasswordResetVerify(email, otpCode);
+      await authService.patchPasswordUpdate(newPassword);
+    },
+    onSuccess: () => {
+      toast.success('Your password has been updated. You can sign in.');
+      router.navigate({ to: '/login' });
     },
   });
 };
