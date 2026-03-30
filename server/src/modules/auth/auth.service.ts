@@ -68,10 +68,12 @@ export class AuthService {
    * @param trusted - When false (default), public signup ignores `organization_id`
    * and `user_role`, creating a standalone user with role `none`. When true, used by
    * organization bootstrap / member creation with full DTO semantics.
+   * @param inviteEmailContext - When an org creates the user, pass its display name for the invite email.
    */
   async register(
     createUserDto: CreateUserDto,
     trusted = false,
+    inviteEmailContext?: { organizationName: string },
   ): Promise<void> {
     let otpEvent: OtpGeneratedEvent | null = null;
 
@@ -214,7 +216,13 @@ export class AuthService {
     }
 
     if (otpEvent) {
-      this.eventEmitter.emit("auth.otp_generated", otpEvent);
+      this.eventEmitter.emit(
+        "auth.otp_generated",
+        this.enrichRegisterOtpEvent(otpEvent, {
+          organizationId,
+          inviteEmailContext,
+        }),
+      );
     }
   }
 
@@ -393,11 +401,28 @@ export class AuthService {
       );
     });
 
-    const event: OtpGeneratedEvent = {
+    let event: OtpGeneratedEvent = {
       email,
       plainOtp,
       purpose,
     };
+
+    if (purpose === OtpPurpose.REGISTER) {
+      const userWithOrg = await this.userRepository.findOne({
+        where: { user_id: emailEntity.user_id },
+        relations: ["organization_id"],
+      });
+      const orgEntity = userWithOrg?.organization_id;
+      if (orgEntity?.organization_name) {
+        event = {
+          ...event,
+          registrationChannel: "organization",
+          organizationName: orgEntity.organization_name,
+          verifyUrl: this.buildVerifyEmailUrl(email),
+        };
+      }
+    }
+
     this.eventEmitter.emit("auth.otp_generated", event);
   }
 
@@ -654,6 +679,36 @@ export class AuthService {
 
   private generateOtpCode(): string {
     return randomInt(100000, 1000000).toString();
+  }
+
+  private buildVerifyEmailUrl(email: string): string {
+    const base = (process.env.FRONTEND_URL ?? "").replace(/\/$/, "");
+    if (!base) {
+      return "";
+    }
+    return `${base}/verify-email?email=${encodeURIComponent(email)}`;
+  }
+
+  private enrichRegisterOtpEvent(
+    event: OtpGeneratedEvent,
+    options: {
+      organizationId?: string;
+      inviteEmailContext?: { organizationName: string };
+    },
+  ): OtpGeneratedEvent {
+    if (
+      event.purpose !== OtpPurpose.REGISTER ||
+      !options.organizationId ||
+      !options.inviteEmailContext?.organizationName
+    ) {
+      return event;
+    }
+    return {
+      ...event,
+      registrationChannel: "organization",
+      organizationName: options.inviteEmailContext.organizationName,
+      verifyUrl: this.buildVerifyEmailUrl(event.email),
+    };
   }
 
   private resolveRegistrationOrgFields(
