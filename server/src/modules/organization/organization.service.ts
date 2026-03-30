@@ -101,7 +101,9 @@ export class OrganizationService {
       organization_id: savedOrganization.organization_id,
     };
 
-    await this.authService.register(createUserDto, true);
+    await this.authService.register(createUserDto, true, {
+      organizationName: savedOrganization.organization_name,
+    });
 
     return {
       message: "Creation successful",
@@ -224,7 +226,7 @@ export class OrganizationService {
     email: string;
     password: string;
   }> {
-    await this.findOrganizationById(organizationId);
+    const organization = await this.findOrganizationById(organizationId);
 
     const u = await this.loadUserWithOrg(caller.user_id);
     const callerOrgId = getUserOrganizationId(u);
@@ -261,6 +263,7 @@ export class OrganizationService {
         user_role: dto.role,
       },
       true,
+      { organizationName: organization.organization_name },
     );
 
     return {
