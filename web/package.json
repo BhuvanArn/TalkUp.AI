@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 8081",
+    "dev": "vite",
     "preview": "vite preview",
     "build": "vite build",
     "lint": "oxlint --fix --react-plugin --jsx-a11y-plugin --import-plugin --promise-plugin src/",
