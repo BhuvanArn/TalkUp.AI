@@ -123,6 +123,7 @@ describe("OrganizationService", () => {
           organization_id: "org-id",
         }),
         true,
+        { organizationName: "TestOrg" },
       );
 
       const registerArg = (authService.register as jest.Mock).mock.calls[0][0];
