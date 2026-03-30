@@ -37,6 +37,24 @@ describe("MailListener", () => {
     );
   });
 
+  it("onOtpGenerated sends organization invite mail when registrationChannel is organization", async () => {
+    await listener.onOtpGenerated({
+      email: "u@example.com",
+      plainOtp: "123456",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "Acme Inc",
+      verifyUrl: "https://talkup.example/verify-email?email=u%40example.com",
+    });
+    expect(mailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "u@example.com",
+        subject: "Your TalkUp account — invited by Acme Inc",
+        html: expect.stringContaining("Acme Inc"),
+      }),
+    );
+  });
+
   it("onPasswordResetRequested sends mail for RESET_PASSWORD", async () => {
     await listener.onPasswordResetRequested(payload(OtpPurpose.RESET_PASSWORD));
     expect(mailService.sendMail).toHaveBeenCalledWith(
