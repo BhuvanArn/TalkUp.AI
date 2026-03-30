@@ -118,9 +118,7 @@ export class OrganizationController {
   @UseGuards(AccessTokenGuard)
   @Get()
   async getMyOrganization(@CurrentUser() currentUser: user) {
-    return await this.organizationService.getMyOrganizationForUser(
-      currentUser,
-    );
+    return await this.organizationService.getMyOrganizationForUser(currentUser);
   }
 
   @ApiCreatedResponse({

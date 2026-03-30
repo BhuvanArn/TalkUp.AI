@@ -154,6 +154,14 @@ export const TimeComboBox = ({ value, onChange }: TimeComboBoxProps) => {
               key={time}
               ref={time === value ? activeOptionRef : null}
               onMouseDown={(event) => event.preventDefault()}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setInputValue(time);
+                  onChange(time);
+                  setIsOpen(false);
+                }
+              }}
               onClick={() => {
                 setInputValue(time);
                 onChange(time);

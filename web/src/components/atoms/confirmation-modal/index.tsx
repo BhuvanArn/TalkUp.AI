@@ -49,6 +49,7 @@ const ConfirmationModal = ({
         aria-modal="true"
         aria-labelledby="confirmation-modal-title"
         onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
       >
         <h3
           id="confirmation-modal-title"

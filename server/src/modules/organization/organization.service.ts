@@ -125,18 +125,16 @@ export class OrganizationService {
     await this.assertAdminOfOrganization(id, currentUser);
 
     try {
-      await this.organizationRepository.manager.transaction(
-        async (manager) => {
-          await manager
-            .createQueryBuilder()
-            .update(user)
-            .set({ user_role: OrganizationUserRole.NONE })
-            .where("organization_id = :orgId", { orgId: id })
-            .execute();
+      await this.organizationRepository.manager.transaction(async (manager) => {
+        await manager
+          .createQueryBuilder()
+          .update(user)
+          .set({ user_role: OrganizationUserRole.NONE })
+          .where("organization_id = :orgId", { orgId: id })
+          .execute();
 
-          await manager.remove(organization);
-        },
-      );
+        await manager.remove(organization);
+      });
     } catch (error) {
       this.logger.error(
         `Error removing organization ${id}: ${error.message}`,
@@ -163,7 +161,8 @@ export class OrganizationService {
       organization.organization_name = updateOrganizationDto.OrganizationName;
     }
     if (updateOrganizationDto.OrganizationProfilePicture) {
-      organization.profile_picture = updateOrganizationDto.OrganizationProfilePicture;
+      organization.profile_picture =
+        updateOrganizationDto.OrganizationProfilePicture;
     }
 
     await this.organizationRepository.save(organization);
@@ -317,8 +316,10 @@ export class OrganizationService {
       );
     }
 
-    if (callerRole === OrganizationUserRole.EMPLOYEE &&
-      member.user_role !== OrganizationUserRole.USER) {
+    if (
+      callerRole === OrganizationUserRole.EMPLOYEE &&
+      member.user_role !== OrganizationUserRole.USER
+    ) {
       throw new ForbiddenException(
         "Employees may only remove users with the basic user role",
       );
@@ -340,11 +341,9 @@ export class OrganizationService {
     return { message: "Member removed from the organization" };
   }
 
-
   ///////////////////////
   /// PRIVATE METHODS ///
   ///////////////////////
-
 
   /**
    * Assert that the current user is an admin of the organization.
@@ -387,9 +386,7 @@ export class OrganizationService {
 
   private async listOrgMembers(
     orgId: string,
-    filter:
-      | { scope: "all" }
-      | { scope: "roles"; roles: string[] },
+    filter: { scope: "all" } | { scope: "roles"; roles: string[] },
   ): Promise<OrganizationMemberRow[]> {
     const qb = this.userRepository
       .createQueryBuilder("u")

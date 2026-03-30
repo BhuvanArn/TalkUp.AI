@@ -96,6 +96,7 @@
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s",
+      "!**/*.d.ts",
       "!**/*.module.(t|j)s",
       "!main.(t|j)s",
       "!**/config/**",

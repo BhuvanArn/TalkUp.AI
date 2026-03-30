@@ -21,7 +21,14 @@ vi.mock('@/hooks/auth/useServices', () => ({
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to, ...rest }: { children: React.ReactNode; to: string }) => (
+  Link: ({
+    children,
+    to,
+    ...rest
+  }: {
+    children: React.ReactNode;
+    to: string;
+  }) => (
     <a href={to} {...rest}>
       {children}
     </a>
@@ -46,9 +53,7 @@ describe('VerifyEmailForm', () => {
   });
 
   it('shows the email from props in the intro copy', () => {
-    render(
-      <VerifyEmailForm initialEmail="user@example.com" redirectTo="/" />,
-    );
+    render(<VerifyEmailForm initialEmail="user@example.com" redirectTo="/" />);
 
     expect(screen.getByText(/user@example\.com/i)).toBeInTheDocument();
   });

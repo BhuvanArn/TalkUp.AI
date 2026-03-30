@@ -94,9 +94,7 @@ describe("Organization API (e2e)", () => {
     };
     expect(org.organization_name).toBe(orgName);
     expect(org.members).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ user_role: "admin" }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ user_role: "admin" })]),
     );
   }, 60000);
 });

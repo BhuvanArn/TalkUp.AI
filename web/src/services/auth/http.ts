@@ -63,10 +63,13 @@ export default class AuthService {
     email: string,
     otpCode: string,
   ): Promise<{ message: string }> => {
-    const response = await axiosInstance.post(`${API_ROUTES.auth}/verify-email`, {
-      email,
-      otpCode,
-    });
+    const response = await axiosInstance.post(
+      `${API_ROUTES.auth}/verify-email`,
+      {
+        email,
+        otpCode,
+      },
+    );
     return response.data;
   };
 

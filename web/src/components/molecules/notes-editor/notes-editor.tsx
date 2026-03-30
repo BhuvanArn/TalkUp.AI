@@ -1,6 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
 
 /**
@@ -12,6 +12,13 @@ const NotesEditor = () => {
 
   /** Required to avoid findDOMNode warnings in React 18 Strict Mode */
   const nodeRef = useRef(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      textareaRef.current?.focus();
+    }
+  }, [isOpen]);
 
   /** Saves current notes (currently logs to console) */
   const handleSaveNotes = () => {
@@ -55,11 +62,11 @@ const NotesEditor = () => {
 
               {/* Note Input */}
               <textarea
+                ref={textareaRef}
                 className="flex-1 p-4 text-sm text-idle focus:outline-none resize-none leading-relaxed"
                 placeholder="Type here..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                autoFocus
               />
 
               {/* Bottom Actions */}

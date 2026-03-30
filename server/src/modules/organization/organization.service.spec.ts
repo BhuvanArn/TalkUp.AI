@@ -4,7 +4,9 @@ import { Repository } from "typeorm";
 import {
   ConflictException,
   ForbiddenException,
+  InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from "@nestjs/common";
 
 import { OrganizationService } from "./organization.service";
@@ -41,20 +43,18 @@ describe("OrganizationService", () => {
       save: jest.fn(),
       remove: jest.fn(),
       manager: {
-        transaction: jest.fn(
-          async (fn: (m: any) => Promise<void>) => {
-            const mockManager = {
-              createQueryBuilder: jest.fn(() => ({
-                update: jest.fn().mockReturnThis(),
-                set: jest.fn().mockReturnThis(),
-                where: jest.fn().mockReturnThis(),
-                execute: jest.fn().mockResolvedValue({ affected: 1 }),
-              })),
-              remove: jest.fn().mockResolvedValue(undefined),
-            };
-            await fn(mockManager);
-          },
-        ) as any,
+        transaction: jest.fn(async (fn: (m: any) => Promise<void>) => {
+          const mockManager = {
+            createQueryBuilder: jest.fn(() => ({
+              update: jest.fn().mockReturnThis(),
+              set: jest.fn().mockReturnThis(),
+              where: jest.fn().mockReturnThis(),
+              execute: jest.fn().mockResolvedValue({ affected: 1 }),
+            })),
+            remove: jest.fn().mockResolvedValue(undefined),
+          };
+          await fn(mockManager);
+        }) as any,
       },
     };
 
@@ -185,6 +185,18 @@ describe("OrganizationService", () => {
       ).rejects.toThrow(ForbiddenException);
 
       expect(orgRepo.manager.transaction).not.toHaveBeenCalled();
+    });
+
+    it("throws InternalServerError when transaction fails", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      orgRepo.manager.transaction = jest
+        .fn()
+        .mockRejectedValue(new Error("db fail"));
+
+      await expect(
+        service.deleteOrganization("org-id", adminUserRow),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -334,11 +346,7 @@ describe("OrganizationService", () => {
         .mockResolvedValueOnce(otherAdmin);
 
       await expect(
-        service.removeOrganizationMember(
-          "org-id",
-          memberUserId,
-          adminUserRow,
-        ),
+        service.removeOrganizationMember("org-id", memberUserId, adminUserRow),
       ).rejects.toThrow(ForbiddenException);
 
       expect(userRepo.save).not.toHaveBeenCalled();
@@ -355,12 +363,53 @@ describe("OrganizationService", () => {
         .mockResolvedValueOnce(outsider);
 
       await expect(
+        service.removeOrganizationMember("org-id", memberUserId, adminUserRow),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(userRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("throws when caller is not in this organization", async () => {
+      const outsiderCaller = {
+        ...adminUserRow,
+        organization_id: { organization_id: "other-org" } as Organization,
+      } as user;
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(outsiderCaller);
+
+      await expect(
         service.removeOrganizationMember(
           "org-id",
           memberUserId,
-          adminUserRow,
+          outsiderCaller,
         ),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(userRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("throws when caller is not admin or employee", async () => {
+      const userCaller = {
+        ...adminUserRow,
+        user_role: OrganizationUserRole.USER,
+      } as user;
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(userCaller);
+
+      await expect(
+        service.removeOrganizationMember("org-id", memberUserId, userCaller),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(userRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("throws Unauthorized when caller user record is missing", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.removeOrganizationMember("org-id", memberUserId, adminUserRow),
+      ).rejects.toThrow(UnauthorizedException);
 
       expect(userRepo.save).not.toHaveBeenCalled();
     });
@@ -375,12 +424,22 @@ describe("OrganizationService", () => {
       } as user;
       (userRepo.findOne as jest.Mock).mockResolvedValue(noneUser);
 
-      await expect(
-        service.getMyOrganizationForUser(noneUser),
-      ).rejects.toThrow(
-        new NotFoundException(
-          "User is not affiliated with an organization",
-        ),
+      await expect(service.getMyOrganizationForUser(noneUser)).rejects.toThrow(
+        new NotFoundException("User is not affiliated with an organization"),
+      );
+    });
+
+    it("throws when user has org but role is not allowed", async () => {
+      const badUser = {
+        ...adminUserRow,
+        user_role: OrganizationUserRole.NONE,
+        organization_id: { organization_id: "org-id" } as Organization,
+      } as user;
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(badUser);
+
+      await expect(service.getMyOrganizationForUser(badUser)).rejects.toThrow(
+        ForbiddenException,
       );
     });
 
@@ -392,9 +451,11 @@ describe("OrganizationService", () => {
         select: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([
-          { username: "a", user_role: OrganizationUserRole.ADMIN },
-        ]),
+        getMany: jest
+          .fn()
+          .mockResolvedValue([
+            { username: "a", user_role: OrganizationUserRole.ADMIN },
+          ]),
       };
       (userRepo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
 
@@ -402,6 +463,137 @@ describe("OrganizationService", () => {
 
       expect(res.organization_id).toBe("org-id");
       expect(res.members).toHaveLength(1);
+    });
+
+    it("returns organization for USER without members list", async () => {
+      const userRow = {
+        ...adminUserRow,
+        user_role: OrganizationUserRole.USER,
+      } as user;
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(userRow);
+
+      const res = await service.getMyOrganizationForUser(userRow);
+
+      expect(res.organization_id).toBe("org-id");
+      expect(res.members).toBeUndefined();
+    });
+
+    it("returns organization for EMPLOYEE with filtered members", async () => {
+      const userRow = {
+        ...adminUserRow,
+        user_role: OrganizationUserRole.EMPLOYEE,
+      } as user;
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(userRow);
+
+      const qb = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest
+          .fn()
+          .mockResolvedValue([
+            { username: "u", user_role: OrganizationUserRole.USER },
+          ]),
+      };
+      (userRepo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
+
+      const res = await service.getMyOrganizationForUser(userRow);
+
+      expect(res.members).toEqual([
+        { username: "u", user_role: OrganizationUserRole.USER },
+      ]);
+      expect(qb.andWhere).toHaveBeenCalled();
+    });
+  });
+
+  describe("createOrganizationMember", () => {
+    const dto = {
+      username: "newuser",
+      email: "n@example.com",
+      role: OrganizationUserRole.USER,
+    };
+
+    it("creates member when admin calls", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      (authService.register as jest.Mock).mockResolvedValue({});
+
+      const res = await service.createOrganizationMember(
+        "org-id",
+        dto as any,
+        adminUserRow,
+      );
+
+      expect(res.message).toBe("Member created");
+      expect(res.username).toBe("newuser");
+      expect(authService.register).toHaveBeenCalled();
+    });
+
+    it("throws when caller is not in this organization", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      const otherOrgUser = {
+        ...adminUserRow,
+        organization_id: { organization_id: "other" } as Organization,
+      } as user;
+      (userRepo.findOne as jest.Mock).mockResolvedValue(otherOrgUser);
+
+      await expect(
+        service.createOrganizationMember("org-id", dto as any, otherOrgUser),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("throws when caller is not admin or employee", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      const userOnly = {
+        ...adminUserRow,
+        user_role: OrganizationUserRole.USER,
+      } as user;
+      (userRepo.findOne as jest.Mock).mockResolvedValue(userOnly);
+
+      await expect(
+        service.createOrganizationMember("org-id", dto as any, userOnly),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("throws when employee tries to create non-USER role", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      const emp = {
+        ...adminUserRow,
+        user_role: OrganizationUserRole.EMPLOYEE,
+      } as user;
+      (userRepo.findOne as jest.Mock).mockResolvedValue(emp);
+
+      await expect(
+        service.createOrganizationMember(
+          "org-id",
+          { ...dto, role: OrganizationUserRole.EMPLOYEE } as any,
+          emp,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("uses dto password when provided", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      (authService.register as jest.Mock).mockResolvedValue({});
+
+      const res = await service.createOrganizationMember(
+        "org-id",
+        { ...dto, password: "CustomPass1!" } as any,
+        adminUserRow,
+      );
+
+      expect(res.password).toBe("CustomPass1!");
+    });
+
+    it("throws InternalServerError when organization lookup fails unexpectedly", async () => {
+      (orgRepo.findOne as jest.Mock).mockRejectedValue(new Error("db fail"));
+
+      await expect(
+        service.createOrganizationMember("org-id", dto as any, adminUserRow),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 });

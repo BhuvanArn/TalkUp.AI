@@ -1,23 +1,16 @@
-import { useEffect, useState } from 'react';
-
-import { useForm } from '@tanstack/react-form';
-import { Link } from '@tanstack/react-router';
-
 import { BaseInput } from '@/components/atoms/base-input';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
-
-import {
-  usePostResendOtp,
-  usePostVerifyEmail,
-} from '@/hooks/auth/useServices';
-
+import { usePostResendOtp, usePostVerifyEmail } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
 import {
   emailSchema,
   otpCodeSchema,
   validateWithSchema,
 } from '@/utils/validators';
+import { useForm } from '@tanstack/react-form';
+import { Link } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 
 const RESEND_COOLDOWN_SEC = 60;
 
@@ -58,7 +51,9 @@ export const VerifyEmailForm = ({
     onSubmit: ({ value }) => {
       setServerError(null);
       if (emailMissingOrInvalid) {
-        setServerError('Missing email. Open this page from the link after registering.');
+        setServerError(
+          'Missing email. Open this page from the link after registering.',
+        );
         return;
       }
       verifyEmail.mutate(
@@ -209,8 +204,8 @@ export const VerifyEmailForm = ({
                     typeof error === 'object' &&
                     error !== null &&
                     'response' in error &&
-                    typeof (error as { response?: { status?: number } }).response
-                      ?.status === 'number' &&
+                    typeof (error as { response?: { status?: number } })
+                      .response?.status === 'number' &&
                     (error as { response: { status: number } }).response
                       .status === 429
                   ) {
