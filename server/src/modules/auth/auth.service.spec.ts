@@ -309,6 +309,80 @@ describe("AuthService", () => {
       );
     });
 
+    it("should enrich OTP event when trusted register includes organization invite context", async () => {
+      const txUserRepo = {
+        create: jest
+          .fn()
+          .mockReturnValue({ ...mockUser, status: UserStatus.PENDING }),
+        save: jest
+          .fn()
+          .mockResolvedValue({ ...mockUser, status: UserStatus.PENDING }),
+        findOne: jest.fn(),
+      };
+      const txUserPasswordRepo = {
+        create: jest.fn().mockReturnValue(mockPassword),
+        save: jest.fn().mockResolvedValue(mockPassword),
+        findOne: jest.fn(),
+      };
+      const txUserEmailRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockReturnValue(mockEmail),
+        save: jest.fn().mockResolvedValue(mockEmail),
+      };
+      const txOtpRepo = {
+        create: jest.fn().mockReturnValue(mockOtp),
+        save: jest.fn().mockResolvedValue(mockOtp),
+        delete: jest.fn().mockResolvedValue({ affected: 1 }),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(null),
+        }),
+      };
+
+      mockedBcrypt.hash.mockResolvedValue("otp-hash" as never);
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) return txUserRepo;
+            if (entity === user_password) return txUserPasswordRepo;
+            if (entity === user_email) return txUserEmailRepo;
+            if (entity === Otp) return txOtpRepo;
+            return null;
+          },
+        }),
+      );
+
+      const prevUrl = process.env.FRONTEND_URL;
+      process.env.FRONTEND_URL = "https://app.example.com";
+
+      await service.register(
+        {
+          ...createUserDto,
+          organization_id: "org-uuid",
+          user_role: OrganizationUserRole.USER,
+        },
+        true,
+        { organizationName: "Acme Inc" },
+      );
+
+      process.env.FRONTEND_URL = prevUrl;
+
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        "auth.otp_generated",
+        expect.objectContaining({
+          email: createUserDto.email,
+          purpose: OtpPurpose.REGISTER,
+          registrationChannel: "organization",
+          organizationName: "Acme Inc",
+          verifyUrl:
+            "https://app.example.com/verify-email?email=test%40example.com",
+        }),
+      );
+    });
+
     it("should throw conflict for active account", async () => {
       mockedBcrypt.hash.mockResolvedValue("otp-hash" as never);
 
@@ -638,6 +712,55 @@ describe("AuthService", () => {
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(
         "auth.otp_generated",
         expect.objectContaining({ email: "test@example.com" }),
+      );
+    });
+
+    it("emits organization invite fields on resend when user belongs to an org", async () => {
+      mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      const pendingUser = {
+        ...mockUser,
+        status: UserStatus.PENDING,
+      };
+      const userWithOrg = {
+        ...pendingUser,
+        organization_id: {
+          organization_id: "org-id",
+          organization_name: "Acme Inc",
+        },
+      };
+      mockUserRepo.findOne = jest
+        .fn()
+        .mockResolvedValueOnce(pendingUser)
+        .mockResolvedValueOnce(userWithOrg);
+      mockedBcrypt.hash.mockResolvedValue("h" as never);
+
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: () => ({
+            delete: jest.fn().mockResolvedValue({ affected: 1 }),
+            create: jest.fn().mockReturnValue(mockOtp),
+            save: jest.fn().mockResolvedValue(mockOtp),
+          }),
+        }),
+      );
+
+      const prevUrl = process.env.FRONTEND_URL;
+      process.env.FRONTEND_URL = "https://app.example.com";
+
+      await service.resendOtp("test@example.com", OtpPurpose.REGISTER);
+
+      process.env.FRONTEND_URL = prevUrl;
+
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        "auth.otp_generated",
+        expect.objectContaining({
+          email: "test@example.com",
+          registrationChannel: "organization",
+          organizationName: "Acme Inc",
+          verifyUrl:
+            "https://app.example.com/verify-email?email=test%40example.com",
+        }),
       );
     });
   });
