@@ -3,32 +3,21 @@ import { Button } from "../../atoms/profile-custom/Button";
 
 /**
  * @interface GeneralSettingsProps
- * @description Properties for the GeneralSettings component to manage user identity and profile details.
  */
 interface GeneralSettingsProps {
-  /** The user's first name */
   firstName: string;
-  /** The user's last name */
   lastName: string;
-  /** A short biographical snippet or introduction */
   bio: string;
-  /** The user's phone number */
-  phoneNumber: string;
-  /** The current hex color code for the avatar background */
+  phoneNumber: string; // Ajouté
   avatarColor: string;
-  /** Callback function triggered when the first name input changes */
   onFirstNameChange: (value: string) => void;
-  /** Callback function triggered when the last name input changes */
   onLastNameChange: (value: string) => void;
-  /** Callback function triggered when the bio textarea changes */
   onBioChange: (value: string) => void;
-  /** Callback function triggered when the phone number changes */
-  onPhoneNumberChange: (value: string) => void;
+  onPhoneNumberChange: (value: string) => void; // Ajouté
+  onAvatarChange?: () => void;
+  onAvatarDelete?: () => void;
 }
 
-/**
- * GeneralSettings Component
- */
 export function GeneralSettings({
   firstName,
   lastName,
@@ -39,21 +28,30 @@ export function GeneralSettings({
   onLastNameChange,
   onBioChange,
   onPhoneNumberChange,
+  onAvatarChange,
+  onAvatarDelete,
 }: GeneralSettingsProps) {
-  /** Derived initials from first and last name for the avatar fallback */
   const initials = (firstName[0] || "") + (lastName[0] || "");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
       
-      {/* ── Section Avatar ── */}
+      {/* ── Section Avatar (Réintégrée avec boutons) ── */}
       <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
         <div style={{ 
           width: 80, height: 80, borderRadius: "50%", background: avatarColor,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 24, fontWeight: 700, color: "white"
+          fontSize: 24, fontWeight: 700, color: "white", flexShrink: 0
         }}>
           {initials.toUpperCase()}
+        </div>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <Button variant="primary" onClick={onAvatarChange}>
+            Changer la photo
+          </Button>
+          <Button variant="secondary" onClick={onAvatarDelete}>
+            Supprimer
+          </Button>
         </div>
       </div>
 
@@ -93,7 +91,7 @@ export function GeneralSettings({
         </div>
       </div>
 
-      {/* ── Section À propos ── */}
+      {/* ── Section À propos & Contact ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         <h3 style={sectionTitleStyle}>À propos & Contact</h3>
         
@@ -111,6 +109,7 @@ export function GeneralSettings({
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          {/* Nouveau champ Téléphone */}
           <div style={inputGroupStyle}>
             <label style={labelStyle}>Téléphone</label>
             <input 
@@ -140,35 +139,8 @@ export function GeneralSettings({
   );
 }
 
-// Styles (inchangés)
-const sectionTitleStyle: React.CSSProperties = {
-  fontSize: 16,
-  fontWeight: 700,
-  color: "#111827",
-  borderBottom: "1px solid #F3F4F6",
-  paddingBottom: "8px",
-  marginBottom: "4px"
-};
-
-const inputGroupStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "6px"
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 13,
-  fontWeight: 600,
-  color: "#4B5563"
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: "1px solid #E5E7EB",
-  fontSize: 14,
-  outline: "none",
-  transition: "border-color 0.2s",
-  background: "#F9FAFB",
-  color: "#111827"
-};
+// ... Styles identiques à ton fichier d'origine
+const sectionTitleStyle: React.CSSProperties = { fontSize: 16, fontWeight: 700, color: "#111827", borderBottom: "1px solid #F3F4F6", paddingBottom: "8px", marginBottom: "4px" };
+const inputGroupStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: "6px" };
+const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: "#4B5563" };
+const inputStyle: React.CSSProperties = { padding: "10px 12px", borderRadius: "8px", border: "1px solid #E5E7EB", fontSize: 14, outline: "none", transition: "border-color 0.2s", background: "#F9FAFB", color: "#111827" };
