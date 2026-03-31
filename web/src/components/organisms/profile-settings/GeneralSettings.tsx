@@ -12,6 +12,8 @@ interface GeneralSettingsProps {
   lastName: string;
   /** A short biographical snippet or introduction */
   bio: string;
+  /** The user's phone number */
+  phoneNumber: string;
   /** The current hex color code for the avatar background */
   avatarColor: string;
   /** Callback function triggered when the first name input changes */
@@ -20,29 +22,23 @@ interface GeneralSettingsProps {
   onLastNameChange: (value: string) => void;
   /** Callback function triggered when the bio textarea changes */
   onBioChange: (value: string) => void;
+  /** Callback function triggered when the phone number changes */
+  onPhoneNumberChange: (value: string) => void;
 }
 
 /**
  * GeneralSettings Component
- * * Provides an interface for users to update their core profile information:
- * - Profile picture management (Avatar preview, Change, Delete)
- * - Identity information (First Name, Last Name, Username)
- * - Professional details (Bio, Title, LinkedIn)
- * * Features:
- * - Real-time character count for bio.
- * - Read-only auto-generated username.
- * - Responsive grid layout for form fields.
- * * @param {GeneralSettingsProps} props - Component properties.
- * @returns {JSX.Element} The rendered settings form section.
  */
 export function GeneralSettings({
   firstName,
   lastName,
   bio,
+  phoneNumber,
   avatarColor,
   onFirstNameChange,
   onLastNameChange,
   onBioChange,
+  onPhoneNumberChange,
 }: GeneralSettingsProps) {
   /** Derived initials from first and last name for the avatar fallback */
   const initials = (firstName[0] || "") + (lastName[0] || "");
@@ -52,7 +48,6 @@ export function GeneralSettings({
       
       {/* ── Section Avatar ── */}
       <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-        {/* Avatar Circle */}
         <div style={{ 
           width: 80, height: 80, borderRadius: "50%", background: avatarColor,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -60,7 +55,6 @@ export function GeneralSettings({
         }}>
           {initials.toUpperCase()}
         </div>
-        {/* Avatar Buttons */}
       </div>
 
       {/* ── Section Identité ── */}
@@ -86,7 +80,6 @@ export function GeneralSettings({
           </div>
         </div>
 
-        {/* Generated Username */}
         <div style={inputGroupStyle}>
           <label style={labelStyle}>Nom d'utilisateur</label>
           <div style={{ position: "relative" }}>
@@ -97,17 +90,13 @@ export function GeneralSettings({
               readOnly 
             />
           </div>
-          <span style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
-            Le nom d'utilisateur est généré automatiquement.
-          </span>
         </div>
       </div>
 
       {/* ── Section À propos ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <h3 style={sectionTitleStyle}>À propos</h3>
+        <h3 style={sectionTitleStyle}>À propos & Contact</h3>
         
-        {/* Bio Textarea with character count */}
         <div style={inputGroupStyle}>
           <label style={labelStyle}>Bio</label>
           <textarea 
@@ -121,28 +110,37 @@ export function GeneralSettings({
           </span>
         </div>
 
-        {/* Professional Details Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div style={inputGroupStyle}>
-            <label style={labelStyle}>Titre professionnel</label>
-            <select style={inputStyle}>
-              <option>Candidat Product Manager</option>
-              <option>Product Designer</option>
-              <option>Software Engineer</option>
-            </select>
+            <label style={labelStyle}>Téléphone</label>
+            <input 
+              type="tel"
+              style={inputStyle} 
+              placeholder="+33 6 00 00 00 00"
+              value={phoneNumber}
+              onChange={(e) => onPhoneNumberChange(e.target.value)}
+            />
           </div>
           <div style={inputGroupStyle}>
             <label style={labelStyle}>Lien LinkedIn</label>
             <input style={inputStyle} placeholder="https://linkedin.com/in/..." />
           </div>
         </div>
+
+        <div style={inputGroupStyle}>
+          <label style={labelStyle}>Titre professionnel</label>
+          <select style={inputStyle}>
+            <option>Candidat Product Manager</option>
+            <option>Product Designer</option>
+            <option>Software Engineer</option>
+          </select>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── Internal Styles ──
-
+// Styles (inchangés)
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: 16,
   fontWeight: 700,
