@@ -1,24 +1,51 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import { InputMolecule } from '@/components/molecules/input-molecule';
+import { usePostPasswordResetRequest } from '@/hooks/auth/useServices';
+import { extractErrorMessage } from '@/utils/error';
 import { emailSchema, validateWithSchema } from '@/utils/validators';
 import { useForm } from '@tanstack/react-form';
-import { Link } from '@tanstack/react-router';
+import { Link, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 /**
- * Forgot-password form: same layout and tokens as Login / Register.
- * Submit is client-side only until the reset API exists.
+ * Step 1 of password reset: request OTP; then navigate to /reset-password.
  */
 export const ForgotPasswordForm = () => {
-  const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
+  const passwordResetRequest = usePostPasswordResetRequest();
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
       email: '',
     },
-    onSubmit: () => {
-      setSubmitted(true);
+    onSubmit: ({ value }) => {
+      setServerError(null);
+      const email = value.email.trim();
+      passwordResetRequest.mutate(
+        { email },
+        {
+          onSuccess: () => {
+            toast.success(
+              'If an account exists for this email, check your inbox for a 6-digit code.',
+            );
+            router.navigate({
+              to: '/reset-password',
+              search: { email },
+            });
+          },
+          onError: (error: unknown) => {
+            setServerError(
+              extractErrorMessage(
+                error,
+                'Could not send reset instructions. Please try again.',
+              ),
+            );
+          },
+        },
+      );
     },
   });
 
@@ -27,7 +54,7 @@ export const ForgotPasswordForm = () => {
       <header className="flex flex-col gap-1 items-start">
         <h2 className="text-h3 text-idle">Forgot password?</h2>
         <p className="text-body-l text-idle">
-          Enter your email and we&apos;ll send you a link to reset your
+          Enter your email and we&apos;ll send you a 6-digit code to reset your
           password.
         </p>
       </header>
@@ -54,7 +81,7 @@ export const ForgotPasswordForm = () => {
                 value={field.state.value}
                 onChange={(e) => {
                   field.handleChange(e.target.value);
-                  setSubmitted(false);
+                  setServerError(null);
                 }}
                 onBlur={field.handleBlur}
                 placeholder="What email did you use?"
@@ -75,17 +102,21 @@ export const ForgotPasswordForm = () => {
           }
         </form.Subscribe>
 
-        <Button color="accent" type="submit">
+        {serverError && (
+          <div className="text-sm text-red-600 text-center" role="alert">
+            {serverError}
+          </div>
+        )}
+
+        <Button
+          color="accent"
+          type="submit"
+          disabled={passwordResetRequest.isPending}
+        >
           <Icon icon="arrow-right" color="white" />
-          Send reset link
+          Continue
         </Button>
 
-        {submitted && (
-          <p className="text-body-sm text-success text-center" role="status">
-            If an account exists for this email, you will receive reset
-            instructions shortly.
-          </p>
-        )}
         <p className="text-idle text-label-m">
           <Link
             to="/login"

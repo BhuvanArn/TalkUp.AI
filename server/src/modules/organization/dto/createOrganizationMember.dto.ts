@@ -16,7 +16,8 @@ export class CreateOrganizationMemberDto {
   @IsIn([OrganizationUserRole.EMPLOYEE, OrganizationUserRole.USER])
   @ApiProperty({
     enum: [OrganizationUserRole.EMPLOYEE, OrganizationUserRole.USER],
-    description: "Admins may create employee or user; employees may only create user.",
+    description:
+      "Admins may create employee or user; employees may only create user.",
   })
   role: typeof OrganizationUserRole.EMPLOYEE | typeof OrganizationUserRole.USER;
 
@@ -24,7 +25,8 @@ export class CreateOrganizationMemberDto {
   @IsString()
   @ApiProperty({
     required: false,
-    description: "If omitted, a secure password is generated and returned once.",
+    description:
+      "If omitted, a secure password is generated and returned once.",
   })
   password?: string;
 }

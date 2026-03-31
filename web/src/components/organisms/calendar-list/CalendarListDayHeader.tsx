@@ -12,6 +12,7 @@ import { CalendarListDayHeaderProps } from './types';
 const CalendarListDayHeader = ({
   dayName,
   date,
+  isToday,
   fullDate,
   calendarViewMode,
   hasEvents,
@@ -31,7 +32,7 @@ const CalendarListDayHeader = ({
       <div className="pl-2 grid grid-cols-[100px_100px_1fr] items-center justify-center">
         <span className="text-body-m text-idle">{dayName}</span>
         <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-body-xl-strong`}
+          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-body-xl-strong ${isToday ? 'bg-accent text-white' : ''}`}
         >
           <span>{date}</span>
         </div>

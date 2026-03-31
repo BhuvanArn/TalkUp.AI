@@ -36,6 +36,13 @@ export const usernameSchema = z
   .max(20, 'Username must be at most 20 characters')
   .regex(/^[a-zA-Z0-9]+$/, 'Username must contain only letters and numbers');
 
+/** 6-digit email verification / OTP code */
+export const otpCodeSchema = z
+  .string()
+  .min(1, 'Code is required')
+  .length(6, 'Code must be 6 digits')
+  .regex(/^\d{6}$/, 'Code must be 6 digits');
+
 /**
  * Helper function to validate a field with a Zod schema
  * Returns the first error message or undefined if valid

@@ -17,6 +17,8 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
+    "baseUrl": ".",
+    "types": ["node"],
     "paths": {
       "@entities/*": ["./src/entities/*"],
       "@common/*": ["./src/common/*"],
@@ -24,6 +26,7 @@
       "@src/*": ["./src/*"]
     }
   },
+  "include": ["src/**/*.ts"],
   "exclude": [
     "node_modules",
     "dist",

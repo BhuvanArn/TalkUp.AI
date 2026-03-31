@@ -18,10 +18,16 @@ axiosInstance.interceptors.response.use(
     const requestUrl = error.config?.url ?? '';
 
     // Allowlist of auth endpoints that should NOT trigger redirects on 401
+    // (wrong OTP / invalid step must show inline errors, not a full-page jump to login)
     const publicAuthEndpoints = [
       '/auth/status',
       '/auth/login',
       '/auth/register',
+      '/auth/verify-email',
+      '/auth/resend-otp',
+      '/auth/password-reset-request',
+      '/auth/password-reset-verify',
+      '/auth/password-update',
     ];
 
     const isPublicAuthEndpoint = publicAuthEndpoints.some((endpoint) =>

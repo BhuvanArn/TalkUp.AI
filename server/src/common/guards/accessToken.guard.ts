@@ -4,8 +4,11 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 
-import { AuthService } from "../../modules/auth/auth.service";
+import { user } from "@entities/user.entity";
 
 /**
  * Guard that verifies the presence and validity of an access token in cookies.
@@ -31,7 +34,11 @@ import { AuthService } from "../../modules/auth/auth.service";
  */
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    @InjectRepository(user)
+    private readonly userRepository: Repository<user>,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
@@ -44,10 +51,44 @@ export class AccessTokenGuard implements CanActivate {
       );
     }
 
-    const user = await this.authService.verifyAccessToken(token);
+    let payload: Record<string, unknown>;
 
-    req.userId = user.user_id;
-    req.user = user;
+    try {
+      payload = (await this.jwtService.verifyAsync(token)) as Record<
+        string,
+        unknown
+      >;
+    } catch {
+      throw new UnauthorizedException("Invalid or expired access token");
+    }
+
+    const userId =
+      typeof payload.userId === "string"
+        ? payload.userId
+        : typeof payload.sub === "string"
+          ? payload.sub
+          : null;
+    const tokenVersion =
+      typeof payload.tv === "number"
+        ? payload.tv
+        : typeof payload.tv === "string"
+          ? Number(payload.tv)
+          : NaN;
+
+    if (!userId || Number.isNaN(tokenVersion)) {
+      throw new UnauthorizedException("Invalid token payload");
+    }
+
+    const foundUser = await this.userRepository.findOne({
+      where: { user_id: userId },
+    });
+
+    if (!foundUser || (foundUser.tokenVersion ?? 1) !== tokenVersion) {
+      throw new UnauthorizedException("Session is no longer valid");
+    }
+
+    req.userId = foundUser.user_id;
+    req.user = foundUser;
 
     return true;
   }

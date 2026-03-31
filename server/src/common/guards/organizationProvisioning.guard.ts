@@ -15,13 +15,17 @@ export class OrganizationProvisioningGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const secret = process.env.ORG_PROVISIONING_SECRET;
     if (!secret) {
-      throw new ForbiddenException("Organization provisioning is not configured");
+      throw new ForbiddenException(
+        "Organization provisioning is not configured",
+      );
     }
 
     const req = context.switchToHttp().getRequest();
     const header = req.headers["x-org-provisioning-secret"];
     if (typeof header !== "string" || header !== secret) {
-      throw new UnauthorizedException("Invalid organization provisioning credentials");
+      throw new UnauthorizedException(
+        "Invalid organization provisioning credentials",
+      );
     }
 
     return true;

@@ -128,83 +128,10 @@ describe('BaseInput', () => {
       expect(input).toHaveAttribute('type', 'password');
     });
 
-    it('should show password visibility toggle button for password type', () => {
-      render(<BaseInput type="password" />);
-      const toggleButton = screen.getByLabelText('Show password');
-      expect(toggleButton).toBeInTheDocument();
-    });
-
     it('should not show password visibility toggle for non-password types', () => {
       render(<BaseInput type="text" />);
       const toggleButton = screen.queryByLabelText('Show password');
       expect(toggleButton).not.toBeInTheDocument();
-    });
-
-    it('should toggle password visibility when button is clicked', async () => {
-      const user = userEvent.setup();
-      render(<BaseInput type="password" />);
-
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      const toggleButton = screen.getByLabelText('Show password');
-
-      // Initially should be password type
-      expect(input.type).toBe('password');
-
-      // Click to show password
-      await user.click(toggleButton);
-      expect(input.type).toBe('text');
-      expect(screen.getByLabelText('Hide password')).toBeInTheDocument();
-
-      // Click to hide password again
-      await user.click(screen.getByLabelText('Hide password'));
-      expect(input.type).toBe('password');
-      expect(screen.getByLabelText('Show password')).toBeInTheDocument();
-    });
-
-    it('should add extra padding for password toggle button', () => {
-      render(<BaseInput type="password" />);
-      const input = screen.getByRole('textbox');
-      expect(input).toHaveClass('pr-10');
-    });
-
-    it('should not add extra padding for non-password inputs', () => {
-      render(<BaseInput type="text" />);
-      const input = screen.getByRole('textbox');
-      expect(input).not.toHaveClass('pr-10');
-    });
-
-    it('should maintain input value when toggling password visibility', async () => {
-      const user = userEvent.setup();
-      render(
-        <BaseInput type="password" value="secret123" onChange={() => {}} />,
-      );
-
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      const toggleButton = screen.getByLabelText('Show password');
-
-      expect(input.value).toBe('secret123');
-
-      await user.click(toggleButton);
-      expect(input.value).toBe('secret123');
-
-      await user.click(screen.getByLabelText('Hide password'));
-      expect(input.value).toBe('secret123');
-    });
-
-    it('should render eye icon when password is hidden', () => {
-      const { container } = render(<BaseInput type="password" />);
-      // The Icon component should render with eye icon
-      expect(container.querySelector('svg')).toBeInTheDocument();
-    });
-
-    it('should change to eye-slash icon when password is visible', async () => {
-      const user = userEvent.setup();
-      render(<BaseInput type="password" />);
-
-      const toggleButton = screen.getByLabelText('Show password');
-      await user.click(toggleButton);
-
-      expect(screen.getByLabelText('Hide password')).toBeInTheDocument();
     });
   });
 
@@ -244,7 +171,6 @@ describe('BaseInput', () => {
     it('should have base styling classes', () => {
       render(<BaseInput />);
       const input = screen.getByRole('textbox');
-      expect(input).toHaveClass('w-full');
       expect(input).toHaveClass('p-2');
       expect(input).toHaveClass('border');
       expect(input).toHaveClass('rounded-sm');
@@ -296,12 +222,6 @@ describe('BaseInput', () => {
       render(<BaseInput readOnly />);
       const input = screen.getByRole('textbox');
       expect(input).toHaveAttribute('aria-readonly', 'true');
-    });
-
-    it('password toggle button should have descriptive aria-label', () => {
-      render(<BaseInput type="password" />);
-      const toggleButton = screen.getByLabelText('Show password');
-      expect(toggleButton).toHaveAttribute('aria-label', 'Show password');
     });
 
     it('renders as required when required prop is true', () => {

@@ -1,15 +1,18 @@
 services:
   server:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: server/Dockerfile
     security_opt:
       - seccomp:unconfined
       - label:disable
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
+    env_file:
+      - .env
     environment:
       - DOCKER_RUN=true
+      - POSTGRES_DOCKER_HOST=postgres_db
     depends_on:
       postgres_db:
         condition: service_healthy
