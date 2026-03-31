@@ -1,4 +1,4 @@
-import { Toggle } from "../../atoms/profile-custom/Toggle";
+import { Toggle } from '../../atoms/profile-custom/Toggle';
 
 /**
  * @interface NotifSetting
@@ -22,7 +22,7 @@ interface NotifSetting {
 interface NotifSettingsProps {
   /** Array of notification settings to be rendered as a list */
   notifs: NotifSetting[];
-  /** * Primary color for the active toggle state. 
+  /** * Primary color for the active toggle state.
    * Defaults to the TalkUp brand blue (#2B70C9).
    */
   accentColor?: string;
@@ -39,39 +39,43 @@ interface NotifSettingsProps {
  */
 export const NotifSettings = ({
   notifs,
-  accentColor = "#2B70C9",
+  accentColor = '#2B70C9',
   onToggle,
 }: NotifSettingsProps) => {
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
       {notifs.map((n, i) => (
         <div
           key={n.id}
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "16px 0",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '16px 0',
             borderBottom:
               i < notifs.length - 1
-                ? "1px solid var(--color-border-tertiary, #F3F4F6)"
-                : "none",
+                ? '1px solid var(--color-border-tertiary, #F3F4F6)'
+                : 'none',
           }}
         >
-          <div style={{ paddingRight: "16px" }}>
-            <div style={{ 
-              fontSize: 14, 
-              fontWeight: 600, 
-              color: "var(--color-text-primary, #111827)" 
-            }}>
+          <div style={{ paddingRight: '16px' }}>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'var(--color-text-primary, #111827)',
+              }}
+            >
               {n.label}
             </div>
-            <div style={{ 
-              fontSize: 12, 
-              color: "var(--color-text-secondary, #6B7280)", 
-              marginTop: 4,
-              lineHeight: "1.4"
-            }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: 'var(--color-text-secondary, #6B7280)',
+                marginTop: 4,
+                lineHeight: '1.4',
+              }}
+            >
               {n.desc}
             </div>
           </div>

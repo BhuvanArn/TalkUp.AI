@@ -1,12 +1,12 @@
-import { Avatar } from "../../atoms/profile-custom/Avatar";
+import { Avatar } from '../../atoms/profile-custom/Avatar';
 
 export const Sidebar = ({ avatarColor, initials, name, email }: any) => {
   const menuItems = [
-    { icon: "◫", label: "Applications" },
-    { icon: "◷", label: "Curriculum" },
-    { icon: "◈", label: "Agenda" },
-    { icon: "✦", label: "AI Chat" },
-    { icon: "◎", label: "Profil", active: true },
+    { icon: '◫', label: 'Applications' },
+    { icon: '◷', label: 'Curriculum' },
+    { icon: '◈', label: 'Agenda' },
+    { icon: '✦', label: 'AI Chat' },
+    { icon: '◎', label: 'Profil', active: true },
   ];
 
   return (
@@ -16,13 +16,16 @@ export const Sidebar = ({ avatarColor, initials, name, email }: any) => {
         <span style={logoTextStyle}>TALKUP</span>
       </div>
 
-      <nav style={{ flex: 1, padding: "10px 8px" }}>
+      <nav style={{ flex: 1, padding: '10px 8px' }}>
         {menuItems.map((item) => (
-          <div key={item.label} style={{
-            ...navItemStyle,
-            color: item.active ? avatarColor : "var(--color-text-secondary)",
-            background: item.active ? `${avatarColor}18` : "transparent",
-          }}>
+          <div
+            key={item.label}
+            style={{
+              ...navItemStyle,
+              color: item.active ? avatarColor : 'var(--color-text-secondary)',
+              background: item.active ? `${avatarColor}18` : 'transparent',
+            }}
+          >
             <span style={{ width: 20 }}>{item.icon}</span>
             {item.label}
           </div>
@@ -31,9 +34,13 @@ export const Sidebar = ({ avatarColor, initials, name, email }: any) => {
 
       <div style={userSectionStyle}>
         <Avatar initials={initials} color={avatarColor} size={30} />
-        <div style={{ overflow: "hidden" }}>
-          <div style={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" }}>{name}</div>
-          <div style={{ fontSize: 11, color: "var(--color-text-secondary)" }}>{email}</div>
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{ fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
+            {name}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+            {email}
+          </div>
         </div>
       </div>
     </aside>
@@ -42,37 +49,51 @@ export const Sidebar = ({ avatarColor, initials, name, email }: any) => {
 
 const sidebarStyle: React.CSSProperties = {
   width: 220,
-  background: "var(--color-background-primary)",
-  borderRight: "0.5px solid var(--color-border-tertiary)",
-  display: "flex",
-  flexDirection: "column",
+  background: 'var(--color-background-primary)',
+  borderRight: '0.5px solid var(--color-border-tertiary)',
+  display: 'flex',
+  flexDirection: 'column',
 };
 
 const logoSectionStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
+  display: 'flex',
+  alignItems: 'center',
   gap: 8,
-  padding: "18px 16px",
-  borderBottom: "0.5px solid var(--color-border-tertiary)",
+  padding: '18px 16px',
+  borderBottom: '0.5px solid var(--color-border-tertiary)',
 };
 
 const logoIconStyle: React.CSSProperties = {
-  width: 28, height: 28, borderRadius: 6,
-  display: "flex", alignItems: "center", justifyContent: "center",
-  color: "white", fontWeight: 700,
+  width: 28,
+  height: 28,
+  borderRadius: 6,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: 'white',
+  fontWeight: 700,
 };
 
 const logoTextStyle: React.CSSProperties = {
-  fontSize: 15, fontWeight: 700, letterSpacing: -0.3
+  fontSize: 15,
+  fontWeight: 700,
+  letterSpacing: -0.3,
 };
 
 const navItemStyle: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 10,
-  padding: "8px 10px", borderRadius: 8, fontSize: 13, cursor: "pointer"
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  padding: '8px 10px',
+  borderRadius: 8,
+  fontSize: 13,
+  cursor: 'pointer',
 };
 
 const userSectionStyle: React.CSSProperties = {
-  padding: "12px 10px",
-  borderTop: "0.5px solid var(--color-border-tertiary)",
-  display: "flex", alignItems: "center", gap: 10
+  padding: '12px 10px',
+  borderTop: '0.5px solid var(--color-border-tertiary)',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
 };

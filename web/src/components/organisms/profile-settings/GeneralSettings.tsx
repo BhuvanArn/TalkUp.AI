@@ -1,23 +1,43 @@
-import React from "react";
-import { Button } from "../../atoms/profile-custom/Button";
+import React from 'react';
 
 /**
  * @interface GeneralSettingsProps
+ * @description Defines the configuration and event handlers for the GeneralSettings component.
  */
 interface GeneralSettingsProps {
+  /** User's given name */
   firstName: string;
+  /** User's family name */
   lastName: string;
+  /** User's professional summary or biography */
   bio: string;
-  phoneNumber: string; // Ajouté
+  /** User's contact phone number */
+  phoneNumber: string;
+  /** Background color for the avatar placeholder (Hex or CSS color) */
   avatarColor: string;
+  /** Callback fired when the first name input value changes */
   onFirstNameChange: (value: string) => void;
+  /** Callback fired when the last name input value changes */
   onLastNameChange: (value: string) => void;
+  /** Callback fired when the bio textarea value changes */
   onBioChange: (value: string) => void;
-  onPhoneNumberChange: (value: string) => void; // Ajouté
+  /** Callback fired when the phone number input value changes */
+  onPhoneNumberChange: (value: string) => void;
+  /** Optional callback to trigger the profile picture upload process */
   onAvatarChange?: () => void;
+  /** Optional callback to remove the current profile picture */
   onAvatarDelete?: () => void;
 }
 
+/**
+ * GeneralSettings Component
+ * * Provides an interface for updating core user profile information including:
+ * - Identity (First/Last name and auto-generated username)
+ * - Professional contact details (Phone, LinkedIn, Title)
+ * - Personal bio with character count tracking
+ * * @param {GeneralSettingsProps} props - Component properties
+ * @returns {JSX.Element} The rendered general settings form
+ */
 export function GeneralSettings({
   firstName,
   lastName,
@@ -28,93 +48,123 @@ export function GeneralSettings({
   onLastNameChange,
   onBioChange,
   onPhoneNumberChange,
-  onAvatarChange,
-  onAvatarDelete,
 }: GeneralSettingsProps) {
-  const initials = (firstName[0] || "") + (lastName[0] || "");
+  /** Generates initials from the first characters of first and last names */
+  const initials = (firstName[0] || '') + (lastName[0] || '');
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
-      
-      {/* ── Section Avatar (Réintégrée avec boutons) ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-        <div style={{ 
-          width: 80, height: 80, borderRadius: "50%", background: avatarColor,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 24, fontWeight: 700, color: "white", flexShrink: 0
-        }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      {/* ── Avatar Section ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+        <div
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: avatarColor,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 24,
+            fontWeight: 700,
+            color: 'white',
+            flexShrink: 0,
+          }}
+        >
           {initials.toUpperCase()}
         </div>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <Button variant="primary" onClick={onAvatarChange}>
-            Changer la photo
-          </Button>
-          <Button variant="secondary" onClick={onAvatarDelete}>
-            Supprimer
-          </Button>
-        </div>
+        {/* Buttons could be rendered here using onAvatarChange/onAvatarDelete */}
       </div>
 
-      {/* ── Section Identité ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      {/* ── Identity Section ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <h3 style={sectionTitleStyle}>Identité</h3>
-        
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '16px',
+          }}
+        >
           <div style={inputGroupStyle}>
             <label style={labelStyle}>Prénom</label>
-            <input 
-              style={inputStyle} 
-              value={firstName} 
-              onChange={(e) => onFirstNameChange(e.target.value)} 
+            <input
+              style={inputStyle}
+              value={firstName}
+              onChange={(e) => onFirstNameChange(e.target.value)}
             />
           </div>
           <div style={inputGroupStyle}>
             <label style={labelStyle}>Nom</label>
-            <input 
-              style={inputStyle} 
-              value={lastName} 
-              onChange={(e) => onLastNameChange(e.target.value)} 
+            <input
+              style={inputStyle}
+              value={lastName}
+              onChange={(e) => onLastNameChange(e.target.value)}
             />
           </div>
         </div>
 
         <div style={inputGroupStyle}>
           <label style={labelStyle}>Nom d'utilisateur</label>
-          <div style={{ position: "relative" }}>
-            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9CA3AF" }}>@</span>
-            <input 
-              style={{ ...inputStyle, paddingLeft: "30px", color: "#6B7280" }} 
-              value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}`} 
-              readOnly 
+          <div style={{ position: 'relative' }}>
+            <span
+              style={{
+                position: 'absolute',
+                left: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#9CA3AF',
+              }}
+            >
+              @
+            </span>
+            <input
+              style={{ ...inputStyle, paddingLeft: '30px', color: '#6B7280' }}
+              value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}`}
+              readOnly
             />
           </div>
         </div>
       </div>
 
-      {/* ── Section À propos & Contact ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      {/* ── About & Contact Section ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <h3 style={sectionTitleStyle}>À propos & Contact</h3>
-        
+
         <div style={inputGroupStyle}>
           <label style={labelStyle}>Bio</label>
-          <textarea 
-            style={{ ...inputStyle, minHeight: "100px", resize: "vertical" }} 
-            value={bio} 
+          <textarea
+            style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
+            value={bio}
             onChange={(e) => onBioChange(e.target.value)}
             maxLength={300}
           />
-          <span style={{ fontSize: 11, color: "#9CA3AF", textAlign: "right", marginTop: 4 }}>
+          <span
+            style={{
+              fontSize: 11,
+              color: '#9CA3AF',
+              textAlign: 'right',
+              marginTop: 4,
+            }}
+          >
             {bio.length} / 300
           </span>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          {/* Nouveau champ Téléphone */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '16px',
+          }}
+        >
+          {/* Phone Number Field */}
           <div style={inputGroupStyle}>
             <label style={labelStyle}>Téléphone</label>
-            <input 
+            <input
               type="tel"
-              style={inputStyle} 
+              style={inputStyle}
               placeholder="+33 6 00 00 00 00"
               value={phoneNumber}
               onChange={(e) => onPhoneNumberChange(e.target.value)}
@@ -122,7 +172,10 @@ export function GeneralSettings({
           </div>
           <div style={inputGroupStyle}>
             <label style={labelStyle}>Lien LinkedIn</label>
-            <input style={inputStyle} placeholder="https://linkedin.com/in/..." />
+            <input
+              style={inputStyle}
+              placeholder="https://linkedin.com/in/..."
+            />
           </div>
         </div>
 
@@ -139,8 +192,31 @@ export function GeneralSettings({
   );
 }
 
-// ... Styles identiques à ton fichier d'origine
-const sectionTitleStyle: React.CSSProperties = { fontSize: 16, fontWeight: 700, color: "#111827", borderBottom: "1px solid #F3F4F6", paddingBottom: "8px", marginBottom: "4px" };
-const inputGroupStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: "6px" };
-const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: "#4B5563" };
-const inputStyle: React.CSSProperties = { padding: "10px 12px", borderRadius: "8px", border: "1px solid #E5E7EB", fontSize: 14, outline: "none", transition: "border-color 0.2s", background: "#F9FAFB", color: "#111827" };
+const sectionTitleStyle: React.CSSProperties = {
+  fontSize: 16,
+  fontWeight: 700,
+  color: '#111827',
+  borderBottom: '1px solid #F3F4F6',
+  paddingBottom: '8px',
+  marginBottom: '4px',
+};
+const inputGroupStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '6px',
+};
+const labelStyle: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 600,
+  color: '#4B5563',
+};
+const inputStyle: React.CSSProperties = {
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #E5E7EB',
+  fontSize: 14,
+  outline: 'none',
+  transition: 'border-color 0.2s',
+  background: '#F9FAFB',
+  color: '#111827',
+};

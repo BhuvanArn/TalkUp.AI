@@ -1,6 +1,6 @@
-import { Button } from "../../atoms/profile-custom/Button";
-
 import React from 'react';
+
+import { Button } from '../../atoms/profile-custom/Button';
 
 interface TopbarProps {
   onSave: () => void;
@@ -8,7 +8,11 @@ interface TopbarProps {
   accentColor?: string;
 }
 
-export const Topbar: React.FC<TopbarProps> = ({ onSave, isSaved, accentColor = "#2B70C9" }) => {
+export const Topbar: React.FC<TopbarProps> = ({
+  onSave,
+  isSaved,
+  accentColor = '#2B70C9',
+}) => {
   return (
     <div style={topbarStyle}>
       <div style={breadcrumbStyle}>
@@ -18,27 +22,31 @@ export const Topbar: React.FC<TopbarProps> = ({ onSave, isSaved, accentColor = "
       </div>
 
       <div style={actionsStyle}>
-        <Button 
-          variant="ghost" 
-          style={{ color: "#6B7280", fontSize: "13px" }}
-        >
+        <Button variant="ghost" style={{ color: '#6B7280', fontSize: '13px' }}>
           Annuler
         </Button>
-        
-        <Button 
-          onClick={onSave} 
+
+        <Button
+          onClick={onSave}
           accentColor={accentColor}
           style={saveButtonStyle}
         >
           {isSaved ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+              >
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
               Enregistré
             </span>
           ) : (
-            "Enregistrer les modifications"
+            'Enregistrer les modifications'
           )}
         </Button>
       </div>
@@ -47,52 +55,52 @@ export const Topbar: React.FC<TopbarProps> = ({ onSave, isSaved, accentColor = "
 };
 
 const topbarStyle: React.CSSProperties = {
-  background: "#FFFFFF",
-  borderBottom: "1px solid #E5E7EB",
-  padding: "0 32px",
-  height: "64px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  position: "sticky",
+  background: '#FFFFFF',
+  borderBottom: '1px solid #E5E7EB',
+  padding: '0 32px',
+  height: '64px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  position: 'sticky',
   top: 0,
   zIndex: 100,
 };
 
 const breadcrumbStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  fontSize: "13px",
-  fontFamily: "Inter, sans-serif",
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  fontSize: '13px',
+  fontFamily: 'Inter, sans-serif',
 };
 
 const folderStyle: React.CSSProperties = {
-  color: "#6B7280", // Gris moyen
+  color: '#6B7280',
 };
 
 const separatorStyle: React.CSSProperties = {
-  color: "#D1D5DB", // Gris très clair
+  color: '#D1D5DB',
 };
 
 const currentPageStyle: React.CSSProperties = {
-  color: "#111827", // Noir/Gris très foncé
+  color: '#111827',
   fontWeight: 500,
 };
 
 const actionsStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
 };
 
 const saveButtonStyle: React.CSSProperties = {
-  minWidth: "180px",
-  height: "38px",
-  borderRadius: "8px",
-  fontSize: "13px",
+  minWidth: '180px',
+  height: '38px',
+  borderRadius: '8px',
+  fontSize: '13px',
   fontWeight: 500,
-  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
 };
 
 export default Topbar;
