@@ -1,3 +1,4 @@
+import React from "react";
 import { Button } from "../../atoms/profile-custom/Button";
 
 /**
@@ -23,11 +24,11 @@ interface GeneralSettingsProps {
 
 /**
  * GeneralSettings Component
- * * * Provides an interface for users to update their core profile information:
- * - Profile picture management (Avatar preview & buttons)
+ * * Provides an interface for users to update their core profile information:
+ * - Profile picture management (Avatar preview, Change, Delete)
  * - Identity information (First Name, Last Name, Username)
  * - Professional details (Bio, Title, LinkedIn)
- * * * Features:
+ * * Features:
  * - Real-time character count for bio.
  * - Read-only auto-generated username.
  * - Responsive grid layout for form fields.
@@ -49,7 +50,9 @@ export function GeneralSettings({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
       
+      {/* ── Section Avatar ── */}
       <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+        {/* Avatar Circle */}
         <div style={{ 
           width: 80, height: 80, borderRadius: "50%", background: avatarColor,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -57,14 +60,10 @@ export function GeneralSettings({
         }}>
           {initials.toUpperCase()}
         </div>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <Button style={{ background: avatarColor, color: "white", border: "none" }}>
-            Changer la photo
-          </Button>
-          <Button variant="ghost" style={{ color: "#EF4444" }}>Supprimer</Button>
-        </div>
+        {/* Avatar Buttons */}
       </div>
 
+      {/* ── Section Identité ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         <h3 style={sectionTitleStyle}>Identité</h3>
         
@@ -87,22 +86,28 @@ export function GeneralSettings({
           </div>
         </div>
 
+        {/* Generated Username */}
         <div style={inputGroupStyle}>
           <label style={labelStyle}>Nom d'utilisateur</label>
           <div style={{ position: "relative" }}>
             <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9CA3AF" }}>@</span>
             <input 
-              style={{ ...inputStyle, paddingLeft: "30px" }} 
+              style={{ ...inputStyle, paddingLeft: "30px", color: "#6B7280" }} 
               value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}`} 
               readOnly 
             />
           </div>
+          <span style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
+            Le nom d'utilisateur est généré automatiquement.
+          </span>
         </div>
       </div>
 
+      {/* ── Section À propos ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         <h3 style={sectionTitleStyle}>À propos</h3>
         
+        {/* Bio Textarea with character count */}
         <div style={inputGroupStyle}>
           <label style={labelStyle}>Bio</label>
           <textarea 
@@ -116,6 +121,7 @@ export function GeneralSettings({
           </span>
         </div>
 
+        {/* Professional Details Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div style={inputGroupStyle}>
             <label style={labelStyle}>Titre professionnel</label>
@@ -135,10 +141,12 @@ export function GeneralSettings({
   );
 }
 
+// ── Internal Styles ──
+
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: 16,
   fontWeight: 700,
-  color: "var(--color-text-primary)",
+  color: "#111827",
   borderBottom: "1px solid #F3F4F6",
   paddingBottom: "8px",
   marginBottom: "4px"
@@ -163,5 +171,6 @@ const inputStyle: React.CSSProperties = {
   fontSize: 14,
   outline: "none",
   transition: "border-color 0.2s",
-  background: "#F9FAFB"
+  background: "#F9FAFB",
+  color: "#111827"
 };
