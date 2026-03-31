@@ -58,4 +58,73 @@ export default class AuthService {
     const response = await axiosInstance.post(`${API_ROUTES.auth}/logout`);
     return response.data;
   };
+
+  postVerifyEmail = async (
+    email: string,
+    otpCode: string,
+  ): Promise<{ message: string }> => {
+    const response = await axiosInstance.post(
+      `${API_ROUTES.auth}/verify-email`,
+      {
+        email,
+        otpCode,
+      },
+    );
+    return response.data;
+  };
+
+  postResendOtp = async (
+    email: string,
+    purpose: 'REGISTER' | 'RESET_PASSWORD' | 'NEW_DEVICE',
+  ): Promise<{ message: string }> => {
+    const response = await axiosInstance.post(`${API_ROUTES.auth}/resend-otp`, {
+      email,
+      purpose,
+    });
+    return response.data;
+  };
+
+  /**
+   * Requests a password-reset OTP for the given email (anti-enumeration: always 202).
+   */
+  postPasswordResetRequest = async (
+    email: string,
+  ): Promise<{ message: string }> => {
+    const response = await axiosInstance.post(
+      `${API_ROUTES.auth}/password-reset-request`,
+      { email },
+    );
+    return response.data;
+  };
+
+  /**
+   * Verifies the reset OTP; server sets HttpOnly `resetToken` cookie on success.
+   */
+  postPasswordResetVerify = async (
+    email: string,
+    code: string,
+  ): Promise<{ message: string }> => {
+    const response = await axiosInstance.post(
+      `${API_ROUTES.auth}/password-reset-verify`,
+      {
+        email,
+        code,
+        purpose: 'RESET_PASSWORD' as const,
+      },
+    );
+    return response.data;
+  };
+
+  /**
+   * Sets a new password using the reset token cookie from password-reset-verify.
+   */
+  patchPasswordUpdate = async (
+    newPassword: string,
+  ): Promise<{ message: string }> => {
+    const response = await axiosInstance.patch(
+      `${API_ROUTES.auth}/password-update`,
+      { newPassword },
+    );
+    return response.data;
+  };
 }

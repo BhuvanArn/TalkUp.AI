@@ -128,6 +128,17 @@ describe("AiService", () => {
       ).rejects.toThrow(InternalServerErrorException);
     });
 
+    it("includes response data in log when axios error has response body", async () => {
+      mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
+      const axiosLike: any = new Error("bad request");
+      axiosLike.response = { data: { detail: "invalid payload" } };
+      mockHttpService.axiosRef.post.mockRejectedValueOnce(axiosLike);
+
+      await expect(
+        service.createInterview({} as any, "user-1"),
+      ).rejects.toThrow(InternalServerErrorException);
+    });
+
     it("throws InternalServerErrorException when save fails", async () => {
       mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
       mockHttpService.axiosRef.post.mockResolvedValueOnce({
@@ -229,6 +240,32 @@ describe("AiService", () => {
         data: [mockInterview],
         meta: { total: 10, page: 2, limit: 5 },
       });
+    });
+
+    it("defaults limit to 20 when only page is provided", async () => {
+      mockAiInterviewRepo.findAndCount.mockResolvedValueOnce([[], 0]);
+
+      await service.getUserInterviews({ page: 3 } as any, "user-1");
+
+      expect(mockAiInterviewRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 20,
+          skip: 40,
+        }),
+      );
+    });
+
+    it("defaults page to 1 when only limit is provided", async () => {
+      mockAiInterviewRepo.findAndCount.mockResolvedValueOnce([[], 0]);
+
+      await service.getUserInterviews({ limit: 15 } as any, "user-1");
+
+      expect(mockAiInterviewRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 15,
+          skip: 0,
+        }),
+      );
     });
 
     it("throws InternalServerErrorException when findAndCount throws", async () => {

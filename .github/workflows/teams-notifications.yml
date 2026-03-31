@@ -9,7 +9,7 @@ on:
 jobs:
   notify-teams:
     runs-on: ubuntu-latest
-    if: github.repository == 'Tugduoff/TalkUp.AI'
+    if: github.repository == 'BhuvanArn/TalkUp.AI'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

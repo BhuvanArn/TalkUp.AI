@@ -82,7 +82,11 @@ export const createAuthGuard = (routePath: string) => {
  */
 export const createPublicRouteGuard = (routePath: string) => {
   return async () => {
-    if (routePath !== '/login' && routePath !== '/register') {
+    if (
+      routePath !== '/login' &&
+      routePath !== '/register' &&
+      routePath !== '/verify-email'
+    ) {
       return;
     }
 

@@ -9,11 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as SimulationsRouteImport } from './routes/simulations'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProgressionRouteImport } from './routes/progression'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DiaryRouteImport } from './routes/diary'
 import { Route as CvAnalysisRouteImport } from './routes/cv-analysis'
 import { Route as AiChatRouteImport } from './routes/ai-chat'
@@ -33,9 +36,19 @@ import { Route as ApplicationsApplicationIdSimulationsRouteImport } from './rout
 import { Route as ApplicationsApplicationIdDashboardRouteImport } from './routes/applications/$applicationId/dashboard'
 import { Route as ApplicationsApplicationIdAnalyticsRouteImport } from './routes/applications/$applicationId/analytics'
 
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SimulationsRoute = SimulationsRouteImport.update({
   id: '/simulations',
   path: '/simulations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -56,6 +69,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiaryRoute = DiaryRouteImport.update({
@@ -160,11 +178,14 @@ export interface FileRoutesByFullPath {
   '/ai-chat': typeof AiChatRoute
   '/cv-analysis': typeof CvAnalysisRoute
   '/diary': typeof DiaryRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/simulations': typeof SimulationsRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -185,11 +206,14 @@ export interface FileRoutesByTo {
   '/ai-chat': typeof AiChatRoute
   '/cv-analysis': typeof CvAnalysisRoute
   '/diary': typeof DiaryRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/simulations': typeof SimulationsRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -211,11 +235,14 @@ export interface FileRoutesById {
   '/ai-chat': typeof AiChatRoute
   '/cv-analysis': typeof CvAnalysisRoute
   '/diary': typeof DiaryRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/simulations': typeof SimulationsRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -238,11 +265,14 @@ export interface FileRouteTypes {
     | '/ai-chat'
     | '/cv-analysis'
     | '/diary'
+    | '/forgot-password'
     | '/login'
     | '/profile'
     | '/progression'
     | '/register'
+    | '/reset-password'
     | '/simulations'
+    | '/verify-email'
     | '/notes/$noteId'
     | '/settings/billing'
     | '/settings/integrations'
@@ -263,11 +293,14 @@ export interface FileRouteTypes {
     | '/ai-chat'
     | '/cv-analysis'
     | '/diary'
+    | '/forgot-password'
     | '/login'
     | '/profile'
     | '/progression'
     | '/register'
+    | '/reset-password'
     | '/simulations'
+    | '/verify-email'
     | '/notes/$noteId'
     | '/settings/billing'
     | '/settings/integrations'
@@ -288,11 +321,14 @@ export interface FileRouteTypes {
     | '/ai-chat'
     | '/cv-analysis'
     | '/diary'
+    | '/forgot-password'
     | '/login'
     | '/profile'
     | '/progression'
     | '/register'
+    | '/reset-password'
     | '/simulations'
+    | '/verify-email'
     | '/notes/$noteId'
     | '/settings/billing'
     | '/settings/integrations'
@@ -314,11 +350,14 @@ export interface RootRouteChildren {
   AiChatRoute: typeof AiChatRoute
   CvAnalysisRoute: typeof CvAnalysisRoute
   DiaryRoute: typeof DiaryRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
   ProgressionRoute: typeof ProgressionRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SimulationsRoute: typeof SimulationsRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   NotesNoteIdRoute: typeof NotesNoteIdRoute
   SettingsBillingRoute: typeof SettingsBillingRoute
   SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
@@ -335,11 +374,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/simulations': {
       id: '/simulations'
       path: '/simulations'
       fullPath: '/simulations'
       preLoaderRoute: typeof SimulationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -368,6 +421,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/diary': {
@@ -506,11 +566,14 @@ const rootRouteChildren: RootRouteChildren = {
   AiChatRoute: AiChatRoute,
   CvAnalysisRoute: CvAnalysisRoute,
   DiaryRoute: DiaryRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
   ProgressionRoute: ProgressionRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SimulationsRoute: SimulationsRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   NotesNoteIdRoute: NotesNoteIdRoute,
   SettingsBillingRoute: SettingsBillingRoute,
   SettingsIntegrationsRoute: SettingsIntegrationsRoute,

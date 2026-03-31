@@ -9,6 +9,9 @@ export const routeConfigs: RouteConfig[] = [
   { path: '/', requiresAuth: false },
   { path: '/login', requiresAuth: false },
   { path: '/register', requiresAuth: false },
+  { path: '/verify-email', requiresAuth: false },
+  { path: '/forgot-password', requiresAuth: false },
+  { path: '/reset-password', requiresAuth: false },
   { path: '/about', requiresAuth: false },
 
   // Protected routes - Main pages

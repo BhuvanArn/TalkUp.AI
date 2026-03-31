@@ -15,11 +15,10 @@ describe('ListEventBlock', () => {
 
     const colors = getEventColorData(props.color);
 
-    render(<ListEventBlock {...props} />);
+    const { container } = render(<ListEventBlock {...props} />);
 
-    // times
-    expect(screen.getByText('09:00')).toBeInTheDocument();
-    expect(screen.getByText('10:00')).toBeInTheDocument();
+    // times are rendered as a single range string
+    expect(screen.getByText(/09:00 to 10:00/)).toBeInTheDocument();
 
     // title & subtitle
     const title = screen.getByText('Team Sync');
@@ -28,18 +27,7 @@ describe('ListEventBlock', () => {
       screen.getByText('Discuss roadmap and blockers'),
     ).toBeInTheDocument();
 
-    // colored container is the parent of the title element
-    const colored = title.parentElement as HTMLElement;
-    expect(colored).toBeTruthy();
-    // style attributes should match the event color data
-    // normalize alpha formatting differences (e.g. 0.20 -> 0.2) and whitespace
-    const normalizedExpectedBg = colors.background
-      .replace(/0\.20/g, '0.2')
-      .replace(/\s/g, '');
-    expect(colored.style.backgroundColor.replace(/\s/g, '')).toBe(
-      normalizedExpectedBg,
-    );
-    // normalize hex border color to rgb used by the DOM
+    // left accent bar uses the event border color
     const hexToRgb = (hex: string) => {
       const h = hex.replace('#', '');
       const num = parseInt(h, 16);
@@ -49,7 +37,9 @@ describe('ListEventBlock', () => {
       return `rgb(${r}, ${g}, ${b})`;
     };
 
-    expect(colored.style.borderLeftColor).toBe(hexToRgb(colors.border));
+    const bar = container.querySelector('span[aria-hidden="true"]');
+    expect(bar).toBeTruthy();
+    expect(bar).toHaveStyle({ backgroundColor: hexToRgb(colors.border) });
   });
 
   it('does not render subtitle when not provided', () => {
@@ -64,11 +54,10 @@ describe('ListEventBlock', () => {
     );
 
     expect(screen.getByText('Solo Event')).toBeInTheDocument();
-    expect(screen.queryByText('12:00')).toBeInTheDocument();
-    expect(screen.queryByText('13:00')).toBeInTheDocument();
+    expect(screen.getByText(/12:00 to 13:00/)).toBeInTheDocument();
 
-    // ensure subtitle not present
-    expect(screen.queryByText(/./, { selector: 'p' })).toBeNull();
+    // only the time range paragraph; no subtitle line
+    expect(screen.getAllByRole('paragraph')).toHaveLength(1);
   });
 });
 
