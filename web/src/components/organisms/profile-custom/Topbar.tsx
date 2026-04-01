@@ -1,25 +1,46 @@
 import React from 'react';
-
 import { Button } from '../../atoms/profile-custom/Button';
 
+/**
+ * @interface TopbarProps
+ * @description Defines the properties for the Topbar component, including dynamic breadcrumbs.
+ */
 interface TopbarProps {
+  /** Array of strings representing the navigation path (e.g., ['Settings', 'Profile']) */
+  breadcrumb?: string[];
+  /** Callback function triggered when the save button is clicked */
   onSave: () => void;
+  /** Boolean indicating if changes are currently saved for UI feedback */
   isSaved: boolean;
+  /** Theme color used for the primary action button */
   accentColor?: string;
 }
 
+/**
+ * Topbar component providing navigation context and global actions.
+ */
 export const Topbar: React.FC<TopbarProps> = ({
+  breadcrumb = ['Paramètres', 'Mon Profil'],
   onSave,
   isSaved,
   accentColor = '#2B70C9',
 }) => {
   return (
-    <div style={topbarStyle}>
-      <div style={breadcrumbStyle}>
-        <span style={folderStyle}>Paramètres</span>
-        <span style={separatorStyle}>/</span>
-        <span style={currentPageStyle}>Mon Profil</span>
-      </div>
+    <header style={topbarStyle}>
+      <nav aria-label="Breadcrumb" style={breadcrumbStyle}>
+        {breadcrumb.map((item, index) => (
+          <React.Fragment key={item}>
+            <span 
+              style={index === breadcrumb.length - 1 ? currentPageStyle : folderStyle}
+            >
+              {item}
+            </span>
+            {index < breadcrumb.length - 1 && (
+              <span style={separatorStyle} aria-hidden="true">/</span>
+            )}
+          </React.Fragment>
+        ))}
+      </nav>
 
       <div style={actionsStyle}>
         <Button variant="ghost" style={{ color: '#6B7280', fontSize: '13px' }}>
@@ -40,6 +61,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="3"
+                aria-hidden="true"
               >
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
@@ -50,7 +72,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           )}
         </Button>
       </div>
-    </div>
+    </header>
   );
 };
 
