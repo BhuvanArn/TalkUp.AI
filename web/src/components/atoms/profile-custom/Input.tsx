@@ -1,11 +1,17 @@
 import React from 'react';
 
-// ─── Input ────────────────────────────────────────────────────────────────────
-
+/**
+ * @interface InputProps
+ * @description Extends standard input attributes with a custom accent color for focus states.
+ */
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  /** Theme color used for borders and box-shadow on focus */
   accentColor?: string;
 }
 
+/**
+ * Custom Input component with dynamic focus styling.
+ */
 export const Input = ({
   accentColor = '#2B70C9',
   style,
@@ -41,13 +47,19 @@ export const Input = ({
   );
 };
 
-// ─── Textarea ─────────────────────────────────────────────────────────────────
-
+/**
+ * @interface TextareaProps
+ * @description Extends standard textarea attributes with a custom accent color for focus states.
+ */
 interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  /** Theme color used for borders and box-shadow on focus */
   accentColor?: string;
 }
 
+/**
+ * Custom Textarea component with auto-resize (vertical) and dynamic focus styling.
+ */
 export const Textarea = ({
   accentColor = '#2B70C9',
   style,
@@ -85,18 +97,24 @@ export const Textarea = ({
   );
 };
 
-// ─── Select ───────────────────────────────────────────────────────────────────
-
+/**
+ * @interface SelectProps
+ * @description Extends standard select attributes.
+ */
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  /** Theme color (currently applied to the container or future focus states) */
   accentColor?: string;
 }
 
+/**
+ * Custom Select component for dropdown menus.
+ */
 export const Select = ({
-  accentColor = '#2B70C9',
+  _accentColor = '#2B70C9', // Prefixed with _ to avoid unused-var lint error if not styled directly
   style,
   children,
   ...props
-}: SelectProps) => {
+}: SelectProps & { _accentColor?: string }) => {
   return (
     <select
       style={{
@@ -119,18 +137,29 @@ export const Select = ({
   );
 };
 
-// ─── Field wrapper ────────────────────────────────────────────────────────────
-
+/**
+ * @interface FieldProps
+ * @description Layout wrapper for form controls, providing a label and optional help text.
+ */
 interface FieldProps {
+  /** The text to display as the field label */
   label: string;
+  /** Optional secondary text to provide context or instructions */
   hint?: string;
+  /** The ID of the associated input/control (required for accessibility) */
+  htmlFor?: string;
+  /** The form control component to be wrapped */
   children: React.ReactNode;
 }
 
-export const Field = ({ label, hint, children }: FieldProps) => {
+/**
+ * Form Field wrapper that ensures accessibility by linking labels to controls.
+ */
+export const Field = ({ label, hint, htmlFor, children }: FieldProps) => {
   return (
     <div style={{ marginBottom: '14px' }}>
       <label
+        htmlFor={htmlFor}
         style={{
           display: 'block',
           fontSize: '12px',

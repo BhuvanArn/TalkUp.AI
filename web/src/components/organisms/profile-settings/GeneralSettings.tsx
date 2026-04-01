@@ -31,11 +31,8 @@ interface GeneralSettingsProps {
 
 /**
  * GeneralSettings Component
- * * Provides an interface for updating core user profile information including:
- * - Identity (First/Last name and auto-generated username)
- * - Professional contact details (Phone, LinkedIn, Title)
- * - Personal bio with character count tracking
- * * @param {GeneralSettingsProps} props - Component properties
+ * * Provides an interface for updating core user profile information.
+ * @param {GeneralSettingsProps} props - Component properties
  * @returns {JSX.Element} The rendered general settings form
  */
 export function GeneralSettings({
@@ -73,31 +70,26 @@ export function GeneralSettings({
         >
           {initials.toUpperCase()}
         </div>
-        {/* Buttons could be rendered here using onAvatarChange/onAvatarDelete */}
       </div>
 
       {/* ── Identity Section ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <h3 style={sectionTitleStyle}>Identité</h3>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '16px',
-          }}
-        >
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div style={inputGroupStyle}>
-            <label style={labelStyle}>Prénom</label>
+            <label style={labelStyle} htmlFor="firstName">Prénom</label>
             <input
+              id="firstName"
               style={inputStyle}
               value={firstName}
               onChange={(e) => onFirstNameChange(e.target.value)}
             />
           </div>
           <div style={inputGroupStyle}>
-            <label style={labelStyle}>Nom</label>
+            <label style={labelStyle} htmlFor="lastName">Nom</label>
             <input
+              id="lastName"
               style={inputStyle}
               value={lastName}
               onChange={(e) => onLastNameChange(e.target.value)}
@@ -106,7 +98,7 @@ export function GeneralSettings({
         </div>
 
         <div style={inputGroupStyle}>
-          <label style={labelStyle}>Nom d'utilisateur</label>
+          <label style={labelStyle} htmlFor="username">Nom d'utilisateur</label>
           <div style={{ position: 'relative' }}>
             <span
               style={{
@@ -120,6 +112,7 @@ export function GeneralSettings({
               @
             </span>
             <input
+              id="username"
               style={{ ...inputStyle, paddingLeft: '30px', color: '#6B7280' }}
               value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}`}
               readOnly
@@ -133,36 +126,24 @@ export function GeneralSettings({
         <h3 style={sectionTitleStyle}>À propos & Contact</h3>
 
         <div style={inputGroupStyle}>
-          <label style={labelStyle}>Bio</label>
+          <label style={labelStyle} htmlFor="bio">Bio</label>
           <textarea
+            id="bio"
             style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
             value={bio}
             onChange={(e) => onBioChange(e.target.value)}
             maxLength={300}
           />
-          <span
-            style={{
-              fontSize: 11,
-              color: '#9CA3AF',
-              textAlign: 'right',
-              marginTop: 4,
-            }}
-          >
+          <span style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'right', marginTop: 4 }}>
             {bio.length} / 300
           </span>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '16px',
-          }}
-        >
-          {/* Phone Number Field */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div style={inputGroupStyle}>
-            <label style={labelStyle}>Téléphone</label>
+            <label style={labelStyle} htmlFor="phone">Téléphone</label>
             <input
+              id="phone"
               type="tel"
               style={inputStyle}
               placeholder="+33 6 00 00 00 00"
@@ -171,8 +152,9 @@ export function GeneralSettings({
             />
           </div>
           <div style={inputGroupStyle}>
-            <label style={labelStyle}>Lien LinkedIn</label>
+            <label style={labelStyle} htmlFor="linkedin">Lien LinkedIn</label>
             <input
+              id="linkedin"
               style={inputStyle}
               placeholder="https://linkedin.com/in/..."
             />
@@ -180,8 +162,8 @@ export function GeneralSettings({
         </div>
 
         <div style={inputGroupStyle}>
-          <label style={labelStyle}>Titre professionnel</label>
-          <select style={inputStyle}>
+          <label style={labelStyle} htmlFor="job-title">Titre professionnel</label>
+          <select id="job-title" style={inputStyle}>
             <option>Candidat Product Manager</option>
             <option>Product Designer</option>
             <option>Software Engineer</option>

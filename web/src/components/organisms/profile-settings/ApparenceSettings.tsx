@@ -3,13 +3,13 @@ import { Avatar } from '../../atoms/profile-custom/Avatar';
 import { Field, Input } from '../../atoms/profile-custom/Input';
 
 const ACCENT_COLORS = [
-  '#2B70C9',
-  '#1D9E75',
-  '#D85A30',
-  '#D4537E',
-  '#BA7517',
-  '#7F77DD',
-  '#555555',
+  { name: 'Bleu', value: '#2B70C9' },
+  { name: 'Vert', value: '#1D9E75' },
+  { name: 'Orange', value: '#D85A30' },
+  { name: 'Rose', value: '#D4537E' },
+  { name: 'Jaune', value: '#BA7517' },
+  { name: 'Violet', value: '#7F77DD' },
+  { name: 'Gris', value: '#555555' },
 ];
 
 const BANNER_PRESETS = [
@@ -37,6 +37,10 @@ interface ApparenceSettingsProps {
   onBannerChange: (g: string) => void;
 }
 
+/**
+ * ApparenceSettings Component
+ * Manages the visual aspect of the profile (Avatar colors, Banner presets, Visibility).
+ */
 export const ApparenceSettings = ({
   avatarColor,
   bannerGradient,
@@ -52,7 +56,7 @@ export const ApparenceSettings = ({
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       {/* Colors of avatar */}
       <div style={subCardStyle}>
-        <div style={sectionTitleStyle}>Couleur du profil</div>
+        <h3 style={sectionTitleStyle}>Couleur du profil</h3>
         <p style={descStyle}>Couleur de ton avatar et accents</p>
         <div
           style={{
@@ -64,24 +68,27 @@ export const ApparenceSettings = ({
         >
           {ACCENT_COLORS.map((c) => (
             <button
-              key={c}
-              onClick={() => onColorChange(c)}
+              key={c.value}
+              type="button"
+              onClick={() => onColorChange(c.value)}
+              aria-label={`Utiliser la couleur ${c.name}`}
               style={{
                 width: 28,
                 height: 28,
                 borderRadius: '50%',
-                background: c,
+                background: c.value,
                 cursor: 'pointer',
                 border:
-                  avatarColor === c
+                  avatarColor === c.value
                     ? '2.5px solid var(--color-text-primary)'
                     : '2px solid transparent',
               }}
             />
           ))}
         </div>
-        <Field label="Couleur personnalisée">
+        <Field label="Couleur personnalisée" htmlFor="custom-color">
           <Input
+            id="custom-color"
             type="color"
             accentColor={avatarColor}
             value={avatarColor}
@@ -91,9 +98,9 @@ export const ApparenceSettings = ({
         </Field>
       </div>
 
-      {/* Aperence */}
+      {/* Preview Section */}
       <div style={subCardStyle}>
-        <div style={sectionTitleStyle}>Aperçu avatar</div>
+        <h3 style={sectionTitleStyle}>Aperçu avatar</h3>
         <div
           style={{
             display: 'flex',
@@ -138,13 +145,15 @@ export const ApparenceSettings = ({
         </div>
       </div>
 
+      {/* Banner Selection */}
       <div style={subCardStyle}>
-        <div style={sectionTitleStyle}>Bannière du profil</div>
+        <h3 style={sectionTitleStyle}>Bannière du profil</h3>
         <p style={descStyle}>Choisis un thème pour ta bannière</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {BANNER_PRESETS.map(({ label, value }) => (
             <button
               key={label}
+              type="button"
               onClick={() => onBannerChange(value)}
               style={{
                 display: 'flex',
@@ -179,8 +188,9 @@ export const ApparenceSettings = ({
         </div>
       </div>
 
+      {/* Visibility Settings */}
       <div style={subCardStyle}>
-        <div style={sectionTitleStyle}>Visibilité du profil</div>
+        <h3 style={sectionTitleStyle}>Visibilité du profil</h3>
         <p style={descStyle}>Qui peut voir ton profil ?</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[
@@ -202,6 +212,7 @@ export const ApparenceSettings = ({
           ].map(({ value, label, desc }) => (
             <label
               key={value}
+              htmlFor={`visibility-${value}`}
               style={{
                 display: 'flex',
                 alignItems: 'flex-start',
@@ -210,6 +221,7 @@ export const ApparenceSettings = ({
               }}
             >
               <input
+                id={`visibility-${value}`}
                 type="radio"
                 name="visibility"
                 checked={visibility === value}
