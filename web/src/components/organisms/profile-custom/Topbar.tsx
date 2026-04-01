@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { Button } from '../../atoms/profile-custom/Button';
 
 /**
@@ -30,13 +31,17 @@ export const Topbar: React.FC<TopbarProps> = ({
       <nav aria-label="Breadcrumb" style={breadcrumbStyle}>
         {breadcrumb.map((item, index) => (
           <React.Fragment key={item}>
-            <span 
-              style={index === breadcrumb.length - 1 ? currentPageStyle : folderStyle}
+            <span
+              style={
+                index === breadcrumb.length - 1 ? currentPageStyle : folderStyle
+              }
             >
               {item}
             </span>
             {index < breadcrumb.length - 1 && (
-              <span style={separatorStyle} aria-hidden="true">/</span>
+              <span style={separatorStyle} aria-hidden="true">
+                /
+              </span>
             )}
           </React.Fragment>
         ))}
