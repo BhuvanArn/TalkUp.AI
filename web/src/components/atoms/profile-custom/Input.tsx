@@ -110,7 +110,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
  * Custom Select component for dropdown menus.
  */
 export const Select = ({
-  _accentColor = '#2B70C9', // Prefixed with _ to avoid unused-var lint error if not styled directly
+  _accentColor = '#2B70C9',
   style,
   children,
   ...props

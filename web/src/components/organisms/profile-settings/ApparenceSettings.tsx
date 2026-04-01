@@ -1,4 +1,5 @@
 import { useState } from 'react';
+
 import { Avatar } from '../../atoms/profile-custom/Avatar';
 import { Field, Input } from '../../atoms/profile-custom/Input';
 
@@ -55,7 +56,7 @@ export const ApparenceSettings = ({
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       {/* Colors of avatar */}
-      <div style={subCardStyle}>
+      <section style={subCardStyle}>
         <h3 style={sectionTitleStyle}>Couleur du profil</h3>
         <p style={descStyle}>Couleur de ton avatar et accents</p>
         <div
@@ -96,10 +97,10 @@ export const ApparenceSettings = ({
             style={{ height: 36, padding: 2, cursor: 'pointer' }}
           />
         </Field>
-      </div>
+      </section>
 
       {/* Preview Section */}
-      <div style={subCardStyle}>
+      <section style={subCardStyle}>
         <h3 style={sectionTitleStyle}>Aperçu avatar</h3>
         <div
           style={{
@@ -143,10 +144,10 @@ export const ApparenceSettings = ({
             style={{ height: 50, borderRadius: 8, background: bannerGradient }}
           />
         </div>
-      </div>
+      </section>
 
       {/* Banner Selection */}
-      <div style={subCardStyle}>
+      <section style={subCardStyle}>
         <h3 style={sectionTitleStyle}>Bannière du profil</h3>
         <p style={descStyle}>Choisis un thème pour ta bannière</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -186,10 +187,10 @@ export const ApparenceSettings = ({
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Visibility Settings */}
-      <div style={subCardStyle}>
+      <section style={subCardStyle}>
         <h3 style={sectionTitleStyle}>Visibilité du profil</h3>
         <p style={descStyle}>Qui peut voir ton profil ?</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -224,6 +225,7 @@ export const ApparenceSettings = ({
                 id={`visibility-${value}`}
                 type="radio"
                 name="visibility"
+                aria-label={label}
                 checked={visibility === value}
                 onChange={() => setVisibility(value)}
                 style={{ marginTop: 2 }}
@@ -247,7 +249,7 @@ export const ApparenceSettings = ({
             </label>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 };

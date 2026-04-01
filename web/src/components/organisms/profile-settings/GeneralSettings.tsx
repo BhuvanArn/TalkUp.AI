@@ -76,9 +76,17 @@ export function GeneralSettings({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <h3 style={sectionTitleStyle}>Identité</h3>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '16px',
+          }}
+        >
           <div style={inputGroupStyle}>
-            <label style={labelStyle} htmlFor="firstName">Prénom</label>
+            <label style={labelStyle} htmlFor="firstName">
+              Prénom
+            </label>
             <input
               id="firstName"
               style={inputStyle}
@@ -87,7 +95,9 @@ export function GeneralSettings({
             />
           </div>
           <div style={inputGroupStyle}>
-            <label style={labelStyle} htmlFor="lastName">Nom</label>
+            <label style={labelStyle} htmlFor="lastName">
+              Nom
+            </label>
             <input
               id="lastName"
               style={inputStyle}
@@ -98,7 +108,9 @@ export function GeneralSettings({
         </div>
 
         <div style={inputGroupStyle}>
-          <label style={labelStyle} htmlFor="username">Nom d'utilisateur</label>
+          <label style={labelStyle} htmlFor="username">
+            Nom d'utilisateur
+          </label>
           <div style={{ position: 'relative' }}>
             <span
               style={{
@@ -126,7 +138,9 @@ export function GeneralSettings({
         <h3 style={sectionTitleStyle}>À propos & Contact</h3>
 
         <div style={inputGroupStyle}>
-          <label style={labelStyle} htmlFor="bio">Bio</label>
+          <label style={labelStyle} htmlFor="bio">
+            Bio
+          </label>
           <textarea
             id="bio"
             style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
@@ -134,14 +148,29 @@ export function GeneralSettings({
             onChange={(e) => onBioChange(e.target.value)}
             maxLength={300}
           />
-          <span style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'right', marginTop: 4 }}>
+          <span
+            style={{
+              fontSize: 11,
+              color: '#9CA3AF',
+              textAlign: 'right',
+              marginTop: 4,
+            }}
+          >
             {bio.length} / 300
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '16px',
+          }}
+        >
           <div style={inputGroupStyle}>
-            <label style={labelStyle} htmlFor="phone">Téléphone</label>
+            <label style={labelStyle} htmlFor="phone">
+              Téléphone
+            </label>
             <input
               id="phone"
               type="tel"
@@ -152,7 +181,9 @@ export function GeneralSettings({
             />
           </div>
           <div style={inputGroupStyle}>
-            <label style={labelStyle} htmlFor="linkedin">Lien LinkedIn</label>
+            <label style={labelStyle} htmlFor="linkedin">
+              Lien LinkedIn
+            </label>
             <input
               id="linkedin"
               style={inputStyle}
@@ -162,7 +193,9 @@ export function GeneralSettings({
         </div>
 
         <div style={inputGroupStyle}>
-          <label style={labelStyle} htmlFor="job-title">Titre professionnel</label>
+          <label style={labelStyle} htmlFor="job-title">
+            Titre professionnel
+          </label>
           <select id="job-title" style={inputStyle}>
             <option>Candidat Product Manager</option>
             <option>Product Designer</option>
