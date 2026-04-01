@@ -1,5 +1,4 @@
 import { Avatar } from '../../atoms/profile-custom/Avatar';
-
 export const Sidebar = ({ avatarColor, initials, name, email }: any) => {
   const menuItems = [
     { icon: '◫', label: 'Applications' },
