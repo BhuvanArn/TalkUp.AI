@@ -1,0 +1,18 @@
+# VCS and editor files
+.git
+.github
+.vscode
+
+# Dependencies and build outputs
+node_modules
+**/node_modules
+**/dist
+**/coverage
+
+# Local env files
+.env
+**/.env
+**/.env.*
+
+# Misc
+**/npm-debug.log

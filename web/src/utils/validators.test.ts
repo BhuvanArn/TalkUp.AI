@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   emailSchema,
   loginPasswordSchema,
+  otpCodeSchema,
   passwordSchema,
   usernameSchema,
   validateWithSchema,
@@ -262,6 +263,18 @@ describe('validators', () => {
       const result = validateWithSchema('weakpassword', passwordSchema);
       expect(result).toBeTruthy();
       expect(typeof result).toBe('string');
+    });
+  });
+
+  describe('otpCodeSchema', () => {
+    it('accepts 6 digits', () => {
+      expect(otpCodeSchema.safeParse('123456').success).toBe(true);
+    });
+
+    it('rejects non-numeric or wrong length', () => {
+      expect(otpCodeSchema.safeParse('12345').success).toBe(false);
+      expect(otpCodeSchema.safeParse('1234567').success).toBe(false);
+      expect(otpCodeSchema.safeParse('12a456').success).toBe(false);
     });
   });
 });

@@ -29,9 +29,9 @@ describe('CalendarListAddButton', () => {
     fireEvent.click(btn!);
     expect(handleClick).toHaveBeenCalledTimes(1);
 
-    // Ensure inner div has expected class names (basic smoke check)
+    // Ensure wrapper div has expected class names (basic smoke check)
     const inner = container.querySelector('div');
-    expect(inner).toHaveClass('p-3');
+    expect(inner).toHaveClass('py-1');
     expect(inner).toHaveClass('flex');
   });
 });

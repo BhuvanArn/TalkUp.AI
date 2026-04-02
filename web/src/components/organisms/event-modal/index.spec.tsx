@@ -4,11 +4,9 @@ import { vi } from 'vitest';
 
 // Mock child components to keep tests focused on the modal logic
 vi.mock('@/components/atoms/base-input', () => ({
-  BaseInput: (props: any) => {
-    // strip internal props that should not be forwarded to DOM elements
-    const { inputType: _inputType, ...rest } = props;
-    return <input data-testid={`base-input-${rest.type ?? ''}`} {...rest} />;
-  },
+  BaseInput: (props: any) => (
+    <input data-testid={`base-input-${props.type}`} {...props} />
+  ),
 }));
 
 vi.mock('@/components/atoms/button', () => ({
@@ -31,17 +29,23 @@ vi.mock('@/components/atoms/icon-action', () => ({
 }));
 
 vi.mock('@/components/atoms/text-area', () => ({
-  TextArea: (props: any) => {
-    const { inputType: _inputType, ...rest } = props;
-    return <textarea data-testid="text-area" {...rest} />;
-  },
+  TextArea: (props: any) => <textarea data-testid="text-area" {...props} />,
+}));
+
+vi.mock('@/components/atoms/time-combobox', () => ({
+  TimeComboBox: (props: any) => (
+    <input
+      data-testid="time-combobox"
+      value={props.value}
+      onChange={(e) => props.onChange(e.target.value)}
+    />
+  ),
 }));
 
 vi.mock('@/components/molecules/input-molecule', () => ({
-  InputMolecule: (props: any) => {
-    const { inputType: _inputType, ...rest } = props;
-    return <input data-testid="input-molecule" {...rest} />;
-  },
+  InputMolecule: (props: any) => (
+    <input data-testid="input-molecule" {...props} />
+  ),
 }));
 
 // Helper to dynamically mock the hook and import the component after mocking
@@ -172,9 +176,15 @@ describe('CalendarModal / event-modal', () => {
     // Error message shown
     expect(screen.getByText('Some error')).toBeInTheDocument();
 
-    // Delete button present and wired
+    // First delete click opens the confirmation modal
     const deleteBtn = screen.getByText('Delete');
     fireEvent.click(deleteBtn);
+    expect(handleDelete).not.toHaveBeenCalled();
+    expect(screen.getByText('Delete Event')).toBeInTheDocument();
+
+    // Confirm delete in the confirmation modal
+    const confirmDeleteBtn = screen.getAllByText('Delete')[1];
+    fireEvent.click(confirmDeleteBtn);
     expect(handleDelete).toHaveBeenCalled();
 
     // Submit button enabled because title has text and shows 'Update'
