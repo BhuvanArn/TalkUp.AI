@@ -1,4 +1,3 @@
-import { Button } from '@/components/atoms/profile-custom/Button';
 import { Topbar } from '@/components/organisms/profile-custom/Topbar';
 import { ApparenceSettings } from '@/components/organisms/profile-settings/ApparenceSettings';
 import { GeneralSettings } from '@/components/organisms/profile-settings/GeneralSettings';
@@ -14,9 +13,16 @@ export const Route = createFileRoute('/profile')({
   component: Profile,
 });
 
+/** @constant {string} THEME_ACCENT - Default brand color used for accents and buttons. */
 const THEME_ACCENT = '#2B70C9';
+
+/** @typedef {"general" | "apparence" | "notifs"} Tab - Valid keys for navigation tabs. */
 type Tab = 'general' | 'apparence' | 'notifs';
 
+/**
+ * @interface NotifSetting
+ * @description Structure for a notification preference item.
+ */
 interface NotifSetting {
   id: string;
   label: string;
@@ -24,57 +30,64 @@ interface NotifSetting {
   enabled: boolean;
 }
 
+/** @constant {Array} BANNER_PRESETS - Background styles available for the profile header. */
 const BANNER_PRESETS = [
   { label: 'Minimal', value: '#FFFFFF' },
   {
-    label: 'Océan',
+    label: 'Ocean',
     value: 'linear-gradient(135deg, #2B70C9 0%, #1D9E75 100%)',
   },
-  { label: 'Nuit', value: 'linear-gradient(135deg, #3b1f6e 0%, #2B70C9 100%)' },
+  {
+    label: 'Night',
+    value: 'linear-gradient(135deg, #3b1f6e 0%, #2B70C9 100%)',
+  },
 ];
 
+/** @constant {NotifSetting[]} DEFAULT_NOTIFS - Initial state for user notification settings. */
 const DEFAULT_NOTIFS: NotifSetting[] = [
   {
     id: 'training',
-    label: "Rappels d'entraînement",
-    desc: 'Notification quotidienne pour pratiquer',
+    label: 'Training Reminders',
+    desc: 'Daily notification to practice',
     enabled: true,
   },
   {
     id: 'recruiters',
     label: 'Messages',
-    desc: "Alertes lors d'un nouveau message",
+    desc: 'Alerts on new messages',
     enabled: true,
   },
   {
     id: 'simulations',
-    label: 'Résultats de simulation',
-    desc: 'Rapport après chaque simulation',
+    label: 'Simulation Results',
+    desc: 'Report after each simulation',
     enabled: true,
   },
   {
     id: 'updates',
-    label: 'Nouveautés TalkUp',
-    desc: 'Nouveaux outils et fonctionnalités',
+    label: 'TalkUp News',
+    desc: 'New tools and features',
     enabled: false,
   },
   {
     id: 'weekly',
-    label: 'Résumé hebdomadaire',
-    desc: 'Récapitulatif de ta progression chaque lundi',
+    label: 'Weekly Summary',
+    desc: 'Recap of progress every Monday',
     enabled: true,
   },
 ];
 
+/** @constant {Array} TABS - Configuration for the horizontal navigation menu. */
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'general', label: 'Général' },
-  { key: 'apparence', label: 'Apparence' },
+  { key: 'general', label: 'General' },
+  { key: 'apparence', label: 'Appearance' },
   { key: 'notifs', label: 'Notifications' },
 ];
 
 /**
  * Profile Component
- * Optimized to pass unit tests (findByText /Profil de l'utilisateur/i)
+ * @description Main dashboard for user settings including profile info, appearance, and notifications.
+ * @returns {JSX.Element} The rendered Profile view.
  */
 function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>('general');
@@ -95,6 +108,9 @@ function Profile() {
   const initials =
     (firstName[0] || 'A').toUpperCase() + (lastName[0] || 'B').toUpperCase();
 
+  /**
+   * Effect to handle clicks outside the avatar menu to close it.
+   */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -105,16 +121,26 @@ function Profile() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  /**
+   * Simulates a save action and shows a success state in the Topbar.
+   */
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
+  /**
+   * Toggles the enabled state of a specific notification setting.
+   * @param {string} id - The unique identifier of the notification setting.
+   */
   const toggleNotif = (id: string) =>
     setNotifs((prev) =>
       prev.map((n) => (n.id === id ? { ...n, enabled: !n.enabled } : n)),
     );
 
+  /**
+   * Cycles through the available banner presets.
+   */
   const cycleBanner = () => {
     const idx = BANNER_PRESETS.findIndex((b) => b.value === bannerGradient);
     setBanner(BANNER_PRESETS[(idx + 1) % BANNER_PRESETS.length].value);
@@ -142,7 +168,6 @@ function Profile() {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            {/* Essential for heading role tests */}
             <h1 style={srOnlyStyle}>Profile</h1>
 
             <div style={headerCardStyle}>
@@ -155,7 +180,7 @@ function Profile() {
                 }}
               >
                 <button onClick={cycleBanner} style={bannerBtnStyle}>
-                  Changer le style
+                  Change Style
                 </button>
               </div>
 
@@ -197,6 +222,55 @@ function Profile() {
                   >
                     <Camera size={13} strokeWidth={2.5} />
                   </button>
+
+                  {showAvatarMenu && (
+                    <div style={dropdownStyle}>
+                      <button
+                        style={{
+                          ...dropdownItemStyle,
+                          background:
+                            hoveredItem === 'choose' ? '#F3F4F6' : 'none',
+                        }}
+                        onMouseEnter={() => setHoveredItem('choose')}
+                        onMouseLeave={() => setHoveredItem(null)}
+                        onClick={() => setShowAvatarMenu(false)}
+                      >
+                        <ImageIcon size={14} /> Choisir photo
+                      </button>
+                      <button
+                        style={{
+                          ...dropdownItemStyle,
+                          background:
+                            hoveredItem === 'take' ? '#F3F4F6' : 'none',
+                        }}
+                        onMouseEnter={() => setHoveredItem('take')}
+                        onMouseLeave={() => setHoveredItem(null)}
+                        onClick={() => setShowAvatarMenu(false)}
+                      >
+                        <Camera size={14} /> Prendre une photo
+                      </button>
+                      <div
+                        style={{
+                          height: '1px',
+                          background: '#F3F4F6',
+                          margin: '4px 0',
+                        }}
+                      />
+                      <button
+                        style={{
+                          ...dropdownItemStyle,
+                          color: '#EF4444',
+                          background:
+                            hoveredItem === 'delete' ? '#FEF2F2' : 'none',
+                        }}
+                        onMouseEnter={() => setHoveredItem('delete')}
+                        onMouseLeave={() => setHoveredItem(null)}
+                        onClick={() => setShowAvatarMenu(false)}
+                      >
+                        <Trash2 size={14} /> Supprimer
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <h2
@@ -210,7 +284,7 @@ function Profile() {
                   {firstName} {lastName}
                 </h2>
                 <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
-                  Candidat Product Manager · TalkUp Pro
+                  Product Manager Candidate · TalkUp Pro
                 </div>
               </div>
 
@@ -244,7 +318,7 @@ function Profile() {
               >
                 <div style={sideCardStyle}>
                   <div style={cardTitleStyle}>Introduction</div>
-                  {/* CRITICAL: This exact text is required by your unit test (-profile.spec.tsx line 72) */}
+                  {/* CRITICAL FOR UNIT TESTS: Keep this specific text string */}
                   <p
                     style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}
                   >
@@ -252,7 +326,6 @@ function Profile() {
                   </p>
                 </div>
 
-                {/* Objective Block */}
                 <div
                   style={{
                     ...sideCardStyle,
@@ -264,7 +337,7 @@ function Profile() {
                   <div
                     style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}
                   >
-                    Objectif
+                    Objectives
                   </div>
                   <div
                     style={{
@@ -334,7 +407,6 @@ function Profile() {
   );
 }
 
-/* Styles */
 const srOnlyStyle: React.CSSProperties = {
   position: 'absolute',
   width: '1px',
@@ -391,6 +463,34 @@ const cameraBtnStyle: React.CSSProperties = {
   cursor: 'pointer',
   boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
   zIndex: 10,
+};
+const dropdownStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '110%',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  background: 'white',
+  borderRadius: 10,
+  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+  border: '1px solid #E5E7EB',
+  padding: '6px',
+  minWidth: '180px',
+  zIndex: 100,
+  display: 'flex',
+  flexDirection: 'column',
+};
+const dropdownItemStyle: React.CSSProperties = {
+  padding: '10px 12px',
+  fontSize: 13,
+  color: '#374151',
+  border: 'none',
+  borderRadius: 6,
+  textAlign: 'left',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  transition: 'background-color 0.2s ease',
 };
 const tabsBarStyle: React.CSSProperties = {
   display: 'flex',
