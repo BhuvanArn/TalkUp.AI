@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Profile from './profile';
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => ({ component: (c: unknown) => c }),
+  createFileRoute: (_path: string) => (options: { component: unknown }) =>
+    options,
 }));
 
 vi.mock('@/components/organisms/profile-custom/Topbar', () => ({
