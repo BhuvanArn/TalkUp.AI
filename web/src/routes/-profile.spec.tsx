@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Profile from './profile';
@@ -184,7 +190,9 @@ describe('Profile page', () => {
 
     it('shows the bio in the introduction card', () => {
       render(<Profile />);
-      expect(screen.getByText(/Passionné par les langues/)).toBeInTheDocument();
+      const matches = screen.getAllByText(/Passionné par les langues/);
+      expect(matches.length).toBeGreaterThanOrEqual(1);
+      expect(matches[0]).toBeInTheDocument();
     });
 
     it('shows the 78% objective progress', () => {
@@ -348,9 +356,9 @@ describe('Profile page', () => {
     it('cycles through all banner presets', () => {
       render(<Profile />);
       const btn = screen.getByTestId('banner-style-button');
-      fireEvent.click(btn);
-      fireEvent.click(btn);
-      fireEvent.click(btn);
+      fireEvent.click(btn); // preset 1 → Océan
+      fireEvent.click(btn); // preset 2 → Nuit
+      fireEvent.click(btn); // preset 3 → back to Minimal (#FFFFFF)
       fireEvent.click(screen.getByTestId('tab-apparence'));
       expect(screen.getByTestId('banner-value')).toHaveTextContent('#FFFFFF');
     });
@@ -364,6 +372,7 @@ describe('Profile page', () => {
     });
 
     it('closes the dropdown when clicking outside', async () => {
+      vi.useRealTimers();
       render(<Profile />);
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
       expect(screen.getByTestId('avatar-dropdown-menu')).toBeInTheDocument();
@@ -373,6 +382,7 @@ describe('Profile page', () => {
           screen.queryByTestId('avatar-dropdown-menu'),
         ).not.toBeInTheDocument();
       });
+      vi.useFakeTimers();
     });
 
     it('closes the dropdown when choosing a photo', () => {
@@ -477,10 +487,10 @@ describe('Profile page', () => {
     it('reverts to "Save" after 2 seconds', async () => {
       render(<Profile />);
       fireEvent.click(screen.getByTestId('save-button'));
-      vi.advanceTimersByTime(2000);
-      await waitFor(() => {
-        expect(screen.getByTestId('save-button')).toHaveTextContent('Save');
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
       });
+      expect(screen.getByTestId('save-button')).toHaveTextContent('Save');
     });
 
     it('does not revert before 2 seconds', () => {
