@@ -8,8 +8,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { user_password, user_email } from "@entities/user.entity";
 import { hashPassword } from "@common/utils/passwordHasher";
-import * as pdf from "pdf-parse";
-import type { Request, Response } from "express";
+import { type Request, type Response } from "express";
+import  {user_cv} from "@entities/userCV.entity";
 
 @Injectable()
 export class UsersService {
@@ -21,6 +21,9 @@ export class UsersService {
 
     @InjectRepository(user_password)
     private passwordRepo: Repository<user_password>,
+
+    @InjectRepository(user_cv)
+    private user_cvRepo: Repository<user_cv>,
   ) {
     this.logger = new Logger(UsersService.name);
   }
@@ -86,18 +89,117 @@ export class UsersService {
         return res.status(400).json({ message: "Upload a PDF file." });
       }
 
+      const userId = (req as any).userId;
       const pdf = require("pdf-parse-debugging-disabled");
       const pdfData = await pdf(req.file.buffer);
       const rawText = pdfData.text;
 
-      if (rawText.length === 0) {
+      if (rawText.length === 0 || !rawText) {
+        console.log("The file is empty!!!");
         return res
           .status(400)
           .json({ message: "The PDF file is empty or could not be parsed." });
+      }
+      console.log("Raw text extracted from PDF:", rawText);
+
+      const Anthropic = require("@anthropic-ai/sdk");
+      const client = new Anthropic();
+      const prompt = await client.messages.create({
+  model: "claude-sonnet-4-20250514",
+  max_tokens: 2048,
+  messages: [
+    {
+      role: "user",
+      content: `You are a specialized CV analysis assistant. Analyze the following text extracted from a CV and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
+      {
+        "desired_job": "string or null",
+        "resume": "string or null - candidate profile/summary",
+        "experiences": [
+          {
+            "company": "string",
+            "title": "string",
+            "description": "string",
+            "duration": "string"
+          }
+        ],
+        "education": [
+          {
+            "degree": "string",
+            "school_name": "string",
+            "duration": "string"
+          }
+        ],
+        "technical_skills": ["string"],
+        "languages": [
+          {
+            "language": "string",
+            "level": "string"
+          }
+        ]
+      }
+
+      Rules:
+      - Always return valid JSON, even if the CV is incomplete or poorly formatted
+      - Use null for missing fields
+      - Use an empty array [] if no entries are found for a list field
+      - Extract all experiences, education, skills and languages you can find
+      - For durations, keep the original format from the CV (e.g. "Jan 2022 - Mar 2024")
+
+      CV text:
+      ${rawText}`,
+          },
+        ],
+      });
+
+      const responseText = prompt.content
+        .filter((block: { type: string }) => block.type === "text")
+        .map((block: { type: string; text?: string }) =>
+          block.type === "text" ? block.text : ""
+        )
+        .join("");
+      let extractedData;
+      try {
+        const cleaned = responseText.replace(/```json|```/g, "").trim();
+        extractedData = JSON.parse(cleaned);
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError);
+        return res
+          .status(500)
+          .json({ message: "Failed to parse extracted CV data." });
+      }
+
+      const existingCV = await this.user_cvRepo.findOne({ where: { user_id: userId } });
+
+      if (existingCV) {
+        await this.user_cvRepo.update(
+          { user_id: userId },
+          {
+            desired_job: extractedData.desired_job ?? null,
+            resume: extractedData.resume ?? null,
+            experiences: extractedData.experiences ?? [],
+            education: extractedData.education ?? [],
+            technical_skills: extractedData.technical_skills ?? [],
+            languages: extractedData.languages ?? [],
+          }
+        );
+        console.log("CV updated for user ID:", userId);
+        return res.status(200).json({
+          message: "CV uploaded successfully",
+        });
       } else {
-        console.log("Raw text extracted from PDF:", rawText);
-        res.status(200).json({
-          message: "CV analysé avec succès",
+        const newCV = this.user_cvRepo.create({
+          user_id: userId,
+          desired_job: extractedData.desired_job ?? null,
+          resume: extractedData.resume ?? null,
+          experiences: extractedData.experiences ?? [],
+          education: extractedData.education ?? [],
+          technical_skills: extractedData.technical_skills ?? [],
+          languages: extractedData.languages ?? [],
+        });
+        console.log("CV created for user ID:", userId);
+        await this.user_cvRepo.save(newCV);
+        return res.status(200).json({
+          message: "CV uploaded successfully",
         });
       }
     } catch (error) {
@@ -107,48 +209,3 @@ export class UsersService {
   }
 }
 
-// router.post('/upload-cv', upload.single('cv'), async (req, res) => {
-//   try {
-//     if (!req.file) {
-//       return res.status(400).json({ error: "Aucun fichier téléchargé" });
-//     }
-
-//     // ÉTAPE A : Extraire le texte brut du PDF
-//     const pdfData = await pdf(req.file.buffer);
-//     const rawText = pdfData.text;
-
-//     // ÉTAPE B : Envoyer le texte à Claude pour analyse
-//     const msg = await anthropic.messages.create({
-//       model: "claude-3-5-sonnet-20240620",
-//       max_tokens: 1500,
-//       temperature: 0, // 0 pour une réponse constante et précise
-//       system: "Tu es un parseur de CV expert. Ton rôle est d'extraire les données au format JSON strict.",
-//       messages: [
-//         {
-//           role: "user",
-//           content: `Extrais les informations suivantes de ce texte de CV :
-//           nom, poste_actuel, experiences (liste avec dates, poste, entreprise),
-//           competences_techniques (liste), et diplomes.
-
-//           Réponds uniquement avec le JSON, sans texte avant ou après.
-
-//           Texte du CV : ${rawText}`
-//         }
-//       ],
-//     });
-
-//     // ÉTAPE C : Parser la réponse de Claude
-//     const textResponse = msg.content[0].text;
-//     const extractedData = JSON.parse(textResponse);
-
-//     // ÉTAPE D : Réponse au front
-//     res.status(200).json({
-//       message: "CV analysé avec succès",
-//       data: extractedData
-//     });
-
-//   } catch (error) {
-//     console.error("Erreur parsing CV:", error);
-//     res.status(500).json({ error: "Erreur lors du traitement du CV" });
-//   }
-// });

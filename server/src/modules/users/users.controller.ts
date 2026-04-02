@@ -5,12 +5,15 @@ import {
   Res,
   BadRequestException,
   UseInterceptors,
+  UseGuards,
   Put,
   Post,
 } from "@nestjs/common";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
 import type { Request, Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { AccessTokenGuard } from "@common/guards/accessToken.guard";
+
 
 import {
   ApiTags,
@@ -65,6 +68,7 @@ export class UsersController {
       },
     }),
   )
+  @UseGuards(AccessTokenGuard)
   @Post("uploadCV")
   async uploadCV(@Req() req: Request, @Res() res: Response) {
     return this.usersService.uploadCV(req, res);
