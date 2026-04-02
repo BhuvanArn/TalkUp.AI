@@ -6,23 +6,13 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-/**
- * @description TanStack Router route definition for the Profile page.
- */
 export const Route = createFileRoute('/profile')({
   component: Profile,
 });
 
-/** @constant {string} THEME_ACCENT - Default brand color used for accents and buttons. */
 const THEME_ACCENT = '#2B70C9';
-
-/** @typedef {"general" | "apparence" | "notifs"} Tab - Valid keys for navigation tabs. */
 type Tab = 'general' | 'apparence' | 'notifs';
 
-/**
- * @interface NotifSetting
- * @description Structure for a notification preference item.
- */
 interface NotifSetting {
   id: string;
   label: string;
@@ -30,65 +20,54 @@ interface NotifSetting {
   enabled: boolean;
 }
 
-/** @constant {Array} BANNER_PRESETS - Background styles available for the profile header. */
 const BANNER_PRESETS = [
   { label: 'Minimal', value: '#FFFFFF' },
   {
-    label: 'Ocean',
+    label: 'Océan',
     value: 'linear-gradient(135deg, #2B70C9 0%, #1D9E75 100%)',
   },
-  {
-    label: 'Night',
-    value: 'linear-gradient(135deg, #3b1f6e 0%, #2B70C9 100%)',
-  },
+  { label: 'Nuit', value: 'linear-gradient(135deg, #3b1f6e 0%, #2B70C9 100%)' },
 ];
 
-/** @constant {NotifSetting[]} DEFAULT_NOTIFS - Initial state for user notification settings. */
 const DEFAULT_NOTIFS: NotifSetting[] = [
   {
     id: 'training',
-    label: 'Training Reminders',
-    desc: 'Daily notification to practice',
+    label: "Rappels d'entraînement",
+    desc: 'Notification quotidienne pour pratiquer',
     enabled: true,
   },
   {
     id: 'recruiters',
     label: 'Messages',
-    desc: 'Alerts on new messages',
+    desc: "Alertes lors d'un nouveau message",
     enabled: true,
   },
   {
     id: 'simulations',
-    label: 'Simulation Results',
-    desc: 'Report after each simulation',
+    label: 'Résultats de simulation',
+    desc: 'Rapport après chaque simulation',
     enabled: true,
   },
   {
     id: 'updates',
-    label: 'TalkUp News',
-    desc: 'New tools and features',
+    label: 'Nouveautés TalkUp',
+    desc: 'Nouveaux outils et fonctionnalités',
     enabled: false,
   },
   {
     id: 'weekly',
-    label: 'Weekly Summary',
-    desc: 'Recap of progress every Monday',
+    label: 'Résumé hebdomadaire',
+    desc: 'Récapitulatif de ta progression chaque lundi',
     enabled: true,
   },
 ];
 
-/** @constant {Array} TABS - Configuration for the horizontal navigation menu. */
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'general', label: 'General' },
-  { key: 'apparence', label: 'Appearance' },
+  { key: 'general', label: 'Général' },
+  { key: 'apparence', label: 'Apparence' },
   { key: 'notifs', label: 'Notifications' },
 ];
 
-/**
- * Profile Component
- * @description Main dashboard for user settings including profile info, appearance, and notifications.
- * @returns {JSX.Element} The rendered Profile view.
- */
 function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>('general');
   const [firstName, setFirstName] = useState('Adam');
@@ -108,9 +87,6 @@ function Profile() {
   const initials =
     (firstName[0] || 'A').toUpperCase() + (lastName[0] || 'B').toUpperCase();
 
-  /**
-   * Effect to handle clicks outside the avatar menu to close it.
-   */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -121,26 +97,16 @@ function Profile() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  /**
-   * Simulates a save action and shows a success state in the Topbar.
-   */
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
-  /**
-   * Toggles the enabled state of a specific notification setting.
-   * @param {string} id - The unique identifier of the notification setting.
-   */
   const toggleNotif = (id: string) =>
     setNotifs((prev) =>
       prev.map((n) => (n.id === id ? { ...n, enabled: !n.enabled } : n)),
     );
 
-  /**
-   * Cycles through the available banner presets.
-   */
   const cycleBanner = () => {
     const idx = BANNER_PRESETS.findIndex((b) => b.value === bannerGradient);
     setBanner(BANNER_PRESETS[(idx + 1) % BANNER_PRESETS.length].value);
@@ -179,8 +145,13 @@ function Profile() {
                   borderBottom: '1px solid #E5E7EB',
                 }}
               >
-                <button onClick={cycleBanner} style={bannerBtnStyle}>
-                  Change Style
+                <button
+                  onClick={cycleBanner}
+                  style={bannerBtnStyle}
+                  data-testid="banner-style-button"
+                  aria-label="Changer le style de bannière"
+                >
+                  Changer le style
                 </button>
               </div>
 
@@ -209,6 +180,7 @@ function Profile() {
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
+                    data-testid="user-avatar-initials"
                   >
                     {initials}
                   </div>
@@ -219,12 +191,17 @@ function Profile() {
                       borderColor: avatarColor,
                       color: avatarColor,
                     }}
+                    data-testid="avatar-camera-button"
+                    aria-label="Changer la photo de profil"
                   >
                     <Camera size={13} strokeWidth={2.5} />
                   </button>
 
                   {showAvatarMenu && (
-                    <div style={dropdownStyle}>
+                    <div
+                      style={dropdownStyle}
+                      data-testid="avatar-dropdown-menu"
+                    >
                       <button
                         style={{
                           ...dropdownItemStyle,
@@ -235,7 +212,7 @@ function Profile() {
                         onMouseLeave={() => setHoveredItem(null)}
                         onClick={() => setShowAvatarMenu(false)}
                       >
-                        <ImageIcon size={14} /> Choisir photo
+                        <ImageIcon size={14} /> Choisir une photo
                       </button>
                       <button
                         style={{
@@ -284,20 +261,23 @@ function Profile() {
                   {firstName} {lastName}
                 </h2>
                 <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
-                  Product Manager Candidate · TalkUp Pro
+                  Candidat Product Manager · TalkUp Pro
                 </div>
               </div>
 
-              <div style={tabsBarStyle}>
+              <div style={tabsBarStyle} role="tablist">
                 {TABS.map(({ key, label }) => (
                   <button
                     key={key}
+                    role="tab"
+                    aria-selected={activeTab === key}
                     onClick={() => setActiveTab(key)}
                     style={{
                       ...tabBtnStyle,
                       color: activeTab === key ? '#111827' : '#6B7280',
                       borderBottom: `2.5px solid ${activeTab === key ? THEME_ACCENT : 'transparent'}`,
                     }}
+                    data-testid={`tab-${key}`}
                   >
                     {label}
                   </button>
@@ -318,7 +298,6 @@ function Profile() {
               >
                 <div style={sideCardStyle}>
                   <div style={cardTitleStyle}>Introduction</div>
-                  {/* CRITICAL FOR UNIT TESTS: Keep this specific text string */}
                   <p
                     style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}
                   >
@@ -337,7 +316,7 @@ function Profile() {
                   <div
                     style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}
                   >
-                    Objectives
+                    Objectif
                   </div>
                   <div
                     style={{
