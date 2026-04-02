@@ -6,8 +6,9 @@ import {
   createRouter,
 } from '@tanstack/react-router';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { Route as ProfileRoute } from './profile';
 
 const localStorageMock = {
@@ -54,11 +55,11 @@ describe('Profile Component - Hardened CI Tests', () => {
 
   it('renders and displays basic information', async () => {
     renderWithProviders(router);
-    
+
     // Use findBy to allow the router to finish rendering the component
     const heading = await screen.findByRole('heading', { name: /Profile/i });
     expect(heading).toBeInTheDocument();
-    
+
     const intro = await screen.findByText(/Profil de l'utilisateur/i);
     expect(intro).toBeInTheDocument();
   });
@@ -72,8 +73,8 @@ describe('Profile Component - Hardened CI Tests', () => {
 
     // Find the camera button - it contains the Camera icon
     const buttons = await screen.findAllByRole('button');
-    const cameraBtn = buttons.find(btn => btn.querySelector('svg'));
-    
+    const cameraBtn = buttons.find((btn) => btn.querySelector('svg'));
+
     if (!cameraBtn) throw new Error('Camera button not found');
 
     await user.click(cameraBtn);
@@ -84,7 +85,7 @@ describe('Profile Component - Hardened CI Tests', () => {
     expect(await screen.findByText(/Supprimer/i)).toBeInTheDocument();
 
     await user.click(screen.getByText(/Choisir une photo/i));
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/Choisir une photo/i)).not.toBeInTheDocument();
     });
@@ -96,13 +97,19 @@ describe('Profile Component - Hardened CI Tests', () => {
 
     await screen.findByRole('heading', { name: /Profile/i });
 
-    const apparenceTab = await screen.findByRole('button', { name: /Apparence/i });
+    const apparenceTab = await screen.findByRole('button', {
+      name: /Apparence/i,
+    });
     await user.click(apparenceTab);
     expect(await screen.findByText(/Style de bannière/i)).toBeInTheDocument();
 
-    const notifTab = await screen.findByRole('button', { name: /Notifications/i });
+    const notifTab = await screen.findByRole('button', {
+      name: /Notifications/i,
+    });
     await user.click(notifTab);
-    expect(await screen.findByText(/Rappels d'entraînement/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Rappels d'entraînement/i),
+    ).toBeInTheDocument();
   });
 
   it('triggers the save animation in the Topbar', async () => {
@@ -111,7 +118,7 @@ describe('Profile Component - Hardened CI Tests', () => {
 
     const saveBtn = await screen.findByRole('button', { name: /Enregistrer/i });
     await user.click(saveBtn);
-    
+
     expect(await screen.findByText(/Sauvegardé/i)).toBeInTheDocument();
   });
 
@@ -119,7 +126,9 @@ describe('Profile Component - Hardened CI Tests', () => {
     const user = userEvent.setup();
     renderWithProviders(router);
 
-    const bannerBtn = await screen.findByRole('button', { name: /Changer le style/i });
+    const bannerBtn = await screen.findByRole('button', {
+      name: /Changer le style/i,
+    });
     await user.click(bannerBtn);
   });
 });
