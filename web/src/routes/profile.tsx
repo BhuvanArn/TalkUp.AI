@@ -278,11 +278,9 @@ function Profile() {
                   )}
                 </div>
 
-                <div
-                  style={{ fontSize: 22, fontWeight: 800, color: '#111827' }}
-                >
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0 }}>
                   {firstName} {lastName}
-                </div>
+                  </h1>
                 <div
                   style={{
                     fontSize: 13,
