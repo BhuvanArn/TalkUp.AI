@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
 import { GeneralSettings } from '../components/organisms/profile-settings/GeneralSettings';
 
 const defaultProps = {
@@ -15,7 +16,6 @@ const defaultProps = {
 };
 
 describe('GeneralSettings', () => {
-
   describe('Initial render', () => {
     it('renders without crashing', () => {
       render(<GeneralSettings {...defaultProps} />);
@@ -41,7 +41,11 @@ describe('GeneralSettings', () => {
 
     it('displays initials in uppercase', () => {
       render(
-        <GeneralSettings {...defaultProps} firstName="adam" lastName="bouffy" />,
+        <GeneralSettings
+          {...defaultProps}
+          firstName="adam"
+          lastName="bouffy"
+        />,
       );
       expect(screen.getByText('AB')).toBeInTheDocument();
     });
@@ -68,7 +72,6 @@ describe('GeneralSettings', () => {
     });
   });
 
-
   describe('First name input', () => {
     it('renders the first name input with correct value', () => {
       render(<GeneralSettings {...defaultProps} />);
@@ -78,7 +81,10 @@ describe('GeneralSettings', () => {
     it('calls onFirstNameChange when value changes', () => {
       const onFirstNameChange = vi.fn();
       render(
-        <GeneralSettings {...defaultProps} onFirstNameChange={onFirstNameChange} />,
+        <GeneralSettings
+          {...defaultProps}
+          onFirstNameChange={onFirstNameChange}
+        />,
       );
       fireEvent.change(screen.getByLabelText('Prénom'), {
         target: { value: 'Marie' },
@@ -89,7 +95,10 @@ describe('GeneralSettings', () => {
     it('calls onFirstNameChange once per change event', () => {
       const onFirstNameChange = vi.fn();
       render(
-        <GeneralSettings {...defaultProps} onFirstNameChange={onFirstNameChange} />,
+        <GeneralSettings
+          {...defaultProps}
+          onFirstNameChange={onFirstNameChange}
+        />,
       );
       fireEvent.change(screen.getByLabelText('Prénom'), {
         target: { value: 'Marie' },
@@ -107,7 +116,10 @@ describe('GeneralSettings', () => {
     it('calls onLastNameChange when value changes', () => {
       const onLastNameChange = vi.fn();
       render(
-        <GeneralSettings {...defaultProps} onLastNameChange={onLastNameChange} />,
+        <GeneralSettings
+          {...defaultProps}
+          onLastNameChange={onLastNameChange}
+        />,
       );
       fireEvent.change(screen.getByLabelText('Nom'), {
         target: { value: 'Dupont' },
@@ -118,7 +130,10 @@ describe('GeneralSettings', () => {
     it('calls onLastNameChange once per change event', () => {
       const onLastNameChange = vi.fn();
       render(
-        <GeneralSettings {...defaultProps} onLastNameChange={onLastNameChange} />,
+        <GeneralSettings
+          {...defaultProps}
+          onLastNameChange={onLastNameChange}
+        />,
       );
       fireEvent.change(screen.getByLabelText('Nom'), {
         target: { value: 'Dupont' },
@@ -126,7 +141,6 @@ describe('GeneralSettings', () => {
       expect(onLastNameChange).toHaveBeenCalledTimes(1);
     });
   });
-
 
   describe('Username field', () => {
     it('renders the username input as readonly', () => {
@@ -145,7 +159,11 @@ describe('GeneralSettings', () => {
 
     it('updates username when first name changes', () => {
       render(
-        <GeneralSettings {...defaultProps} firstName="Marie" lastName="Dupont" />,
+        <GeneralSettings
+          {...defaultProps}
+          firstName="Marie"
+          lastName="Dupont"
+        />,
       );
       expect(screen.getByLabelText("Nom d'utilisateur")).toHaveValue(
         'marie.dupont',
@@ -157,7 +175,6 @@ describe('GeneralSettings', () => {
       expect(screen.getByText('@')).toBeInTheDocument();
     });
   });
-
 
   describe('Bio textarea', () => {
     it('renders the bio textarea with correct value', () => {
@@ -189,9 +206,7 @@ describe('GeneralSettings', () => {
     it('updates the character count when bio changes', () => {
       const shortBio = 'Courte bio';
       render(<GeneralSettings {...defaultProps} bio={shortBio} />);
-      expect(
-        screen.getByText(`${shortBio.length} / 300`),
-      ).toBeInTheDocument();
+      expect(screen.getByText(`${shortBio.length} / 300`)).toBeInTheDocument();
     });
 
     it('shows 0 / 300 when bio is empty', () => {
@@ -264,7 +279,6 @@ describe('GeneralSettings', () => {
       );
     });
   });
-
 
   describe('Job title select', () => {
     it('renders the job title select', () => {
