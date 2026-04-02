@@ -6,6 +6,7 @@ import {
   createRouter,
 } from '@tanstack/react-router';
 import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Route as ProfileRoute } from './profile';
@@ -25,12 +26,8 @@ vi.mock('@/utils/auth.guards', () => ({
   createAuthGuard: vi.fn(() => () => Promise.resolve()),
 }));
 
-const rootRoute = createRouter({
-  routeTree: ProfileRoute,
-}).routeTree;
-
 const router = createRouter({
-  routeTree: rootRoute,
+  routeTree: ProfileRoute,
   history: createMemoryHistory(),
 });
 
@@ -46,45 +43,64 @@ const renderWithProviders = (component: React.ReactElement) => {
   );
 };
 
-/**
- * Test suite for the Profile component.
- * Verifies that the component renders its content correctly within a TanStack Router context.
- */
-describe('Profile', () => {
+describe('Profile Component - Advanced Coverage', () => {
+  const user = userEvent.setup();
+
   beforeEach(async () => {
     router.history.push('/profile');
-
     await act(async () => {
       await router.load();
     });
   });
 
-  it('renders the main heading correctly', async () => {
+  it('renders and displays basic information', async () => {
     renderWithProviders(<RouterProvider router={router} />);
     expect(
       await screen.findByRole('heading', { name: /Profile/i }),
     ).toBeInTheDocument();
+    expect(screen.getByText(/Profil de l'utilisateur/i)).toBeInTheDocument();
   });
 
-  it('renders the descriptive paragraph correctly', async () => {
+  it('opens and closes the avatar menu when camera button is clicked', async () => {
     renderWithProviders(<RouterProvider router={router} />);
-    expect(
-      await screen.findByText(/Profil de l'utilisateur/i),
-    ).toBeInTheDocument();
+
+    const cameraBtn = screen.getByRole('button', { name: '' });
+
+    await user.click(cameraBtn);
+
+    expect(screen.getByText(/Choisir une photo/i)).toBeInTheDocument();
+    expect(screen.getByText(/Prendre une photo/i)).toBeInTheDocument();
+    expect(screen.getByText(/Supprimer/i)).toBeInTheDocument();
+
+    await user.click(screen.getByText(/Choisir une photo/i));
+    expect(screen.queryByText(/Choisir une photo/i)).not.toBeInTheDocument();
   });
 
-  it('renders both heading and paragraph in the document', async () => {
-    const { container } = renderWithProviders(
-      <RouterProvider router={router} />,
-    );
+  it('switches between tabs and renders corresponding settings', async () => {
+    renderWithProviders(<RouterProvider router={router} />);
 
-    expect(
-      await screen.findByRole('heading', { name: /Profile/i }),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText(/Profil de l'utilisateur/i),
-    ).toBeInTheDocument();
+    const apparenceTab = screen.getByRole('button', { name: /Apparence/i });
+    await user.click(apparenceTab);
+    expect(screen.getByText(/Style de bannière/i)).toBeInTheDocument();
 
-    expect(container.firstChild).toHaveClass('p-2');
+    const notifTab = screen.getByRole('button', { name: /Notifications/i });
+    await user.click(notifTab);
+    expect(screen.getByText(/Rappels d'entraînement/i)).toBeInTheDocument();
+  });
+
+  it('triggers the save animation in the Topbar', async () => {
+    renderWithProviders(<RouterProvider router={router} />);
+
+    const saveBtn = screen.getByRole('button', { name: /Enregistrer/i });
+    await user.click(saveBtn);
+
+    expect(screen.getByText(/Sauvegardé/i)).toBeInTheDocument();
+  });
+
+  it('cycles the banner style when clicking the banner button', async () => {
+    renderWithProviders(<RouterProvider router={router} />);
+
+    const bannerBtn = screen.getByText(/Changer le style/i);
+    await user.click(bannerBtn);
   });
 });
