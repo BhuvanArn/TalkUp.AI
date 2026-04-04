@@ -38,9 +38,9 @@
   --color-disabled: #c7c7c7;
 
   --color-background: #fff;
-  --color-surface: #F8F9FF;
-  --color-surface-hover: #F0F4FA;
-  --color-surface-raised: #ECEDF6;
+  --color-surface: #f8f9ff;
+  --color-surface-hover: #f0f4fa;
+  --color-surface-raised: #ecedf6;
   --color-surface-raised-hover: #dcddee;
 
   --color-note-card: #ecedf6;
@@ -100,7 +100,7 @@
 
   --color-error-weak: #fbdedc;
   --color-error-weaker: #feebe8;
-  --color-error: #EF4444;
+  --color-error: #ef4444;
   --color-error-hover: #8b1f12;
   --color-error-active: #6e1610;
   --color-danger: var(--color-error);

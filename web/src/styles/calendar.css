@@ -25,7 +25,9 @@
 }
 
 /* Remove default borders */
-.rbc-month-view, .rbc-time-view, .rbc-agenda-view {
+.rbc-month-view,
+.rbc-time-view,
+.rbc-agenda-view {
   border: none !important;
 }
 
@@ -61,7 +63,8 @@
 }
 
 /* Time Gutter */
-.rbc-time-gutter, .rbc-time-header-gutter {
+.rbc-time-gutter,
+.rbc-time-header-gutter {
   border-right: none !important;
   width: 52px !important;
   min-width: 52px !important;
@@ -169,8 +172,8 @@
   min-height: 0 !important; /* Critical for scrolling in flex container */
   overflow-y: auto !important; /* Enable scroll on content only */
   border-top: none !important;
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 /* Hide scrollbar for WebKit browsers */
