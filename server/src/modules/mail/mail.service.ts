@@ -30,6 +30,7 @@ export class MailService {
           user: this.configService.get<string>("SMTP_USER"),
           pass: this.configService.get<string>("SMTP_PASS"),
         },
+        family: 4, // Use IPv4 to avoid issues with IPv6 (ENETUNREACH errors)
       };
     }
 
