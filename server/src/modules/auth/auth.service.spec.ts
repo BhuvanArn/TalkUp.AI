@@ -898,6 +898,20 @@ describe("AuthService", () => {
         UnauthorizedException,
       );
     });
+
+    it("rejects when RT TTL is expired", async () => {
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValueOnce({
+        userId: "test-user-id",
+        tv: 1,
+        typ: "refresh",
+        jti: "jti-1",
+        exp: Math.floor(Date.now() / 1000) - 1,
+      });
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+      await expect(service.refreshTokens("expired-rt")).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
   });
 
   describe("logout", () => {
