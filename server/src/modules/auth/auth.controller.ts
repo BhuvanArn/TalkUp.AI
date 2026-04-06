@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Post,
+  Req,
   Res,
   Get,
   Patch,
@@ -9,12 +10,14 @@ import {
   HttpCode,
   HttpStatus,
   UsePipes,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
-import { Response, CookieOptions } from "express";
+import { Request, Response } from "express";
 
 import { AccessTokenGuard } from "@common/guards/accessToken.guard";
 import { ResetTokenGuard } from "@common/guards/resetToken.guard";
+import { SessionGuard } from "@common/guards/session.guard";
 
 import {
   ApiBadRequestResponse,
@@ -38,24 +41,15 @@ import { PasswordUpdateDto } from "./dto/passwordUpdate.dto";
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { UserId } from "@common/decorators/userId.decorator";
 
+import {
+  ACCESS_COOKIE_NAME,
+  REFRESH_COOKIE_NAME,
+  ACCESS_TOKEN_MAX_AGE_MS,
+  REFRESH_TOKEN_MAX_AGE_MS,
+  BASE_COOKIE_OPTIONS,
+} from "@common/constants/auth.constants";
+
 import { AuthService } from "./auth.service";
-
-const COOKIE_NAME = "accessToken";
-const DEFAULT_COOKIE_MAX_AGE = 48 * 60 * 60 * 1000;
-const COOKIE_MAX_AGE = process.env.COOKIE_MAX_AGE
-  ? parseInt(process.env.COOKIE_MAX_AGE, 10)
-  : DEFAULT_COOKIE_MAX_AGE;
-
-const BASE_COOKIE_OPTIONS: CookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  path: "/",
-  domain:
-    process.env.NODE_ENV === "production"
-      ? process.env.COOKIE_DOMAIN
-      : undefined,
-};
 
 @ApiTags("Auth")
 @Controller("auth")
@@ -103,9 +97,14 @@ export class AuthController {
   ) {
     const result = await this.authService.verifyEmail(verifyEmailDto);
 
-    response.cookie(COOKIE_NAME, result.accessToken, {
+    // Pair cookies: short AT + long RT; maxAge matches JWT TTLs in auth.constants.
+    response.cookie(ACCESS_COOKIE_NAME, result.accessToken, {
       ...BASE_COOKIE_OPTIONS,
-      maxAge: COOKIE_MAX_AGE,
+      maxAge: ACCESS_TOKEN_MAX_AGE_MS,
+    });
+    response.cookie(REFRESH_COOKIE_NAME, result.refreshToken, {
+      ...BASE_COOKIE_OPTIONS,
+      maxAge: REFRESH_TOKEN_MAX_AGE_MS,
     });
 
     return { message: "Email verified" };
@@ -144,33 +143,86 @@ export class AuthController {
     );
     const result = await this.authService.login(user);
 
-    const cookieOptions = {
+    response.cookie(ACCESS_COOKIE_NAME, result.accessToken, {
       ...BASE_COOKIE_OPTIONS,
-      maxAge: COOKIE_MAX_AGE,
-    };
-
-    response.cookie(COOKIE_NAME, result.accessToken, cookieOptions);
+      maxAge: ACCESS_TOKEN_MAX_AGE_MS,
+    });
+    response.cookie(REFRESH_COOKIE_NAME, result.refreshToken, {
+      ...BASE_COOKIE_OPTIONS,
+      maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+    });
 
     return { message: "Login successful" };
   }
 
+  /**
+   * Primary logout: bump tokenVersion so every JWT with the old `tv` fails validation.
+   * Optional refreshJti blacklist is defense-in-depth when SessionGuard authenticated
+   * via RT (see SessionGuard); omitting it when AT was used is fine — tv bump is enough.
+   */
   @ApiOkResponse({
     description: "User successfully logged out.",
   })
   @ApiUnauthorizedResponse({
     description: "User is not authenticated or token is invalid.",
   })
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(SessionGuard)
   @HttpCode(200)
   @Post("logout")
-  async logout(@Res({ passthrough: true }) response: Response) {
-    response.cookie(COOKIE_NAME, "", {
-      ...BASE_COOKIE_OPTIONS,
-      maxAge: 0,
-      expires: new Date(0),
-    });
+  async logout(
+    @UserId() userId: string,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshJti = (request as { refreshJti?: string }).refreshJti;
+    await this.authService.logout(userId, refreshJti);
+
+    const clearOptions = { ...BASE_COOKIE_OPTIONS, maxAge: 0, expires: new Date(0) };
+    response.cookie(ACCESS_COOKIE_NAME, "", clearOptions);
+    response.cookie(REFRESH_COOKIE_NAME, "", clearOptions);
 
     return { message: "Logout successful" };
+  }
+
+  /**
+   * Strict refresh-token rotation (RTR): one successful use consumes the old RT JTI,
+   * then issues a new AT+RT pair. Concurrent refreshes with the same RT: only one
+   * wins consumeRefreshJti; the other gets 401 (client should single-flight refresh).
+   *
+   * `jti`, `iat`, `exp` on the payload come from jsonwebtoken (jwtid + registered claims).
+   */
+  @ApiOkResponse({
+    description: "Token refreshed successfully.",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Refresh token is missing, invalid, or revoked.",
+  })
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post("refresh")
+  @HttpCode(200)
+  async refresh(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    // Cookie-based RT only — body does not carry secrets (XSS can't read httpOnly).
+    const refreshToken = request.cookies?.[REFRESH_COOKIE_NAME];
+    if (!refreshToken || typeof refreshToken !== "string") {
+      throw new UnauthorizedException("Refresh token missing");
+    }
+
+    const tokens = await this.authService.refreshTokens(refreshToken);
+
+    response.cookie(ACCESS_COOKIE_NAME, tokens.accessToken, {
+      ...BASE_COOKIE_OPTIONS,
+      maxAge: ACCESS_TOKEN_MAX_AGE_MS,
+    });
+    response.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {
+      ...BASE_COOKIE_OPTIONS,
+      maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+    });
+
+    return { message: "Token refreshed" };
   }
 
   @ApiOkResponse({

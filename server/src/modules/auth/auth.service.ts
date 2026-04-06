@@ -1,4 +1,4 @@
-import { randomInt } from "crypto";
+import { randomInt, randomUUID } from "crypto";
 import { DataSource, Repository } from "typeorm";
 
 import {
@@ -30,6 +30,13 @@ import { OtpGeneratedEvent } from "./events/otp-generated.event";
 import { hashPassword } from "@common/utils/passwordHasher";
 import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 import { Organization } from "@entities/organization.entity";
+import { ITokenStorage } from "@common/interfaces/token-storage";
+import {
+  ACCESS_TOKEN_EXPIRY,
+  REFRESH_TOKEN_EXPIRY,
+  REFRESH_SECRET,
+  REFRESH_TOKEN_MAX_AGE_MS,
+} from "@common/constants/auth.constants";
 
 type AuthTokens = {
   accessToken: string;
@@ -62,6 +69,7 @@ export class AuthService {
     private readonly dataSource: DataSource,
     private jwtService: JwtService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tokenStorage: ITokenStorage,
   ) {}
 
   /**
@@ -588,6 +596,10 @@ export class AuthService {
     });
   }
 
+  async incrementTokenVersion(userId: string): Promise<void> {
+    await this.tokenStorage.incrementTokenVersion(userId);
+  }
+
   async validateUser(email: string, password: string): Promise<user> {
     const emailEntity = await this.userEmailRepository.findOne({
       where: { email },
@@ -659,22 +671,106 @@ export class AuthService {
     });
   }
 
+  /**
+   * Strict refresh-token rotation (RTR): one successful use consumes the old RT JTI,
+   * then issues a new AT+RT pair. Concurrent refreshes with the same RT: only one
+   * wins consumeRefreshJti; the other gets 401 (client should single-flight refresh).
+   *
+   * `jti`, `iat`, `exp` on the payload come from jsonwebtoken (jwtid + registered claims).
+   */
+  async refreshTokens(refreshTokenJwt: string): Promise<AuthTokens> {
+    let payload: Record<string, unknown>;
+    try {
+      payload = (await this.jwtService.verifyAsync(refreshTokenJwt, {
+        secret: REFRESH_SECRET,
+      })) as Record<string, unknown>;
+    } catch {
+      throw new UnauthorizedException("Invalid or expired refresh token");
+    }
+
+    if (payload.typ !== "refresh") {
+      throw new UnauthorizedException("Invalid token type");
+    }
+
+    // jti comes from the jsonwebtoken library and is used to identify the refresh token
+    const jti = payload.jti as string | undefined;
+    const userId = payload.userId as string | undefined;
+    const tv =
+      typeof payload.tv === "number"
+        ? payload.tv
+        : typeof payload.tv === "string"
+          ? Number(payload.tv)
+          : NaN;
+
+    if (!jti || !userId || Number.isNaN(tv)) {
+      throw new UnauthorizedException("Invalid refresh token payload");
+    }
+
+    const foundUser = await this.userRepository.findOne({
+      where: { user_id: userId },
+    });
+    if (!foundUser || (foundUser.tokenVersion ?? 1) !== tv) {
+      throw new UnauthorizedException("Session is no longer valid");
+    }
+
+    // exp comes from the jsonwebtoken library and is used to get the expiration time of the refresh token
+    const exp = payload.exp as number | undefined;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const ttlSeconds = exp
+      ? exp - nowSec
+      : Math.floor(REFRESH_TOKEN_MAX_AGE_MS / 1000);
+    if (ttlSeconds <= 0) {
+      throw new UnauthorizedException("Invalid or expired refresh token");
+    }
+
+    // Atomic claim: implements "use once" for this RT instance (see ITokenStorage).
+    if (!(await this.tokenStorage.consumeRefreshJti(jti, ttlSeconds))) {
+      throw new UnauthorizedException("Refresh token has been revoked");
+    }
+
+    return this.createAuthTokens(foundUser);
+  }
+
+  /**
+   * Primary logout: bump tokenVersion so every JWT with the old `tv` fails validation.
+   * Optional refreshJti blacklist is defense-in-depth when SessionGuard authenticated
+   * via RT (see SessionGuard); omitting it when AT was used is fine — tv bump is enough.
+   */
+  async logout(userId: string, refreshJti?: string): Promise<void> {
+    await this.tokenStorage.incrementTokenVersion(userId);
+
+    if (refreshJti) {
+      const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
+      await this.tokenStorage.blacklistToken(refreshJti, SEVEN_DAYS_SECONDS);
+    }
+  }
+
+  /**
+   * AT: default JWT secret + typ access.
+   * RT: REFRESH_SECRET + typ refresh — prevents swap attacks.
+  */
   private async createAuthTokens(userEntity: user): Promise<AuthTokens> {
-    const payload = {
+    const basePayload = {
       userId: userEntity.user_id,
       username: userEntity.username,
       tv: userEntity.tokenVersion ?? 1,
     };
 
-    const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || "7d") as any,
-    });
+    const accessToken = await this.jwtService.signAsync(
+      { ...basePayload, typ: "access" },
+      { expiresIn: ACCESS_TOKEN_EXPIRY as any, jwtid: randomUUID() },
+    );
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    const refreshToken = await this.jwtService.signAsync(
+      { ...basePayload, typ: "refresh" },
+      {
+        expiresIn: REFRESH_TOKEN_EXPIRY as any,
+        jwtid: randomUUID(),
+        secret: REFRESH_SECRET,
+      },
+    );
+
+    return { accessToken, refreshToken };
   }
 
   private generateOtpCode(): string {
