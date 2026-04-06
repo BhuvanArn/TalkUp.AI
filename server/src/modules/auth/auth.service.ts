@@ -748,7 +748,7 @@ export class AuthService {
   /**
    * AT: default JWT secret + typ access.
    * RT: REFRESH_SECRET + typ refresh — prevents swap attacks.
-  */
+   */
   private async createAuthTokens(userEntity: user): Promise<AuthTokens> {
     const basePayload = {
       userId: userEntity.user_id,

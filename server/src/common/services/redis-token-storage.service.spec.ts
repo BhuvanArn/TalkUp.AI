@@ -72,9 +72,9 @@ describe("RedisTokenStorage", () => {
     it("throws on Redis failure (fail closed)", async () => {
       mockRedis.set.mockRejectedValueOnce(new Error("ECONNREFUSED"));
 
-      await expect(
-        storage.consumeRefreshJti("jti-fail", 100),
-      ).rejects.toThrow("ECONNREFUSED");
+      await expect(storage.consumeRefreshJti("jti-fail", 100)).rejects.toThrow(
+        "ECONNREFUSED",
+      );
     });
   });
 
@@ -82,19 +82,15 @@ describe("RedisTokenStorage", () => {
     it("calls SETEX with prefixed key and TTL", async () => {
       await storage.blacklistToken("jti-abc", 3600);
 
-      expect(mockRedis.setex).toHaveBeenCalledWith(
-        "rt:bl:jti-abc",
-        3600,
-        "1",
-      );
+      expect(mockRedis.setex).toHaveBeenCalledWith("rt:bl:jti-abc", 3600, "1");
     });
 
     it("throws on Redis failure (fail closed)", async () => {
       mockRedis.setex.mockRejectedValueOnce(new Error("ECONNREFUSED"));
 
-      await expect(
-        storage.blacklistToken("jti-fail", 100),
-      ).rejects.toThrow("ECONNREFUSED");
+      await expect(storage.blacklistToken("jti-fail", 100)).rejects.toThrow(
+        "ECONNREFUSED",
+      );
     });
   });
 
@@ -112,9 +108,9 @@ describe("RedisTokenStorage", () => {
     it("throws on Redis failure (fail closed)", async () => {
       mockRedis.exists.mockRejectedValueOnce(new Error("ECONNREFUSED"));
 
-      await expect(
-        storage.isJtiBlacklisted("jti-fail"),
-      ).rejects.toThrow("ECONNREFUSED");
+      await expect(storage.isJtiBlacklisted("jti-fail")).rejects.toThrow(
+        "ECONNREFUSED",
+      );
     });
   });
 

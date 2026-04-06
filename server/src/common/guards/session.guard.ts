@@ -52,9 +52,7 @@ export class SessionGuard implements CanActivate {
     throw new UnauthorizedException("No valid session");
   }
 
-  private async tryAccessToken(
-    req: Record<string, unknown>,
-  ): Promise<boolean> {
+  private async tryAccessToken(req: Record<string, unknown>): Promise<boolean> {
     const cookies = req.cookies as Record<string, unknown> | undefined;
     const token = cookies?.[ACCESS_COOKIE_NAME];
 

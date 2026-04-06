@@ -21,11 +21,9 @@ export const REFRESH_COOKIE_NAME = IS_PRODUCTION
   ? "__Host-refresh_token"
   : "refresh_token";
 
-export const ACCESS_TOKEN_EXPIRY =
-  process.env.JWT_ACCESS_EXPIRES_IN || "15m";
+export const ACCESS_TOKEN_EXPIRY = process.env.JWT_ACCESS_EXPIRES_IN || "15m";
 
-export const REFRESH_TOKEN_EXPIRY =
-  process.env.JWT_REFRESH_EXPIRES_IN || "7d";
+export const REFRESH_TOKEN_EXPIRY = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
 /** Separate signing key prevents swapping an access JWT for a refresh JWT. */
 export const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;

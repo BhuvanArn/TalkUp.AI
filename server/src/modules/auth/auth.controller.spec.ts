@@ -304,10 +304,7 @@ describe("AuthController", () => {
       );
 
       expect(result).toEqual({ message: "Logout successful" });
-      expect(mockAuthService.logout).toHaveBeenCalledWith(
-        "user-1",
-        undefined,
-      );
+      expect(mockAuthService.logout).toHaveBeenCalledWith("user-1", undefined);
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         ACCESS_COOKIE_NAME,
         "",

@@ -177,7 +177,11 @@ export class AuthController {
     const refreshJti = (request as { refreshJti?: string }).refreshJti;
     await this.authService.logout(userId, refreshJti);
 
-    const clearOptions = { ...BASE_COOKIE_OPTIONS, maxAge: 0, expires: new Date(0) };
+    const clearOptions = {
+      ...BASE_COOKIE_OPTIONS,
+      maxAge: 0,
+      expires: new Date(0),
+    };
     response.cookie(ACCESS_COOKIE_NAME, "", clearOptions);
     response.cookie(REFRESH_COOKIE_NAME, "", clearOptions);
 

@@ -10,11 +10,10 @@
  * - Logout invalidates sessions by incrementing tv; optional RT blacklist is extra.
  */
 export abstract class ITokenStorage {
-
   /**
    * Marks a JTI as revoked until TTL (time to live, the time after which the token is no longer valid)
    * (logout defense-in-depth, not the primary revoke).
-  */
+   */
   abstract blacklistToken(jti: string, ttlSeconds: number): Promise<void>;
 
   /**

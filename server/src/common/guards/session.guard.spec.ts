@@ -27,11 +27,7 @@ describe("SessionGuard (unit)", () => {
     mockTokenStorage = {
       isJtiBlacklisted: jest.fn().mockResolvedValue(false),
     };
-    guard = new SessionGuard(
-      mockJwtService,
-      mockUserRepo,
-      mockTokenStorage,
-    );
+    guard = new SessionGuard(mockJwtService, mockUserRepo, mockTokenStorage);
   });
 
   it("authenticates via valid access token", async () => {
@@ -97,9 +93,9 @@ describe("SessionGuard (unit)", () => {
   it("throws when neither AT nor RT is valid", async () => {
     const reqObj: any = { cookies: {} };
 
-    await expect(
-      guard.canActivate(makeContext(reqObj) as any),
-    ).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(makeContext(reqObj) as any)).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it("rejects RT with wrong typ", async () => {
@@ -113,9 +109,9 @@ describe("SessionGuard (unit)", () => {
       jti: "jti-1",
     });
 
-    await expect(
-      guard.canActivate(makeContext(reqObj) as any),
-    ).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(makeContext(reqObj) as any)).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it("rejects RT when jti is blacklisted", async () => {
@@ -130,9 +126,9 @@ describe("SessionGuard (unit)", () => {
     });
     mockTokenStorage.isJtiBlacklisted.mockResolvedValueOnce(true);
 
-    await expect(
-      guard.canActivate(makeContext(reqObj) as any),
-    ).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(makeContext(reqObj) as any)).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it("rejects RT when tokenVersion mismatches", async () => {
@@ -150,8 +146,8 @@ describe("SessionGuard (unit)", () => {
       tokenVersion: 1,
     });
 
-    await expect(
-      guard.canActivate(makeContext(reqObj) as any),
-    ).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(makeContext(reqObj) as any)).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 });

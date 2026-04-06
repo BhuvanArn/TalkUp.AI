@@ -43,9 +43,7 @@ describe("AccessTokenGuard (unit)", () => {
       new UnauthorizedException(),
     );
     await expect(
-      guard.canActivate(
-        makeContext({}, { cookies: makeCookies("token") }),
-      ),
+      guard.canActivate(makeContext({}, { cookies: makeCookies("token") })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -88,9 +86,7 @@ describe("AccessTokenGuard (unit)", () => {
     });
 
     await expect(
-      guard.canActivate(
-        makeContext({}, { cookies: makeCookies("token") }),
-      ),
+      guard.canActivate(makeContext({}, { cookies: makeCookies("token") })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -134,9 +130,7 @@ describe("AccessTokenGuard (unit)", () => {
   it("throws when userId cannot be resolved", async () => {
     mockJwtService.verifyAsync.mockResolvedValueOnce({ tv: 1 });
     await expect(
-      guard.canActivate(
-        makeContext({}, { cookies: makeCookies("token") }),
-      ),
+      guard.canActivate(makeContext({}, { cookies: makeCookies("token") })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -146,9 +140,7 @@ describe("AccessTokenGuard (unit)", () => {
       tv: "bad",
     });
     await expect(
-      guard.canActivate(
-        makeContext({}, { cookies: makeCookies("token") }),
-      ),
+      guard.canActivate(makeContext({}, { cookies: makeCookies("token") })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -156,9 +148,7 @@ describe("AccessTokenGuard (unit)", () => {
     mockJwtService.verifyAsync.mockResolvedValueOnce({ userId: "u1", tv: 1 });
     mockUserRepo.findOne.mockResolvedValueOnce(null);
     await expect(
-      guard.canActivate(
-        makeContext({}, { cookies: makeCookies("token") }),
-      ),
+      guard.canActivate(makeContext({}, { cookies: makeCookies("token") })),
     ).rejects.toThrow(UnauthorizedException);
   });
 

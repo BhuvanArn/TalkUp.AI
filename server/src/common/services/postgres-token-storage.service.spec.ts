@@ -65,9 +65,7 @@ describe("PostgresTokenStorage", () => {
 
       const call = mockRevokedRepo.upsert.mock.calls[0][0];
       const expiresAt = call.expires_at as Date;
-      expect(expiresAt.getTime()).toBeGreaterThanOrEqual(
-        before + 3600 * 1000,
-      );
+      expect(expiresAt.getTime()).toBeGreaterThanOrEqual(before + 3600 * 1000);
     });
   });
 
