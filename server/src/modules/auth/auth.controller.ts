@@ -174,8 +174,7 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const refreshJti = (request as { refreshJti?: string }).refreshJti;
-    await this.authService.logout(userId, refreshJti);
+    await this.authService.logout(userId, request.refreshJti);
 
     const clearOptions = {
       ...BASE_COOKIE_OPTIONS,

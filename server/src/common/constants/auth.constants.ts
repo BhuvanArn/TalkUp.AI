@@ -34,9 +34,7 @@ function expiryToMs(expiry: string | number): number {
     return Number(expiry) * 1000;
   }
 
-  const match = expiry
-    .trim()
-    .match(/^(\d+)\s*(ms|s|m|h|d|w)$/i);
+  const match = expiry.trim().match(/^(\d+)\s*(ms|s|m|h|d|w)$/i);
 
   if (!match) {
     throw new Error(`Unsupported JWT expiry format: ${expiry}`);
