@@ -40,8 +40,8 @@ export class AuthCronService {
 
       let blacklistAffected = 0;
 
-      // if not using Redis, add new entry to the revoked table so that this token is not used again
-      // if using Redis, the blacklist is managed by the Redis TTL
+      // if not using Redis, delete expired entries from the revoked table
+      // if using Redis, blacklist entries are managed by the Redis TTL
       if (!REDIS_HANDLES_BLACKLIST) {
         const blacklistDeletion =
           await this.revokedRefreshTokenRepository.delete({
