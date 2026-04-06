@@ -740,8 +740,8 @@ export class AuthService {
     await this.tokenStorage.incrementTokenVersion(userId);
 
     if (refreshJti) {
-      const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
-      await this.tokenStorage.blacklistToken(refreshJti, SEVEN_DAYS_SECONDS);
+      const blacklistTtlSeconds = Math.floor(REFRESH_TOKEN_MAX_AGE_MS / 1000);
+      await this.tokenStorage.blacklistToken(refreshJti, blacklistTtlSeconds);
     }
   }
 
