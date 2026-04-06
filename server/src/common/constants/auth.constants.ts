@@ -25,7 +25,8 @@ export const ACCESS_TOKEN_EXPIRY = process.env.JWT_ACCESS_EXPIRES_IN || "15m";
 
 export const REFRESH_TOKEN_EXPIRY = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
-function expiryToMs(expiry: string | number): number {
+/** Exported for unit tests; also used to derive cookie max-age from JWT expiry strings. */
+export function expiryToMs(expiry: string | number): number {
   if (typeof expiry === "number") {
     return expiry * 1000;
   }

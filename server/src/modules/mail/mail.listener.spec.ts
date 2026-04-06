@@ -98,4 +98,19 @@ describe("MailListener", () => {
     await listener.onOtpGenerated(payload(OtpPurpose.REGISTER));
     expect(Logger.prototype.error).toHaveBeenCalled();
   });
+
+  it("logs error when organization invite mail fails", async () => {
+    mailService.sendMail.mockRejectedValueOnce(new Error("smtp down"));
+    await listener.onOtpGenerated({
+      email: "u@example.com",
+      plainOtp: "123456",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "Acme Inc",
+    });
+    expect(Logger.prototype.error).toHaveBeenCalledWith(
+      expect.stringContaining("Failed to dispatch OTP email"),
+      expect.any(String),
+    );
+  });
 });

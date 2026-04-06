@@ -57,3 +57,44 @@ describe("AuthCronService", () => {
     expect(Logger.prototype.error).toHaveBeenCalled();
   });
 });
+
+describe("AuthCronService when REDIS_URL is set", () => {
+  const origRedis = process.env.REDIS_URL;
+
+  beforeEach(() => {
+    process.env.REDIS_URL = "redis://127.0.0.1:6379";
+    jest.resetModules();
+  });
+
+  afterEach(() => {
+    if (origRedis === undefined) {
+      delete process.env.REDIS_URL;
+    } else {
+      process.env.REDIS_URL = origRedis;
+    }
+    jest.resetModules();
+  });
+
+  it("skips Postgres revoked delete and logs Redis TTL message", async () => {
+    const { AuthCronService } = await import("./auth.cron");
+    const userRepo = { delete: jest.fn().mockResolvedValue({ affected: 0 }) };
+    const otpRepo = { delete: jest.fn().mockResolvedValue({ affected: 0 }) };
+    const revokedRepo = { delete: jest.fn() };
+    const service = new AuthCronService(
+      userRepo as never,
+      otpRepo as never,
+      revokedRepo as never,
+    );
+    const logSpy = jest.spyOn(
+      (service as unknown as { logger: Logger }).logger,
+      "log",
+    );
+
+    await service.cleanupStaleAuthData();
+
+    expect(revokedRepo.delete).not.toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining("blacklist managed by Redis TTL"),
+    );
+  });
+});

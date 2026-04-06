@@ -13,7 +13,11 @@ jest.mock("ioredis", () => {
   return { __esModule: true, default: MockRedis };
 });
 
+import IoRedis from "ioredis";
+
 import { RedisTokenStorage } from "./redis-token-storage.service";
+
+const mockedRedisCtor = IoRedis as unknown as jest.Mock;
 
 describe("RedisTokenStorage", () => {
   let storage: RedisTokenStorage;
@@ -31,6 +35,35 @@ describe("RedisTokenStorage", () => {
     } else {
       process.env.REDIS_URL = origEnv;
     }
+  });
+
+  it("throws when REDIS_URL is missing", () => {
+    const prev = process.env.REDIS_URL;
+    delete process.env.REDIS_URL;
+    expect(
+      () => new RedisTokenStorage(mockUserRepo as any),
+    ).toThrow(/REDIS_URL is required/);
+    process.env.REDIS_URL = prev;
+  });
+
+  it("registers Redis error/connect handlers and retryStrategy branches", () => {
+    const lastCall = mockedRedisCtor.mock.calls.at(-1);
+    expect(lastCall).toBeDefined();
+    const opts = lastCall![1] as {
+      retryStrategy: (n: number) => number | null;
+    };
+    expect(opts.retryStrategy(6)).toBeNull();
+    expect(opts.retryStrategy(2)).toBe(400);
+
+    const errorHandler = mockRedis.on.mock.calls.find(
+      (c) => c[0] === "error",
+    )?.[1] as (e: Error) => void;
+    const connectHandler = mockRedis.on.mock.calls.find(
+      (c) => c[0] === "connect",
+    )?.[1] as () => void;
+
+    expect(() => errorHandler(new Error("econnreset"))).not.toThrow();
+    expect(() => connectHandler()).not.toThrow();
   });
 
   beforeEach(() => {
@@ -142,9 +175,22 @@ describe("RedisTokenStorage", () => {
       expect(await storage.ping()).toBe(true);
     });
 
+    it("returns false when response is not PONG", async () => {
+      mockRedis.ping.mockResolvedValueOnce("NO");
+      expect(await storage.ping()).toBe(false);
+    });
+
     it("returns false on error", async () => {
       mockRedis.ping.mockRejectedValueOnce(new Error("down"));
       expect(await storage.ping()).toBe(false);
+    });
+  });
+
+  describe("onModuleDestroy", () => {
+    it("disconnects when quit fails", async () => {
+      mockRedis.quit.mockRejectedValueOnce(new Error("quit failed"));
+      await storage.onModuleDestroy();
+      expect(mockRedis.disconnect).toHaveBeenCalled();
     });
   });
 });

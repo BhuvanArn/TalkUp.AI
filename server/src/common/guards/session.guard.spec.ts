@@ -150,4 +150,52 @@ describe("SessionGuard (unit)", () => {
       UnauthorizedException,
     );
   });
+
+  it("falls back to RT when AT verify throws and RT is valid (sub + string tv)", async () => {
+    const reqObj: any = {
+      cookies: { [ACCESS_COOKIE_NAME]: "bad-at", [REFRESH_COOKIE_NAME]: "rt-jwt" },
+    };
+    mockJwtService.verifyAsync
+      .mockRejectedValueOnce(new Error("expired"))
+      .mockResolvedValueOnce({
+        sub: "u1",
+        tv: 1,
+        typ: "refresh",
+        jti: "rt-jti-sub",
+      });
+    mockUserRepo.findOne.mockResolvedValueOnce(mockUser);
+
+    const result = await guard.canActivate(makeContext(reqObj) as any);
+    expect(result).toBe(true);
+    expect(reqObj.userId).toBe("u1");
+  });
+
+  it("returns false on RT path when verify throws", async () => {
+    const reqObj: any = {
+      cookies: { [REFRESH_COOKIE_NAME]: "bad-rt" },
+    };
+    mockJwtService.verifyAsync.mockRejectedValueOnce(new Error("bad sig"));
+
+    await expect(guard.canActivate(makeContext(reqObj) as any)).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it("accepts RT with userId on sub and tv as string", async () => {
+    const reqObj: any = {
+      cookies: { [REFRESH_COOKIE_NAME]: "rt-jwt" },
+    };
+    mockJwtService.verifyAsync.mockResolvedValueOnce({
+      sub: "u1",
+      tv: "1",
+      typ: "refresh",
+      jti: "jti-str-tv",
+    });
+    mockUserRepo.findOne.mockResolvedValueOnce(mockUser);
+
+    await expect(guard.canActivate(makeContext(reqObj) as any)).resolves.toBe(
+      true,
+    );
+    expect(reqObj.userId).toBe("u1");
+  });
 });
