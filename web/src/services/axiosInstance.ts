@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 import { API_BASE_URL } from '../config/env';
+import { API_ROUTES } from './api';
 
 /**
  * API client: httpOnly auth cookies require withCredentials.
@@ -89,7 +90,7 @@ axiosInstance.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      await axiosInstance.post('/auth/refresh');
+      await axiosInstance.post(`${API_ROUTES.auth}/refresh`);
 
       // put the original request back in the queue
       processQueue(null);
