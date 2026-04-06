@@ -65,6 +65,7 @@ describe("MailService", () => {
       port: 465,
       secure: true,
       auth: { user: "u", pass: "p" },
+      family: 4,
     });
 
     await service.sendMail({
