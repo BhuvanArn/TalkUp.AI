@@ -2,10 +2,15 @@ import { UnauthorizedException } from "@nestjs/common";
 
 import { AccessTokenGuard } from "./accessToken.guard";
 
+import { ACCESS_COOKIE_NAME } from "@common/constants/auth.constants";
+
 describe("AccessTokenGuard (unit)", () => {
   let guard: any;
   let mockJwtService: any;
   let mockUserRepo: any;
+
+  const makeCookies = (token?: unknown) =>
+    token !== undefined ? { [ACCESS_COOKIE_NAME]: token } : {};
 
   const makeContext = (headers: any, reqObj = {}) => ({
     switchToHttp: () => ({
@@ -21,17 +26,15 @@ describe("AccessTokenGuard (unit)", () => {
     guard = new AccessTokenGuard(mockJwtService, mockUserRepo);
   });
 
-  it("throws when header missing", async () => {
-    guard = new AccessTokenGuard(mockJwtService, mockUserRepo);
+  it("throws when cookie missing", async () => {
     await expect(guard.canActivate(makeContext({}))).rejects.toThrow(
       UnauthorizedException,
     );
   });
 
-  it("throws when header malformed", async () => {
-    guard = new AccessTokenGuard(mockJwtService, mockUserRepo);
+  it("throws when cookie malformed", async () => {
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: 123 } })),
+      guard.canActivate(makeContext({}, { cookies: makeCookies(123) })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -39,16 +42,17 @@ describe("AccessTokenGuard (unit)", () => {
     mockJwtService.verifyAsync.mockRejectedValueOnce(
       new UnauthorizedException(),
     );
-    guard = new AccessTokenGuard(mockJwtService, mockUserRepo);
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
+      guard.canActivate(
+        makeContext({}, { cookies: makeCookies("token") }),
+      ),
     ).rejects.toThrow(UnauthorizedException);
   });
 
   it("returns true and sets req.userId and req.user when ok", async () => {
     const mockUser = { user_id: "u1", username: "test" };
     const reqObj: any = {
-      cookies: { accessToken: "token" },
+      cookies: makeCookies("token"),
       userId: null,
       user: undefined,
     };
@@ -84,12 +88,14 @@ describe("AccessTokenGuard (unit)", () => {
     });
 
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
+      guard.canActivate(
+        makeContext({}, { cookies: makeCookies("token") }),
+      ),
     ).rejects.toThrow(UnauthorizedException);
   });
 
   it("resolves userId from sub when userId missing", async () => {
-    const reqObj: any = { cookies: { accessToken: "token" } };
+    const reqObj: any = { cookies: makeCookies("token") };
     mockJwtService.verifyAsync.mockResolvedValueOnce({
       sub: "u-sub",
       tv: 1,
@@ -108,7 +114,7 @@ describe("AccessTokenGuard (unit)", () => {
   });
 
   it("accepts tv as numeric string", async () => {
-    const reqObj: any = { cookies: { accessToken: "token" } };
+    const reqObj: any = { cookies: makeCookies("token") };
     mockJwtService.verifyAsync.mockResolvedValueOnce({
       userId: "u1",
       tv: "2",
@@ -128,7 +134,9 @@ describe("AccessTokenGuard (unit)", () => {
   it("throws when userId cannot be resolved", async () => {
     mockJwtService.verifyAsync.mockResolvedValueOnce({ tv: 1 });
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
+      guard.canActivate(
+        makeContext({}, { cookies: makeCookies("token") }),
+      ),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -138,7 +146,9 @@ describe("AccessTokenGuard (unit)", () => {
       tv: "bad",
     });
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
+      guard.canActivate(
+        makeContext({}, { cookies: makeCookies("token") }),
+      ),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -146,12 +156,14 @@ describe("AccessTokenGuard (unit)", () => {
     mockJwtService.verifyAsync.mockResolvedValueOnce({ userId: "u1", tv: 1 });
     mockUserRepo.findOne.mockResolvedValueOnce(null);
     await expect(
-      guard.canActivate(makeContext({}, { cookies: { accessToken: "token" } })),
+      guard.canActivate(
+        makeContext({}, { cookies: makeCookies("token") }),
+      ),
     ).rejects.toThrow(UnauthorizedException);
   });
 
   it("uses tokenVersion 1 when user has undefined tokenVersion", async () => {
-    const reqObj: any = { cookies: { accessToken: "token" } };
+    const reqObj: any = { cookies: makeCookies("token") };
     mockJwtService.verifyAsync.mockResolvedValueOnce({ userId: "u1", tv: 1 });
     mockUserRepo.findOne.mockResolvedValueOnce({
       user_id: "u1",
