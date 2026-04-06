@@ -804,9 +804,9 @@ describe("AuthService", () => {
         }),
       );
 
-      await expect(
-        service.passwordUpdate("ghost-id", "x"),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.passwordUpdate("ghost-id", "x")).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 

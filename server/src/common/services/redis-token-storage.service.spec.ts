@@ -40,9 +40,9 @@ describe("RedisTokenStorage", () => {
   it("throws when REDIS_URL is missing", () => {
     const prev = process.env.REDIS_URL;
     delete process.env.REDIS_URL;
-    expect(
-      () => new RedisTokenStorage(mockUserRepo as any),
-    ).toThrow(/REDIS_URL is required/);
+    expect(() => new RedisTokenStorage(mockUserRepo as any)).toThrow(
+      /REDIS_URL is required/,
+    );
     process.env.REDIS_URL = prev;
   });
 

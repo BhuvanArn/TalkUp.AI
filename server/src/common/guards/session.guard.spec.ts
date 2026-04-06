@@ -153,7 +153,10 @@ describe("SessionGuard (unit)", () => {
 
   it("falls back to RT when AT verify throws and RT is valid (sub + string tv)", async () => {
     const reqObj: any = {
-      cookies: { [ACCESS_COOKIE_NAME]: "bad-at", [REFRESH_COOKIE_NAME]: "rt-jwt" },
+      cookies: {
+        [ACCESS_COOKIE_NAME]: "bad-at",
+        [REFRESH_COOKIE_NAME]: "rt-jwt",
+      },
     };
     mockJwtService.verifyAsync
       .mockRejectedValueOnce(new Error("expired"))
