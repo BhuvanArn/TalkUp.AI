@@ -25,13 +25,51 @@ export const ACCESS_TOKEN_EXPIRY = process.env.JWT_ACCESS_EXPIRES_IN || "15m";
 
 export const REFRESH_TOKEN_EXPIRY = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
+function expiryToMs(expiry: string | number): number {
+  if (typeof expiry === "number") {
+    return expiry * 1000;
+  }
+
+  if (/^\d+$/.test(expiry)) {
+    return Number(expiry) * 1000;
+  }
+
+  const match = expiry
+    .trim()
+    .match(/^(\d+)\s*(ms|s|m|h|d|w)$/i);
+
+  if (!match) {
+    throw new Error(`Unsupported JWT expiry format: ${expiry}`);
+  }
+
+  const value = Number(match[1]);
+  const unit = match[2].toLowerCase();
+
+  switch (unit) {
+    case "ms":
+      return value;
+    case "s":
+      return value * 1000;
+    case "m":
+      return value * 60 * 1000;
+    case "h":
+      return value * 60 * 60 * 1000;
+    case "d":
+      return value * 24 * 60 * 60 * 1000;
+    case "w":
+      return value * 7 * 24 * 60 * 60 * 1000;
+    default:
+      throw new Error(`Unsupported JWT expiry unit: ${unit}`);
+  }
+}
+
 /** Separate signing key prevents swapping an access JWT for a refresh JWT. */
 export const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
-/** Must stay aligned with ACCESS_TOKEN_EXPIRY / JWT sign options. */
-export const ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000;
-/** Must stay aligned with REFRESH_TOKEN_EXPIRY / JWT sign options. */
-export const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+/** Derived from ACCESS_TOKEN_EXPIRY so cookie and JWT expiry stay aligned. */
+export const ACCESS_TOKEN_MAX_AGE_MS = expiryToMs(ACCESS_TOKEN_EXPIRY);
+/** Derived from REFRESH_TOKEN_EXPIRY so cookie and JWT expiry stay aligned. */
+export const REFRESH_TOKEN_MAX_AGE_MS = expiryToMs(REFRESH_TOKEN_EXPIRY);
 
 const COOKIE_SAMESITE_ENV = process.env.COOKIE_SAMESITE as
   | "lax"
