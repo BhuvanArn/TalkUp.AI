@@ -111,6 +111,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
  */
 export const Select = ({
   _accentColor = '#2B70C9',
+  accentColor: _unusedAccentColor,
   style,
   children,
   ...props

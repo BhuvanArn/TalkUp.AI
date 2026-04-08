@@ -1,6 +1,14 @@
 import { Avatar } from '../../atoms/profile-custom/Avatar';
+import type { CSSProperties } from 'react';
 
-export const Sidebar = ({ avatarColor, initials, name, email }: any) => {
+interface SidebarProps {
+  avatarColor: string;
+  initials: string;
+  name: string;
+  email: string;
+}
+
+export const Sidebar = ({ avatarColor, initials, name, email }: SidebarProps) => {
   const menuItems = [
     { icon: '◫', label: 'Applications' },
     { icon: '◷', label: 'Curriculum' },
@@ -47,7 +55,7 @@ export const Sidebar = ({ avatarColor, initials, name, email }: any) => {
   );
 };
 
-const sidebarStyle: React.CSSProperties = {
+const sidebarStyle: CSSProperties = {
   width: 220,
   background: 'var(--color-background-primary)',
   borderRight: '0.5px solid var(--color-border-tertiary)',
@@ -55,7 +63,7 @@ const sidebarStyle: React.CSSProperties = {
   flexDirection: 'column',
 };
 
-const logoSectionStyle: React.CSSProperties = {
+const logoSectionStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 8,
@@ -63,7 +71,7 @@ const logoSectionStyle: React.CSSProperties = {
   borderBottom: '0.5px solid var(--color-border-tertiary)',
 };
 
-const logoIconStyle: React.CSSProperties = {
+const logoIconStyle: CSSProperties = {
   width: 28,
   height: 28,
   borderRadius: 6,
@@ -74,13 +82,13 @@ const logoIconStyle: React.CSSProperties = {
   fontWeight: 700,
 };
 
-const logoTextStyle: React.CSSProperties = {
+const logoTextStyle: CSSProperties = {
   fontSize: 15,
   fontWeight: 700,
   letterSpacing: -0.3,
 };
 
-const navItemStyle: React.CSSProperties = {
+const navItemStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 10,
@@ -90,7 +98,7 @@ const navItemStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-const userSectionStyle: React.CSSProperties = {
+const userSectionStyle: CSSProperties = {
   padding: '12px 10px',
   borderTop: '0.5px solid var(--color-border-tertiary)',
   display: 'flex',

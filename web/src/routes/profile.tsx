@@ -1,12 +1,15 @@
 import { Topbar } from '@/components/organisms/profile-custom/Topbar';
 import { ApparenceSettings } from '@/components/organisms/profile-settings/ApparenceSettings';
+import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
 import { GeneralSettings } from '@/components/organisms/profile-settings/GeneralSettings';
 import { NotifSettings } from '@/components/organisms/profile-settings/NotifSettings';
+import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 export const Route = createFileRoute('/profile')({
+  beforeLoad: createAuthGuard('/profile'),
   component: Profile,
 });
 
@@ -19,15 +22,6 @@ interface NotifSetting {
   desc: string;
   enabled: boolean;
 }
-
-const BANNER_PRESETS = [
-  { label: 'Minimal', value: '#FFFFFF' },
-  {
-    label: 'Océan',
-    value: 'linear-gradient(135deg, #2B70C9 0%, #1D9E75 100%)',
-  },
-  { label: 'Nuit', value: 'linear-gradient(135deg, #3b1f6e 0%, #2B70C9 100%)' },
-];
 
 const DEFAULT_NOTIFS: NotifSetting[] = [
   {
@@ -77,12 +71,13 @@ function Profile() {
   );
   const [phoneNumber, setPhoneNumber] = useState('+33 6 00 00 00 00');
   const [avatarColor, setAvatarColor] = useState(THEME_ACCENT);
-  const [bannerGradient, setBanner] = useState(BANNER_PRESETS[0].value);
+  const [bannerGradient, setBanner] = useState<string>(BANNER_PRESETS[0].value);
   const [notifs, setNotifs] = useState<NotifSetting[]>(DEFAULT_NOTIFS);
   const [saved, setSaved] = useState(false);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const initials =
     (firstName[0] || 'A').toUpperCase() + (lastName[0] || 'B').toUpperCase();
@@ -97,9 +92,21 @@ function Profile() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(
+    () => () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
   const handleSave = () => {
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => setSaved(false), 2000);
   };
 
   const toggleNotif = (id: string) =>
@@ -386,7 +393,7 @@ function Profile() {
   );
 }
 
-const srOnlyStyle: React.CSSProperties = {
+const srOnlyStyle: CSSProperties = {
   position: 'absolute',
   width: '1px',
   height: '1px',
@@ -397,14 +404,14 @@ const srOnlyStyle: React.CSSProperties = {
   whiteSpace: 'nowrap',
   borderWidth: '0',
 };
-const headerCardStyle: React.CSSProperties = {
+const headerCardStyle: CSSProperties = {
   background: '#FFF',
   borderRadius: 16,
   border: '0.5px solid #E5E7EB',
   overflow: 'hidden',
   marginBottom: 24,
 };
-const bannerBtnStyle: React.CSSProperties = {
+const bannerBtnStyle: CSSProperties = {
   position: 'absolute',
   bottom: 10,
   right: 12,
@@ -416,7 +423,7 @@ const bannerBtnStyle: React.CSSProperties = {
   border: 'none',
   cursor: 'pointer',
 };
-const avatarCircleStyle: React.CSSProperties = {
+const avatarCircleStyle: CSSProperties = {
   width: 96,
   height: 96,
   borderRadius: '50%',
@@ -426,7 +433,7 @@ const avatarCircleStyle: React.CSSProperties = {
   color: 'white',
   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 };
-const cameraBtnStyle: React.CSSProperties = {
+const cameraBtnStyle: CSSProperties = {
   position: 'absolute',
   bottom: 2,
   right: 2,
@@ -443,7 +450,7 @@ const cameraBtnStyle: React.CSSProperties = {
   boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
   zIndex: 10,
 };
-const dropdownStyle: React.CSSProperties = {
+const dropdownStyle: CSSProperties = {
   position: 'absolute',
   top: '110%',
   left: '50%',
@@ -458,7 +465,7 @@ const dropdownStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
 };
-const dropdownItemStyle: React.CSSProperties = {
+const dropdownItemStyle: CSSProperties = {
   padding: '10px 12px',
   fontSize: 13,
   color: '#374151',
@@ -471,32 +478,32 @@ const dropdownItemStyle: React.CSSProperties = {
   gap: '10px',
   transition: 'background-color 0.2s ease',
 };
-const tabsBarStyle: React.CSSProperties = {
+const tabsBarStyle: CSSProperties = {
   display: 'flex',
   justifyContent: 'center',
   borderTop: '0.5px solid #F3F4F6',
   marginTop: 12,
 };
-const tabBtnStyle: React.CSSProperties = {
+const tabBtnStyle: CSSProperties = {
   padding: '14px 22px',
   fontSize: 13,
   background: 'none',
   border: 'none',
   cursor: 'pointer',
 };
-const sideCardStyle: React.CSSProperties = {
+const sideCardStyle: CSSProperties = {
   background: '#FFF',
   borderRadius: 12,
   padding: 20,
   border: '0.5px solid #E5E7EB',
 };
-const cardTitleStyle: React.CSSProperties = {
+const cardTitleStyle: CSSProperties = {
   fontSize: 14,
   fontWeight: 600,
   color: '#111827',
   marginBottom: 10,
 };
-const settingsPanelStyle: React.CSSProperties = {
+const settingsPanelStyle: CSSProperties = {
   background: '#FFF',
   borderRadius: 16,
   padding: '32px',

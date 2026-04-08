@@ -1,5 +1,6 @@
 import { LangTag } from '../../molecules/prof-customs/LangTag';
 import { ProgressBar } from '../../molecules/prof-customs/ProgressBar';
+import type { CSSProperties } from 'react';
 
 /**
  * @interface Language
@@ -93,7 +94,7 @@ export const LanguageSettings = ({ languages }: LanguageSettingsProps) => {
 };
 
 /** Base card styling for consistent layout within the settings panel */
-const cardStyle: React.CSSProperties = {
+const cardStyle: CSSProperties = {
   background: 'var(--color-background-primary, #FFF)',
   border: '0.5px solid var(--color-border-tertiary, #E5E7EB)',
   borderRadius: 12,

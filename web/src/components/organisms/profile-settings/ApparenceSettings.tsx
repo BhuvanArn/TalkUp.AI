@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 
 import { Avatar } from '../../atoms/profile-custom/Avatar';
 import { Field, Input } from '../../atoms/profile-custom/Input';
+import { BANNER_PRESETS } from './constants';
 
 const ACCENT_COLORS = [
   { name: 'Bleu', value: '#2B70C9' },
@@ -11,23 +12,6 @@ const ACCENT_COLORS = [
   { name: 'Jaune', value: '#BA7517' },
   { name: 'Violet', value: '#7F77DD' },
   { name: 'Gris', value: '#555555' },
-];
-
-const BANNER_PRESETS = [
-  {
-    label: 'Océan',
-    value: 'linear-gradient(135deg, #2B70C9 0%, #1D9E75 100%)',
-  },
-  {
-    label: 'Coucher',
-    value: 'linear-gradient(135deg, #D85A30 0%, #BA7517 100%)',
-  },
-  { label: 'Nuit', value: 'linear-gradient(135deg, #3b1f6e 0%, #2B70C9 100%)' },
-  {
-    label: 'Forêt',
-    value: 'linear-gradient(135deg, #1D9E75 0%, #3B6D11 100%)',
-  },
-  { label: 'Rose', value: 'linear-gradient(135deg, #D4537E 0%, #BA7517 100%)' },
 ];
 
 interface ApparenceSettingsProps {
@@ -254,14 +238,14 @@ export const ApparenceSettings = ({
   );
 };
 
-const subCardStyle: React.CSSProperties = {
+const subCardStyle: CSSProperties = {
   background: 'var(--color-background-secondary)',
   borderRadius: 10,
   padding: '16px 18px',
   border: '0.5px solid var(--color-border-tertiary)',
 };
 
-const sectionTitleStyle: React.CSSProperties = {
+const sectionTitleStyle: CSSProperties = {
   fontSize: 13,
   fontWeight: 600,
   color: 'var(--color-text-primary)',
@@ -270,7 +254,7 @@ const sectionTitleStyle: React.CSSProperties = {
   borderBottom: '0.5px solid var(--color-border-tertiary)',
 };
 
-const descStyle: React.CSSProperties = {
+const descStyle: CSSProperties = {
   fontSize: 12,
   color: 'var(--color-text-secondary)',
   marginBottom: 12,
