@@ -1,5 +1,6 @@
-import { Avatar } from '../../atoms/profile-custom/Avatar';
 import type { CSSProperties } from 'react';
+
+import { Avatar } from '../../atoms/profile-custom/Avatar';
 
 interface SidebarProps {
   avatarColor: string;
@@ -8,7 +9,12 @@ interface SidebarProps {
   email: string;
 }
 
-export const Sidebar = ({ avatarColor, initials, name, email }: SidebarProps) => {
+export const Sidebar = ({
+  avatarColor,
+  initials,
+  name,
+  email,
+}: SidebarProps) => {
   const menuItems = [
     { icon: '◫', label: 'Applications' },
     { icon: '◷', label: 'Curriculum' },

@@ -1,12 +1,12 @@
 import { Topbar } from '@/components/organisms/profile-custom/Topbar';
 import { ApparenceSettings } from '@/components/organisms/profile-settings/ApparenceSettings';
-import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
 import { GeneralSettings } from '@/components/organisms/profile-settings/GeneralSettings';
 import { NotifSettings } from '@/components/organisms/profile-settings/NotifSettings';
+import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 
 export const Route = createFileRoute('/profile')({
   beforeLoad: createAuthGuard('/profile'),

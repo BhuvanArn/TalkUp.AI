@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { type CSSProperties, useState } from 'react';
 
 import { Avatar } from '../../atoms/profile-custom/Avatar';
 import { Field, Input } from '../../atoms/profile-custom/Input';

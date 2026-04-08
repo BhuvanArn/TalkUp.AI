@@ -1,6 +1,7 @@
+import type { CSSProperties } from 'react';
+
 import { LangTag } from '../../molecules/prof-customs/LangTag';
 import { ProgressBar } from '../../molecules/prof-customs/ProgressBar';
-import type { CSSProperties } from 'react';
 
 /**
  * @interface Language
