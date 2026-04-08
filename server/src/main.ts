@@ -46,6 +46,8 @@ async function bootstrap() {
           );
     const localhostPattern = /^localhost$|^127\.0\.0\.1$|^\[::1\]$/;
     const vercelPreviewPattern = /^[a-zA-Z0-9-]+\.talk-up-ai\.vercel\.app$/;
+    /** Prod SPA + API share registrable domain; still list explicit origins + CORS_ORIGIN for others. */
+    const productionPattern = /^(api\.)?talkupai\.online$/;
 
     app.enableCors({
       origin: (
@@ -67,6 +69,10 @@ async function bootstrap() {
           }
 
           if (vercelPreviewPattern.test(hostname)) {
+            return callback(null, true);
+          }
+
+          if (productionPattern.test(hostname)) {
             return callback(null, true);
           }
         } catch {
