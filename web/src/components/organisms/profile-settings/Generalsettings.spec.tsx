@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { GeneralSettings } from '../components/organisms/profile-settings/GeneralSettings';
+import { GeneralSettings } from './GeneralSettings';
 
 const defaultProps = {
   firstName: 'Adam',

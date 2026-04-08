@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ApparenceSettings } from '../components/organisms/profile-settings/ApparenceSettings';
+import { ApparenceSettings } from './ApparenceSettings';
 
 describe('ApparenceSettings Component', () => {
   const defaultProps = {
@@ -49,11 +49,11 @@ describe('ApparenceSettings Component', () => {
   it('calls onBannerChange when a banner preset is clicked', () => {
     render(<ApparenceSettings {...defaultProps} />);
 
-    const sunsetBtn = screen.getByText('Coucher').closest('button');
+    const sunsetBtn = screen.getByText('Ocean').closest('button');
     if (sunsetBtn) fireEvent.click(sunsetBtn);
 
     expect(defaultProps.onBannerChange).toHaveBeenCalledWith(
-      'linear-gradient(135deg, #D85A30 0%, #BA7517 100%)',
+      'linear-gradient(135deg, #2B70C9 0%, #1D9E75 100%)',
     );
   });
 
