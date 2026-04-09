@@ -34,8 +34,8 @@ export const Button = ({
     },
     ghost: {
       background: 'transparent',
-      color: 'var(--color-text-secondary)',
-      border: '0.5px solid var(--color-border-secondary)',
+      color: 'var(--color-text-weaker)',
+      border: '0.5px solid var(--color-border)',
     },
   };
 

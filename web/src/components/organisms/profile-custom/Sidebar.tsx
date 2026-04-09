@@ -36,7 +36,7 @@ export const Sidebar = ({
             key={item.label}
             style={{
               ...navItemStyle,
-              color: item.active ? avatarColor : 'var(--color-text-secondary)',
+              color: item.active ? avatarColor : 'var(--color-text-weaker)',
               background: item.active ? `${avatarColor}18` : 'transparent',
             }}
           >
@@ -52,7 +52,7 @@ export const Sidebar = ({
           <div style={{ fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
             {name}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+          <div style={{ fontSize: 11, color: 'var(--color-text-weaker)' }}>
             {email}
           </div>
         </div>
@@ -63,8 +63,8 @@ export const Sidebar = ({
 
 const sidebarStyle: CSSProperties = {
   width: 220,
-  background: 'var(--color-background-primary)',
-  borderRight: '0.5px solid var(--color-border-tertiary)',
+  background: 'var(--color-background)',
+  borderRight: '0.5px solid var(--color-border)',
   display: 'flex',
   flexDirection: 'column',
 };
@@ -74,7 +74,7 @@ const logoSectionStyle: CSSProperties = {
   alignItems: 'center',
   gap: 8,
   padding: '18px 16px',
-  borderBottom: '0.5px solid var(--color-border-tertiary)',
+  borderBottom: '0.5px solid var(--color-border)',
 };
 
 const logoIconStyle: CSSProperties = {
@@ -106,7 +106,7 @@ const navItemStyle: CSSProperties = {
 
 const userSectionStyle: CSSProperties = {
   padding: '12px 10px',
-  borderTop: '0.5px solid var(--color-border-tertiary)',
+  borderTop: '0.5px solid var(--color-border)',
   display: 'flex',
   alignItems: 'center',
   gap: 10,

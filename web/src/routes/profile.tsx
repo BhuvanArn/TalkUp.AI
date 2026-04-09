@@ -122,7 +122,12 @@ function Profile() {
   return (
     <div
       className="p-2"
-      style={{ display: 'flex', height: '100vh', background: '#F4F7FB' }}
+      style={{
+        display: 'flex',
+        height: '100vh',
+        background: 'var(--color-surface)',
+        color: 'var(--color-text)',
+      }}
     >
       <div
         style={{
@@ -136,7 +141,7 @@ function Profile() {
           breadcrumb={['Settings', 'My Profile']}
           onSave={handleSave}
           isSaved={saved}
-          accentColor={THEME_ACCENT}
+          accentColor="var(--color-accent)"
         />
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
@@ -149,7 +154,7 @@ function Profile() {
                   height: 130,
                   background: bannerGradient,
                   position: 'relative',
-                  borderBottom: '1px solid #E5E7EB',
+                  borderBottom: '1px solid var(--color-border)',
                 }}
               >
                 <button
@@ -213,7 +218,9 @@ function Profile() {
                         style={{
                           ...dropdownItemStyle,
                           background:
-                            hoveredItem === 'choose' ? '#F3F4F6' : 'none',
+                            hoveredItem === 'choose'
+                              ? 'var(--color-surface-raised-hover)'
+                              : 'transparent',
                         }}
                         onMouseEnter={() => setHoveredItem('choose')}
                         onMouseLeave={() => setHoveredItem(null)}
@@ -225,7 +232,9 @@ function Profile() {
                         style={{
                           ...dropdownItemStyle,
                           background:
-                            hoveredItem === 'take' ? '#F3F4F6' : 'none',
+                            hoveredItem === 'take'
+                              ? 'var(--color-surface-raised-hover)'
+                              : 'transparent',
                         }}
                         onMouseEnter={() => setHoveredItem('take')}
                         onMouseLeave={() => setHoveredItem(null)}
@@ -236,7 +245,7 @@ function Profile() {
                       <div
                         style={{
                           height: '1px',
-                          background: '#F3F4F6',
+                          background: 'var(--color-border)',
                           margin: '4px 0',
                         }}
                       />
@@ -245,7 +254,9 @@ function Profile() {
                           ...dropdownItemStyle,
                           color: '#EF4444',
                           background:
-                            hoveredItem === 'delete' ? '#FEF2F2' : 'none',
+                            hoveredItem === 'delete'
+                              ? 'var(--color-error-weaker)'
+                              : 'transparent',
                         }}
                         onMouseEnter={() => setHoveredItem('delete')}
                         onMouseLeave={() => setHoveredItem(null)}
@@ -261,13 +272,19 @@ function Profile() {
                   style={{
                     fontSize: 22,
                     fontWeight: 800,
-                    color: '#111827',
+                    color: 'var(--color-text)',
                     margin: 0,
                   }}
                 >
                   {firstName} {lastName}
                 </h2>
-                <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--color-text-weaker)',
+                    marginTop: 4,
+                  }}
+                >
                   Candidat Product Manager · TalkUp Pro
                 </div>
               </div>
@@ -281,8 +298,11 @@ function Profile() {
                     onClick={() => setActiveTab(key)}
                     style={{
                       ...tabBtnStyle,
-                      color: activeTab === key ? '#111827' : '#6B7280',
-                      borderBottom: `2.5px solid ${activeTab === key ? THEME_ACCENT : 'transparent'}`,
+                      color:
+                        activeTab === key
+                          ? 'var(--color-text)'
+                          : 'var(--color-text-weaker)',
+                      borderBottom: `2.5px solid ${activeTab === key ? 'var(--color-accent)' : 'transparent'}`,
                     }}
                     data-testid={`tab-${key}`}
                   >
@@ -306,7 +326,11 @@ function Profile() {
                 <div style={sideCardStyle}>
                   <div style={cardTitleStyle}>Introduction</div>
                   <p
-                    style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--color-text-weaker)',
+                      lineHeight: 1.6,
+                    }}
                   >
                     <strong>Profil de l'utilisateur :</strong> {bio}
                   </p>
@@ -380,7 +404,7 @@ function Profile() {
                 {activeTab === 'notifs' && (
                   <NotifSettings
                     notifs={notifs}
-                    accentColor={THEME_ACCENT}
+                    accentColor="var(--color-accent)"
                     onToggle={toggleNotif}
                   />
                 )}
@@ -405,9 +429,9 @@ const srOnlyStyle: CSSProperties = {
   borderWidth: '0',
 };
 const headerCardStyle: CSSProperties = {
-  background: '#FFF',
+  background: 'var(--color-background)',
   borderRadius: 16,
-  border: '0.5px solid #E5E7EB',
+  border: '0.5px solid var(--color-border)',
   overflow: 'hidden',
   marginBottom: 24,
 };
@@ -427,7 +451,7 @@ const avatarCircleStyle: CSSProperties = {
   width: 96,
   height: 96,
   borderRadius: '50%',
-  border: '4px solid #FFF',
+  border: '4px solid var(--color-background)',
   fontSize: 28,
   fontWeight: 800,
   color: 'white',
@@ -440,7 +464,7 @@ const cameraBtnStyle: CSSProperties = {
   width: 28,
   height: 28,
   borderRadius: '50%',
-  background: 'white',
+  background: 'var(--color-background)',
   borderStyle: 'solid',
   borderWidth: 2,
   display: 'flex',
@@ -455,10 +479,10 @@ const dropdownStyle: CSSProperties = {
   top: '110%',
   left: '50%',
   transform: 'translateX(-50%)',
-  background: 'white',
+  background: 'var(--color-background)',
   borderRadius: 10,
   boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-  border: '1px solid #E5E7EB',
+  border: '1px solid var(--color-border)',
   padding: '6px',
   minWidth: '180px',
   zIndex: 100,
@@ -468,7 +492,7 @@ const dropdownStyle: CSSProperties = {
 const dropdownItemStyle: CSSProperties = {
   padding: '10px 12px',
   fontSize: 13,
-  color: '#374151',
+  color: 'var(--color-text)',
   border: 'none',
   borderRadius: 6,
   textAlign: 'left',
@@ -481,7 +505,7 @@ const dropdownItemStyle: CSSProperties = {
 const tabsBarStyle: CSSProperties = {
   display: 'flex',
   justifyContent: 'center',
-  borderTop: '0.5px solid #F3F4F6',
+  borderTop: '0.5px solid var(--color-border)',
   marginTop: 12,
 };
 const tabBtnStyle: CSSProperties = {
@@ -492,22 +516,22 @@ const tabBtnStyle: CSSProperties = {
   cursor: 'pointer',
 };
 const sideCardStyle: CSSProperties = {
-  background: '#FFF',
+  background: 'var(--color-background)',
   borderRadius: 12,
   padding: 20,
-  border: '0.5px solid #E5E7EB',
+  border: '0.5px solid var(--color-border)',
 };
 const cardTitleStyle: CSSProperties = {
   fontSize: 14,
   fontWeight: 600,
-  color: '#111827',
+  color: 'var(--color-text)',
   marginBottom: 10,
 };
 const settingsPanelStyle: CSSProperties = {
-  background: '#FFF',
+  background: 'var(--color-background)',
   borderRadius: 16,
   padding: '32px',
-  border: '0.5px solid #E5E7EB',
+  border: '0.5px solid var(--color-border)',
   minHeight: 500,
 };
 

@@ -24,9 +24,9 @@ export const Input = ({
         padding: '8px 11px',
         fontSize: '13px',
         borderRadius: '8px',
-        border: '0.5px solid var(--color-border-secondary)',
-        background: 'var(--color-background-primary)',
-        color: 'var(--color-text-primary)',
+        border: '0.5px solid var(--color-border)',
+        background: 'var(--color-background)',
+        color: 'var(--color-text)',
         outline: 'none',
         fontFamily: 'inherit',
         transition: 'border-color 0.15s, box-shadow 0.15s',
@@ -38,7 +38,7 @@ export const Input = ({
         props.onFocus?.(e);
       }}
       onBlur={(e) => {
-        e.currentTarget.style.borderColor = 'var(--color-border-secondary)';
+        e.currentTarget.style.borderColor = 'var(--color-border)';
         e.currentTarget.style.boxShadow = 'none';
         props.onBlur?.(e);
       }}
@@ -72,9 +72,9 @@ export const Textarea = ({
         padding: '8px 11px',
         fontSize: '13px',
         borderRadius: '8px',
-        border: '0.5px solid var(--color-border-secondary)',
-        background: 'var(--color-background-primary)',
-        color: 'var(--color-text-primary)',
+        border: '0.5px solid var(--color-border)',
+        background: 'var(--color-background)',
+        color: 'var(--color-text)',
         outline: 'none',
         fontFamily: 'inherit',
         resize: 'vertical',
@@ -88,7 +88,7 @@ export const Textarea = ({
         props.onFocus?.(e);
       }}
       onBlur={(e) => {
-        e.currentTarget.style.borderColor = 'var(--color-border-secondary)';
+        e.currentTarget.style.borderColor = 'var(--color-border)';
         e.currentTarget.style.boxShadow = 'none';
         props.onBlur?.(e);
       }}
@@ -123,9 +123,9 @@ export const Select = ({
         padding: '8px 11px',
         fontSize: '13px',
         borderRadius: '8px',
-        border: '0.5px solid var(--color-border-secondary)',
-        background: 'var(--color-background-primary)',
-        color: 'var(--color-text-primary)',
+        border: '0.5px solid var(--color-border)',
+        background: 'var(--color-background)',
+        color: 'var(--color-text)',
         outline: 'none',
         fontFamily: 'inherit',
         cursor: 'pointer',
@@ -165,7 +165,7 @@ export const Field = ({ label, hint, htmlFor, children }: FieldProps) => {
           display: 'block',
           fontSize: '12px',
           fontWeight: 500,
-          color: 'var(--color-text-secondary)',
+          color: 'var(--color-text-weak)',
           marginBottom: '5px',
         }}
       >
@@ -176,7 +176,7 @@ export const Field = ({ label, hint, htmlFor, children }: FieldProps) => {
         <div
           style={{
             fontSize: '11px',
-            color: 'var(--color-text-secondary)',
+            color: 'var(--color-text-weaker)',
             marginTop: '4px',
           }}
         >

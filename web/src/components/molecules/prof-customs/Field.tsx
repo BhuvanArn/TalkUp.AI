@@ -13,7 +13,7 @@ export const Field = ({ label, children }: FieldProps) => {
           display: 'block',
           fontSize: '12px',
           fontWeight: 500,
-          color: 'var(--color-text-secondary)',
+          color: 'var(--color-text-weak)',
           marginBottom: '5px',
         }}
       >

@@ -11,8 +11,8 @@ export const LangTag = ({ label, variant }: LangTagProps) => {
     learning: { background: '#EAF3DE', color: '#3B6D11' },
     add: {
       background: 'transparent',
-      border: '0.5px dashed var(--color-border-secondary)',
-      color: 'var(--color-text-secondary)',
+      border: '0.5px dashed var(--color-border)',
+      color: 'var(--color-text-weaker)',
     },
   };
 

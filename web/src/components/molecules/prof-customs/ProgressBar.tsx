@@ -9,7 +9,7 @@ export const ProgressBar = ({ progress, color }: ProgressBarProps) => {
       style={{
         height: 5,
         borderRadius: 3,
-        background: 'var(--color-background-secondary)',
+        background: 'var(--color-surface-raised)',
         marginTop: 8,
         overflow: 'hidden',
       }}

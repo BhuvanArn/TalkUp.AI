@@ -44,7 +44,7 @@ export const LanguageSettings = ({ languages }: LanguageSettingsProps) => {
           style={{
             fontSize: 14,
             fontWeight: 600,
-            color: 'var(--color-text-primary)',
+            color: 'var(--color-text)',
             marginBottom: 12,
           }}
         >
@@ -63,7 +63,7 @@ export const LanguageSettings = ({ languages }: LanguageSettingsProps) => {
           style={{
             fontSize: 14,
             fontWeight: 600,
-            color: 'var(--color-text-primary)',
+            color: 'var(--color-text)',
             marginBottom: 16,
           }}
         >
@@ -79,7 +79,7 @@ export const LanguageSettings = ({ languages }: LanguageSettingsProps) => {
                 marginBottom: 8,
               }}
             >
-              <span style={{ color: 'var(--color-text-secondary)' }}>
+              <span style={{ color: 'var(--color-text-weaker)' }}>
                 {lang.name}
               </span>
               <span style={{ color: lang.color, fontWeight: 700 }}>
@@ -96,8 +96,8 @@ export const LanguageSettings = ({ languages }: LanguageSettingsProps) => {
 
 /** Base card styling for consistent layout within the settings panel */
 const cardStyle: CSSProperties = {
-  background: 'var(--color-background-primary, #FFF)',
-  border: '0.5px solid var(--color-border-tertiary, #E5E7EB)',
+  background: 'var(--color-surface)',
+  border: '0.5px solid var(--color-border)',
   borderRadius: 12,
   padding: '20px 22px',
 };

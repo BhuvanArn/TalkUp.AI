@@ -65,7 +65,7 @@ export const ApparenceSettings = ({
                 cursor: 'pointer',
                 border:
                   avatarColor === c.value
-                    ? '2.5px solid var(--color-text-primary)'
+                    ? '2.5px solid var(--color-text)'
                     : '2px solid transparent',
               }}
             />
@@ -104,7 +104,7 @@ export const ApparenceSettings = ({
               <div
                 style={{
                   fontSize: 11,
-                  color: 'var(--color-text-secondary)',
+                  color: 'var(--color-text-weaker)',
                   marginTop: 6,
                 }}
               >
@@ -118,7 +118,7 @@ export const ApparenceSettings = ({
             style={{
               fontSize: 12,
               fontWeight: 500,
-              color: 'var(--color-text-secondary)',
+              color: 'var(--color-text-weaker)',
               marginBottom: 8,
             }}
           >
@@ -150,8 +150,8 @@ export const ApparenceSettings = ({
                 cursor: 'pointer',
                 border:
                   bannerGradient === value
-                    ? '1.5px solid var(--color-text-primary)'
-                    : '0.5px solid var(--color-border-secondary)',
+                    ? '1.5px solid var(--color-text)'
+                    : '0.5px solid var(--color-border)',
               }}
             >
               <div
@@ -164,7 +164,7 @@ export const ApparenceSettings = ({
                 }}
               />
               <span
-                style={{ fontSize: 13, color: 'var(--color-text-primary)' }}
+                style={{ fontSize: 13, color: 'var(--color-text)' }}
               >
                 {label}
               </span>
@@ -219,13 +219,13 @@ export const ApparenceSettings = ({
                   style={{
                     fontSize: 13,
                     fontWeight: 500,
-                    color: 'var(--color-text-primary)',
+                    color: 'var(--color-text)',
                   }}
                 >
                   {label}
                 </div>
                 <div
-                  style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}
+                  style={{ fontSize: 12, color: 'var(--color-text-weaker)' }}
                 >
                   {desc}
                 </div>
@@ -239,23 +239,23 @@ export const ApparenceSettings = ({
 };
 
 const subCardStyle: CSSProperties = {
-  background: 'var(--color-background-secondary)',
+  background: 'var(--color-surface)',
   borderRadius: 10,
   padding: '16px 18px',
-  border: '0.5px solid var(--color-border-tertiary)',
+  border: '0.5px solid var(--color-border)',
 };
 
 const sectionTitleStyle: CSSProperties = {
   fontSize: 13,
   fontWeight: 600,
-  color: 'var(--color-text-primary)',
+  color: 'var(--color-text)',
   marginBottom: 12,
   paddingBottom: 8,
-  borderBottom: '0.5px solid var(--color-border-tertiary)',
+  borderBottom: '0.5px solid var(--color-border)',
 };
 
 const descStyle: CSSProperties = {
   fontSize: 12,
-  color: 'var(--color-text-secondary)',
+  color: 'var(--color-text-weaker)',
   marginBottom: 12,
 };

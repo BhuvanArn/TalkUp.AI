@@ -48,7 +48,10 @@ export const Topbar: React.FC<TopbarProps> = ({
       </nav>
 
       <div style={actionsStyle}>
-        <Button variant="ghost" style={{ color: '#6B7280', fontSize: '13px' }}>
+        <Button
+          variant="ghost"
+          style={{ color: 'var(--color-text-weaker)', fontSize: '13px' }}
+        >
           Annuler
         </Button>
 
@@ -82,8 +85,8 @@ export const Topbar: React.FC<TopbarProps> = ({
 };
 
 const topbarStyle: React.CSSProperties = {
-  background: '#FFFFFF',
-  borderBottom: '1px solid #E5E7EB',
+  background: 'var(--color-background)',
+  borderBottom: '1px solid var(--color-border)',
   padding: '0 32px',
   height: '64px',
   display: 'flex',
@@ -103,15 +106,15 @@ const breadcrumbStyle: React.CSSProperties = {
 };
 
 const folderStyle: React.CSSProperties = {
-  color: '#6B7280',
+  color: 'var(--color-text-weaker)',
 };
 
 const separatorStyle: React.CSSProperties = {
-  color: '#D1D5DB',
+  color: 'var(--color-border-strong)',
 };
 
 const currentPageStyle: React.CSSProperties = {
-  color: '#111827',
+  color: 'var(--color-text)',
   fontWeight: 500,
 };
 

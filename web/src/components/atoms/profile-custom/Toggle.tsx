@@ -11,6 +11,7 @@ export const Toggle = ({
 }: ToggleProps) => {
   return (
     <button
+      type="button"
       onClick={onToggle}
       role="switch"
       aria-checked={enabled}
@@ -18,12 +19,14 @@ export const Toggle = ({
         width: 36,
         height: 20,
         borderRadius: 10,
-        background: enabled ? accentColor : 'var(--color-background-secondary)',
-        border: `0.5px solid ${enabled ? accentColor : 'var(--color-border-secondary)'}`,
+        background: enabled
+          ? accentColor
+          : 'var(--color-surface-raised)',
+        border: `0.5px solid ${enabled ? accentColor : 'var(--color-border-strong)'}`,
         position: 'relative',
         cursor: 'pointer',
         flexShrink: 0,
-        transition: 'background 0.2s',
+        transition: 'background 0.2s, border-color 0.2s',
       }}
     >
       <div
@@ -31,7 +34,8 @@ export const Toggle = ({
           width: 14,
           height: 14,
           borderRadius: '50%',
-          background: 'white',
+          background: '#ffffff',
+          boxShadow: '0 0 0 0.5px rgba(0,0,0,0.06)',
           position: 'absolute',
           top: 2,
           left: enabled ? 18 : 2,

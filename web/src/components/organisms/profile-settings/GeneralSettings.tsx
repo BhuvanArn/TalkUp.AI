@@ -118,14 +118,18 @@ export function GeneralSettings({
                 left: 12,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#9CA3AF',
+                color: 'var(--color-text-weakest)',
               }}
             >
               @
             </span>
             <input
               id="username"
-              style={{ ...inputStyle, paddingLeft: '30px', color: '#6B7280' }}
+              style={{
+                ...inputStyle,
+                paddingLeft: '30px',
+                color: 'var(--color-text-weaker)',
+              }}
               value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}`}
               readOnly
             />
@@ -151,7 +155,7 @@ export function GeneralSettings({
           <span
             style={{
               fontSize: 11,
-              color: '#9CA3AF',
+              color: 'var(--color-text-weakest)',
               textAlign: 'right',
               marginTop: 4,
             }}
@@ -210,8 +214,8 @@ export function GeneralSettings({
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: 16,
   fontWeight: 700,
-  color: '#111827',
-  borderBottom: '1px solid #F3F4F6',
+  color: 'var(--color-text)',
+  borderBottom: '1px solid var(--color-border)',
   paddingBottom: '8px',
   marginBottom: '4px',
 };
@@ -223,15 +227,15 @@ const inputGroupStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 600,
-  color: '#4B5563',
+  color: 'var(--color-text-weak)',
 };
 const inputStyle: React.CSSProperties = {
   padding: '10px 12px',
   borderRadius: '8px',
-  border: '1px solid #E5E7EB',
+  border: '1px solid var(--color-border)',
   fontSize: 14,
   outline: 'none',
   transition: 'border-color 0.2s',
-  background: '#F9FAFB',
-  color: '#111827',
+  background: 'var(--color-surface)',
+  color: 'var(--color-text)',
 };

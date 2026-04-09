@@ -53,9 +53,7 @@ export const NotifSettings = ({
             alignItems: 'center',
             padding: '16px 0',
             borderBottom:
-              i < notifs.length - 1
-                ? '1px solid var(--color-border-tertiary, #F3F4F6)'
-                : 'none',
+              i < notifs.length - 1 ? '1px solid var(--color-border)' : 'none',
           }}
         >
           <div style={{ paddingRight: '16px' }}>
@@ -63,7 +61,7 @@ export const NotifSettings = ({
               style={{
                 fontSize: 14,
                 fontWeight: 600,
-                color: 'var(--color-text-primary, #111827)',
+                color: 'var(--color-text)',
               }}
             >
               {n.label}
@@ -71,7 +69,7 @@ export const NotifSettings = ({
             <div
               style={{
                 fontSize: 12,
-                color: 'var(--color-text-secondary, #6B7280)',
+                color: 'var(--color-text-weaker)',
                 marginTop: 4,
                 lineHeight: '1.4',
               }}
