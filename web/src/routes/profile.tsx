@@ -120,18 +120,9 @@ function Profile() {
   };
 
   return (
-    <div
-      className="p-2"
-      style={{
-        display: 'flex',
-        height: '100vh',
-        background: 'var(--color-surface)',
-        color: 'var(--color-text)',
-      }}
-    >
+    <div className="p-6 bg-background text-text">
       <div
         style={{
-          flex: 1,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -144,8 +135,8 @@ function Profile() {
           accentColor="var(--color-accent)"
         />
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ overflowY: 'auto', padding: '24px 0 0' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <h1 style={srOnlyStyle}>Profile</h1>
 
             <div style={headerCardStyle}>
@@ -339,7 +330,8 @@ function Profile() {
                 <div
                   style={{
                     ...sideCardStyle,
-                    background: `linear-gradient(135deg, ${THEME_ACCENT} 0%, #1E40AF 100%)`,
+                    background:
+                      'linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)',
                     color: 'white',
                     border: 'none',
                   }}
@@ -429,7 +421,7 @@ const srOnlyStyle: CSSProperties = {
   borderWidth: '0',
 };
 const headerCardStyle: CSSProperties = {
-  background: 'var(--color-background)',
+  background: 'var(--color-surface)',
   borderRadius: 16,
   border: '0.5px solid var(--color-border)',
   overflow: 'hidden',
@@ -442,9 +434,9 @@ const bannerBtnStyle: CSSProperties = {
   padding: '4px 10px',
   fontSize: 11,
   borderRadius: 6,
-  background: 'rgba(0,0,0,0.3)',
-  color: 'white',
-  border: 'none',
+  background: 'var(--color-background)',
+  color: 'var(--color-text)',
+  border: '0.5px solid var(--color-border)',
   cursor: 'pointer',
 };
 const avatarCircleStyle: CSSProperties = {
@@ -516,7 +508,7 @@ const tabBtnStyle: CSSProperties = {
   cursor: 'pointer',
 };
 const sideCardStyle: CSSProperties = {
-  background: 'var(--color-background)',
+  background: 'var(--color-surface)',
   borderRadius: 12,
   padding: 20,
   border: '0.5px solid var(--color-border)',
@@ -528,7 +520,7 @@ const cardTitleStyle: CSSProperties = {
   marginBottom: 10,
 };
 const settingsPanelStyle: CSSProperties = {
-  background: 'var(--color-background)',
+  background: 'var(--color-surface)',
   borderRadius: 16,
   padding: '32px',
   border: '0.5px solid var(--color-border)',
