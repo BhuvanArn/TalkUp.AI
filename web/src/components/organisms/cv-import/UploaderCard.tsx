@@ -108,7 +108,7 @@ export const UploaderCard = ({ onFileSelect, step = 1 }: UploaderCardProps) => {
   );
 };
 
-// Styles
+
 const cardStyle: React.CSSProperties = {
   background: '#FFF',
   borderRadius: '24px',

@@ -1,3 +1,4 @@
+
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -7,8 +8,8 @@ import { UploaderCard } from '../components/organisms/cv-import/UploaderCard';
 
 /**
  * @route /cv-analysis
- * @description Main route for CV and Job Description matching.
- * Orchestrates the 3 steps: Upload, AI Analysis, and Results.
+ * @description Main route for CV and Job Offer URL matching.
+ * Orchestrates the 3 steps: Upload, AI Web Scraping/Analysis, and Results.
  */
 export const Route = createFileRoute('/cv-analysis')({
   component: CVAnalysisPage,
@@ -17,13 +18,12 @@ export const Route = createFileRoute('/cv-analysis')({
 function CVAnalysisPage() {
   // --- States ---
   const [cvFile, setCvFile] = useState<File | null>(null);
-  const [jobText, setJobText] = useState('');
+  const [jobUrl, setJobUrl] = useState(''); // Updated from jobText to jobUrl
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
   /**
    * Mock data for AI analysis results.
-   * In a real app, this data would come from your backend API.
    */
   const [analysisResult, setAnalysisResult] = useState({
     score: 0,
@@ -34,13 +34,14 @@ function CVAnalysisPage() {
   // --- Handlers ---
 
   /**
-   * Starts the AI process by showing the overlay.
+   * Starts the AI process. 
+   * Validation check for both a file and a valid-looking URL.
    */
   const handleStartAnalysis = () => {
-    if (cvFile && jobText.trim().length > 20) {
+    if (cvFile && jobUrl.trim().startsWith('http')) {
       setIsAnalyzing(true);
 
-      // Simulate receiving data from AI
+      // Simulate receiving data from AI (After scraping the URL)
       setAnalysisResult({
         score: 82,
         strengths: [
@@ -59,19 +60,19 @@ function CVAnalysisPage() {
   const handleReset = () => {
     setIsFinished(false);
     setCvFile(null);
-    setJobText('');
+    setJobUrl('');
   };
 
   // --- Render ---
 
   return (
     <div style={pageContainer}>
-      {/* 1. HEADER (Hidden if results are shown) */}
+      {/* 1. HEADER */}
       {!isFinished && (
         <header style={headerStyle}>
           <h1 style={titleStyle}>Analyse de Compatibilité</h1>
           <p style={subtitleStyle}>
-            Importez votre CV et l'annonce pour voir si ça match !
+            Importez votre CV et collez le lien de l'annonce pour l'analyse IA.
           </p>
         </header>
       )}
@@ -88,7 +89,6 @@ function CVAnalysisPage() {
 
       {/* 3. MAIN CONTENT */}
       {isFinished ? (
-        /* STEP 3: RESULTS VIEW */
         <AnalysisResultCard
           score={analysisResult.score}
           strengths={analysisResult.strengths}
@@ -96,7 +96,6 @@ function CVAnalysisPage() {
           onRetry={handleReset}
         />
       ) : (
-        /* STEP 1: UPLOAD & INPUT VIEW */
         <>
           <div style={mainGrid}>
             {/* Column 1: CV Upload */}
@@ -111,9 +110,7 @@ function CVAnalysisPage() {
                     <p style={{ fontWeight: 700, margin: 0, fontSize: '14px' }}>
                       {cvFile.name}
                     </p>
-                    <p
-                      style={{ fontSize: '12px', color: '#64748B', margin: 0 }}
-                    >
+                    <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>
                       {(cvFile.size / 1024 / 1024).toFixed(2)} MB • Prêt
                     </p>
                   </div>
@@ -124,16 +121,23 @@ function CVAnalysisPage() {
               )}
             </section>
 
-            {/* Column 2: Job Description */}
+            {/* Column 2: Job URL Input */}
             <section style={columnStyle}>
-              <h2 style={sectionTitle}>2. L'Annonce</h2>
+              <h2 style={sectionTitle}>2. L'Annonce (Lien)</h2>
               <div style={jobCard}>
-                <textarea
-                  style={textAreaStyle}
-                  placeholder="Collez ici le texte de l'offre d'emploi du recruteur..."
-                  value={jobText}
-                  onChange={(e) => setJobText(e.target.value)}
-                />
+                <div style={urlInputWrapper}>
+                  <span style={{ fontSize: '18px' }}>🔗</span>
+                  <input
+                    type="url"
+                    style={urlInputStyle}
+                    placeholder="Collez le lien de l'offre (LinkedIn, WTTJ...)"
+                    value={jobUrl}
+                    onChange={(e) => setJobUrl(e.target.value)}
+                  />
+                </div>
+                <p style={helperText}>
+                  TalkUp.AI extraira automatiquement les détails de l'offre.
+                </p>
               </div>
             </section>
           </div>
@@ -142,13 +146,13 @@ function CVAnalysisPage() {
           <footer style={footerStyle}>
             <button
               onClick={handleStartAnalysis}
-              disabled={!cvFile || jobText.trim().length < 20}
+              disabled={!cvFile || !jobUrl.trim().startsWith('http')}
               style={{
                 ...analyzeButton,
                 backgroundColor:
-                  cvFile && jobText.trim().length > 20 ? '#1D9E75' : '#CBD5E1',
+                  cvFile && jobUrl.trim().startsWith('http') ? '#1D9E75' : '#CBD5E1',
                 cursor:
-                  cvFile && jobText.trim().length > 20
+                  cvFile && jobUrl.trim().startsWith('http')
                     ? 'pointer'
                     : 'not-allowed',
               }}
@@ -162,7 +166,7 @@ function CVAnalysisPage() {
   );
 }
 
-// --- Styles (CSS-in-JS) ---
+// --- Updated Styles ---
 
 const pageContainer: React.CSSProperties = {
   backgroundColor: '#F8FAFC',
@@ -212,6 +216,7 @@ const fileSuccessCard: React.CSSProperties = {
   backgroundColor: '#F0FDF4',
   border: '2px solid #1D9E75',
   borderRadius: '24px',
+  minHeight: '110px'
 };
 
 const fileIconCircle: React.CSSProperties = {
@@ -240,17 +245,36 @@ const jobCard: React.CSSProperties = {
   borderRadius: '24px',
   boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
   border: '1px solid #F1F5F9',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  minHeight: '110px'
 };
 
-const textAreaStyle: React.CSSProperties = {
-  width: '100%',
-  minHeight: '200px',
-  padding: '0',
+const urlInputWrapper: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  backgroundColor: '#F8FAFC',
+  border: '1px solid #E2E8F0',
+  borderRadius: '12px',
+  padding: '12px 16px',
+};
+
+const urlInputStyle: React.CSSProperties = {
+  flex: 1,
   border: 'none',
+  background: 'transparent',
   fontSize: '14px',
-  resize: 'none',
   outline: 'none',
-  lineHeight: '1.6',
+  color: '#1E293B',
+};
+
+const helperText: React.CSSProperties = {
+  fontSize: '12px',
+  color: '#94A3B8',
+  marginTop: '10px',
+  fontStyle: 'italic'
 };
 
 const footerStyle: React.CSSProperties = {
