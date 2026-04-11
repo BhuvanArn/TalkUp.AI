@@ -7,8 +7,10 @@ import { API_ROUTES } from './api';
  * API client: httpOnly auth cookies require withCredentials.
  *
  * On 401: one in-flight POST /auth/refresh; other failing requests queue and retry after.
- * Without this, parallel 401s would race refresh rotation and log users out. /auth/refresh
- * is allowlisted so a failed refresh does not recurse into another refresh attempt.
+ * Without this, parallel 401s would race refresh rotation and log users out.
+ * /auth/refresh is allowlisted so a failed refresh does not recurse. /auth/status is not
+ * allowlisted: a 401 there still attempts refresh once (session may be recoverable).
+ * If refresh fails, we redirect to /login except on public auth routes (avoids reload loops).
  */
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL, // Dynamically determined API base URL
@@ -19,8 +21,8 @@ const axiosInstance = axios.create({
 axiosInstance.defaults.headers.common['Content-Type'] = 'application/json';
 axiosInstance.defaults.headers.common['Accept'] = 'application/json';
 
+/** Endpoints where 401 must not trigger POST /auth/refresh (refresh itself must not recurse). */
 const PUBLIC_AUTH_ENDPOINTS = [
-  '/auth/status',
   '/auth/login',
   '/auth/register',
   '/auth/verify-email',
@@ -30,6 +32,15 @@ const PUBLIC_AUTH_ENDPOINTS = [
   '/auth/password-update',
   '/auth/refresh',
 ];
+
+/** Routes where failed refresh must not assign `/login` (same guard re-runs status → loop). */
+const NO_LOGIN_REDIRECT_AFTER_REFRESH_FAIL = new Set([
+  '/login',
+  '/register',
+  '/verify-email',
+  '/forgot-password',
+  '/reset-password',
+]);
 
 type QueueEntry = {
   resolve: (value?: unknown) => void;
@@ -96,9 +107,10 @@ axiosInstance.interceptors.response.use(
       processQueue(null);
       return axiosInstance(originalRequest);
     } catch (refreshError) {
-      // if the refresh fails, put the original request back in the queue
       processQueue(refreshError);
-      window.location.href = '/login';
+      if (!NO_LOGIN_REDIRECT_AFTER_REFRESH_FAIL.has(window.location.pathname)) {
+        window.location.href = '/login';
+      }
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;
