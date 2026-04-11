@@ -6,7 +6,7 @@ import { GeneralSettings } from './GeneralSettings';
 const defaultProps = {
   firstName: 'Adam',
   lastName: 'Bouffy',
-  bio: 'Passionné par les langues et le management.',
+  bio: 'Passionate about languages and management.',
   phoneNumber: '+33 6 00 00 00 00',
   avatarColor: '#2B70C9',
   onFirstNameChange: vi.fn(),
@@ -19,17 +19,17 @@ describe('GeneralSettings', () => {
   describe('Initial render', () => {
     it('renders without crashing', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Prénom')).toBeInTheDocument();
+      expect(screen.getByLabelText('First name')).toBeInTheDocument();
     });
 
-    it('renders the Identité section title', () => {
+    it('renders the Identity section title', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByText('Identité')).toBeInTheDocument();
+      expect(screen.getByText('Identity')).toBeInTheDocument();
     });
 
-    it('renders the À propos & Contact section title', () => {
+    it('renders the About & Contact section title', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByText('À propos & Contact')).toBeInTheDocument();
+      expect(screen.getByText('About & Contact')).toBeInTheDocument();
     });
   });
 
@@ -75,7 +75,7 @@ describe('GeneralSettings', () => {
   describe('First name input', () => {
     it('renders the first name input with correct value', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Prénom')).toHaveValue('Adam');
+      expect(screen.getByLabelText('First name')).toHaveValue('Adam');
     });
 
     it('calls onFirstNameChange when value changes', () => {
@@ -86,7 +86,7 @@ describe('GeneralSettings', () => {
           onFirstNameChange={onFirstNameChange}
         />,
       );
-      fireEvent.change(screen.getByLabelText('Prénom'), {
+      fireEvent.change(screen.getByLabelText('First name'), {
         target: { value: 'Marie' },
       });
       expect(onFirstNameChange).toHaveBeenCalledWith('Marie');
@@ -100,7 +100,7 @@ describe('GeneralSettings', () => {
           onFirstNameChange={onFirstNameChange}
         />,
       );
-      fireEvent.change(screen.getByLabelText('Prénom'), {
+      fireEvent.change(screen.getByLabelText('First name'), {
         target: { value: 'Marie' },
       });
       expect(onFirstNameChange).toHaveBeenCalledTimes(1);
@@ -110,7 +110,7 @@ describe('GeneralSettings', () => {
   describe('Last name input', () => {
     it('renders the last name input with correct value', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Nom')).toHaveValue('Bouffy');
+      expect(screen.getByLabelText('Last name')).toHaveValue('Bouffy');
     });
 
     it('calls onLastNameChange when value changes', () => {
@@ -121,7 +121,7 @@ describe('GeneralSettings', () => {
           onLastNameChange={onLastNameChange}
         />,
       );
-      fireEvent.change(screen.getByLabelText('Nom'), {
+      fireEvent.change(screen.getByLabelText('Last name'), {
         target: { value: 'Dupont' },
       });
       expect(onLastNameChange).toHaveBeenCalledWith('Dupont');
@@ -135,7 +135,7 @@ describe('GeneralSettings', () => {
           onLastNameChange={onLastNameChange}
         />,
       );
-      fireEvent.change(screen.getByLabelText('Nom'), {
+      fireEvent.change(screen.getByLabelText('Last name'), {
         target: { value: 'Dupont' },
       });
       expect(onLastNameChange).toHaveBeenCalledTimes(1);
@@ -145,14 +145,14 @@ describe('GeneralSettings', () => {
   describe('Username field', () => {
     it('renders the username input as readonly', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText("Nom d'utilisateur")).toHaveAttribute(
+      expect(screen.getByLabelText('Username')).toHaveAttribute(
         'readOnly',
       );
     });
 
     it('generates username from first and last name in lowercase', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText("Nom d'utilisateur")).toHaveValue(
+      expect(screen.getByLabelText('Username')).toHaveValue(
         'adam.bouffy',
       );
     });
@@ -165,7 +165,7 @@ describe('GeneralSettings', () => {
           lastName="Dupont"
         />,
       );
-      expect(screen.getByLabelText("Nom d'utilisateur")).toHaveValue(
+      expect(screen.getByLabelText('Username')).toHaveValue(
         'marie.dupont',
       );
     });
@@ -186,9 +186,9 @@ describe('GeneralSettings', () => {
       const onBioChange = vi.fn();
       render(<GeneralSettings {...defaultProps} onBioChange={onBioChange} />);
       fireEvent.change(screen.getByLabelText('Bio'), {
-        target: { value: 'Nouvelle bio' },
+        target: { value: 'Updated bio' },
       });
-      expect(onBioChange).toHaveBeenCalledWith('Nouvelle bio');
+      expect(onBioChange).toHaveBeenCalledWith('Updated bio');
     });
 
     it('has a maxLength of 300', () => {
@@ -204,7 +204,7 @@ describe('GeneralSettings', () => {
     });
 
     it('updates the character count when bio changes', () => {
-      const shortBio = 'Courte bio';
+      const shortBio = 'Short bio';
       render(<GeneralSettings {...defaultProps} bio={shortBio} />);
       expect(screen.getByText(`${shortBio.length} / 300`)).toBeInTheDocument();
     });
@@ -218,14 +218,14 @@ describe('GeneralSettings', () => {
   describe('Phone number input', () => {
     it('renders the phone input with correct value', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Téléphone')).toHaveValue(
+      expect(screen.getByLabelText('Phone number')).toHaveValue(
         defaultProps.phoneNumber,
       );
     });
 
     it('has type tel', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Téléphone')).toHaveAttribute('type', 'tel');
+      expect(screen.getByLabelText('Phone number')).toHaveAttribute('type', 'tel');
     });
 
     it('calls onPhoneNumberChange when value changes', () => {
@@ -236,7 +236,7 @@ describe('GeneralSettings', () => {
           onPhoneNumberChange={onPhoneNumberChange}
         />,
       );
-      fireEvent.change(screen.getByLabelText('Téléphone'), {
+      fireEvent.change(screen.getByLabelText('Phone number'), {
         target: { value: '+33 7 11 22 33 44' },
       });
       expect(onPhoneNumberChange).toHaveBeenCalledWith('+33 7 11 22 33 44');
@@ -250,7 +250,7 @@ describe('GeneralSettings', () => {
           onPhoneNumberChange={onPhoneNumberChange}
         />,
       );
-      fireEvent.change(screen.getByLabelText('Téléphone'), {
+      fireEvent.change(screen.getByLabelText('Phone number'), {
         target: { value: '+33 7 00 00 00 00' },
       });
       expect(onPhoneNumberChange).toHaveBeenCalledTimes(1);
@@ -258,7 +258,7 @@ describe('GeneralSettings', () => {
 
     it('renders the placeholder text', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Téléphone')).toHaveAttribute(
+      expect(screen.getByLabelText('Phone number')).toHaveAttribute(
         'placeholder',
         '+33 6 00 00 00 00',
       );
@@ -268,12 +268,12 @@ describe('GeneralSettings', () => {
   describe('LinkedIn field', () => {
     it('renders the LinkedIn input', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Lien LinkedIn')).toBeInTheDocument();
+      expect(screen.getByLabelText('LinkedIn URL')).toBeInTheDocument();
     });
 
     it('renders the LinkedIn placeholder', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Lien LinkedIn')).toHaveAttribute(
+      expect(screen.getByLabelText('LinkedIn URL')).toHaveAttribute(
         'placeholder',
         'https://linkedin.com/in/...',
       );
@@ -283,13 +283,13 @@ describe('GeneralSettings', () => {
   describe('Job title select', () => {
     it('renders the job title select', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Titre professionnel')).toBeInTheDocument();
+      expect(screen.getByLabelText('Job title')).toBeInTheDocument();
     });
 
     it('renders all job title options', () => {
       render(<GeneralSettings {...defaultProps} />);
       expect(
-        screen.getByRole('option', { name: 'Candidat Product Manager' }),
+        screen.getByRole('option', { name: 'Product Manager Candidate' }),
       ).toBeInTheDocument();
       expect(
         screen.getByRole('option', { name: 'Product Designer' }),
@@ -299,10 +299,10 @@ describe('GeneralSettings', () => {
       ).toBeInTheDocument();
     });
 
-    it('has Candidat Product Manager as default option', () => {
+    it('has Product Manager Candidate as default option', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Titre professionnel')).toHaveValue(
-        'Candidat Product Manager',
+      expect(screen.getByLabelText('Job title')).toHaveValue(
+        'Product Manager Candidate',
       );
     });
   });

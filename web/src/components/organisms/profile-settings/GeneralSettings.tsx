@@ -46,35 +46,13 @@ export function GeneralSettings({
   onBioChange,
   onPhoneNumberChange,
 }: GeneralSettingsProps) {
-  /** Generates initials from the first characters of first and last names */
-  const initials = (firstName[0] || '') + (lastName[0] || '');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      {/* ── Avatar Section ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
-            background: avatarColor,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 24,
-            fontWeight: 700,
-            color: 'white',
-            flexShrink: 0,
-          }}
-        >
-          {initials.toUpperCase()}
-        </div>
-      </div>
 
       {/* ── Identity Section ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <h3 style={sectionTitleStyle}>Identité</h3>
+        <h3 style={sectionTitleStyle}>Identity</h3>
 
         <div
           style={{
@@ -85,7 +63,7 @@ export function GeneralSettings({
         >
           <div style={inputGroupStyle}>
             <label style={labelStyle} htmlFor="firstName">
-              Prénom
+              First name
             </label>
             <input
               id="firstName"
@@ -96,7 +74,7 @@ export function GeneralSettings({
           </div>
           <div style={inputGroupStyle}>
             <label style={labelStyle} htmlFor="lastName">
-              Nom
+              Last name
             </label>
             <input
               id="lastName"
@@ -109,7 +87,7 @@ export function GeneralSettings({
 
         <div style={inputGroupStyle}>
           <label style={labelStyle} htmlFor="username">
-            Nom d'utilisateur
+            Username
           </label>
           <div style={{ position: 'relative' }}>
             <span
@@ -139,7 +117,7 @@ export function GeneralSettings({
 
       {/* ── About & Contact Section ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <h3 style={sectionTitleStyle}>À propos & Contact</h3>
+        <h3 style={sectionTitleStyle}>About & Contact</h3>
 
         <div style={inputGroupStyle}>
           <label style={labelStyle} htmlFor="bio">
@@ -173,7 +151,7 @@ export function GeneralSettings({
         >
           <div style={inputGroupStyle}>
             <label style={labelStyle} htmlFor="phone">
-              Téléphone
+              Phone number
             </label>
             <input
               id="phone"
@@ -186,7 +164,7 @@ export function GeneralSettings({
           </div>
           <div style={inputGroupStyle}>
             <label style={labelStyle} htmlFor="linkedin">
-              Lien LinkedIn
+              LinkedIn URL
             </label>
             <input
               id="linkedin"
@@ -198,10 +176,10 @@ export function GeneralSettings({
 
         <div style={inputGroupStyle}>
           <label style={labelStyle} htmlFor="job-title">
-            Titre professionnel
+            Job title
           </label>
           <select id="job-title" style={inputStyle}>
-            <option>Candidat Product Manager</option>
+            <option>Product Manager Candidate</option>
             <option>Product Designer</option>
             <option>Software Engineer</option>
           </select>

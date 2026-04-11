@@ -19,14 +19,14 @@ describe('NotifSettings Component', () => {
   const mockNotifs = [
     {
       id: 'training',
-      label: 'Rappels d’entraînement',
-      desc: 'Reçois une notification pour tes sessions prévues.',
+      label: 'Training reminders',
+      desc: 'Receive notifications for your planned sessions.',
       enabled: true,
     },
     {
       id: 'updates',
-      label: 'Mises à jour produit',
-      desc: 'Découvre les nouvelles fonctionnalités en avant-première.',
+      label: 'Product updates',
+      desc: 'Discover new features early.',
       enabled: false,
     },
   ];
