@@ -1,6 +1,10 @@
 import { AppearanceSettings } from '@/components/organisms/profile-settings/AppearanceSettings';
 import { GeneralSettings } from '@/components/organisms/profile-settings/GeneralSettings';
 import { NotifSettings } from '@/components/organisms/profile-settings/NotifSettings';
+import {
+  type AccountSession,
+  SecuritySettings,
+} from '@/components/organisms/profile-settings/SecuritySettings';
 import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
 import {
   type UnsavedChangesCtaAnchorRect,
@@ -27,7 +31,7 @@ export const Route = createFileRoute('/profile')({
 });
 
 const THEME_ACCENT = '#2B70C9';
-type Tab = 'general' | 'appearance' | 'notifications';
+type Tab = 'general' | 'appearance' | 'notifications' | 'security';
 
 interface NotifSetting {
   id: string;
@@ -79,10 +83,38 @@ const DEFAULT_NOTIFS: NotifSetting[] = [
   },
 ];
 
+const DEFAULT_SESSIONS: AccountSession[] = [
+  {
+    id: 'session-current',
+    deviceLabel: 'Chrome on Windows 11',
+    location: 'Paris, France',
+    lastActive: 'Active now',
+    isCurrent: true,
+    kind: 'desktop',
+  },
+  {
+    id: 'session-mobile',
+    deviceLabel: 'Safari on iOS',
+    location: 'Lyon, France',
+    lastActive: '2 days ago',
+    isCurrent: false,
+    kind: 'mobile',
+  },
+  {
+    id: 'session-work',
+    deviceLabel: 'Firefox on macOS',
+    location: 'Remote',
+    lastActive: '1 week ago',
+    isCurrent: false,
+    kind: 'desktop',
+  },
+];
+
 const TABS: { key: Tab; label: string }[] = [
   { key: 'general', label: 'General' },
   { key: 'appearance', label: 'Appearance' },
   { key: 'notifications', label: 'Notifications' },
+  { key: 'security', label: 'Security' },
 ];
 
 function Profile() {
@@ -96,6 +128,8 @@ function Profile() {
   const [avatarColor, setAvatarColor] = useState(THEME_ACCENT);
   const [bannerGradient, setBanner] = useState<string>(BANNER_PRESETS[0].value);
   const [notifs, setNotifs] = useState<NotifSetting[]>(DEFAULT_NOTIFS);
+  const [sessions, setSessions] =
+    useState<AccountSession[]>(DEFAULT_SESSIONS);
   const [saved, setSaved] = useState(false);
   const [ctaAttentionTick, setCtaAttentionTick] = useState(0);
   const [ctaAnchorRect, setCtaAnchorRect] =
@@ -218,6 +252,12 @@ function Profile() {
     setNotifs((prev) =>
       prev.map((n) => (n.id === id ? { ...n, enabled: !n.enabled } : n)),
     );
+
+  const revokeSession = (sessionId: string) =>
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+
+  const logoutEverywhere = () =>
+    setSessions((prev) => prev.filter((s) => s.isCurrent));
 
   const cycleBanner = () => {
     const idx = BANNER_PRESETS.findIndex((b) => b.value === bannerGradient);
@@ -500,6 +540,16 @@ function Profile() {
                 )}
                 {activeTab === 'notifications' && (
                   <NotifSettings notifs={notifs} onToggle={toggleNotif} />
+                )}
+                {activeTab === 'security' && (
+                  <SecuritySettings
+                    sessions={sessions}
+                    onRevokeSession={revokeSession}
+                    onLogoutEverywhere={logoutEverywhere}
+                    onChangePassword={() => {}}
+                    onRequestDataExport={() => {}}
+                    onDeleteAccount={() => {}}
+                  />
                 )}
               </div>
             </div>

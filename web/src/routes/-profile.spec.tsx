@@ -122,6 +122,12 @@ vi.mock('@/components/organisms/profile-settings/NotifSettings', () => ({
   ),
 }));
 
+vi.mock('@/components/organisms/profile-settings/SecuritySettings', () => ({
+  SecuritySettings: () => (
+    <div data-testid="security-settings">Security</div>
+  ),
+}));
+
 describe('Profile page', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -161,11 +167,12 @@ describe('Profile page', () => {
       expect(screen.getByTestId('general-settings')).toBeInTheDocument();
     });
 
-    it('renders all three tabs', () => {
+    it('renders all profile setting tabs', () => {
       render(<Profile />);
       expect(screen.getByTestId('tab-general')).toBeInTheDocument();
       expect(screen.getByTestId('tab-appearance')).toBeInTheDocument();
       expect(screen.getByTestId('tab-notifications')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-security')).toBeInTheDocument();
     });
 
     it('shows the bio in the introduction card', () => {
@@ -198,6 +205,13 @@ describe('Profile page', () => {
       render(<Profile />);
       fireEvent.click(screen.getByTestId('tab-notifications'));
       expect(screen.getByTestId('notif-settings')).toBeInTheDocument();
+      expect(screen.queryByTestId('general-settings')).not.toBeInTheDocument();
+    });
+
+    it('switches to Security tab when clicked', () => {
+      render(<Profile />);
+      fireEvent.click(screen.getByTestId('tab-security'));
+      expect(screen.getByTestId('security-settings')).toBeInTheDocument();
       expect(screen.queryByTestId('general-settings')).not.toBeInTheDocument();
     });
 
