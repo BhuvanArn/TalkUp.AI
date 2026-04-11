@@ -1,4 +1,4 @@
-import { CheckboxInput } from '@/components/atoms/checkbox-input';
+import { Toggle } from '@/components/atoms/toggle';
 import { cn } from '@/utils/cn';
 
 /**
@@ -49,18 +49,16 @@ export const NotifSettings = ({
             i < notifs.length - 1 && 'border-b border-border',
           )}
         >
-          <div className="min-w-0 pr-4">
+          <label htmlFor={`notif-${n.id}`} className="min-w-0 pr-4 cursor-pointer text-text">
             <div className="text-sm font-semibold text-text">{n.label}</div>
             <div className="mt-1 text-xs leading-snug text-text-weaker">
               {n.desc}
             </div>
-          </div>
-          <CheckboxInput
+          </label>
+          <Toggle
             id={`notif-${n.id}`}
-            name={`notif-${n.id}`}
-            checked={n.enabled}
-            onChange={() => onToggle(n.id)}
-            className="h-5 w-5 shrink-0"
+            enabled={n.enabled}
+            onToggle={() => onToggle(n.id)}
             aria-label={`${n.label} notifications`}
           />
         </div>

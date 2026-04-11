@@ -30,20 +30,20 @@ describe('NotifSettings Component', () => {
     });
   });
 
-  it('renders checkboxes with the correct initial checked state', () => {
+  it('renders switches with the correct initial checked state', () => {
     render(<NotifSettings notifs={mockNotifs} onToggle={mockOnToggle} />);
 
-    const checkboxes = screen.getAllByRole('checkbox');
-    expect(checkboxes).toHaveLength(2);
-    expect(checkboxes[0]).toBeChecked();
-    expect(checkboxes[1]).not.toBeChecked();
+    const switches = screen.getAllByRole('switch');
+    expect(switches).toHaveLength(2);
+    expect(switches[0]).toBeChecked();
+    expect(switches[1]).not.toBeChecked();
   });
 
-  it('calls onToggle with the correct ID when a checkbox is toggled', () => {
+  it('calls onToggle with the correct ID when a switch is toggled', () => {
     render(<NotifSettings notifs={mockNotifs} onToggle={mockOnToggle} />);
 
-    const checkboxes = screen.getAllByRole('checkbox');
-    fireEvent.click(checkboxes[1]);
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[1]);
 
     expect(mockOnToggle).toHaveBeenCalledWith('updates');
     expect(mockOnToggle).toHaveBeenCalledTimes(1);
