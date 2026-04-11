@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ApparenceSettings } from './ApparenceSettings';
+import { AppearanceSettings } from './AppearanceSettings';
 
-describe('ApparenceSettings Component', () => {
+describe('AppearanceSettings Component', () => {
   const defaultProps = {
     avatarColor: '#2B70C9',
     bannerGradient: 'linear-gradient(135deg, #2B70C9 0%, #1D9E75 100%)',
@@ -13,41 +13,41 @@ describe('ApparenceSettings Component', () => {
   };
 
   it('renders all sections correctly', () => {
-    render(<ApparenceSettings {...defaultProps} />);
+    render(<AppearanceSettings {...defaultProps} />);
 
-    expect(screen.getByText('Couleur du profil')).toBeInTheDocument();
-    expect(screen.getByText('Aperçu avatar')).toBeInTheDocument();
-    expect(screen.getByText('Bannière du profil')).toBeInTheDocument();
-    expect(screen.getByText('Visibilité du profil')).toBeInTheDocument();
+    expect(screen.getByText('Profile color')).toBeInTheDocument();
+    expect(screen.getByText('Avatar preview')).toBeInTheDocument();
+    expect(screen.getByText('Profile banner')).toBeInTheDocument();
+    expect(screen.getByText('Profile visibility')).toBeInTheDocument();
   });
 
   it('calls onColorChange when a preset color is clicked', () => {
-    render(<ApparenceSettings {...defaultProps} />);
+    render(<AppearanceSettings {...defaultProps} />);
 
-    const greenBtn = screen.getByLabelText(/Utiliser la couleur Vert/i);
+    const greenBtn = screen.getByLabelText(/Use color Green/i);
     fireEvent.click(greenBtn);
 
     expect(defaultProps.onColorChange).toHaveBeenCalledWith('#1D9E75');
   });
 
   it('calls onColorChange when custom color input is used', () => {
-    render(<ApparenceSettings {...defaultProps} />);
+    render(<AppearanceSettings {...defaultProps} />);
 
-    const colorInput = screen.getByLabelText(/Couleur personnalisée/i);
+    const colorInput = screen.getByLabelText(/Custom color/i);
     fireEvent.change(colorInput, { target: { value: '#FF0000' } });
 
     expect(defaultProps.onColorChange).toHaveBeenCalledWith('#ff0000');
   });
 
   it('renders avatars with correct initials and color', () => {
-    render(<ApparenceSettings {...defaultProps} />);
+    render(<AppearanceSettings {...defaultProps} />);
 
     const initialsElements = screen.getAllByText(defaultProps.initials);
     expect(initialsElements).toHaveLength(3);
   });
 
   it('calls onBannerChange when a banner preset is clicked', () => {
-    render(<ApparenceSettings {...defaultProps} />);
+    render(<AppearanceSettings {...defaultProps} />);
 
     const sunsetBtn = screen.getByText('Ocean').closest('button');
     if (sunsetBtn) fireEvent.click(sunsetBtn);
@@ -58,9 +58,9 @@ describe('ApparenceSettings Component', () => {
   });
 
   it('updates visibility radio buttons state', () => {
-    render(<ApparenceSettings {...defaultProps} />);
+    render(<AppearanceSettings {...defaultProps} />);
 
-    const privateRadio = screen.getByLabelText('Privé') as HTMLInputElement;
+    const privateRadio = screen.getByLabelText('Private') as HTMLInputElement;
     const publicRadio = screen.getByLabelText('Public') as HTMLInputElement;
 
     expect(publicRadio.checked).toBe(true);
@@ -73,9 +73,9 @@ describe('ApparenceSettings Component', () => {
   });
 
   it('highlights the active color preset', () => {
-    render(<ApparenceSettings {...defaultProps} />);
+    render(<AppearanceSettings {...defaultProps} />);
 
-    const activeColorBtn = screen.getByLabelText(/Utiliser la couleur Bleu/i);
+    const activeColorBtn = screen.getByLabelText(/Use color Blue/i);
     expect(activeColorBtn.style.border).toContain('var(--color-text)');
   });
 });

@@ -5,16 +5,16 @@ import { Field, Input } from '../../atoms/profile-custom/Input';
 import { BANNER_PRESETS } from './constants';
 
 const ACCENT_COLORS = [
-  { name: 'Bleu', value: '#2B70C9' },
-  { name: 'Vert', value: '#1D9E75' },
+  { name: 'Blue', value: '#2B70C9' },
+  { name: 'Green', value: '#1D9E75' },
   { name: 'Orange', value: '#D85A30' },
-  { name: 'Rose', value: '#D4537E' },
-  { name: 'Jaune', value: '#BA7517' },
-  { name: 'Violet', value: '#7F77DD' },
-  { name: 'Gris', value: '#555555' },
+  { name: 'Pink', value: '#D4537E' },
+  { name: 'Yellow', value: '#BA7517' },
+  { name: 'Purple', value: '#7F77DD' },
+  { name: 'Gray', value: '#555555' },
 ];
 
-interface ApparenceSettingsProps {
+interface AppearanceSettingsProps {
   avatarColor: string;
   bannerGradient: string;
   initials: string;
@@ -23,16 +23,16 @@ interface ApparenceSettingsProps {
 }
 
 /**
- * ApparenceSettings Component
+ * AppearanceSettings Component
  * Manages the visual aspect of the profile (Avatar colors, Banner presets, Visibility).
  */
-export const ApparenceSettings = ({
+export const AppearanceSettings = ({
   avatarColor,
   bannerGradient,
   initials,
   onColorChange,
   onBannerChange,
-}: ApparenceSettingsProps) => {
+}: AppearanceSettingsProps) => {
   const [visibility, setVisibility] = useState<'public' | 'private' | 'hidden'>(
     'public',
   );
@@ -41,8 +41,8 @@ export const ApparenceSettings = ({
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       {/* Colors of avatar */}
       <section style={subCardStyle}>
-        <h3 style={sectionTitleStyle}>Couleur du profil</h3>
-        <p style={descStyle}>Couleur de ton avatar et accents</p>
+        <h3 style={sectionTitleStyle}>Profile color</h3>
+        <p style={descStyle}>Choose your avatar and accent color</p>
         <div
           style={{
             display: 'flex',
@@ -56,7 +56,7 @@ export const ApparenceSettings = ({
               key={c.value}
               type="button"
               onClick={() => onColorChange(c.value)}
-              aria-label={`Utiliser la couleur ${c.name}`}
+              aria-label={`Use color ${c.name}`}
               style={{
                 width: 28,
                 height: 28,
@@ -71,7 +71,7 @@ export const ApparenceSettings = ({
             />
           ))}
         </div>
-        <Field label="Couleur personnalisée" htmlFor="custom-color">
+        <Field label="Custom color" htmlFor="custom-color">
           <Input
             id="custom-color"
             type="color"
@@ -85,7 +85,7 @@ export const ApparenceSettings = ({
 
       {/* Preview Section */}
       <section style={subCardStyle}>
-        <h3 style={sectionTitleStyle}>Aperçu avatar</h3>
+        <h3 style={sectionTitleStyle}>Avatar preview</h3>
         <div
           style={{
             display: 'flex',
@@ -95,9 +95,9 @@ export const ApparenceSettings = ({
           }}
         >
           {[
-            { size: 60, label: 'Grand' },
-            { size: 40, label: 'Moyen' },
-            { size: 26, label: 'Petit' },
+            { size: 60, label: 'Large' },
+            { size: 40, label: 'Medium' },
+            { size: 26, label: 'Small' },
           ].map(({ size, label }) => (
             <div key={label} style={{ textAlign: 'center' }}>
               <Avatar initials={initials} color={avatarColor} size={size} />
@@ -122,7 +122,7 @@ export const ApparenceSettings = ({
               marginBottom: 8,
             }}
           >
-            Aperçu bannière
+            Banner preview
           </div>
           <div
             style={{ height: 50, borderRadius: 8, background: bannerGradient }}
@@ -132,8 +132,8 @@ export const ApparenceSettings = ({
 
       {/* Banner Selection */}
       <section style={subCardStyle}>
-        <h3 style={sectionTitleStyle}>Bannière du profil</h3>
-        <p style={descStyle}>Choisis un thème pour ta bannière</p>
+        <h3 style={sectionTitleStyle}>Profile banner</h3>
+        <p style={descStyle}>Choose a theme for your banner</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {BANNER_PRESETS.map(({ label, value }) => (
             <button
@@ -175,24 +175,24 @@ export const ApparenceSettings = ({
 
       {/* Visibility Settings */}
       <section style={subCardStyle}>
-        <h3 style={sectionTitleStyle}>Visibilité du profil</h3>
-        <p style={descStyle}>Qui peut voir ton profil ?</p>
+        <h3 style={sectionTitleStyle}>Profile visibility</h3>
+        <p style={descStyle}>Who can view your profile?</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[
             {
               value: 'public' as const,
               label: 'Public',
-              desc: 'Visible par les recruteurs et la communauté',
+              desc: 'Visible to recruiters and the community',
             },
             {
               value: 'private' as const,
-              label: 'Privé',
-              desc: 'Uniquement toi et tes recruteurs associés',
+              label: 'Private',
+              desc: 'Visible only to you and your associated recruiters',
             },
             {
               value: 'hidden' as const,
-              label: 'Masqué',
-              desc: 'Profil non indexé',
+              label: 'Hidden',
+              desc: 'Profile is not indexed',
             },
           ].map(({ value, label, desc }) => (
             <label
