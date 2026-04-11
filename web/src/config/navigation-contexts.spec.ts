@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applicationNavigationContext,
-  globalNavigationItems,
   navigationContexts,
   publicNavigationContext,
   rootNavigationContext,
@@ -158,31 +157,6 @@ describe('navigation-contexts', () => {
       expect(routes).toContain('/settings/billing');
       expect(routes).toContain('/settings/integrations');
       expect(routes).toContain('/settings/security');
-    });
-  });
-
-  describe('globalNavigationItems', () => {
-    it('should contain global navigation items', () => {
-      expect(globalNavigationItems).toHaveLength(2);
-    });
-
-    it('should include Settings and Help Center', () => {
-      const labels = globalNavigationItems.map((item) => item.label);
-      expect(labels).toContain('Settings');
-      expect(labels).toContain('Help Center');
-    });
-
-    it('should have all items visible in navigation', () => {
-      globalNavigationItems.forEach((item) => {
-        expect(item.showInNav).toBe(true);
-      });
-    });
-
-    it('should have icons for all items', () => {
-      globalNavigationItems.forEach((item) => {
-        expect(item.icon).toBeDefined();
-        expect(typeof item.icon).toBe('string');
-      });
     });
   });
 

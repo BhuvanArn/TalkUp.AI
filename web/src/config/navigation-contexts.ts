@@ -147,26 +147,6 @@ export const settingsNavigationContext: NavigationContext = {
 };
 
 /**
- * Global navigation items that appear in all contexts
- */
-export const globalNavigationItems: import('@/types/navigation').NavItem[] = [
-  {
-    to: '/settings',
-    label: 'Settings',
-    icon: 'settings',
-    showInNav: true,
-    order: 1,
-  },
-  {
-    to: '/about',
-    label: 'Help Center',
-    icon: 'help-center',
-    showInNav: true,
-    order: 2,
-  },
-];
-
-/**
  * Map of all navigation contexts
  */
 export const navigationContexts: Record<string, NavigationContext> = {
