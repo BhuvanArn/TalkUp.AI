@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "@google/generative-ai": "^0.24.1",
     "@nestjs/axios": "^4.0.0",
     "@nestjs/cli": "^11.0.7",
     "@nestjs/common": "^11.1.0",
@@ -44,8 +45,8 @@
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.5.0",
-    "nodemailer": "^8.0.2",
     "multer": "^2.1.1",
+    "nodemailer": "^8.0.2",
     "pdf-parse": "^2.4.5",
     "pdf-parse-debugging-disabled": "^1.1.1",
     "pg": "^8.15.6",

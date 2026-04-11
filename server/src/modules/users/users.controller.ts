@@ -68,7 +68,7 @@ export class UsersController {
       },
     }),
   )
-  @UseGuards(AccessTokenGuard)
+  // @UseGuards(AccessTokenGuard)
   @Post("uploadCV")
   async uploadCV(@Req() req: Request, @Res() res: Response) {
     return this.usersService.uploadCV(req, res);
