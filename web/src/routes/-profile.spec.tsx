@@ -14,24 +14,6 @@ vi.mock('@tanstack/react-router', () => ({
     options,
 }));
 
-vi.mock('@/components/organisms/profile-custom/Topbar', () => ({
-  Topbar: ({
-    onSave,
-    isSaved,
-  }: {
-    breadcrumb: string[];
-    onSave: () => void;
-    isSaved: boolean;
-    accentColor: string;
-  }) => (
-    <div>
-      <button onClick={onSave} data-testid="save-button">
-        {isSaved ? 'Saved' : 'Save'}
-      </button>
-    </div>
-  ),
-}));
-
 vi.mock('@/components/organisms/profile-settings/GeneralSettings', () => ({
   GeneralSettings: ({
     firstName,
@@ -79,7 +61,7 @@ vi.mock('@/components/organisms/profile-settings/GeneralSettings', () => ({
 }));
 
 vi.mock('@/components/organisms/profile-settings/ApparenceSettings', () => ({
-  ApparenceSettings: ({
+  AppearanceSettings: ({
     avatarColor,
     bannerGradient,
     initials,
@@ -92,7 +74,7 @@ vi.mock('@/components/organisms/profile-settings/ApparenceSettings', () => ({
     onColorChange: (v: string) => void;
     onBannerChange: (v: string) => void;
   }) => (
-    <div data-testid="apparence-settings">
+    <div data-testid="appearance-settings">
       <span data-testid="avatar-color">{avatarColor}</span>
       <span data-testid="banner-value">{bannerGradient}</span>
       <span data-testid="initials-preview">{initials}</span>
@@ -172,7 +154,7 @@ describe('Profile page', () => {
     it('displays the subtitle with role and plan', () => {
       render(<Profile />);
       expect(
-        screen.getByText('Candidat Product Manager · TalkUp Pro'),
+        screen.getByText('Product Manager Candidate · TalkUp Pro'),
       ).toBeInTheDocument();
     });
 
@@ -184,13 +166,13 @@ describe('Profile page', () => {
     it('renders all three tabs', () => {
       render(<Profile />);
       expect(screen.getByTestId('tab-general')).toBeInTheDocument();
-      expect(screen.getByTestId('tab-apparence')).toBeInTheDocument();
-      expect(screen.getByTestId('tab-notifs')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-appearance')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-notifications')).toBeInTheDocument();
     });
 
     it('shows the bio in the introduction card', () => {
       render(<Profile />);
-      const matches = screen.getAllByText(/Passionné par les langues/);
+      const matches = screen.getAllByText(/Passionate about languages/);
       expect(matches.length).toBeGreaterThanOrEqual(1);
       expect(matches[0]).toBeInTheDocument();
     });
@@ -207,23 +189,23 @@ describe('Profile page', () => {
   });
 
   describe('Tab navigation', () => {
-    it('switches to Apparence tab when clicked', () => {
+    it('switches to Appearance tab when clicked', () => {
       render(<Profile />);
-      fireEvent.click(screen.getByTestId('tab-apparence'));
-      expect(screen.getByTestId('apparence-settings')).toBeInTheDocument();
+      fireEvent.click(screen.getByTestId('tab-appearance'));
+      expect(screen.getByTestId('appearance-settings')).toBeInTheDocument();
       expect(screen.queryByTestId('general-settings')).not.toBeInTheDocument();
     });
 
     it('switches to Notifications tab when clicked', () => {
       render(<Profile />);
-      fireEvent.click(screen.getByTestId('tab-notifs'));
+      fireEvent.click(screen.getByTestId('tab-notifications'));
       expect(screen.getByTestId('notif-settings')).toBeInTheDocument();
       expect(screen.queryByTestId('general-settings')).not.toBeInTheDocument();
     });
 
     it('switches back to General tab after visiting another tab', () => {
       render(<Profile />);
-      fireEvent.click(screen.getByTestId('tab-apparence'));
+      fireEvent.click(screen.getByTestId('tab-appearance'));
       fireEvent.click(screen.getByTestId('tab-general'));
       expect(screen.getByTestId('general-settings')).toBeInTheDocument();
     });
@@ -234,7 +216,7 @@ describe('Profile page', () => {
         'aria-selected',
         'true',
       );
-      expect(screen.getByTestId('tab-apparence')).toHaveAttribute(
+      expect(screen.getByTestId('tab-appearance')).toHaveAttribute(
         'aria-selected',
         'false',
       );
@@ -242,8 +224,8 @@ describe('Profile page', () => {
 
     it('updates aria-selected when switching tabs', () => {
       render(<Profile />);
-      fireEvent.click(screen.getByTestId('tab-apparence'));
-      expect(screen.getByTestId('tab-apparence')).toHaveAttribute(
+      fireEvent.click(screen.getByTestId('tab-appearance'));
+      expect(screen.getByTestId('tab-appearance')).toHaveAttribute(
         'aria-selected',
         'true',
       );
@@ -283,9 +265,9 @@ describe('Profile page', () => {
     it('updates the bio when changed', () => {
       render(<Profile />);
       fireEvent.change(screen.getByTestId('input-bio'), {
-        target: { value: 'Nouvelle bio' },
+        target: { value: 'Updated bio' },
       });
-      expect(screen.getByTestId('input-bio')).toHaveValue('Nouvelle bio');
+      expect(screen.getByTestId('input-bio')).toHaveValue('Updated bio');
     });
 
     it('updates the phone number when changed', () => {
@@ -319,17 +301,17 @@ describe('Profile page', () => {
     });
   });
 
-  describe('Apparence settings', () => {
+  describe('Appearance settings', () => {
     beforeEach(() => {
       render(<Profile />);
-      fireEvent.click(screen.getByTestId('tab-apparence'));
+      fireEvent.click(screen.getByTestId('tab-appearance'));
     });
 
-    it('passes the initial avatar color to ApparenceSettings', () => {
+    it('passes the initial avatar color to AppearanceSettings', () => {
       expect(screen.getByTestId('avatar-color')).toHaveTextContent('#2B70C9');
     });
 
-    it('passes the correct initials to ApparenceSettings', () => {
+    it('passes the correct initials to AppearanceSettings', () => {
       expect(screen.getByTestId('initials-preview')).toHaveTextContent('AB');
     });
 
@@ -356,10 +338,10 @@ describe('Profile page', () => {
     it('cycles through all banner presets', () => {
       render(<Profile />);
       const btn = screen.getByTestId('banner-style-button');
-      fireEvent.click(btn); // preset 1 → Océan
-      fireEvent.click(btn); // preset 2 → Nuit
+      fireEvent.click(btn); // preset 1 -> Ocean
+      fireEvent.click(btn); // preset 2 -> Night
       fireEvent.click(btn); // preset 3 → back to Minimal (#FFFFFF)
-      fireEvent.click(screen.getByTestId('tab-apparence'));
+      fireEvent.click(screen.getByTestId('tab-appearance'));
       expect(screen.getByTestId('banner-value')).toHaveTextContent('#FFFFFF');
     });
   });
@@ -388,7 +370,7 @@ describe('Profile page', () => {
     it('closes the dropdown when choosing a photo', () => {
       render(<Profile />);
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
-      fireEvent.click(screen.getByText('Choisir une photo'));
+      fireEvent.click(screen.getByText('Choose photo'));
       expect(
         screen.queryByTestId('avatar-dropdown-menu'),
       ).not.toBeInTheDocument();
@@ -397,7 +379,7 @@ describe('Profile page', () => {
     it('closes the dropdown when taking a photo', () => {
       render(<Profile />);
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
-      fireEvent.click(screen.getByText('Prendre une photo'));
+      fireEvent.click(screen.getByText('Take photo'));
       expect(
         screen.queryByTestId('avatar-dropdown-menu'),
       ).not.toBeInTheDocument();
@@ -406,7 +388,7 @@ describe('Profile page', () => {
     it('closes the dropdown on delete', () => {
       render(<Profile />);
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
-      fireEvent.click(screen.getByText('Supprimer'));
+      fireEvent.click(screen.getByText('Remove'));
       expect(
         screen.queryByTestId('avatar-dropdown-menu'),
       ).not.toBeInTheDocument();
@@ -425,7 +407,7 @@ describe('Profile page', () => {
   describe('Notification settings', () => {
     beforeEach(() => {
       render(<Profile />);
-      fireEvent.click(screen.getByTestId('tab-notifs'));
+      fireEvent.click(screen.getByTestId('tab-notifications'));
     });
 
     it('renders the NotifSettings component', () => {
@@ -472,32 +454,73 @@ describe('Profile page', () => {
     });
   });
 
-  describe('Save button', () => {
-    it('shows "Save" initially', () => {
+  describe('Floating save menu', () => {
+    it('is visually hidden initially', () => {
       render(<Profile />);
-      expect(screen.getByTestId('save-button')).toHaveTextContent('Save');
+      expect(screen.getByTestId('floating-save-menu')).toHaveAttribute(
+        'aria-hidden',
+        'true',
+      );
     });
 
-    it('shows "Saved" immediately after clicking save', () => {
+    it('appears after profile change', () => {
       render(<Profile />);
-      fireEvent.click(screen.getByTestId('save-button'));
-      expect(screen.getByTestId('save-button')).toHaveTextContent('Saved');
-    });
-
-    it('reverts to "Save" after 2 seconds', async () => {
-      render(<Profile />);
-      fireEvent.click(screen.getByTestId('save-button'));
-      await act(async () => {
-        vi.advanceTimersByTime(2000);
+      fireEvent.change(screen.getByTestId('input-firstname'), {
+        target: { value: 'Marie' },
       });
-      expect(screen.getByTestId('save-button')).toHaveTextContent('Save');
+      expect(screen.getByTestId('floating-save-menu')).toHaveAttribute(
+        'aria-hidden',
+        'false',
+      );
     });
 
-    it('does not revert before 2 seconds', () => {
+    it('hides after saving changes', async () => {
       render(<Profile />);
+      fireEvent.change(screen.getByTestId('input-firstname'), {
+        target: { value: 'Marie' },
+      });
       fireEvent.click(screen.getByTestId('save-button'));
-      vi.advanceTimersByTime(1999);
-      expect(screen.getByTestId('save-button')).toHaveTextContent('Saved');
+      expect(screen.getByTestId('floating-save-menu')).toHaveAttribute(
+        'aria-hidden',
+        'true',
+      );
+    });
+
+    it('reset reverts unsaved form value', () => {
+      render(<Profile />);
+      fireEvent.change(screen.getByTestId('input-firstname'), {
+        target: { value: 'Marie' },
+      });
+      fireEvent.click(screen.getByTestId('reset-changes-button'));
+      expect(screen.getByTestId('input-firstname')).toHaveValue('Adam');
+    });
+
+    it('locks tab switching when General has unsaved changes', () => {
+      render(<Profile />);
+      fireEvent.change(screen.getByTestId('input-firstname'), {
+        target: { value: 'Marie' },
+      });
+      fireEvent.click(screen.getByTestId('tab-appearance'));
+      expect(screen.getByTestId('general-settings')).toBeInTheDocument();
+      expect(screen.queryByTestId('appearance-settings')).not.toBeInTheDocument();
+    });
+
+    it('triggers CTA attention when tab switch is blocked', () => {
+      render(<Profile />);
+      fireEvent.change(screen.getByTestId('input-firstname'), {
+        target: { value: 'Marie' },
+      });
+
+      const cta = screen.getByTestId('floating-save-menu');
+      expect(cta).toHaveAttribute('data-attention', 'false');
+
+      fireEvent.click(screen.getByTestId('tab-appearance'));
+      expect(cta).toHaveAttribute('data-attention', 'true');
+
+      act(() => {
+        vi.advanceTimersByTime(800);
+      });
+      expect(cta).toHaveAttribute('data-attention', 'false');
     });
   });
 });

@@ -1,12 +1,22 @@
-import { Topbar } from '@/components/organisms/profile-custom/Topbar';
-import { ApparenceSettings } from '@/components/organisms/profile-settings/ApparenceSettings';
+import { AppearanceSettings } from '@/components/organisms/profile-settings/AppearanceSettings';
 import { GeneralSettings } from '@/components/organisms/profile-settings/GeneralSettings';
 import { NotifSettings } from '@/components/organisms/profile-settings/NotifSettings';
 import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
+import {
+  type UnsavedChangesCtaAnchorRect,
+  UnsavedChangesCta,
+} from '@/components/molecules/unsaved-changes-cta';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
-import { type CSSProperties, useEffect, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 export const Route = createFileRoute('/profile')({
   beforeLoad: createAuthGuard('/profile'),
@@ -14,7 +24,7 @@ export const Route = createFileRoute('/profile')({
 });
 
 const THEME_ACCENT = '#2B70C9';
-type Tab = 'general' | 'apparence' | 'notifs';
+type Tab = 'general' | 'appearance' | 'notifications';
 
 interface NotifSetting {
   id: string;
@@ -23,43 +33,53 @@ interface NotifSetting {
   enabled: boolean;
 }
 
+interface ProfileSnapshot {
+  firstName: string;
+  lastName: string;
+  bio: string;
+  phoneNumber: string;
+  avatarColor: string;
+  bannerGradient: string;
+  notifs: NotifSetting[];
+}
+
 const DEFAULT_NOTIFS: NotifSetting[] = [
   {
     id: 'training',
-    label: "Rappels d'entraînement",
-    desc: 'Notification quotidienne pour pratiquer',
+    label: 'Training reminders',
+    desc: 'Daily practice notification',
     enabled: true,
   },
   {
     id: 'recruiters',
     label: 'Messages',
-    desc: "Alertes lors d'un nouveau message",
+    desc: 'Alerts for new messages',
     enabled: true,
   },
   {
     id: 'simulations',
-    label: 'Résultats de simulation',
-    desc: 'Rapport après chaque simulation',
+    label: 'Simulation results',
+    desc: 'Report after each simulation',
     enabled: true,
   },
   {
     id: 'updates',
-    label: 'Nouveautés TalkUp',
-    desc: 'Nouveaux outils et fonctionnalités',
+    label: 'TalkUp updates',
+    desc: 'New tools and features',
     enabled: false,
   },
   {
     id: 'weekly',
-    label: 'Résumé hebdomadaire',
-    desc: 'Récapitulatif de ta progression chaque lundi',
+    label: 'Weekly summary',
+    desc: 'Progress recap every Monday',
     enabled: true,
   },
 ];
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'general', label: 'Général' },
-  { key: 'apparence', label: 'Apparence' },
-  { key: 'notifs', label: 'Notifications' },
+  { key: 'general', label: 'General' },
+  { key: 'appearance', label: 'Appearance' },
+  { key: 'notifications', label: 'Notifications' },
 ];
 
 function Profile() {
@@ -67,20 +87,91 @@ function Profile() {
   const [firstName, setFirstName] = useState('Adam');
   const [lastName, setLastName] = useState('Bouffy');
   const [bio, setBio] = useState(
-    "Passionné par les langues et le management, je m'entraîne pour mes futurs entretiens.",
+    'Passionate about languages and management, practicing for future interviews.',
   );
   const [phoneNumber, setPhoneNumber] = useState('+33 6 00 00 00 00');
   const [avatarColor, setAvatarColor] = useState(THEME_ACCENT);
   const [bannerGradient, setBanner] = useState<string>(BANNER_PRESETS[0].value);
   const [notifs, setNotifs] = useState<NotifSetting[]>(DEFAULT_NOTIFS);
   const [saved, setSaved] = useState(false);
+  const [ctaAttentionTick, setCtaAttentionTick] = useState(0);
+  const [ctaAnchorRect, setCtaAnchorRect] =
+    useState<UnsavedChangesCtaAnchorRect | null>(null);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const profileColumnRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [snapshot, setSnapshot] = useState<ProfileSnapshot>({
+    firstName: 'Adam',
+    lastName: 'Bouffy',
+    bio: 'Passionate about languages and management, practicing for future interviews.',
+    phoneNumber: '+33 6 00 00 00 00',
+    avatarColor: THEME_ACCENT,
+    bannerGradient: BANNER_PRESETS[0].value,
+    notifs: DEFAULT_NOTIFS,
+  });
 
   const initials =
     (firstName[0] || 'A').toUpperCase() + (lastName[0] || 'B').toUpperCase();
+
+  const currentSnapshot = useMemo<ProfileSnapshot>(
+    () => ({
+      firstName,
+      lastName,
+      bio,
+      phoneNumber,
+      avatarColor,
+      bannerGradient,
+      notifs,
+    }),
+    [firstName, lastName, bio, phoneNumber, avatarColor, bannerGradient, notifs],
+  );
+
+  const hasUnsavedChanges =
+    JSON.stringify(currentSnapshot) !== JSON.stringify(snapshot);
+
+  useLayoutEffect(() => {
+    const el = profileColumnRef.current;
+    if (!el) return;
+
+    const updateAnchor = () => {
+      const r = el.getBoundingClientRect();
+      if (r.width <= 0) {
+        setCtaAnchorRect(null);
+        return;
+      }
+      setCtaAnchorRect({ left: r.left, width: r.width });
+    };
+
+    updateAnchor();
+
+    const resizeObservers: ResizeObserver[] = [];
+    if (typeof ResizeObserver !== 'undefined') {
+      const roColumn = new ResizeObserver(updateAnchor);
+      roColumn.observe(el);
+      resizeObservers.push(roColumn);
+
+      // When the profile column stays 1200px wide but recenters (e.g. sidebar toggle),
+      // its width may not change — only `left` does. Observing `<main>` catches layout
+      // width changes so the CTA recenters with the column.
+      const mainEl = el.closest('main');
+      if (mainEl) {
+        const roMain = new ResizeObserver(updateAnchor);
+        roMain.observe(mainEl);
+        resizeObservers.push(roMain);
+      }
+    }
+
+    window.addEventListener('resize', updateAnchor);
+    window.addEventListener('scroll', updateAnchor, true);
+
+    return () => {
+      resizeObservers.forEach((o) => o.disconnect());
+      window.removeEventListener('resize', updateAnchor);
+      window.removeEventListener('scroll', updateAnchor, true);
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -102,11 +193,22 @@ function Profile() {
   );
 
   const handleSave = () => {
+    setSnapshot(currentSnapshot);
     setSaved(true);
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
     saveTimeoutRef.current = setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleCancelChanges = () => {
+    setFirstName(snapshot.firstName);
+    setLastName(snapshot.lastName);
+    setBio(snapshot.bio);
+    setPhoneNumber(snapshot.phoneNumber);
+    setAvatarColor(snapshot.avatarColor);
+    setBanner(snapshot.bannerGradient);
+    setNotifs(snapshot.notifs);
   };
 
   const toggleNotif = (id: string) =>
@@ -128,15 +230,11 @@ function Profile() {
           overflow: 'hidden',
         }}
       >
-        <Topbar
-          breadcrumb={['Settings', 'My Profile']}
-          onSave={handleSave}
-          isSaved={saved}
-          accentColor="var(--color-accent)"
-        />
-
-        <div style={{ overflowY: 'auto', padding: '24px 0 0' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ overflowY: 'auto' }}>
+          <div
+            ref={profileColumnRef}
+            style={{ maxWidth: 1200, margin: '0 auto' }}
+          >
             <h1 style={srOnlyStyle}>Profile</h1>
 
             <div style={headerCardStyle}>
@@ -152,9 +250,9 @@ function Profile() {
                   onClick={cycleBanner}
                   style={bannerBtnStyle}
                   data-testid="banner-style-button"
-                  aria-label="Changer le style de bannière"
+                  aria-label="Change banner style"
                 >
-                  Changer le style
+                  Change style
                 </button>
               </div>
 
@@ -195,7 +293,7 @@ function Profile() {
                       color: avatarColor,
                     }}
                     data-testid="avatar-camera-button"
-                    aria-label="Changer la photo de profil"
+                    aria-label="Change profile picture"
                   >
                     <Camera size={13} strokeWidth={2.5} />
                   </button>
@@ -217,7 +315,7 @@ function Profile() {
                         onMouseLeave={() => setHoveredItem(null)}
                         onClick={() => setShowAvatarMenu(false)}
                       >
-                        <ImageIcon size={14} /> Choisir une photo
+                        <ImageIcon size={14} /> Choose photo
                       </button>
                       <button
                         style={{
@@ -231,7 +329,7 @@ function Profile() {
                         onMouseLeave={() => setHoveredItem(null)}
                         onClick={() => setShowAvatarMenu(false)}
                       >
-                        <Camera size={14} /> Prendre une photo
+                        <Camera size={14} /> Take photo
                       </button>
                       <div
                         style={{
@@ -253,7 +351,7 @@ function Profile() {
                         onMouseLeave={() => setHoveredItem(null)}
                         onClick={() => setShowAvatarMenu(false)}
                       >
-                        <Trash2 size={14} /> Supprimer
+                        <Trash2 size={14} /> Remove
                       </button>
                     </div>
                   )}
@@ -276,7 +374,7 @@ function Profile() {
                     marginTop: 4,
                   }}
                 >
-                  Candidat Product Manager · TalkUp Pro
+                  Product Manager Candidate · TalkUp Pro
                 </div>
               </div>
 
@@ -286,7 +384,16 @@ function Profile() {
                     key={key}
                     role="tab"
                     aria-selected={activeTab === key}
-                    onClick={() => setActiveTab(key)}
+                    onClick={() => {
+                      if (
+                        hasUnsavedChanges &&
+                        activeTab !== key
+                      ) {
+                        setCtaAttentionTick((prev) => prev + 1);
+                        return;
+                      }
+                      setActiveTab(key);
+                    }}
                     style={{
                       ...tabBtnStyle,
                       color:
@@ -323,7 +430,7 @@ function Profile() {
                       lineHeight: 1.6,
                     }}
                   >
-                    <strong>Profil de l'utilisateur :</strong> {bio}
+                    <strong>User profile :</strong> {bio}
                   </p>
                 </div>
 
@@ -339,7 +446,7 @@ function Profile() {
                   <div
                     style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}
                   >
-                    Objectif
+                    Goal
                   </div>
                   <div
                     style={{
@@ -384,8 +491,8 @@ function Profile() {
                     onPhoneNumberChange={setPhoneNumber}
                   />
                 )}
-                {activeTab === 'apparence' && (
-                  <ApparenceSettings
+                {activeTab === 'appearance' && (
+                  <AppearanceSettings
                     avatarColor={avatarColor}
                     bannerGradient={bannerGradient}
                     initials={initials}
@@ -393,7 +500,7 @@ function Profile() {
                     onBannerChange={setBanner}
                   />
                 )}
-                {activeTab === 'notifs' && (
+                {activeTab === 'notifications' && (
                   <NotifSettings
                     notifs={notifs}
                     accentColor="var(--color-accent)"
@@ -405,6 +512,14 @@ function Profile() {
           </div>
         </div>
       </div>
+      <UnsavedChangesCta
+        isVisible={hasUnsavedChanges}
+        isSaved={saved}
+        onSave={handleSave}
+        onReset={handleCancelChanges}
+        attentionTrigger={ctaAttentionTick}
+        anchorRect={ctaAnchorRect}
+      />
     </div>
   );
 }
