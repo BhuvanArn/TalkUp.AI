@@ -1,4 +1,5 @@
-import { Toggle } from '../../atoms/profile-custom/Toggle';
+import { CheckboxInput } from '@/components/atoms/checkbox-input';
+import { cn } from '@/utils/cn';
 
 /**
  * @interface NotifSetting
@@ -22,10 +23,6 @@ interface NotifSetting {
 interface NotifSettingsProps {
   /** Array of notification settings to be rendered as a list */
   notifs: NotifSetting[];
-  /** * Primary color for the active toggle state.
-   * Defaults to the TalkUp brand blue (#2B70C9).
-   */
-  accentColor?: string;
   /** Callback function triggered when a toggle switch is clicked */
   onToggle: (id: string) => void;
 }
@@ -39,48 +36,32 @@ interface NotifSettingsProps {
  */
 export const NotifSettings = ({
   notifs,
-  accentColor = '#2B70C9',
   onToggle,
 }: NotifSettingsProps) => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="flex flex-col">
       {notifs.map((n, i) => (
         <div
           key={n.id}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '16px 0',
-            borderBottom:
-              i < notifs.length - 1 ? '1px solid var(--color-border)' : 'none',
-          }}
+          data-testid={`notif-row-${n.id}`}
+          className={cn(
+            'flex items-center justify-between gap-4 py-4',
+            i < notifs.length - 1 && 'border-b border-border',
+          )}
         >
-          <div style={{ paddingRight: '16px' }}>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--color-text)',
-              }}
-            >
-              {n.label}
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: 'var(--color-text-weaker)',
-                marginTop: 4,
-                lineHeight: '1.4',
-              }}
-            >
+          <div className="min-w-0 pr-4">
+            <div className="text-sm font-semibold text-text">{n.label}</div>
+            <div className="mt-1 text-xs leading-snug text-text-weaker">
               {n.desc}
             </div>
           </div>
-          <Toggle
-            enabled={n.enabled}
-            onToggle={() => onToggle(n.id)}
-            accentColor={accentColor}
+          <CheckboxInput
+            id={`notif-${n.id}`}
+            name={`notif-${n.id}`}
+            checked={n.enabled}
+            onChange={() => onToggle(n.id)}
+            className="h-5 w-5 shrink-0"
+            aria-label={`${n.label} notifications`}
           />
         </div>
       ))}

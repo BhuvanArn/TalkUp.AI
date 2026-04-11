@@ -8,7 +8,10 @@ import {
 } from '@/components/molecules/unsaved-changes-cta';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
+import { Avatar } from '@/components/atoms/avatar';
+import { Button } from '@/components/atoms/button';
 import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { cn } from '@/utils/cn';
 import {
   type CSSProperties,
   useEffect,
@@ -246,14 +249,18 @@ function Profile() {
                   borderBottom: '1px solid var(--color-border)',
                 }}
               >
-                <button
+                <Button
+                  type="button"
                   onClick={cycleBanner}
-                  style={bannerBtnStyle}
+                  variant="outlined"
+                  color="neutral"
+                  size="xs"
+                  className="absolute bottom-2.5 right-3 border-border bg-background text-[11px] text-text"
                   data-testid="banner-style-button"
                   aria-label="Change banner style"
                 >
                   Change style
-                </button>
+                </Button>
               </div>
 
               <div
@@ -273,86 +280,80 @@ function Profile() {
                   }}
                   ref={menuRef}
                 >
-                  <div
-                    style={{
-                      ...avatarCircleStyle,
-                      background: avatarColor,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
+                  <Avatar
                     data-testid="user-avatar-initials"
-                  >
-                    {initials}
-                  </div>
-                  <button
-                    onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+                    fallback={initials}
+                    size="xl"
+                    className="!h-24 !w-24 !border-4 !text-[28px] font-extrabold text-white shadow-md"
                     style={{
-                      ...cameraBtnStyle,
-                      borderColor: avatarColor,
-                      color: avatarColor,
+                      backgroundColor: avatarColor,
+                      borderColor: 'var(--color-background)',
                     }}
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+                    variant="outlined"
+                    color="neutral"
+                    size="sm"
+                    squared
+                    circled
+                    className="absolute bottom-0.5 right-0.5 z-10 !h-7 !w-7 min-h-0 min-w-0 border-2 bg-background p-0 shadow-md"
+                    style={{ borderColor: avatarColor, color: avatarColor }}
                     data-testid="avatar-camera-button"
                     aria-label="Change profile picture"
                   >
                     <Camera size={13} strokeWidth={2.5} />
-                  </button>
+                  </Button>
 
                   {showAvatarMenu && (
                     <div
                       style={dropdownStyle}
                       data-testid="avatar-dropdown-menu"
                     >
-                      <button
-                        style={{
-                          ...dropdownItemStyle,
-                          background:
-                            hoveredItem === 'choose'
-                              ? 'var(--color-surface-raised-hover)'
-                              : 'transparent',
-                        }}
+                      <Button
+                        type="button"
+                        variant="text"
+                        color="neutral"
+                        className={cn(
+                          'h-auto w-full justify-start rounded-md px-3 py-2.5 text-body-s text-text',
+                          hoveredItem === 'choose' && 'bg-surface-raised-hover',
+                        )}
                         onMouseEnter={() => setHoveredItem('choose')}
                         onMouseLeave={() => setHoveredItem(null)}
                         onClick={() => setShowAvatarMenu(false)}
                       >
                         <ImageIcon size={14} /> Choose photo
-                      </button>
-                      <button
-                        style={{
-                          ...dropdownItemStyle,
-                          background:
-                            hoveredItem === 'take'
-                              ? 'var(--color-surface-raised-hover)'
-                              : 'transparent',
-                        }}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="text"
+                        color="neutral"
+                        className={cn(
+                          'h-auto w-full justify-start rounded-md px-3 py-2.5 text-body-s text-text',
+                          hoveredItem === 'take' && 'bg-surface-raised-hover',
+                        )}
                         onMouseEnter={() => setHoveredItem('take')}
                         onMouseLeave={() => setHoveredItem(null)}
                         onClick={() => setShowAvatarMenu(false)}
                       >
                         <Camera size={14} /> Take photo
-                      </button>
-                      <div
-                        style={{
-                          height: '1px',
-                          background: 'var(--color-border)',
-                          margin: '4px 0',
-                        }}
-                      />
-                      <button
-                        style={{
-                          ...dropdownItemStyle,
-                          color: '#EF4444',
-                          background:
-                            hoveredItem === 'delete'
-                              ? 'var(--color-error-weaker)'
-                              : 'transparent',
-                        }}
+                      </Button>
+                      <div className="my-1 h-px bg-border" />
+                      <Button
+                        type="button"
+                        variant="text"
+                        color="error"
+                        className={cn(
+                          'h-auto w-full justify-start rounded-md px-3 py-2.5 text-body-s',
+                          hoveredItem === 'delete' && 'bg-error-weaker',
+                        )}
                         onMouseEnter={() => setHoveredItem('delete')}
                         onMouseLeave={() => setHoveredItem(null)}
                         onClick={() => setShowAvatarMenu(false)}
                       >
                         <Trash2 size={14} /> Remove
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -380,32 +381,30 @@ function Profile() {
 
               <div style={tabsBarStyle} role="tablist">
                 {TABS.map(({ key, label }) => (
-                  <button
+                  <Button
                     key={key}
+                    type="button"
                     role="tab"
+                    variant="text"
+                    color="neutral"
                     aria-selected={activeTab === key}
                     onClick={() => {
-                      if (
-                        hasUnsavedChanges &&
-                        activeTab !== key
-                      ) {
+                      if (hasUnsavedChanges && activeTab !== key) {
                         setCtaAttentionTick((prev) => prev + 1);
                         return;
                       }
                       setActiveTab(key);
                     }}
-                    style={{
-                      ...tabBtnStyle,
-                      color:
-                        activeTab === key
-                          ? 'var(--color-text)'
-                          : 'var(--color-text-weaker)',
-                      borderBottom: `2.5px solid ${activeTab === key ? 'var(--color-accent)' : 'transparent'}`,
-                    }}
+                    className={cn(
+                      'rounded-none border-b-[2.5px] border-transparent px-5 py-3.5 text-[13px] font-normal',
+                      activeTab === key
+                        ? 'border-accent text-text'
+                        : 'text-text-weaker',
+                    )}
                     data-testid={`tab-${key}`}
                   >
                     {label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -484,7 +483,6 @@ function Profile() {
                     lastName={lastName}
                     bio={bio}
                     phoneNumber={phoneNumber}
-                    avatarColor={avatarColor}
                     onFirstNameChange={setFirstName}
                     onLastNameChange={setLastName}
                     onBioChange={setBio}
@@ -501,11 +499,7 @@ function Profile() {
                   />
                 )}
                 {activeTab === 'notifications' && (
-                  <NotifSettings
-                    notifs={notifs}
-                    accentColor="var(--color-accent)"
-                    onToggle={toggleNotif}
-                  />
+                  <NotifSettings notifs={notifs} onToggle={toggleNotif} />
                 )}
               </div>
             </div>
@@ -542,45 +536,6 @@ const headerCardStyle: CSSProperties = {
   overflow: 'hidden',
   marginBottom: 24,
 };
-const bannerBtnStyle: CSSProperties = {
-  position: 'absolute',
-  bottom: 10,
-  right: 12,
-  padding: '4px 10px',
-  fontSize: 11,
-  borderRadius: 6,
-  background: 'var(--color-background)',
-  color: 'var(--color-text)',
-  border: '0.5px solid var(--color-border)',
-  cursor: 'pointer',
-};
-const avatarCircleStyle: CSSProperties = {
-  width: 96,
-  height: 96,
-  borderRadius: '50%',
-  border: '4px solid var(--color-background)',
-  fontSize: 28,
-  fontWeight: 800,
-  color: 'white',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-};
-const cameraBtnStyle: CSSProperties = {
-  position: 'absolute',
-  bottom: 2,
-  right: 2,
-  width: 28,
-  height: 28,
-  borderRadius: '50%',
-  background: 'var(--color-background)',
-  borderStyle: 'solid',
-  borderWidth: 2,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  cursor: 'pointer',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-  zIndex: 10,
-};
 const dropdownStyle: CSSProperties = {
   position: 'absolute',
   top: '110%',
@@ -596,31 +551,11 @@ const dropdownStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
 };
-const dropdownItemStyle: CSSProperties = {
-  padding: '10px 12px',
-  fontSize: 13,
-  color: 'var(--color-text)',
-  border: 'none',
-  borderRadius: 6,
-  textAlign: 'left',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-  transition: 'background-color 0.2s ease',
-};
 const tabsBarStyle: CSSProperties = {
   display: 'flex',
   justifyContent: 'center',
   borderTop: '0.5px solid var(--color-border)',
   marginTop: 12,
-};
-const tabBtnStyle: CSSProperties = {
-  padding: '14px 22px',
-  fontSize: 13,
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
 };
 const sideCardStyle: CSSProperties = {
   background: 'var(--color-surface)',

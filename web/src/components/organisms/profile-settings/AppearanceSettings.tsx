@@ -1,7 +1,9 @@
-import { type CSSProperties, useState } from 'react';
+import { Avatar } from '@/components/atoms/avatar';
+import { BaseInput } from '@/components/atoms/base-input';
+import { Button } from '@/components/atoms/button';
+import { cn } from '@/utils/cn';
+import { useState } from 'react';
 
-import { Avatar } from '../../atoms/profile-custom/Avatar';
-import { Field, Input } from '../../atoms/profile-custom/Input';
 import { BANNER_PRESETS } from './constants';
 
 const ACCENT_COLORS = [
@@ -12,7 +14,13 @@ const ACCENT_COLORS = [
   { name: 'Yellow', value: '#BA7517' },
   { name: 'Purple', value: '#7F77DD' },
   { name: 'Gray', value: '#555555' },
-];
+] as const;
+
+const AVATAR_PREVIEW_SIZES = [
+  { label: 'Large', className: '!h-[60px] !w-[60px] !text-[22px]' },
+  { label: 'Medium', className: '!h-10 !w-10 !text-base' },
+  { label: 'Small', className: '!h-[26px] !w-[26px] !text-[10px]' },
+] as const;
 
 interface AppearanceSettingsProps {
   avatarColor: string;
@@ -38,172 +46,125 @@ export const AppearanceSettings = ({
   );
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-      {/* Colors of avatar */}
-      <section style={subCardStyle}>
-        <h3 style={sectionTitleStyle}>Profile color</h3>
-        <p style={descStyle}>Choose your avatar and accent color</p>
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            flexWrap: 'wrap',
-            marginBottom: 14,
-          }}
-        >
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+      <section className={subCardClass}>
+        <h3 className={sectionTitleClass}>Profile color</h3>
+        <p className={descClass}>Choose your avatar and accent color</p>
+        <div className="mb-3.5 flex flex-wrap gap-2">
           {ACCENT_COLORS.map((c) => (
-            <button
+            <Button
               key={c.value}
               type="button"
-              onClick={() => onColorChange(c.value)}
+              variant="text"
+              color="neutral"
               aria-label={`Use color ${c.name}`}
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                background: c.value,
-                cursor: 'pointer',
-                border:
-                  avatarColor === c.value
-                    ? '2.5px solid var(--color-text)'
-                    : '2px solid transparent',
-              }}
+              onClick={() => onColorChange(c.value)}
+              className={cn(
+                'h-7 w-7 min-h-0 min-w-0 shrink-0 rounded-full border-2 p-0',
+                avatarColor === c.value ? 'border-text' : 'border-transparent',
+              )}
+              style={{ backgroundColor: c.value }}
             />
           ))}
         </div>
-        <Field label="Custom color" htmlFor="custom-color">
-          <Input
+        <div className="flex flex-col gap-1">
+          <label htmlFor="custom-color" className="text-label-m text-idle">
+            Custom color
+          </label>
+          <BaseInput
             id="custom-color"
+            name="custom-color"
             type="color"
-            accentColor={avatarColor}
             value={avatarColor}
             onChange={(e) => onColorChange(e.target.value)}
-            style={{ height: 36, padding: 2, cursor: 'pointer' }}
+            className="h-9 cursor-pointer p-0.5"
+            placeholder=""
           />
-        </Field>
+        </div>
       </section>
 
-      {/* Preview Section */}
-      <section style={subCardStyle}>
-        <h3 style={sectionTitleStyle}>Avatar preview</h3>
-        <div
-          style={{
-            display: 'flex',
-            gap: 20,
-            alignItems: 'flex-end',
-            marginTop: 16,
-          }}
-        >
-          {[
-            { size: 60, label: 'Large' },
-            { size: 40, label: 'Medium' },
-            { size: 26, label: 'Small' },
-          ].map(({ size, label }) => (
-            <div key={label} style={{ textAlign: 'center' }}>
-              <Avatar initials={initials} color={avatarColor} size={size} />
-              <div
-                style={{
-                  fontSize: 11,
-                  color: 'var(--color-text-weaker)',
-                  marginTop: 6,
-                }}
-              >
-                {label}
-              </div>
+      <section className={subCardClass}>
+        <h3 className={sectionTitleClass}>Avatar preview</h3>
+        <div className="mt-4 flex items-end gap-5">
+          {AVATAR_PREVIEW_SIZES.map(({ label, className }) => (
+            <div key={label} className="text-center">
+              <Avatar
+                fallback={initials}
+                size="md"
+                className={cn(
+                  'shrink-0 font-bold text-white',
+                  className,
+                )}
+                style={{ backgroundColor: avatarColor }}
+              />
+              <div className="mt-1.5 text-[11px] text-text-weaker">{label}</div>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 20 }}>
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 500,
-              color: 'var(--color-text-weaker)',
-              marginBottom: 8,
-            }}
-          >
+        <div className="mt-5">
+          <div className="mb-2 text-xs font-medium text-text-weaker">
             Banner preview
           </div>
           <div
-            style={{ height: 50, borderRadius: 8, background: bannerGradient }}
+            className="h-[50px] rounded-lg"
+            style={{ background: bannerGradient }}
           />
         </div>
       </section>
 
-      {/* Banner Selection */}
-      <section style={subCardStyle}>
-        <h3 style={sectionTitleStyle}>Profile banner</h3>
-        <p style={descStyle}>Choose a theme for your banner</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <section className={subCardClass}>
+        <h3 className={sectionTitleClass}>Profile banner</h3>
+        <p className={descClass}>Choose a theme for your banner</p>
+        <div className="flex flex-col gap-2">
           {BANNER_PRESETS.map(({ label, value }) => (
             <button
               key={label}
               type="button"
               onClick={() => onBannerChange(value)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '8px 12px',
-                borderRadius: 8,
-                background: 'transparent',
-                cursor: 'pointer',
-                border:
-                  bannerGradient === value
-                    ? '1.5px solid var(--color-text)'
-                    : '0.5px solid var(--color-border)',
-              }}
+              className={cn(
+                'flex cursor-pointer items-center gap-3 rounded-lg border bg-transparent px-3 py-2',
+                bannerGradient === value
+                  ? 'border-[1.5px] border-text'
+                  : 'border-border',
+              )}
             >
               <div
-                style={{
-                  width: 36,
-                  height: 20,
-                  borderRadius: 4,
-                  background: value,
-                  flexShrink: 0,
-                }}
+                className="h-5 w-9 shrink-0 rounded"
+                style={{ background: value }}
               />
-              <span
-                style={{ fontSize: 13, color: 'var(--color-text)' }}
-              >
-                {label}
-              </span>
+              <span className="text-body-s text-text">{label}</span>
             </button>
           ))}
         </div>
       </section>
 
-      {/* Visibility Settings */}
-      <section style={subCardStyle}>
-        <h3 style={sectionTitleStyle}>Profile visibility</h3>
-        <p style={descStyle}>Who can view your profile?</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {[
-            {
-              value: 'public' as const,
-              label: 'Public',
-              desc: 'Visible to recruiters and the community',
-            },
-            {
-              value: 'private' as const,
-              label: 'Private',
-              desc: 'Visible only to you and your associated recruiters',
-            },
-            {
-              value: 'hidden' as const,
-              label: 'Hidden',
-              desc: 'Profile is not indexed',
-            },
-          ].map(({ value, label, desc }) => (
+      <section className={subCardClass}>
+        <h3 className={sectionTitleClass}>Profile visibility</h3>
+        <p className={descClass}>Who can view your profile?</p>
+        <div className="flex flex-col gap-3">
+          {(
+            [
+              {
+                value: 'public' as const,
+                label: 'Public',
+                desc: 'Visible to recruiters and the community',
+              },
+              {
+                value: 'private' as const,
+                label: 'Private',
+                desc: 'Visible only to you and your associated recruiters',
+              },
+              {
+                value: 'hidden' as const,
+                label: 'Hidden',
+                desc: 'Profile is not indexed',
+              },
+            ] as const
+          ).map(({ value, label, desc }) => (
             <label
               key={value}
               htmlFor={`visibility-${value}`}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 10,
-                cursor: 'pointer',
-              }}
+              className="flex cursor-pointer items-start gap-2.5"
             >
               <input
                 id={`visibility-${value}`}
@@ -212,23 +173,11 @@ export const AppearanceSettings = ({
                 aria-label={label}
                 checked={visibility === value}
                 onChange={() => setVisibility(value)}
-                style={{ marginTop: 2 }}
+                className="mt-0.5"
               />
               <div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: 'var(--color-text)',
-                  }}
-                >
-                  {label}
-                </div>
-                <div
-                  style={{ fontSize: 12, color: 'var(--color-text-weaker)' }}
-                >
-                  {desc}
-                </div>
+                <div className="text-body-s font-medium text-text">{label}</div>
+                <div className="text-xs text-text-weaker">{desc}</div>
               </div>
             </label>
           ))}
@@ -238,24 +187,10 @@ export const AppearanceSettings = ({
   );
 };
 
-const subCardStyle: CSSProperties = {
-  background: 'var(--color-surface)',
-  borderRadius: 10,
-  padding: '16px 18px',
-  border: '0.5px solid var(--color-border)',
-};
+const subCardClass =
+  'rounded-[10px] border border-border bg-surface px-[18px] py-4';
 
-const sectionTitleStyle: CSSProperties = {
-  fontSize: 13,
-  fontWeight: 600,
-  color: 'var(--color-text)',
-  marginBottom: 12,
-  paddingBottom: 8,
-  borderBottom: '0.5px solid var(--color-border)',
-};
+const sectionTitleClass =
+  'mb-3 border-b border-border pb-2 text-[13px] font-semibold text-text';
 
-const descStyle: CSSProperties = {
-  fontSize: 12,
-  color: 'var(--color-text-weaker)',
-  marginBottom: 12,
-};
+const descClass = 'mb-3 text-xs text-text-weaker';

@@ -76,6 +76,6 @@ describe('AppearanceSettings Component', () => {
     render(<AppearanceSettings {...defaultProps} />);
 
     const activeColorBtn = screen.getByLabelText(/Use color Blue/i);
-    expect(activeColorBtn.style.border).toContain('var(--color-text)');
+    expect(activeColorBtn.className).toMatch(/border-text/);
   });
 });

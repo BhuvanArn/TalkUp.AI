@@ -29,7 +29,6 @@ vi.mock('@/components/organisms/profile-settings/GeneralSettings', () => ({
     lastName: string;
     bio: string;
     phoneNumber: string;
-    avatarColor: string;
     onFirstNameChange: (v: string) => void;
     onLastNameChange: (v: string) => void;
     onBioChange: (v: string) => void;
@@ -60,7 +59,7 @@ vi.mock('@/components/organisms/profile-settings/GeneralSettings', () => ({
   ),
 }));
 
-vi.mock('@/components/organisms/profile-settings/ApparenceSettings', () => ({
+vi.mock('@/components/organisms/profile-settings/AppearanceSettings', () => ({
   AppearanceSettings: ({
     avatarColor,
     bannerGradient,
@@ -102,7 +101,6 @@ vi.mock('@/components/organisms/profile-settings/NotifSettings', () => ({
     onToggle,
   }: {
     notifs: { id: string; label: string; desc: string; enabled: boolean }[];
-    accentColor: string;
     onToggle: (id: string) => void;
   }) => (
     <div data-testid="notif-settings">

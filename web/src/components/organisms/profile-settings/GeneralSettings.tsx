@@ -1,4 +1,14 @@
-import React from 'react';
+import { BaseInput } from '@/components/atoms/base-input';
+import type { SelectorOption } from '@/components/atoms/selector-input';
+import { TextArea } from '@/components/atoms/text-area';
+import { InputMolecule } from '@/components/molecules/input-molecule';
+import { useState } from 'react';
+
+const JOB_OPTIONS: SelectorOption[] = [
+  { value: 'Product Manager Candidate', label: 'Product Manager Candidate' },
+  { value: 'Product Designer', label: 'Product Designer' },
+  { value: 'Software Engineer', label: 'Software Engineer' },
+];
 
 /**
  * @interface GeneralSettingsProps
@@ -13,8 +23,6 @@ interface GeneralSettingsProps {
   bio: string;
   /** User's contact phone number */
   phoneNumber: string;
-  /** Background color for the avatar placeholder (Hex or CSS color) */
-  avatarColor: string;
   /** Callback fired when the first name input value changes */
   onFirstNameChange: (value: string) => void;
   /** Callback fired when the last name input value changes */
@@ -23,10 +31,6 @@ interface GeneralSettingsProps {
   onBioChange: (value: string) => void;
   /** Callback fired when the phone number input value changes */
   onPhoneNumberChange: (value: string) => void;
-  /** Optional callback to trigger the profile picture upload process */
-  onAvatarChange?: () => void;
-  /** Optional callback to remove the current profile picture */
-  onAvatarDelete?: () => void;
 }
 
 /**
@@ -40,180 +44,115 @@ export function GeneralSettings({
   lastName,
   bio,
   phoneNumber,
-  avatarColor,
   onFirstNameChange,
   onLastNameChange,
   onBioChange,
   onPhoneNumberChange,
 }: GeneralSettingsProps) {
+  const [jobTitle, setJobTitle] = useState<string>(JOB_OPTIONS[0].value);
+  const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-5">
+        <h3 className="mb-1 border-b border-border pb-2 text-base font-bold text-text">
+          Identity
+        </h3>
 
-      {/* ── Identity Section ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <h3 style={sectionTitleStyle}>Identity</h3>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '16px',
-          }}
-        >
-          <div style={inputGroupStyle}>
-            <label style={labelStyle} htmlFor="firstName">
-              First name
-            </label>
-            <input
-              id="firstName"
-              style={inputStyle}
-              value={firstName}
-              onChange={(e) => onFirstNameChange(e.target.value)}
-            />
-          </div>
-          <div style={inputGroupStyle}>
-            <label style={labelStyle} htmlFor="lastName">
-              Last name
-            </label>
-            <input
-              id="lastName"
-              style={inputStyle}
-              value={lastName}
-              onChange={(e) => onLastNameChange(e.target.value)}
-            />
-          </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <InputMolecule
+            inputType="base"
+            id="firstName"
+            name="firstName"
+            label="First name"
+            value={firstName}
+            onChange={(e) => onFirstNameChange(e.target.value)}
+            placeholder=""
+          />
+          <InputMolecule
+            inputType="base"
+            id="lastName"
+            name="lastName"
+            label="Last name"
+            value={lastName}
+            onChange={(e) => onLastNameChange(e.target.value)}
+            placeholder=""
+          />
         </div>
 
-        <div style={inputGroupStyle}>
-          <label style={labelStyle} htmlFor="username">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="username" className="text-label-m text-idle">
             Username
           </label>
-          <div style={{ position: 'relative' }}>
-            <span
-              style={{
-                position: 'absolute',
-                left: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--color-text-weakest)',
-              }}
-            >
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-weakest">
               @
             </span>
-            <input
+            <BaseInput
               id="username"
-              style={{
-                ...inputStyle,
-                paddingLeft: '30px',
-                color: 'var(--color-text-weaker)',
-              }}
-              value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}`}
+              name="username"
+              value={username}
               readOnly
+              className="pl-8 text-text-weaker"
+              placeholder=""
             />
           </div>
         </div>
       </div>
 
-      {/* ── About & Contact Section ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <h3 style={sectionTitleStyle}>About & Contact</h3>
+      <div className="flex flex-col gap-5">
+        <h3 className="mb-1 border-b border-border pb-2 text-base font-bold text-text">
+          About & Contact
+        </h3>
 
-        <div style={inputGroupStyle}>
-          <label style={labelStyle} htmlFor="bio">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="bio" className="text-label-m text-idle">
             Bio
           </label>
-          <textarea
+          <TextArea
             id="bio"
-            style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
+            name="bio"
             value={bio}
             onChange={(e) => onBioChange(e.target.value)}
             maxLength={300}
+            rows={4}
+            placeholder=""
           />
-          <span
-            style={{
-              fontSize: 11,
-              color: 'var(--color-text-weakest)',
-              textAlign: 'right',
-              marginTop: 4,
-            }}
-          >
-            {bio.length} / 300
-          </span>
+          <p className="mt-1 text-xs text-text-weakest">{`${bio.length} / 300`}</p>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '16px',
-          }}
-        >
-          <div style={inputGroupStyle}>
-            <label style={labelStyle} htmlFor="phone">
-              Phone number
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              style={inputStyle}
-              placeholder="+33 6 00 00 00 00"
-              value={phoneNumber}
-              onChange={(e) => onPhoneNumberChange(e.target.value)}
-            />
-          </div>
-          <div style={inputGroupStyle}>
-            <label style={labelStyle} htmlFor="linkedin">
-              LinkedIn URL
-            </label>
-            <input
-              id="linkedin"
-              style={inputStyle}
-              placeholder="https://linkedin.com/in/..."
-            />
-          </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <InputMolecule
+            inputType="base"
+            id="phone"
+            name="phone"
+            label="Phone number"
+            type="tel"
+            value={phoneNumber}
+            onChange={(e) => onPhoneNumberChange(e.target.value)}
+            placeholder="+33 6 00 00 00 00"
+          />
+          <InputMolecule
+            inputType="base"
+            id="linkedin"
+            name="linkedin"
+            label="LinkedIn URL"
+            value=""
+            onChange={() => {}}
+            placeholder="https://linkedin.com/in/..."
+          />
         </div>
 
-        <div style={inputGroupStyle}>
-          <label style={labelStyle} htmlFor="job-title">
-            Job title
-          </label>
-          <select id="job-title" style={inputStyle}>
-            <option>Product Manager Candidate</option>
-            <option>Product Designer</option>
-            <option>Software Engineer</option>
-          </select>
-        </div>
+        <InputMolecule
+          inputType="selector"
+          id="job-title"
+          name="jobTitle"
+          label="Job title"
+          value={jobTitle}
+          onChange={(e) => setJobTitle(e.target.value)}
+          options={JOB_OPTIONS}
+        />
       </div>
     </div>
   );
 }
-
-const sectionTitleStyle: React.CSSProperties = {
-  fontSize: 16,
-  fontWeight: 700,
-  color: 'var(--color-text)',
-  borderBottom: '1px solid var(--color-border)',
-  paddingBottom: '8px',
-  marginBottom: '4px',
-};
-const inputGroupStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '6px',
-};
-const labelStyle: React.CSSProperties = {
-  fontSize: 13,
-  fontWeight: 600,
-  color: 'var(--color-text-weak)',
-};
-const inputStyle: React.CSSProperties = {
-  padding: '10px 12px',
-  borderRadius: '8px',
-  border: '1px solid var(--color-border)',
-  fontSize: 14,
-  outline: 'none',
-  transition: 'border-color 0.2s',
-  background: 'var(--color-surface)',
-  color: 'var(--color-text)',
-};

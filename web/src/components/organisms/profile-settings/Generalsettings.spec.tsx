@@ -8,7 +8,6 @@ const defaultProps = {
   lastName: 'Bouffy',
   bio: 'Passionate about languages and management.',
   phoneNumber: '+33 6 00 00 00 00',
-  avatarColor: '#2B70C9',
   onFirstNameChange: vi.fn(),
   onLastNameChange: vi.fn(),
   onBioChange: vi.fn(),
@@ -30,45 +29,6 @@ describe('GeneralSettings', () => {
     it('renders the About & Contact section title', () => {
       render(<GeneralSettings {...defaultProps} />);
       expect(screen.getByText('About & Contact')).toBeInTheDocument();
-    });
-  });
-
-  describe('Avatar', () => {
-    it('displays correct initials from first and last name', () => {
-      render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByText('AB')).toBeInTheDocument();
-    });
-
-    it('displays initials in uppercase', () => {
-      render(
-        <GeneralSettings
-          {...defaultProps}
-          firstName="adam"
-          lastName="bouffy"
-        />,
-      );
-      expect(screen.getByText('AB')).toBeInTheDocument();
-    });
-
-    it('displays only first initial when last name is empty', () => {
-      render(<GeneralSettings {...defaultProps} lastName="" />);
-      expect(screen.getByText('A')).toBeInTheDocument();
-    });
-
-    it('displays empty initials when both names are empty', () => {
-      render(<GeneralSettings {...defaultProps} firstName="" lastName="" />);
-      const avatar = screen
-        .getAllByText('')
-        .find((el) => el.style.borderRadius === '50%');
-      expect(avatar).toBeDefined();
-    });
-
-    it('applies the avatarColor as background', () => {
-      const { container } = render(<GeneralSettings {...defaultProps} />);
-      const avatar = container.querySelector(
-        '[style*="border-radius: 50%"]',
-      ) as HTMLElement;
-      expect(avatar.style.background).toBe('rgb(43, 112, 201)');
     });
   });
 

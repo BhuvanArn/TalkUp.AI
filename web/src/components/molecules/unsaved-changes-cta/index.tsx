@@ -1,3 +1,4 @@
+import { Button } from '@/components/atoms/button';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 
 /** When set, the dock is fixed to this viewport rectangle (e.g. main content column), not the full window. */
@@ -117,22 +118,26 @@ export const UnsavedChangesCta = ({
       >
         <span style={labelStyle}>{message}</span>
         <div style={actionsStyle}>
-          <button
+          <Button
             type="button"
+            variant="outlined"
+            color="neutral"
             onClick={onReset}
-            style={resetButtonStyle}
             data-testid="reset-changes-button"
+            className="min-h-10 rounded-[10px] border-border bg-background px-[18px] text-sm font-medium text-text"
           >
             {resetLabel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="contained"
+            color="accent"
             onClick={onSave}
-            style={saveButtonStyle}
             data-testid="save-button"
+            className="min-h-10 rounded-[10px] px-5 text-sm font-semibold"
           >
             {isSaved ? savedLabel : saveLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -187,28 +192,4 @@ const actionsStyle: CSSProperties = {
   justifyContent: 'flex-end',
   gap: 10,
   flex: '0 1 auto',
-};
-
-const resetButtonStyle: CSSProperties = {
-  minHeight: 40,
-  padding: '0 18px',
-  borderRadius: 10,
-  border: '1px solid var(--color-border)',
-  background: 'var(--color-background)',
-  color: 'var(--color-text)',
-  fontSize: 14,
-  fontWeight: 500,
-  cursor: 'pointer',
-};
-
-const saveButtonStyle: CSSProperties = {
-  minHeight: 40,
-  padding: '0 20px',
-  borderRadius: 10,
-  border: 'none',
-  background: 'var(--color-accent)',
-  color: 'white',
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: 'pointer',
 };

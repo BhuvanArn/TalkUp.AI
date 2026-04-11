@@ -1,7 +1,5 @@
-import type { CSSProperties } from 'react';
-
-import { LangTag } from '../../molecules/prof-customs/LangTag';
-import { ProgressBar } from '../../molecules/prof-customs/ProgressBar';
+import { Badge } from '@/components/atoms/badge';
+import { cn } from '@/utils/cn';
 
 /**
  * @interface Language
@@ -37,56 +35,40 @@ interface LanguageSettingsProps {
  */
 export const LanguageSettings = ({ languages }: LanguageSettingsProps) => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* ── Language Tags Section ── */}
-      <div style={cardStyle}>
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: 'var(--color-text)',
-            marginBottom: 12,
-          }}
-        >
-          Langues
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          <LangTag label="Français" variant="native" />
-          <LangTag label="Anglais" variant="learning" />
-          <LangTag label="+ Ajouter" variant="add" />
+    <div className="flex flex-col gap-5">
+      <div className={cardClass}>
+        <div className="mb-3 text-sm font-semibold text-text">Langues</div>
+        <div className="flex flex-wrap gap-2">
+          <Badge color="accent">Français</Badge>
+          <Badge color="success">Anglais</Badge>
+          <Badge
+            color="neutral"
+            className="cursor-pointer border border-dashed border-border bg-transparent"
+          >
+            + Ajouter
+          </Badge>
         </div>
       </div>
 
-      {/* ── Progression Details Section ── */}
-      <div style={cardStyle}>
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: 'var(--color-text)',
-            marginBottom: 16,
-          }}
-        >
-          Progression
-        </div>
+      <div className={cardClass}>
+        <div className="mb-4 text-sm font-semibold text-text">Progression</div>
         {languages.map((lang) => (
-          <div key={lang.name} style={{ marginBottom: 18 }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: 13,
-                marginBottom: 8,
-              }}
-            >
-              <span style={{ color: 'var(--color-text-weaker)' }}>
-                {lang.name}
-              </span>
-              <span style={{ color: lang.color, fontWeight: 700 }}>
+          <div key={lang.name} className="mb-4 last:mb-0">
+            <div className="mb-2 flex justify-between text-body-s">
+              <span className="text-text-weaker">{lang.name}</span>
+              <span className="font-bold" style={{ color: lang.color }}>
                 {lang.level}
               </span>
             </div>
-            <ProgressBar progress={lang.progress} color={lang.color} />
+            <div className="mt-2 h-[5px] overflow-hidden rounded bg-surface-raised">
+              <div
+                className={cn('h-full rounded transition-[width] duration-300 ease-in-out')}
+                style={{
+                  width: `${lang.progress}%`,
+                  backgroundColor: lang.color,
+                }}
+              />
+            </div>
           </div>
         ))}
       </div>
@@ -94,10 +76,5 @@ export const LanguageSettings = ({ languages }: LanguageSettingsProps) => {
   );
 };
 
-/** Base card styling for consistent layout within the settings panel */
-const cardStyle: CSSProperties = {
-  background: 'var(--color-surface)',
-  border: '0.5px solid var(--color-border)',
-  borderRadius: 12,
-  padding: '20px 22px',
-};
+const cardClass =
+  'rounded-xl border border-border bg-surface px-5 py-5 md:px-[22px]';
