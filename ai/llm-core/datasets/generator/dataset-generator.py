@@ -12,8 +12,8 @@ import json
 import random
 from pathlib import Path
 
-file_path = "../dataset_multi_turn.jsonl"
 base_dir = Path(__file__).resolve().parent
+file_path = (base_dir.parent / "dataset_multi_turn.json").resolve()
 config_dir = base_dir / "config"
 
 
@@ -115,9 +115,15 @@ def generate_conversation() -> dict:
     return {"messages": messages}
 
 
-dataset = [generate_conversation() for _ in range(5000)]
+def main() -> None:
+    """
+    Main function to generate a dataset of conversations and save it to a JSON file.
+    """
+    dataset = [generate_conversation() for _ in range(5000)]
 
-with open(file_path, "w", encoding="utf-8") as f:
-    json.dump(dataset, f, ensure_ascii=False, indent=2)
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(dataset, f, ensure_ascii=False, indent=2)
+    print(f"Dataset generated and saved to {file_path}")
 
-print(f"Dataset generated and saved to {file_path}")
+if __name__ == "__main__":
+    main()
