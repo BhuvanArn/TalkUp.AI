@@ -1,6 +1,7 @@
 import {
   Entity,
   Column,
+  PrimaryColumn,
   PrimaryGeneratedColumn,
   OneToOne,
   JoinColumn,
@@ -11,6 +12,7 @@ import { uuidv7 } from "uuidv7";
 import { Organization } from "./organization.entity";
 
 import { AuthProvider } from "@common/enums/AuthProvider";
+import { ProfileVisibility } from "@common/enums/ProfileVisibility";
 import { UserStatus } from "@common/enums/UserStatus";
 
 @Entity()
@@ -20,13 +22,6 @@ export class user {
 
   @Column({ nullable: false })
   username!: string;
-
-  @Column({
-    nullable: true,
-    default: null,
-    comment: "user's profile picture as a base64 string",
-  })
-  profile_picture?: string;
 
   @Column({
     nullable: true,
@@ -84,6 +79,58 @@ export class user {
   generateUUIDv7() {
     if (!this.user_id) this.user_id = uuidv7();
   }
+}
+
+/**
+ * Optional 1:1 profile payload (names, UI prefs, avatar asset). Created on demand.
+ */
+@Entity()
+export class user_profile {
+  @PrimaryColumn("uuid")
+  user_id!: string;
+
+  @OneToOne(() => user, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "user_id" })
+  user!: user;
+
+  @Column({
+    type: "text",
+    nullable: true,
+    default: null,
+    comment: "Avatar image: URL or base64 depending on client",
+  })
+  profile_picture?: string | null;
+
+  @Column({ type: "varchar", length: 80, nullable: true, default: null })
+  first_name?: string | null;
+
+  @Column({ type: "varchar", length: 80, nullable: true, default: null })
+  last_name?: string | null;
+
+  @Column({ type: "text", nullable: true, default: null })
+  bio?: string | null;
+
+  @Column({ type: "varchar", length: 120, nullable: true, default: null })
+  job_title?: string | null;
+
+  @Column({ type: "varchar", length: 512, nullable: true, default: null })
+  linkedin_url?: string | null;
+
+  @Column({ type: "varchar", length: 16, nullable: true, default: null })
+  avatar_accent_color?: string | null;
+
+  @Column({ type: "text", nullable: true, default: null })
+  banner_gradient?: string | null;
+
+  @Column({
+    type: "enum",
+    enum: ProfileVisibility,
+    default: ProfileVisibility.PUBLIC,
+  })
+  profile_visibility!: ProfileVisibility;
+
+  @Column({ type: "jsonb", nullable: true, default: null })
+  notification_prefs?: Record<string, boolean> | null;
 }
 
 @Entity()

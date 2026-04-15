@@ -31,7 +31,6 @@ import {
 
 import { CreateUserDto } from "./dto/createUser.dto";
 import { LoginDto } from "./dto/login.dto";
-import { EditUserDto } from "./dto/editUser.dto";
 import { VerifyEmailDto } from "./dto/verifyEmail.dto";
 import { ResendOtpDto } from "./dto/resendOtp.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
@@ -310,12 +309,5 @@ export class AuthController {
     });
 
     return { message: "Password updated successfully" };
-  }
-
-  @Patch("editUser")
-  @UseGuards(AccessTokenGuard)
-  @ApiOkResponse({ description: "User updated successfully." })
-  async editUser(@UserId() userId: string, @Body() editUserDto: EditUserDto) {
-    return await this.authService.editUser(userId, editUserDto);
   }
 }

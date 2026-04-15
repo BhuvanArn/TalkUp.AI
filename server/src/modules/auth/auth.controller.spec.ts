@@ -7,7 +7,6 @@ import { applyMockAccessTokenGuard } from "../../test/utils/mock-guards";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { CreateUserDto } from "./dto/createUser.dto";
-import { EditUserDto } from "./dto/editUser.dto";
 import { LoginDto } from "./dto/login.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
@@ -31,7 +30,6 @@ describe("AuthController", () => {
   const mockUser = {
     user_id: "test-user-id",
     username: "testuser",
-    profile_picture: "",
     provider: "",
     verification_code: "",
     status: UserStatus.ACTIVE,
@@ -51,7 +49,6 @@ describe("AuthController", () => {
       passwordResetRequest: jest.fn(),
       passwordResetVerify: jest.fn(),
       passwordUpdate: jest.fn(),
-      editUser: jest.fn(),
       refreshTokens: jest.fn(),
       logout: jest.fn(),
     };
@@ -443,22 +440,6 @@ describe("AuthController", () => {
         expect.objectContaining({ maxAge: 0 }),
       );
       expect(result).toEqual({ message: "Password updated successfully" });
-    });
-  });
-
-  describe("editUser", () => {
-    it("delegates to auth service", async () => {
-      const updated = { ...mockUser, username: "new" };
-      mockAuthService.editUser = jest.fn().mockResolvedValue(updated);
-      const dto: EditUserDto = {
-        username: "new",
-        email: "testuser@example.com",
-      };
-
-      const result = await controller.editUser("user-1", dto);
-
-      expect(mockAuthService.editUser).toHaveBeenCalledWith("user-1", dto);
-      expect(result).toEqual(updated);
     });
   });
 });

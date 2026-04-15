@@ -14,7 +14,6 @@ import * as bcrypt from "bcrypt";
 
 import { AuthService } from "./auth.service";
 import { CreateUserDto } from "./dto/createUser.dto";
-import { EditUserDto } from "./dto/editUser.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
 
@@ -54,7 +53,6 @@ describe("AuthService", () => {
   const mockUser: user = {
     user_id: "test-user-id",
     username: "testuser",
-    profile_picture: "",
     provider: "",
     verification_code: "",
     status: UserStatus.ACTIVE,
@@ -918,34 +916,6 @@ describe("AuthService", () => {
             "https://app.example.com/verify-email?email=test%40example.com",
         }),
       );
-    });
-  });
-
-  describe("editUser", () => {
-    it("updates username and email", async () => {
-      mockUserRepo.findOneByOrFail = jest.fn().mockResolvedValue({
-        ...mockUser,
-      });
-      mockUserRepo.save = jest.fn().mockResolvedValue(mockUser);
-      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
-
-      const dto: EditUserDto = {
-        username: "newname",
-        email: "new@example.com",
-      };
-
-      const result = await service.editUser("test-user-id", dto);
-      expect(result).toBeDefined();
-      expect(mockUserEmailRepo.save).toHaveBeenCalled();
-    });
-
-    it("wraps unexpected errors", async () => {
-      mockUserRepo.findOneByOrFail = jest.fn().mockResolvedValue(mockUser);
-      mockUserRepo.save = jest.fn().mockRejectedValue(new Error("db"));
-
-      await expect(
-        service.editUser("test-user-id", { username: "x" } as EditUserDto),
-      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 

@@ -16,7 +16,6 @@ import { EventEmitter2 } from "@nestjs/event-emitter";
 import * as bcrypt from "bcrypt";
 
 import { CreateUserDto } from "./dto/createUser.dto";
-import { EditUserDto } from "./dto/editUser.dto";
 import { VerifyEmailDto } from "./dto/verifyEmail.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
@@ -635,34 +634,6 @@ export class AuthService {
 
   async login(user: user): Promise<AuthTokens> {
     return await this.createAuthTokens(user);
-  }
-
-  async editUser(userId: string, EditUserDto: EditUserDto) {
-    const user = await this.userRepository.findOneByOrFail({
-      user_id: userId,
-    });
-    try {
-      if (EditUserDto.username) user.username = EditUserDto.username;
-      // This part will be uncommented when those arguments will be added in the user's infos
-      // if (EditUserDto.phone) user.phone = EditUserDto.phone;
-      // if (EditUserDto.profilePicture) user.profilePicture = EditUserDto.profilePicture;
-      // if (EditUserDto.cv) user.cv = EditUserDto.cv;
-      // if (EditUserDto.activitySector) user.activitySector = EditUserDto.activitySector;
-      if (EditUserDto.email) {
-        const emailEntity = await this.userEmailRepository.findOne({
-          where: { user_id: userId },
-        });
-        if (emailEntity) {
-          emailEntity.email = EditUserDto.email;
-          await this.userEmailRepository.save(emailEntity);
-        }
-      }
-      return await this.userRepository.save(user);
-    } catch {
-      throw new InternalServerErrorException(
-        "Internal server error while editing the user's info.",
-      );
-    }
   }
 
   async getUserById(userId: string): Promise<user | null> {
