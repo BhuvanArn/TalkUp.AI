@@ -39,7 +39,9 @@ export const UnsavedChangesCta = ({
 }: UnsavedChangesCtaProps) => {
   const [isAttentionActive, setIsAttentionActive] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const attentionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attentionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     if (attentionTrigger <= 0 || !isVisible) {
@@ -96,7 +98,10 @@ export const UnsavedChangesCta = ({
     : {};
 
   return (
-    <div style={{ ...dockStyle, ...dockPositionStyle }} aria-hidden={!isVisible}>
+    <div
+      style={{ ...dockStyle, ...dockPositionStyle }}
+      aria-hidden={!isVisible}
+    >
       <div
         ref={containerRef}
         style={{
@@ -173,7 +178,8 @@ const barStyle: CSSProperties = {
   borderRadius: 14,
   padding: '14px 18px',
   boxShadow: '0 12px 32px rgba(0, 0, 0, 0.18)',
-  transition: 'opacity 180ms ease, transform 180ms ease, border-color 200ms ease, box-shadow 200ms ease',
+  transition:
+    'opacity 180ms ease, transform 180ms ease, border-color 200ms ease, box-shadow 200ms ease',
 };
 
 const labelStyle: CSSProperties = {

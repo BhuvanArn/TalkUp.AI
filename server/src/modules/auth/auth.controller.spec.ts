@@ -442,5 +442,4 @@ describe("AuthController", () => {
       expect(result).toEqual({ message: "Password updated successfully" });
     });
   });
-
 });

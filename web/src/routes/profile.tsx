@@ -1,3 +1,9 @@
+import { Avatar } from '@/components/atoms/avatar';
+import { Button } from '@/components/atoms/button';
+import {
+  UnsavedChangesCta,
+  type UnsavedChangesCtaAnchorRect,
+} from '@/components/molecules/unsaved-changes-cta';
 import { AppearanceSettings } from '@/components/organisms/profile-settings/AppearanceSettings';
 import { GeneralSettings } from '@/components/organisms/profile-settings/GeneralSettings';
 import { NotifSettings } from '@/components/organisms/profile-settings/NotifSettings';
@@ -6,31 +12,22 @@ import {
   SecuritySettings,
 } from '@/components/organisms/profile-settings/SecuritySettings';
 import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
-import {
-  type UnsavedChangesCtaAnchorRect,
-  UnsavedChangesCta,
-} from '@/components/molecules/unsaved-changes-cta';
+import AuthService from '@/services/auth/http';
 import {
   deleteMyAccount,
   fetchMyProfile,
   updateMyProfile,
 } from '@/services/users/http';
-import AuthService from '@/services/auth/http';
-import type {
-  ProfileVisibility,
-  UserProfile,
-} from '@/services/users/types';
+import type { ProfileVisibility, UserProfile } from '@/services/users/types';
 import { createAuthGuard } from '@/utils/auth.guards';
-import { createFileRoute } from '@tanstack/react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Avatar } from '@/components/atoms/avatar';
-import { Button } from '@/components/atoms/button';
-import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { resizeImageFileToJpegDataUrl } from '@/utils/resizeImageToJpegDataUrl';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router';
+import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
 import {
-  type ChangeEvent,
   type CSSProperties,
+  type ChangeEvent,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -217,8 +214,7 @@ function Profile() {
   const [notifs, setNotifs] = useState<NotifSetting[]>(() =>
     DEFAULT_NOTIFS.map((n) => ({ ...n })),
   );
-  const [sessions, setSessions] =
-    useState<AccountSession[]>(DEFAULT_SESSIONS);
+  const [sessions, setSessions] = useState<AccountSession[]>(DEFAULT_SESSIONS);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [ctaAttentionTick, setCtaAttentionTick] = useState(0);
@@ -228,9 +224,7 @@ function Profile() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [emailOnNewDevice, setEmailOnNewDevice] = useState(true);
-  const [avatarImageError, setAvatarImageError] = useState<string | null>(
-    null,
-  );
+  const [avatarImageError, setAvatarImageError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
   const profileColumnRef = useRef<HTMLDivElement>(null);
@@ -278,12 +272,10 @@ function Profile() {
         avatarAccentColor: avatarColor,
         bannerGradient,
         profileVisibility,
-        notificationPrefs: Object.fromEntries(
-          [
-            ...notifs.map((n) => [n.id, n.enabled] as const),
-            [SECURITY_SIGNIN_PREF_KEY, emailOnNewDevice] as const,
-          ],
-        ),
+        notificationPrefs: Object.fromEntries([
+          ...notifs.map((n) => [n.id, n.enabled] as const),
+          [SECURITY_SIGNIN_PREF_KEY, emailOnNewDevice] as const,
+        ]),
       }),
     onSuccess: (updated) => {
       queryClient.setQueryData(['user-profile'], updated);
@@ -322,7 +314,9 @@ function Profile() {
   const passwordResetRequestMutation = useMutation({
     mutationFn: (email: string) => authService.postPasswordResetRequest(email),
     onSuccess: (_data, email) => {
-      window.location.assign(`/reset-password?email=${encodeURIComponent(email)}`);
+      window.location.assign(
+        `/reset-password?email=${encodeURIComponent(email)}`,
+      );
     },
     onError: () => {
       setSaveError(
@@ -461,9 +455,7 @@ function Profile() {
     input.click();
   };
 
-  const handleAvatarFileChange = async (
-    e: ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleAvatarFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;

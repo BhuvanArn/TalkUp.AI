@@ -67,7 +67,9 @@ export class UsersService {
 
   async deleteAccount(userEntity: user): Promise<void> {
     try {
-      const result = await this.userRepo.delete({ user_id: userEntity.user_id });
+      const result = await this.userRepo.delete({
+        user_id: userEntity.user_id,
+      });
       if (!result.affected) {
         throw new NotFoundException("User not found.");
       }

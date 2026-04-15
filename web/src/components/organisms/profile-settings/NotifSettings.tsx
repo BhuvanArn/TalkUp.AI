@@ -34,10 +34,7 @@ interface NotifSettingsProps {
  * * @param {NotifSettingsProps} props - Component properties.
  * @returns {JSX.Element} A structured list of notification toggles.
  */
-export const NotifSettings = ({
-  notifs,
-  onToggle,
-}: NotifSettingsProps) => {
+export const NotifSettings = ({ notifs, onToggle }: NotifSettingsProps) => {
   return (
     <div className="flex flex-col">
       {notifs.map((n, i) => (
@@ -49,7 +46,10 @@ export const NotifSettings = ({
             i < notifs.length - 1 && 'border-b border-border',
           )}
         >
-          <label htmlFor={`notif-${n.id}`} className="min-w-0 pr-4 cursor-pointer text-text">
+          <label
+            htmlFor={`notif-${n.id}`}
+            className="min-w-0 pr-4 cursor-pointer text-text"
+          >
             <div className="text-sm font-semibold text-text">{n.label}</div>
             <div className="mt-1 text-xs leading-snug text-text-weaker">
               {n.desc}

@@ -5,7 +5,12 @@ import { HttpModule } from "@nestjs/axios";
 import { LinkedInController } from "./linkedin.controller";
 import { LinkedInService } from "./linkedin.service";
 
-import { user, user_email, user_oauth, user_profile } from "@entities/user.entity";
+import {
+  user,
+  user_email,
+  user_oauth,
+  user_profile,
+} from "@entities/user.entity";
 
 import * as dotenv from "dotenv";
 dotenv.config();

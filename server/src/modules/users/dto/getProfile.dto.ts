@@ -2,9 +2,9 @@ import { ProfileVisibility } from "@common/enums/ProfileVisibility";
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 
 @ApiSchema({
-    name: "UserProfileView",
-    description: "User profile view",
-  })
+  name: "UserProfileView",
+  description: "User profile view",
+})
 export class GetProfileDto {
   @ApiProperty({ description: "User ID" })
   userId: string;

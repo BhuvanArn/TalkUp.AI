@@ -16,7 +16,9 @@ type ForgotPasswordFormProps = {
   initialEmail?: string;
 };
 
-export const ForgotPasswordForm = ({ initialEmail = '' }: ForgotPasswordFormProps) => {
+export const ForgotPasswordForm = ({
+  initialEmail = '',
+}: ForgotPasswordFormProps) => {
   const router = useRouter();
   const passwordResetRequest = usePostPasswordResetRequest();
   const [serverError, setServerError] = useState<string | null>(null);

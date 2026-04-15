@@ -171,12 +171,16 @@ describe("UsersService", () => {
     it("deletes existing account", async () => {
       userRepo.delete.mockResolvedValue({ affected: 1 });
       await expect(service.deleteAccount(baseUser)).resolves.toBeUndefined();
-      expect(userRepo.delete).toHaveBeenCalledWith({ user_id: baseUser.user_id });
+      expect(userRepo.delete).toHaveBeenCalledWith({
+        user_id: baseUser.user_id,
+      });
     });
 
     it("throws when account does not exist", async () => {
       userRepo.delete.mockResolvedValue({ affected: 0 });
-      await expect(service.deleteAccount(baseUser)).rejects.toThrow("User not found.");
+      await expect(service.deleteAccount(baseUser)).rejects.toThrow(
+        "User not found.",
+      );
     });
   });
 });

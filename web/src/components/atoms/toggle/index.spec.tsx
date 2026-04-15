@@ -7,11 +7,7 @@ describe('Toggle', () => {
   it('calls onToggle when clicked', () => {
     const onToggle = vi.fn();
     render(
-      <Toggle
-        enabled={false}
-        onToggle={onToggle}
-        aria-label="Test toggle"
-      />,
+      <Toggle enabled={false} onToggle={onToggle} aria-label="Test toggle" />,
     );
 
     fireEvent.click(screen.getByRole('switch', { name: 'Test toggle' }));

@@ -1,10 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  type AccountSession,
-  SecuritySettings,
-} from './SecuritySettings';
+import { type AccountSession, SecuritySettings } from './SecuritySettings';
 
 const sessions: AccountSession[] = [
   {
@@ -36,7 +33,9 @@ describe('SecuritySettings', () => {
     );
 
     expect(screen.getByText('Password')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Devices & sessions/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /Devices & sessions/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Chrome on Windows')).toBeInTheDocument();
     expect(screen.getByText('Safari on iPhone')).toBeInTheDocument();
     expect(screen.getByText('This device')).toBeInTheDocument();
@@ -101,9 +100,7 @@ describe('SecuritySettings', () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Log out everywhere' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Log out everywhere' }));
     expect(
       screen.getByRole('heading', { name: /Log out of other devices/i }),
     ).toBeInTheDocument();

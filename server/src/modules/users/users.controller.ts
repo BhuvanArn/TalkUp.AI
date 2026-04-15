@@ -43,10 +43,7 @@ export class UsersController {
   @UsePipes(new PostValidationPipe())
   @Patch("me")
   @HttpCode(HttpStatus.OK)
-  async patchMe(
-    @CurrentUser() user: user,
-    @Body() body: UpdateProfileDto,
-  ) {
+  async patchMe(@CurrentUser() user: user, @Body() body: UpdateProfileDto) {
     return this.usersService.updateProfile(user, body);
   }
 

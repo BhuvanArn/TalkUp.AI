@@ -62,7 +62,9 @@ export const LanguageSettings = ({ languages }: LanguageSettingsProps) => {
             </div>
             <div className="mt-2 h-[5px] overflow-hidden rounded bg-surface-raised">
               <div
-                className={cn('h-full rounded transition-[width] duration-300 ease-in-out')}
+                className={cn(
+                  'h-full rounded transition-[width] duration-300 ease-in-out',
+                )}
                 style={{
                   width: `${lang.progress}%`,
                   backgroundColor: lang.color,

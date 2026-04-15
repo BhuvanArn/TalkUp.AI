@@ -1,3 +1,5 @@
+import type { UserProfile } from '@/services/users/types';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   act,
   fireEvent,
@@ -5,10 +7,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { UserProfile } from '@/services/users/types';
 
 import Profile from './profile';
 
@@ -193,9 +192,7 @@ vi.mock('@/components/organisms/profile-settings/NotifSettings', () => ({
 }));
 
 vi.mock('@/components/organisms/profile-settings/SecuritySettings', () => ({
-  SecuritySettings: () => (
-    <div data-testid="security-settings">Security</div>
-  ),
+  SecuritySettings: () => <div data-testid="security-settings">Security</div>,
 }));
 
 describe('Profile page', () => {
@@ -592,7 +589,9 @@ describe('Profile page', () => {
       });
       fireEvent.click(screen.getByTestId('tab-appearance'));
       expect(screen.getByTestId('general-settings')).toBeInTheDocument();
-      expect(screen.queryByTestId('appearance-settings')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('appearance-settings'),
+      ).not.toBeInTheDocument();
     });
 
     it('triggers CTA attention when tab switch is blocked', () => {

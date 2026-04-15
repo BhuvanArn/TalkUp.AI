@@ -114,7 +114,8 @@ export function SecuritySettings({
         </h3>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <p className="min-w-0 flex-1 text-sm text-text-weaker">
-            These sessions can use your account. Revoke any you do not recognize.
+            These sessions can use your account. Revoke any you do not
+            recognize.
           </p>
           {onLogoutEverywhere && (
             <Button

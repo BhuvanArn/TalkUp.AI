@@ -96,10 +96,7 @@ export const AppearanceSettings = ({
                 alt="Avatar preview"
                 fallback={initials}
                 size="md"
-                className={cn(
-                  'shrink-0 font-bold text-white',
-                  className,
-                )}
+                className={cn('shrink-0 font-bold text-white', className)}
                 style={{ backgroundColor: avatarColor }}
               />
               <div className="mt-1.5 text-[11px] text-text-weaker">{label}</div>

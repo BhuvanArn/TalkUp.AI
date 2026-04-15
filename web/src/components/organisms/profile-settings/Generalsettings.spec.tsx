@@ -110,16 +110,12 @@ describe('GeneralSettings', () => {
   describe('Username field', () => {
     it('renders the username input as readonly', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Username')).toHaveAttribute(
-        'readOnly',
-      );
+      expect(screen.getByLabelText('Username')).toHaveAttribute('readOnly');
     });
 
     it('shows the account username from the server', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Username')).toHaveValue(
-        'adam.bouffy',
-      );
+      expect(screen.getByLabelText('Username')).toHaveValue('adam.bouffy');
     });
 
     it('keeps account username when display name fields change', () => {
@@ -188,7 +184,10 @@ describe('GeneralSettings', () => {
 
     it('has type tel', () => {
       render(<GeneralSettings {...defaultProps} />);
-      expect(screen.getByLabelText('Phone number')).toHaveAttribute('type', 'tel');
+      expect(screen.getByLabelText('Phone number')).toHaveAttribute(
+        'type',
+        'tel',
+      );
     });
 
     it('calls onPhoneNumberChange when value changes', () => {

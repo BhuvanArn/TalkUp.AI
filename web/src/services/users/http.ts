@@ -1,6 +1,5 @@
 import { API_ROUTES } from '../api';
 import axiosInstance from '../axiosInstance';
-
 import type { UpdateProfileBody, UserProfile } from './types';
 
 export async function fetchMyProfile(): Promise<UserProfile> {

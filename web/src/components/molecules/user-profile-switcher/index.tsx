@@ -26,7 +26,9 @@ function getDisplayName(
   lastName?: string | null,
   username?: string | null,
 ) {
-  const fullName = [firstName?.trim(), lastName?.trim()].filter(Boolean).join(' ');
+  const fullName = [firstName?.trim(), lastName?.trim()]
+    .filter(Boolean)
+    .join(' ');
   return fullName || username?.trim() || 'User';
 }
 
@@ -162,7 +164,9 @@ export const UserProfileSwitcher = ({
               style={{ backgroundColor: avatarColor }}
             />
             <span className="min-w-0 flex flex-col text-left">
-              <span className="truncate text-body-s text-idle">{displayName}</span>
+              <span className="truncate text-body-s text-idle">
+                {displayName}
+              </span>
               <span className="truncate text-body-s text-idle/60">
                 {displayEmail}
               </span>
@@ -196,7 +200,12 @@ export const UserProfileSwitcher = ({
               role="menuitem"
               onClick={closeMenu}
             >
-              <Icon icon="profile" size="sm" color="neutral" className="shrink-0" />
+              <Icon
+                icon="profile"
+                size="sm"
+                color="neutral"
+                className="shrink-0"
+              />
               Profile
             </Link>
             <button
@@ -219,7 +228,12 @@ export const UserProfileSwitcher = ({
               role="menuitem"
               onClick={closeMenu}
             >
-              <Icon icon="chat" size="sm" color="neutral" className="shrink-0" />
+              <Icon
+                icon="chat"
+                size="sm"
+                color="neutral"
+                className="shrink-0"
+              />
               Help Center
             </Link>
 
@@ -253,7 +267,12 @@ export const UserProfileSwitcher = ({
                 }}
               >
                 <span>Log out</span>
-                <Icon icon="power" size="sm" color="error" className="shrink-0" />
+                <Icon
+                  icon="power"
+                  size="sm"
+                  color="error"
+                  className="shrink-0"
+                />
               </button>
             </div>
           </div>
