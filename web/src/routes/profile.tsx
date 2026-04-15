@@ -878,7 +878,7 @@ const headerCardStyle: CSSProperties = {
   background: 'var(--color-surface)',
   borderRadius: 16,
   border: '0.5px solid var(--color-border)',
-  overflow: 'hidden',
+  overflow: 'visible',
   marginBottom: 24,
 };
 const dropdownStyle: CSSProperties = {
