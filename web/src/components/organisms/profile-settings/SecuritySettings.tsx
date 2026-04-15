@@ -24,6 +24,9 @@ export interface AccountSession {
 interface SecuritySettingsProps {
   sessions: AccountSession[];
   onRevokeSession: (sessionId: string) => void;
+  /** Controlled sign-in email notification toggle */
+  emailOnNewDevice?: boolean;
+  onEmailOnNewDeviceChange?: (enabled: boolean) => void;
   /** Revoke every session except the current device (wire to API when available). */
   onLogoutEverywhere?: () => void;
   /** Wired later to auth / password flow */
@@ -43,14 +46,17 @@ const cardClass =
 export function SecuritySettings({
   sessions,
   onRevokeSession,
+  emailOnNewDevice,
+  onEmailOnNewDeviceChange,
   onLogoutEverywhere,
   onChangePassword,
   onRequestDataExport,
   onDeleteAccount,
 }: SecuritySettingsProps) {
-  const [emailOnNewDevice, setEmailOnNewDevice] = useState(true);
+  const [localEmailOnNewDevice, setLocalEmailOnNewDevice] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [logoutEverywhereOpen, setLogoutEverywhereOpen] = useState(false);
+  const emailOnNewDeviceEnabled = emailOnNewDevice ?? localEmailOnNewDevice;
 
   const otherSessionCount = sessions.filter((s) => !s.isCurrent).length;
 
@@ -89,8 +95,14 @@ export function SecuritySettings({
           </label>
           <Toggle
             id="security-email-new-device"
-            enabled={emailOnNewDevice}
-            onToggle={() => setEmailOnNewDevice((v) => !v)}
+            enabled={emailOnNewDeviceEnabled}
+            onToggle={() => {
+              const next = !emailOnNewDeviceEnabled;
+              onEmailOnNewDeviceChange?.(next);
+              if (emailOnNewDevice === undefined) {
+                setLocalEmailOnNewDevice(next);
+              }
+            }}
             aria-label="Email me when a new device is used"
           />
         </div>

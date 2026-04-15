@@ -4,14 +4,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { GeneralSettings } from './GeneralSettings';
 
 const defaultProps = {
+  accountUsername: 'adam.bouffy',
   firstName: 'Adam',
   lastName: 'Bouffy',
   bio: 'Passionate about languages and management.',
   phoneNumber: '+33 6 00 00 00 00',
+  linkedinUrl: '',
+  jobTitle: 'Product Manager Candidate',
   onFirstNameChange: vi.fn(),
   onLastNameChange: vi.fn(),
   onBioChange: vi.fn(),
   onPhoneNumberChange: vi.fn(),
+  onLinkedinUrlChange: vi.fn(),
+  onJobTitleChange: vi.fn(),
 };
 
 describe('GeneralSettings', () => {
@@ -110,14 +115,14 @@ describe('GeneralSettings', () => {
       );
     });
 
-    it('generates username from first and last name in lowercase', () => {
+    it('shows the account username from the server', () => {
       render(<GeneralSettings {...defaultProps} />);
       expect(screen.getByLabelText('Username')).toHaveValue(
         'adam.bouffy',
       );
     });
 
-    it('updates username when first name changes', () => {
+    it('keeps account username when display name fields change', () => {
       render(
         <GeneralSettings
           {...defaultProps}
@@ -125,9 +130,7 @@ describe('GeneralSettings', () => {
           lastName="Dupont"
         />,
       );
-      expect(screen.getByLabelText('Username')).toHaveValue(
-        'marie.dupont',
-      );
+      expect(screen.getByLabelText('Username')).toHaveValue('adam.bouffy');
     });
 
     it('renders the @ prefix', () => {

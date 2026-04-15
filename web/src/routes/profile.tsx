@@ -10,13 +10,26 @@ import {
   type UnsavedChangesCtaAnchorRect,
   UnsavedChangesCta,
 } from '@/components/molecules/unsaved-changes-cta';
+import {
+  deleteMyAccount,
+  fetchMyProfile,
+  updateMyProfile,
+} from '@/services/users/http';
+import AuthService from '@/services/auth/http';
+import type {
+  ProfileVisibility,
+  UserProfile,
+} from '@/services/users/types';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatar } from '@/components/atoms/avatar';
 import { Button } from '@/components/atoms/button';
 import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { resizeImageFileToJpegDataUrl } from '@/utils/resizeImageToJpegDataUrl';
 import {
+  type ChangeEvent,
   type CSSProperties,
   useEffect,
   useLayoutEffect,
@@ -31,7 +44,27 @@ export const Route = createFileRoute('/profile')({
 });
 
 const THEME_ACCENT = '#2B70C9';
+const DEFAULT_JOB_TITLE = 'Product Manager Candidate';
+const SECURITY_SIGNIN_PREF_KEY = 'securityEmailOnNewDevice';
+const authService = new AuthService();
+
 type Tab = 'general' | 'appearance' | 'notifications' | 'security';
+
+function namesFromUsername(username: string): { first: string; last: string } {
+  const parts = username.split(/[.\s_]+/).filter(Boolean);
+  if (parts.length === 0) {
+    return { first: '', last: '' };
+  }
+  const cap = (s: string) =>
+    s.length ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
+  if (parts.length === 1) {
+    return { first: cap(parts[0]), last: '' };
+  }
+  return {
+    first: cap(parts[0]),
+    last: parts.slice(1).map(cap).join(' '),
+  };
+}
 
 interface NotifSetting {
   id: string;
@@ -45,8 +78,13 @@ interface ProfileSnapshot {
   lastName: string;
   bio: string;
   phoneNumber: string;
+  linkedinUrl: string;
+  jobTitle: string;
   avatarColor: string;
   bannerGradient: string;
+  profileVisibility: ProfileVisibility;
+  profilePicture: string | null;
+  emailOnNewDevice: boolean;
   notifs: NotifSetting[];
 }
 
@@ -83,6 +121,35 @@ const DEFAULT_NOTIFS: NotifSetting[] = [
   },
 ];
 
+function mergeNotifsFromServer(
+  prefs: Record<string, boolean> | null | undefined,
+): NotifSetting[] {
+  return DEFAULT_NOTIFS.map((n) => ({
+    ...n,
+    enabled: prefs?.[n.id] ?? n.enabled,
+  }));
+}
+
+function profileToSnapshot(p: UserProfile): ProfileSnapshot {
+  const guessed = namesFromUsername(p.username);
+  const first = (p.firstName ?? '').trim() || guessed.first;
+  const last = (p.lastName ?? '').trim() || guessed.last;
+  return {
+    firstName: first,
+    lastName: last,
+    bio: p.bio ?? '',
+    phoneNumber: p.phone ?? '',
+    linkedinUrl: p.linkedinUrl ?? '',
+    jobTitle: p.jobTitle ?? DEFAULT_JOB_TITLE,
+    avatarColor: p.avatarAccentColor ?? THEME_ACCENT,
+    bannerGradient: p.bannerGradient ?? BANNER_PRESETS[0].value,
+    profileVisibility: p.profileVisibility,
+    profilePicture: p.profilePicture ?? null,
+    emailOnNewDevice: p.notificationPrefs?.[SECURITY_SIGNIN_PREF_KEY] ?? true,
+    notifs: mergeNotifsFromServer(p.notificationPrefs),
+  };
+}
+
 const DEFAULT_SESSIONS: AccountSession[] = [
   {
     id: 'session-current',
@@ -117,36 +184,151 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'security', label: 'Security' },
 ];
 
+const emptySnapshot = (): ProfileSnapshot => ({
+  firstName: '',
+  lastName: '',
+  bio: '',
+  phoneNumber: '',
+  linkedinUrl: '',
+  jobTitle: DEFAULT_JOB_TITLE,
+  avatarColor: THEME_ACCENT,
+  bannerGradient: BANNER_PRESETS[0].value,
+  profileVisibility: 'public',
+  profilePicture: null,
+  emailOnNewDevice: true,
+  notifs: DEFAULT_NOTIFS.map((n) => ({ ...n })),
+});
+
 function Profile() {
+  const queryClient = useQueryClient();
+  const hydratedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<Tab>('general');
-  const [firstName, setFirstName] = useState('Adam');
-  const [lastName, setLastName] = useState('Bouffy');
-  const [bio, setBio] = useState(
-    'Passionate about languages and management, practicing for future interviews.',
-  );
-  const [phoneNumber, setPhoneNumber] = useState('+33 6 00 00 00 00');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [bio, setBio] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [jobTitle, setJobTitle] = useState(DEFAULT_JOB_TITLE);
+  const [accountUsername, setAccountUsername] = useState('');
   const [avatarColor, setAvatarColor] = useState(THEME_ACCENT);
   const [bannerGradient, setBanner] = useState<string>(BANNER_PRESETS[0].value);
-  const [notifs, setNotifs] = useState<NotifSetting[]>(DEFAULT_NOTIFS);
+  const [profileVisibility, setProfileVisibility] =
+    useState<ProfileVisibility>('public');
+  const [notifs, setNotifs] = useState<NotifSetting[]>(() =>
+    DEFAULT_NOTIFS.map((n) => ({ ...n })),
+  );
   const [sessions, setSessions] =
     useState<AccountSession[]>(DEFAULT_SESSIONS);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [ctaAttentionTick, setCtaAttentionTick] = useState(0);
   const [ctaAnchorRect, setCtaAnchorRect] =
     useState<UnsavedChangesCtaAnchorRect | null>(null);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [emailOnNewDevice, setEmailOnNewDevice] = useState(true);
+  const [avatarImageError, setAvatarImageError] = useState<string | null>(
+    null,
+  );
   const menuRef = useRef<HTMLDivElement>(null);
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
   const profileColumnRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [snapshot, setSnapshot] = useState<ProfileSnapshot>({
-    firstName: 'Adam',
-    lastName: 'Bouffy',
-    bio: 'Passionate about languages and management, practicing for future interviews.',
-    phoneNumber: '+33 6 00 00 00 00',
-    avatarColor: THEME_ACCENT,
-    bannerGradient: BANNER_PRESETS[0].value,
-    notifs: DEFAULT_NOTIFS,
+  const [snapshot, setSnapshot] = useState<ProfileSnapshot>(emptySnapshot);
+
+  const profileQuery = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: fetchMyProfile,
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    const data = profileQuery.data;
+    if (!data || hydratedRef.current) {
+      return;
+    }
+    hydratedRef.current = true;
+    const snap = profileToSnapshot(data);
+    setAccountUsername(data.username);
+    setFirstName(snap.firstName);
+    setLastName(snap.lastName);
+    setBio(snap.bio);
+    setPhoneNumber(snap.phoneNumber);
+    setLinkedinUrl(snap.linkedinUrl);
+    setJobTitle(snap.jobTitle);
+    setAvatarColor(snap.avatarColor);
+    setBanner(snap.bannerGradient);
+    setProfileVisibility(snap.profileVisibility);
+    setProfilePicture(snap.profilePicture);
+    setEmailOnNewDevice(snap.emailOnNewDevice);
+    setNotifs(snap.notifs);
+    setSnapshot(snap);
+  }, [profileQuery.data]);
+
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      updateMyProfile({
+        firstName,
+        lastName,
+        bio,
+        linkedinUrl,
+        jobTitle,
+        profilePicture,
+        avatarAccentColor: avatarColor,
+        bannerGradient,
+        profileVisibility,
+        notificationPrefs: Object.fromEntries(
+          [
+            ...notifs.map((n) => [n.id, n.enabled] as const),
+            [SECURITY_SIGNIN_PREF_KEY, emailOnNewDevice] as const,
+          ],
+        ),
+      }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['user-profile'], updated);
+      setAccountUsername(updated.username);
+      const snap = profileToSnapshot(updated);
+      setFirstName(snap.firstName);
+      setLastName(snap.lastName);
+      setBio(snap.bio);
+      setPhoneNumber(snap.phoneNumber);
+      setLinkedinUrl(snap.linkedinUrl);
+      setJobTitle(snap.jobTitle);
+      setAvatarColor(snap.avatarColor);
+      setBanner(snap.bannerGradient);
+      setProfileVisibility(snap.profileVisibility);
+      setProfilePicture(snap.profilePicture);
+      setEmailOnNewDevice(snap.emailOnNewDevice);
+      setNotifs(snap.notifs.map((n) => ({ ...n })));
+      setSnapshot(snap);
+      setSaveError(null);
+      setSaved(true);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      saveTimeoutRef.current = setTimeout(() => setSaved(false), 2000);
+    },
+    onError: () => {
+      setSaveError('Could not save your profile. Please try again.');
+    },
+  });
+  const deleteAccountMutation = useMutation({
+    mutationFn: deleteMyAccount,
+    onSuccess: () => {
+      window.location.assign('/login');
+    },
+  });
+  const passwordResetRequestMutation = useMutation({
+    mutationFn: (email: string) => authService.postPasswordResetRequest(email),
+    onSuccess: (_data, email) => {
+      window.location.assign(`/reset-password?email=${encodeURIComponent(email)}`);
+    },
+    onError: () => {
+      setSaveError(
+        'Could not start password reset right now. Please try again.',
+      );
+    },
   });
 
   const initials =
@@ -158,11 +340,29 @@ function Profile() {
       lastName,
       bio,
       phoneNumber,
+      linkedinUrl,
+      jobTitle,
       avatarColor,
       bannerGradient,
+      profileVisibility,
+      profilePicture,
+      emailOnNewDevice,
       notifs,
     }),
-    [firstName, lastName, bio, phoneNumber, avatarColor, bannerGradient, notifs],
+    [
+      firstName,
+      lastName,
+      bio,
+      phoneNumber,
+      linkedinUrl,
+      jobTitle,
+      avatarColor,
+      bannerGradient,
+      profileVisibility,
+      profilePicture,
+      emailOnNewDevice,
+      notifs,
+    ],
   );
 
   const hasUnsavedChanges =
@@ -230,12 +430,8 @@ function Profile() {
   );
 
   const handleSave = () => {
-    setSnapshot(currentSnapshot);
-    setSaved(true);
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    saveTimeoutRef.current = setTimeout(() => setSaved(false), 2000);
+    setSaveError(null);
+    saveMutation.mutate();
   };
 
   const handleCancelChanges = () => {
@@ -243,9 +439,42 @@ function Profile() {
     setLastName(snapshot.lastName);
     setBio(snapshot.bio);
     setPhoneNumber(snapshot.phoneNumber);
+    setLinkedinUrl(snapshot.linkedinUrl);
+    setJobTitle(snapshot.jobTitle);
     setAvatarColor(snapshot.avatarColor);
     setBanner(snapshot.bannerGradient);
-    setNotifs(snapshot.notifs);
+    setProfileVisibility(snapshot.profileVisibility);
+    setProfilePicture(snapshot.profilePicture);
+    setEmailOnNewDevice(snapshot.emailOnNewDevice);
+    setNotifs(snapshot.notifs.map((n) => ({ ...n })));
+  };
+
+  const openAvatarFilePicker = (capture?: 'user' | 'environment') => {
+    const input = avatarFileInputRef.current;
+    if (!input) return;
+    if (capture) {
+      input.setAttribute('capture', capture);
+    } else {
+      input.removeAttribute('capture');
+    }
+    input.value = '';
+    input.click();
+  };
+
+  const handleAvatarFileChange = async (
+    e: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setAvatarImageError(null);
+    try {
+      const dataUrl = await resizeImageFileToJpegDataUrl(file);
+      setProfilePicture(dataUrl);
+      setShowAvatarMenu(false);
+    } catch {
+      setAvatarImageError('Could not use this image. Try another file.');
+    }
   };
 
   const toggleNotif = (id: string) =>
@@ -263,6 +492,22 @@ function Profile() {
     const idx = BANNER_PRESETS.findIndex((b) => b.value === bannerGradient);
     setBanner(BANNER_PRESETS[(idx + 1) % BANNER_PRESETS.length].value);
   };
+
+  if (profileQuery.isPending) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center p-6 text-text-weaker">
+        Loading profile…
+      </div>
+    );
+  }
+
+  if (profileQuery.isError || !profileQuery.data) {
+    return (
+      <div className="p-6 text-body-s text-error">
+        We could not load your profile. Refresh the page or try again later.
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-background text-text">
@@ -320,8 +565,20 @@ function Profile() {
                   }}
                   ref={menuRef}
                 >
+                  <input
+                    ref={avatarFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    tabIndex={-1}
+                    onChange={handleAvatarFileChange}
+                    data-testid="avatar-file-input"
+                    title="Upload profile photo"
+                  />
                   <Avatar
                     data-testid="user-avatar-initials"
+                    src={profilePicture ?? undefined}
+                    alt={`${firstName} ${lastName}`.trim() || 'Profile'}
                     fallback={initials}
                     size="xl"
                     className="!h-24 !w-24 !border-4 !text-[28px] font-extrabold text-white shadow-md"
@@ -361,7 +618,11 @@ function Profile() {
                         )}
                         onMouseEnter={() => setHoveredItem('choose')}
                         onMouseLeave={() => setHoveredItem(null)}
-                        onClick={() => setShowAvatarMenu(false)}
+                        onClick={() => {
+                          setAvatarImageError(null);
+                          setShowAvatarMenu(false);
+                          queueMicrotask(() => openAvatarFilePicker());
+                        }}
                       >
                         <ImageIcon size={14} /> Choose photo
                       </Button>
@@ -375,7 +636,11 @@ function Profile() {
                         )}
                         onMouseEnter={() => setHoveredItem('take')}
                         onMouseLeave={() => setHoveredItem(null)}
-                        onClick={() => setShowAvatarMenu(false)}
+                        onClick={() => {
+                          setAvatarImageError(null);
+                          setShowAvatarMenu(false);
+                          queueMicrotask(() => openAvatarFilePicker('user'));
+                        }}
                       >
                         <Camera size={14} /> Take photo
                       </Button>
@@ -390,13 +655,24 @@ function Profile() {
                         )}
                         onMouseEnter={() => setHoveredItem('delete')}
                         onMouseLeave={() => setHoveredItem(null)}
-                        onClick={() => setShowAvatarMenu(false)}
+                        onClick={() => {
+                          setProfilePicture(null);
+                          setShowAvatarMenu(false);
+                        }}
                       >
                         <Trash2 size={14} /> Remove
                       </Button>
                     </div>
                   )}
                 </div>
+                {avatarImageError ? (
+                  <p
+                    className="mt-2 text-center text-body-s text-error"
+                    role="alert"
+                  >
+                    {avatarImageError}
+                  </p>
+                ) : null}
 
                 <h2
                   style={{
@@ -415,7 +691,7 @@ function Profile() {
                     marginTop: 4,
                   }}
                 >
-                  Product Manager Candidate · TalkUp Pro
+                  {jobTitle || 'Member'} · TalkUp Pro
                 </div>
               </div>
 
@@ -519,14 +795,19 @@ function Profile() {
               <div style={settingsPanelStyle}>
                 {activeTab === 'general' && (
                   <GeneralSettings
+                    accountUsername={accountUsername}
                     firstName={firstName}
                     lastName={lastName}
                     bio={bio}
                     phoneNumber={phoneNumber}
+                    linkedinUrl={linkedinUrl}
+                    jobTitle={jobTitle}
                     onFirstNameChange={setFirstName}
                     onLastNameChange={setLastName}
                     onBioChange={setBio}
                     onPhoneNumberChange={setPhoneNumber}
+                    onLinkedinUrlChange={setLinkedinUrl}
+                    onJobTitleChange={setJobTitle}
                   />
                 )}
                 {activeTab === 'appearance' && (
@@ -534,8 +815,11 @@ function Profile() {
                     avatarColor={avatarColor}
                     bannerGradient={bannerGradient}
                     initials={initials}
+                    profilePictureSrc={profilePicture}
+                    profileVisibility={profileVisibility}
                     onColorChange={setAvatarColor}
                     onBannerChange={setBanner}
+                    onProfileVisibilityChange={setProfileVisibility}
                   />
                 )}
                 {activeTab === 'notifications' && (
@@ -545,10 +829,20 @@ function Profile() {
                   <SecuritySettings
                     sessions={sessions}
                     onRevokeSession={revokeSession}
+                    emailOnNewDevice={emailOnNewDevice}
+                    onEmailOnNewDeviceChange={setEmailOnNewDevice}
                     onLogoutEverywhere={logoutEverywhere}
-                    onChangePassword={() => {}}
+                    onChangePassword={() => {
+                      const email = profileQuery.data?.email?.trim();
+                      if (!email) {
+                        window.location.assign('/forgot-password');
+                        return;
+                      }
+                      setSaveError(null);
+                      passwordResetRequestMutation.mutate(email);
+                    }}
                     onRequestDataExport={() => {}}
-                    onDeleteAccount={() => {}}
+                    onDeleteAccount={() => deleteAccountMutation.mutate()}
                   />
                 )}
               </div>
@@ -556,6 +850,14 @@ function Profile() {
           </div>
         </div>
       </div>
+      {saveError ? (
+        <div
+          className="fixed bottom-28 left-1/2 z-[121] max-w-md -translate-x-1/2 rounded-lg border border-error bg-background px-4 py-2 text-center text-body-s text-error shadow-lg"
+          role="alert"
+        >
+          {saveError}
+        </div>
+      ) : null}
       <UnsavedChangesCta
         isVisible={hasUnsavedChanges}
         isSaved={saved}

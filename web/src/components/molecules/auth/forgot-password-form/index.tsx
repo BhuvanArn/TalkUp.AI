@@ -12,14 +12,18 @@ import toast from 'react-hot-toast';
 /**
  * Step 1 of password reset: request OTP; then navigate to /reset-password.
  */
-export const ForgotPasswordForm = () => {
+type ForgotPasswordFormProps = {
+  initialEmail?: string;
+};
+
+export const ForgotPasswordForm = ({ initialEmail = '' }: ForgotPasswordFormProps) => {
   const router = useRouter();
   const passwordResetRequest = usePostPasswordResetRequest();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
-      email: '',
+      email: initialEmail,
     },
     onSubmit: ({ value }) => {
       setServerError(null);

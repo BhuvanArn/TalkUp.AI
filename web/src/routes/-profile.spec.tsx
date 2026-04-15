@@ -5,14 +5,80 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { UserProfile } from '@/services/users/types';
+
 import Profile from './profile';
+
+const mockProfile: UserProfile = {
+  userId: 'u1',
+  username: 'adam.bouffy',
+  email: 'adam@example.com',
+  phone: '+33 6 00 00 00 00',
+  firstName: 'Adam',
+  lastName: 'Bouffy',
+  bio: 'Passionate about languages and management, practicing for future interviews.',
+  jobTitle: 'Product Manager Candidate',
+  linkedinUrl: '',
+  profilePicture: null,
+  avatarAccentColor: '#2B70C9',
+  bannerGradient: '#FFFFFF',
+  profileVisibility: 'public',
+  notificationPrefs: null,
+};
+
+const { fetchMyProfile, updateMyProfile, deleteMyAccount } = vi.hoisted(() => ({
+  fetchMyProfile: vi.fn(() => Promise.resolve({ ...mockProfile })),
+  deleteMyAccount: vi.fn(() => Promise.resolve()),
+  updateMyProfile: vi.fn(async (body: Record<string, unknown>) => ({
+    ...mockProfile,
+    firstName: (body.firstName as string) ?? mockProfile.firstName,
+    lastName: (body.lastName as string) ?? mockProfile.lastName,
+    bio: (body.bio as string) ?? mockProfile.bio,
+    phone: (body.phone as string) ?? mockProfile.phone,
+    linkedinUrl: (body.linkedinUrl as string) ?? mockProfile.linkedinUrl,
+    jobTitle: (body.jobTitle as string) ?? mockProfile.jobTitle,
+    profilePicture:
+      'profilePicture' in body
+        ? (body.profilePicture as string | null)
+        : mockProfile.profilePicture,
+    avatarAccentColor:
+      (body.avatarAccentColor as string) ?? mockProfile.avatarAccentColor,
+    bannerGradient:
+      (body.bannerGradient as string) ?? mockProfile.bannerGradient,
+    profileVisibility:
+      (body.profileVisibility as UserProfile['profileVisibility']) ??
+      mockProfile.profileVisibility,
+    notificationPrefs:
+      (body.notificationPrefs as UserProfile['notificationPrefs']) ??
+      mockProfile.notificationPrefs,
+  })),
+}));
+
+vi.mock('@/services/users/http', () => ({
+  fetchMyProfile,
+  updateMyProfile,
+  deleteMyAccount,
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: (_path: string) => (options: { component: unknown }) =>
     options,
 }));
+
+function renderProfile() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  client.setQueryData(['user-profile'], { ...mockProfile });
+  return render(
+    <QueryClientProvider client={client}>
+      <Profile />
+    </QueryClientProvider>,
+  );
+}
 
 vi.mock('@/components/organisms/profile-settings/GeneralSettings', () => ({
   GeneralSettings: ({
@@ -64,14 +130,18 @@ vi.mock('@/components/organisms/profile-settings/AppearanceSettings', () => ({
     avatarColor,
     bannerGradient,
     initials,
+    profileVisibility: _profileVisibility,
     onColorChange,
     onBannerChange,
+    onProfileVisibilityChange: _onProfileVisibilityChange,
   }: {
     avatarColor: string;
     bannerGradient: string;
     initials: string;
+    profileVisibility: string;
     onColorChange: (v: string) => void;
     onBannerChange: (v: string) => void;
+    onProfileVisibilityChange: (v: string) => void;
   }) => (
     <div data-testid="appearance-settings">
       <span data-testid="avatar-color">{avatarColor}</span>
@@ -130,45 +200,42 @@ vi.mock('@/components/organisms/profile-settings/SecuritySettings', () => ({
 
 describe('Profile page', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
+    vi.clearAllMocks();
+    fetchMyProfile.mockResolvedValue({ ...mockProfile });
   });
 
   describe('Initial render', () => {
     it('renders the profile page without crashing', () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByTestId('user-avatar-initials')).toBeInTheDocument();
     });
 
     it('displays default initials AB', () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByTestId('user-avatar-initials')).toHaveTextContent(
         'AB',
       );
     });
 
     it('displays full name Adam Bouffy', () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByText('Adam Bouffy')).toBeInTheDocument();
     });
 
     it('displays the subtitle with role and plan', () => {
-      render(<Profile />);
+      renderProfile();
       expect(
         screen.getByText('Product Manager Candidate · TalkUp Pro'),
       ).toBeInTheDocument();
     });
 
     it('renders the General tab as active by default', () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByTestId('general-settings')).toBeInTheDocument();
     });
 
     it('renders all profile setting tabs', () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByTestId('tab-general')).toBeInTheDocument();
       expect(screen.getByTestId('tab-appearance')).toBeInTheDocument();
       expect(screen.getByTestId('tab-notifications')).toBeInTheDocument();
@@ -176,54 +243,54 @@ describe('Profile page', () => {
     });
 
     it('shows the bio in the introduction card', () => {
-      render(<Profile />);
+      renderProfile();
       const matches = screen.getAllByText(/Passionate about languages/);
       expect(matches.length).toBeGreaterThanOrEqual(1);
       expect(matches[0]).toBeInTheDocument();
     });
 
     it('shows the 78% objective progress', () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByText('78%')).toBeInTheDocument();
     });
 
     it('shows the banner style button', () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByTestId('banner-style-button')).toBeInTheDocument();
     });
   });
 
   describe('Tab navigation', () => {
     it('switches to Appearance tab when clicked', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('tab-appearance'));
       expect(screen.getByTestId('appearance-settings')).toBeInTheDocument();
       expect(screen.queryByTestId('general-settings')).not.toBeInTheDocument();
     });
 
     it('switches to Notifications tab when clicked', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('tab-notifications'));
       expect(screen.getByTestId('notif-settings')).toBeInTheDocument();
       expect(screen.queryByTestId('general-settings')).not.toBeInTheDocument();
     });
 
     it('switches to Security tab when clicked', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('tab-security'));
       expect(screen.getByTestId('security-settings')).toBeInTheDocument();
       expect(screen.queryByTestId('general-settings')).not.toBeInTheDocument();
     });
 
     it('switches back to General tab after visiting another tab', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('tab-appearance'));
       fireEvent.click(screen.getByTestId('tab-general'));
       expect(screen.getByTestId('general-settings')).toBeInTheDocument();
     });
 
     it('active tab has aria-selected=true', () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByTestId('tab-general')).toHaveAttribute(
         'aria-selected',
         'true',
@@ -235,7 +302,7 @@ describe('Profile page', () => {
     });
 
     it('updates aria-selected when switching tabs', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('tab-appearance'));
       expect(screen.getByTestId('tab-appearance')).toHaveAttribute(
         'aria-selected',
@@ -250,7 +317,7 @@ describe('Profile page', () => {
 
   describe('General settings', () => {
     it('passes correct initial values to GeneralSettings', () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByTestId('input-firstname')).toHaveValue('Adam');
       expect(screen.getByTestId('input-lastname')).toHaveValue('Bouffy');
       expect(screen.getByTestId('input-phone')).toHaveValue(
@@ -259,7 +326,7 @@ describe('Profile page', () => {
     });
 
     it('updates the first name when changed', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-firstname'), {
         target: { value: 'Marie' },
       });
@@ -267,7 +334,7 @@ describe('Profile page', () => {
     });
 
     it('updates the last name when changed', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-lastname'), {
         target: { value: 'Dupont' },
       });
@@ -275,7 +342,7 @@ describe('Profile page', () => {
     });
 
     it('updates the bio when changed', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-bio'), {
         target: { value: 'Updated bio' },
       });
@@ -283,7 +350,7 @@ describe('Profile page', () => {
     });
 
     it('updates the phone number when changed', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-phone'), {
         target: { value: '+33 7 11 22 33 44' },
       });
@@ -293,7 +360,7 @@ describe('Profile page', () => {
     });
 
     it('updates avatar initials when first name changes', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-firstname'), {
         target: { value: 'Marie' },
       });
@@ -303,7 +370,7 @@ describe('Profile page', () => {
     });
 
     it('updates avatar initials when last name changes', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-lastname'), {
         target: { value: 'Dupont' },
       });
@@ -315,7 +382,7 @@ describe('Profile page', () => {
 
   describe('Appearance settings', () => {
     beforeEach(() => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('tab-appearance'));
     });
 
@@ -348,7 +415,7 @@ describe('Profile page', () => {
 
   describe('Banner cycling', () => {
     it('cycles through all banner presets', () => {
-      render(<Profile />);
+      renderProfile();
       const btn = screen.getByTestId('banner-style-button');
       fireEvent.click(btn); // preset 1 -> Ocean
       fireEvent.click(btn); // preset 2 -> Night
@@ -360,14 +427,14 @@ describe('Profile page', () => {
 
   describe('Avatar dropdown menu', () => {
     it('opens the dropdown on camera button click', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
       expect(screen.getByTestId('avatar-dropdown-menu')).toBeInTheDocument();
     });
 
     it('closes the dropdown when clicking outside', async () => {
       vi.useRealTimers();
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
       expect(screen.getByTestId('avatar-dropdown-menu')).toBeInTheDocument();
       fireEvent.mouseDown(document.body);
@@ -380,7 +447,7 @@ describe('Profile page', () => {
     });
 
     it('closes the dropdown when choosing a photo', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
       fireEvent.click(screen.getByText('Choose photo'));
       expect(
@@ -389,7 +456,7 @@ describe('Profile page', () => {
     });
 
     it('closes the dropdown when taking a photo', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
       fireEvent.click(screen.getByText('Take photo'));
       expect(
@@ -398,7 +465,7 @@ describe('Profile page', () => {
     });
 
     it('closes the dropdown on delete', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
       fireEvent.click(screen.getByText('Remove'));
       expect(
@@ -407,7 +474,7 @@ describe('Profile page', () => {
     });
 
     it('toggles dropdown closed when camera button clicked again', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
       fireEvent.click(screen.getByTestId('avatar-camera-button'));
       expect(
@@ -418,7 +485,7 @@ describe('Profile page', () => {
 
   describe('Notification settings', () => {
     beforeEach(() => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.click(screen.getByTestId('tab-notifications'));
     });
 
@@ -467,8 +534,12 @@ describe('Profile page', () => {
   });
 
   describe('Floating save menu', () => {
+    beforeEach(() => {
+      vi.useRealTimers();
+    });
+
     it('is visually hidden initially', () => {
-      render(<Profile />);
+      renderProfile();
       expect(screen.getByTestId('floating-save-menu')).toHaveAttribute(
         'aria-hidden',
         'true',
@@ -476,7 +547,7 @@ describe('Profile page', () => {
     });
 
     it('appears after profile change', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-firstname'), {
         target: { value: 'Marie' },
       });
@@ -487,19 +558,26 @@ describe('Profile page', () => {
     });
 
     it('hides after saving changes', async () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-firstname'), {
         target: { value: 'Marie' },
       });
-      fireEvent.click(screen.getByTestId('save-button'));
-      expect(screen.getByTestId('floating-save-menu')).toHaveAttribute(
-        'aria-hidden',
-        'true',
-      );
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('save-button'));
+      });
+      await waitFor(() => {
+        expect(updateMyProfile).toHaveBeenCalled();
+      });
+      await waitFor(() => {
+        expect(screen.getByTestId('floating-save-menu')).toHaveAttribute(
+          'aria-hidden',
+          'true',
+        );
+      });
     });
 
     it('reset reverts unsaved form value', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-firstname'), {
         target: { value: 'Marie' },
       });
@@ -508,7 +586,7 @@ describe('Profile page', () => {
     });
 
     it('locks tab switching when General has unsaved changes', () => {
-      render(<Profile />);
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-firstname'), {
         target: { value: 'Marie' },
       });
@@ -518,7 +596,8 @@ describe('Profile page', () => {
     });
 
     it('triggers CTA attention when tab switch is blocked', () => {
-      render(<Profile />);
+      vi.useFakeTimers();
+      renderProfile();
       fireEvent.change(screen.getByTestId('input-firstname'), {
         target: { value: 'Marie' },
       });
@@ -533,6 +612,7 @@ describe('Profile page', () => {
         vi.advanceTimersByTime(800);
       });
       expect(cta).toHaveAttribute('data-attention', 'false');
+      vi.useRealTimers();
     });
   });
 });

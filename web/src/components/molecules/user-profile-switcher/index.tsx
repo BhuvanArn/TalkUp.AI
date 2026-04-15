@@ -1,7 +1,10 @@
+import { Avatar } from '@/components/atoms/avatar';
 import { Icon } from '@/components/atoms/icon';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLogout } from '@/hooks/auth/useLogout';
+import { fetchMyProfile } from '@/services/users/http';
 import { cn } from '@/utils/cn';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -16,6 +19,16 @@ const menuPanelClass =
 
 const menuItemClass =
   'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-body-s font-medium text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+const DEFAULT_AVATAR_COLOR = '#2B70C9';
+
+function getDisplayName(
+  firstName?: string | null,
+  lastName?: string | null,
+  username?: string | null,
+) {
+  const fullName = [firstName?.trim(), lastName?.trim()].filter(Boolean).join(' ');
+  return fullName || username?.trim() || 'User';
+}
 
 /**
  * UserProfileSwitcher
@@ -62,6 +75,23 @@ export const UserProfileSwitcher = ({
   const { logout } = useLogout();
   const { theme, toggleTheme } = useTheme();
   const rootRef = useRef<HTMLDivElement>(null);
+  const { data: profile } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: fetchMyProfile,
+    staleTime: Infinity,
+  });
+
+  const displayName = getDisplayName(
+    profile?.firstName,
+    profile?.lastName,
+    profile?.username,
+  );
+  const displayEmail = profile?.email ?? 'No email set';
+  const avatarSrc = profile?.profilePicture ?? undefined;
+  const avatarColor = profile?.avatarAccentColor ?? DEFAULT_AVATAR_COLOR;
+  const initials =
+    (profile?.firstName?.trim().charAt(0) || 'A').toUpperCase() +
+    (profile?.lastName?.trim().charAt(0) || 'B').toUpperCase();
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const toggleMenu = useCallback(() => setMenuOpen((open) => !open), []);
@@ -105,10 +135,13 @@ export const UserProfileSwitcher = ({
       )}
     >
       {isCollapsed ? (
-        <img
-          src="/avatar.png"
+        <Avatar
+          src={avatarSrc}
           alt="User Avatar"
-          className="w-8 h-8 rounded-full object-cover border border-border"
+          fallback={initials}
+          size="sm"
+          className="!h-8 !w-8 !border border-border text-white font-semibold"
+          style={{ backgroundColor: avatarColor }}
         />
       ) : (
         <button
@@ -116,19 +149,22 @@ export const UserProfileSwitcher = ({
           className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg py-0.5 pl-0.5 pr-1 text-left transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          aria-label="Open account menu, Adam Gouffy"
+          aria-label={`Open account menu, ${displayName}`}
           onClick={toggleMenu}
         >
           <span className="flex min-w-0 flex-1 items-center gap-2">
-            <img
-              src="/avatar.png"
+            <Avatar
+              src={avatarSrc}
               alt=""
-              className="size-8 shrink-0 rounded-full border border-border object-cover"
+              fallback={initials}
+              size="sm"
+              className="!h-8 !w-8 shrink-0 !border border-border text-white font-semibold"
+              style={{ backgroundColor: avatarColor }}
             />
             <span className="min-w-0 flex flex-col text-left">
-              <span className="truncate text-body-s text-idle">Adam Gouffy</span>
+              <span className="truncate text-body-s text-idle">{displayName}</span>
               <span className="truncate text-body-s text-idle/60">
-                adam.gouffy@gmail.com
+                {displayEmail}
               </span>
             </span>
           </span>

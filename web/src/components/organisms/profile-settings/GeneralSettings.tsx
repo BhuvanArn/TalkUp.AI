@@ -2,7 +2,7 @@ import { BaseInput } from '@/components/atoms/base-input';
 import type { SelectorOption } from '@/components/atoms/selector-input';
 import { TextArea } from '@/components/atoms/text-area';
 import { InputMolecule } from '@/components/molecules/input-molecule';
-import { useState } from 'react';
+import { useMemo } from 'react';
 
 const JOB_OPTIONS: SelectorOption[] = [
   { value: 'Product Manager Candidate', label: 'Product Manager Candidate' },
@@ -15,6 +15,8 @@ const JOB_OPTIONS: SelectorOption[] = [
  * @description Defines the configuration and event handlers for the GeneralSettings component.
  */
 interface GeneralSettingsProps {
+  /** Login / account handle (read-only) */
+  accountUsername: string;
   /** User's given name */
   firstName: string;
   /** User's family name */
@@ -23,6 +25,8 @@ interface GeneralSettingsProps {
   bio: string;
   /** User's contact phone number */
   phoneNumber: string;
+  linkedinUrl: string;
+  jobTitle: string;
   /** Callback fired when the first name input value changes */
   onFirstNameChange: (value: string) => void;
   /** Callback fired when the last name input value changes */
@@ -31,6 +35,8 @@ interface GeneralSettingsProps {
   onBioChange: (value: string) => void;
   /** Callback fired when the phone number input value changes */
   onPhoneNumberChange: (value: string) => void;
+  onLinkedinUrlChange: (value: string) => void;
+  onJobTitleChange: (value: string) => void;
 }
 
 /**
@@ -40,17 +46,29 @@ interface GeneralSettingsProps {
  * @returns {JSX.Element} The rendered general settings form
  */
 export function GeneralSettings({
+  accountUsername,
   firstName,
   lastName,
   bio,
   phoneNumber,
+  linkedinUrl,
+  jobTitle,
   onFirstNameChange,
   onLastNameChange,
   onBioChange,
   onPhoneNumberChange,
+  onLinkedinUrlChange,
+  onJobTitleChange,
 }: GeneralSettingsProps) {
-  const [jobTitle, setJobTitle] = useState<string>(JOB_OPTIONS[0].value);
-  const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
+  const jobOptions = useMemo((): SelectorOption[] => {
+    if (JOB_OPTIONS.some((o) => o.value === jobTitle)) {
+      return JOB_OPTIONS;
+    }
+    if (!jobTitle) {
+      return JOB_OPTIONS;
+    }
+    return [{ value: jobTitle, label: jobTitle }, ...JOB_OPTIONS];
+  }, [jobTitle]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -91,7 +109,7 @@ export function GeneralSettings({
             <BaseInput
               id="username"
               name="username"
-              value={username}
+              value={accountUsername}
               readOnly
               className="pl-8 text-text-weaker"
               placeholder=""
@@ -137,8 +155,8 @@ export function GeneralSettings({
             id="linkedin"
             name="linkedin"
             label="LinkedIn URL"
-            value=""
-            onChange={() => {}}
+            value={linkedinUrl}
+            onChange={(e) => onLinkedinUrlChange(e.target.value)}
             placeholder="https://linkedin.com/in/..."
           />
         </div>
@@ -149,8 +167,8 @@ export function GeneralSettings({
           name="jobTitle"
           label="Job title"
           value={jobTitle}
-          onChange={(e) => setJobTitle(e.target.value)}
-          options={JOB_OPTIONS}
+          onChange={(e) => onJobTitleChange(e.target.value)}
+          options={jobOptions}
         />
       </div>
     </div>

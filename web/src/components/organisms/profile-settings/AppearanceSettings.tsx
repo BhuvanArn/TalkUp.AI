@@ -2,9 +2,10 @@ import { Avatar } from '@/components/atoms/avatar';
 import { BaseInput } from '@/components/atoms/base-input';
 import { Button } from '@/components/atoms/button';
 import { cn } from '@/utils/cn';
-import { useState } from 'react';
 
 import { BANNER_PRESETS } from './constants';
+
+export type ProfileVisibilityValue = 'public' | 'private' | 'hidden';
 
 const ACCENT_COLORS = [
   { name: 'Blue', value: '#2B70C9' },
@@ -26,8 +27,11 @@ interface AppearanceSettingsProps {
   avatarColor: string;
   bannerGradient: string;
   initials: string;
+  profilePictureSrc?: string | null;
+  profileVisibility: ProfileVisibilityValue;
   onColorChange: (c: string) => void;
   onBannerChange: (g: string) => void;
+  onProfileVisibilityChange: (v: ProfileVisibilityValue) => void;
 }
 
 /**
@@ -38,13 +42,12 @@ export const AppearanceSettings = ({
   avatarColor,
   bannerGradient,
   initials,
+  profilePictureSrc,
+  profileVisibility,
   onColorChange,
   onBannerChange,
+  onProfileVisibilityChange,
 }: AppearanceSettingsProps) => {
-  const [visibility, setVisibility] = useState<'public' | 'private' | 'hidden'>(
-    'public',
-  );
-
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       <section className={subCardClass}>
@@ -89,6 +92,8 @@ export const AppearanceSettings = ({
           {AVATAR_PREVIEW_SIZES.map(({ label, className }) => (
             <div key={label} className="text-center">
               <Avatar
+                src={profilePictureSrc ?? undefined}
+                alt="Avatar preview"
                 fallback={initials}
                 size="md"
                 className={cn(
@@ -171,8 +176,8 @@ export const AppearanceSettings = ({
                 type="radio"
                 name="visibility"
                 aria-label={label}
-                checked={visibility === value}
-                onChange={() => setVisibility(value)}
+                checked={profileVisibility === value}
+                onChange={() => onProfileVisibilityChange(value)}
                 className="mt-0.5"
               />
               <div>

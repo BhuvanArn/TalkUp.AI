@@ -8,8 +8,10 @@ describe('AppearanceSettings Component', () => {
     avatarColor: '#2B70C9',
     bannerGradient: 'linear-gradient(135deg, #2B70C9 0%, #1D9E75 100%)',
     initials: 'AB',
+    profileVisibility: 'public' as const,
     onColorChange: vi.fn(),
     onBannerChange: vi.fn(),
+    onProfileVisibilityChange: vi.fn(),
   };
 
   it('renders all sections correctly', () => {
@@ -57,19 +59,19 @@ describe('AppearanceSettings Component', () => {
     );
   });
 
-  it('updates visibility radio buttons state', () => {
-    render(<AppearanceSettings {...defaultProps} />);
+  it('calls onProfileVisibilityChange when visibility changes', () => {
+    const onProfileVisibilityChange = vi.fn();
+    render(
+      <AppearanceSettings
+        {...defaultProps}
+        onProfileVisibilityChange={onProfileVisibilityChange}
+      />,
+    );
 
-    const privateRadio = screen.getByLabelText('Private') as HTMLInputElement;
-    const publicRadio = screen.getByLabelText('Public') as HTMLInputElement;
-
-    expect(publicRadio.checked).toBe(true);
-    expect(privateRadio.checked).toBe(false);
-
+    const privateRadio = screen.getByLabelText('Private');
     fireEvent.click(privateRadio);
 
-    expect(privateRadio.checked).toBe(true);
-    expect(publicRadio.checked).toBe(false);
+    expect(onProfileVisibilityChange).toHaveBeenCalledWith('private');
   });
 
   it('highlights the active color preset', () => {
