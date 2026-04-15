@@ -11,10 +11,16 @@ import { JwtService } from "@nestjs/jwt";
 import { HttpService } from "@nestjs/axios";
 import { AxiosResponse } from "axios";
 
-import { user, user_email, user_oauth } from "@entities/user.entity";
+import {
+  user,
+  user_email,
+  user_oauth,
+  user_profile,
+} from "@entities/user.entity";
 
 import { LinkedInProfile, LinkedInTokenDatas } from "@common/utils/types";
 import { AuthProvider } from "@common/enums/AuthProvider";
+import { ProfileVisibility } from "@common/enums/ProfileVisibility";
 
 @Injectable()
 export class LinkedInService {
@@ -30,6 +36,8 @@ export class LinkedInService {
     private userEmailRepository: Repository<user_email>,
     @InjectRepository(user_oauth)
     private userOauthRepository: Repository<user_oauth>,
+    @InjectRepository(user_profile)
+    private userProfileRepository: Repository<user_profile>,
 
     private jwtService: JwtService,
     private readonly httpService: HttpService,
@@ -148,15 +156,19 @@ export class LinkedInService {
       };
     }
 
-    // Create a new user
     const newUser = this.userRepository.create({
       username: linkedInProfile.name,
-      profile_picture: linkedInProfile.picture,
       provider: AuthProvider.LINKEDIN,
     });
 
-    // Save the user to the database
     const savedUser = await this.userRepository.save(newUser);
+
+    const newProfile = this.userProfileRepository.create({
+      user_id: savedUser.user_id,
+      profile_picture: linkedInProfile.picture ?? null,
+      profile_visibility: ProfileVisibility.PUBLIC,
+    });
+    await this.userProfileRepository.save(newProfile);
 
     try {
       // Create OAuth data

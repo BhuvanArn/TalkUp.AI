@@ -6,75 +6,164 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { user_password, user_email } from "@entities/user.entity";
-import { hashPassword } from "@common/utils/passwordHasher";
+
+import { ProfileVisibility } from "@common/enums/ProfileVisibility";
+import {
+  user,
+  user_email,
+  user_phone_number,
+  user_profile,
+} from "@entities/user.entity";
+
+import { UpdateProfileDto } from "./dto/updateProfile.dto";
+import { GetProfileDto } from "./dto/getProfile.dto";
 
 @Injectable()
 export class UsersService {
-  private readonly logger: Logger;
+  private readonly logger = new Logger(UsersService.name);
 
   constructor(
+    @InjectRepository(user)
+    private readonly userRepo: Repository<user>,
+    @InjectRepository(user_profile)
+    private readonly profileRepo: Repository<user_profile>,
     @InjectRepository(user_email)
-    private emailRepo: Repository<user_email>,
+    private readonly userEmailRepo: Repository<user_email>,
+    @InjectRepository(user_phone_number)
+    private readonly phoneRepo: Repository<user_phone_number>,
+  ) {}
 
-    @InjectRepository(user_password)
-    private passwordRepo: Repository<user_password>,
-  ) {
-    this.logger = new Logger(UsersService.name);
+  async getProfile(user: user): Promise<GetProfileDto> {
+    const p = await this.profileRepo.findOne({
+      where: { user_id: user.user_id },
+    });
+    return this.assembleProfileView(user, p);
   }
 
-  /**
-   * Changes the password for a user identified by their email address.
-   *
-   * This method first verifies the existence of a user with the given email address.
-   * If the user exists, it hashes the new password and updates or creates the password entity
-   * associated with the user's ID. If no user is found, it throws an UnauthorizedException.
-   *
-   * @param email - The email address of the user whose password is to be changed.
-   * @param newUserPassword - The new password to set for the user.
-   * @returns A promise that resolves to `true` if the password was successfully changed.
-   * @throws {NotFoundException} If no user exists with the provided email address.
-   */
-  async changeUserPassword(
-    email: string,
-    newUserPassword: string,
-  ): Promise<boolean> {
+  async updateProfile(
+    userEntity: user,
+    dto: UpdateProfileDto,
+  ): Promise<GetProfileDto> {
+    const profile = await this.ensureProfile(userEntity.user_id);
+
+    if (dto.username !== undefined) {
+      Object.assign(userEntity, { username: dto.username });
+    }
+    this.applyProfileDto(profile, dto);
+
     try {
-      const emailEntity = await this.emailRepo.findOne({
-        where: { email },
-      });
+      await this.userRepo.save(userEntity);
+      await this.profileRepo.save(profile);
+      return this.assembleProfileView(userEntity, profile);
+    } catch (error) {
+      this.logger.error(
+        `updateProfile failed for ${userEntity.user_id}: ${error}`,
+      );
+      throw new InternalServerErrorException(
+        "Internal server error while updating profile.",
+      );
+    }
+  }
 
-      if (!emailEntity) {
-        throw new NotFoundException("There is no user with that email");
+  async deleteAccount(userEntity: user): Promise<void> {
+    try {
+      const result = await this.userRepo.delete({ user_id: userEntity.user_id });
+      if (!result.affected) {
+        throw new NotFoundException("User not found.");
       }
-
-      const hashedPassword = await hashPassword(newUserPassword);
-
-      const passwordEntity = await this.passwordRepo.findOne({
-        where: { user_id: emailEntity.user_id },
-      });
-
-      if (!passwordEntity) {
-        const newUserPasswordEntity = this.passwordRepo.create({
-          password: hashedPassword,
-          user_id: emailEntity.user_id,
-        });
-        await this.passwordRepo.save(newUserPasswordEntity);
-      } else {
-        passwordEntity.password = hashedPassword;
-        await this.passwordRepo.save(passwordEntity);
-      }
-      return true;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
       this.logger.error(
-        `Failed to change password for email ${email}: ${error}`,
+        `deleteAccount failed for ${userEntity.user_id}: ${error}`,
       );
       throw new InternalServerErrorException(
-        "Internal server error while changing password.",
+        "Internal server error while deleting account.",
       );
     }
+  }
+
+  private applyProfileDto(profile: user_profile, dto: UpdateProfileDto): void {
+    const strOrNull = (v: string | undefined) =>
+      v === undefined ? undefined : v.trim() === "" ? null : v;
+
+    if (dto.profilePicture !== undefined) {
+      profile.profile_picture =
+        dto.profilePicture === "" ? null : dto.profilePicture;
+    }
+    if (dto.firstName !== undefined) {
+      profile.first_name = strOrNull(dto.firstName) ?? null;
+    }
+    if (dto.lastName !== undefined) {
+      profile.last_name = strOrNull(dto.lastName) ?? null;
+    }
+    if (dto.bio !== undefined) {
+      profile.bio = strOrNull(dto.bio) ?? null;
+    }
+    if (dto.jobTitle !== undefined) {
+      profile.job_title = strOrNull(dto.jobTitle) ?? null;
+    }
+    if (dto.linkedinUrl !== undefined) {
+      profile.linkedin_url = strOrNull(dto.linkedinUrl) ?? null;
+    }
+    if (dto.avatarAccentColor !== undefined) {
+      profile.avatar_accent_color =
+        dto.avatarAccentColor === "" ? null : dto.avatarAccentColor;
+    }
+    if (dto.bannerGradient !== undefined) {
+      profile.banner_gradient =
+        dto.bannerGradient === "" ? null : dto.bannerGradient;
+    }
+    if (dto.profileVisibility !== undefined) {
+      profile.profile_visibility = dto.profileVisibility;
+    }
+    if (dto.notificationPrefs !== undefined) {
+      profile.notification_prefs = dto.notificationPrefs;
+    }
+  }
+
+  private async ensureProfile(userId: string): Promise<user_profile> {
+    let p = await this.profileRepo.findOne({ where: { user_id: userId } });
+
+    if (!p) {
+      p = this.profileRepo.create({
+        user_id: userId,
+        profile_visibility: ProfileVisibility.PUBLIC,
+      });
+
+      await this.profileRepo.save(p);
+    }
+
+    return p;
+  }
+
+  private async assembleProfileView(
+    u: user,
+    p: user_profile | null,
+  ): Promise<GetProfileDto> {
+    const emailRow = await this.userEmailRepo.findOne({
+      where: { user_id: u.user_id },
+    });
+    const phoneRow = await this.phoneRepo.findOne({
+      where: { user_id: u.user_id },
+    });
+
+    return {
+      userId: u.user_id,
+      username: u.username,
+      email: emailRow?.email ?? null,
+      phone: phoneRow?.phone_number ?? null,
+      firstName: p?.first_name ?? null,
+      lastName: p?.last_name ?? null,
+      bio: p?.bio ?? null,
+      jobTitle: p?.job_title ?? null,
+      linkedinUrl: p?.linkedin_url ?? null,
+      profilePicture: p?.profile_picture ?? null,
+      avatarAccentColor: p?.avatar_accent_color ?? null,
+      bannerGradient: p?.banner_gradient ?? null,
+      profileVisibility: p?.profile_visibility ?? ProfileVisibility.PUBLIC,
+      notificationPrefs: p?.notification_prefs ?? null,
+    };
   }
 }
