@@ -326,7 +326,8 @@ function Profile() {
   });
 
   const initials =
-    (firstName[0] || 'A').toUpperCase() + (lastName[0] || 'B').toUpperCase();
+    (firstName.charAt(0) || '').toUpperCase() +
+    (lastName.charAt(0) || '').toUpperCase();
 
   const currentSnapshot = useMemo<ProfileSnapshot>(
     () => ({

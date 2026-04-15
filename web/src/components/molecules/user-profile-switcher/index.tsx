@@ -32,6 +32,25 @@ function getDisplayName(
   return fullName || username?.trim() || 'User';
 }
 
+function namesFromUsername(username?: string | null): {
+  first: string;
+  last: string;
+} {
+  const parts = (username ?? '').split(/[.\s_]+/).filter(Boolean);
+  if (parts.length === 0) {
+    return { first: '', last: '' };
+  }
+  const cap = (s: string) =>
+    s.length ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
+  if (parts.length === 1) {
+    return { first: cap(parts[0]), last: '' };
+  }
+  return {
+    first: cap(parts[0]),
+    last: parts.slice(1).map(cap).join(' '),
+  };
+}
+
 /**
  * UserProfileSwitcher
  *
@@ -88,12 +107,17 @@ export const UserProfileSwitcher = ({
     profile?.lastName,
     profile?.username,
   );
+  const guessedNames = namesFromUsername(profile?.username);
+  const resolvedFirstName =
+    (profile?.firstName ?? '').trim() || guessedNames.first;
+  const resolvedLastName =
+    (profile?.lastName ?? '').trim() || guessedNames.last;
   const displayEmail = profile?.email ?? 'No email set';
   const avatarSrc = profile?.profilePicture ?? undefined;
   const avatarColor = profile?.avatarAccentColor ?? DEFAULT_AVATAR_COLOR;
   const initials =
-    (profile?.firstName?.trim().charAt(0) || 'A').toUpperCase() +
-    (profile?.lastName?.trim().charAt(0) || 'B').toUpperCase();
+    (resolvedFirstName.charAt(0) || '').toUpperCase() +
+    (resolvedLastName.charAt(0) || '').toUpperCase();
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const toggleMenu = useCallback(() => setMenuOpen((open) => !open), []);
