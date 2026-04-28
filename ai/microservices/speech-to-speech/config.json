@@ -1,0 +1,11 @@
+{
+	"LLM_PATH": "/app/llm/sup-it-v3-merged",
+	"SYSTEM_PROMPT": "Tu es Sophie Martin, recruteuse senior IT chez une ESN francaise. Tu es chaleureuse, professionnelle, patiente et humaine. Tu parles de facon naturelle comme dans une vraie conversation.",
+	"PIPER_VOICE_PATH": "/app/models/piper/fr_FR-siwis-medium.onnx",
+	"WHISPER_MODEL_PATH": "/app/models/whisper/faster-whisper-large-v3",
+	"LLM_BACKEND": "auto",
+	"LLM_GPU_MAX_MEMORY": "2GiB",
+	"LLM_CPU_MAX_MEMORY": "16GiB",
+	"LLM_MAX_NEW_TOKENS": 160,
+	"QUEUE_MAXSIZE": 32
+}
