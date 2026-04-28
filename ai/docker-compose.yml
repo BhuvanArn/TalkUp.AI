@@ -11,9 +11,8 @@ services:
     depends_on:
       - behavior_analyzer
       - emotional_analyzer
-      - speech_to_text
-      - text_to_speech
       - verbal_analyzer
+      - sts-service
 
   behavior_analyzer:
     build:
@@ -33,30 +32,28 @@ services:
     ports:
       - "5052:5000"
 
-  speech_to_text:
-    build:
-      context: .
-      dockerfile: ./microservices/speech-to-text/Dockerfile
-    container_name: speech_to_text_services
-    environment:
-      - PYTHONUNBUFFERED=1
-      - STT_HOST=speech_to_text
-      - STT_PORT=8002
-      - VOSK_MODEL_PATH=/app/models/vosk-fr
+  sts-service:
+    build: ./microservices/speech-to-speech
+    container_name: talkup-sts
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     ports:
       - "8002:8002"
-
-  text_to_speech:
-    build:
-      context: .
-      dockerfile: ./microservices/text-to-speech/Dockerfile
-    container_name: text_to_speech_services
+    volumes:
+      - ./llm-core/models/sup-it-v3-merged:/app/llm/sup-it-v3-merged
     environment:
-      - PYTHONUNBUFFERED=1
-      - TTS_HOST=text_to_speech
-      - TTS_PORT=8005
-    ports:
-      - "8005:8005"
+      - CUDA_VISIBLE_DEVICES=-1
+      - NVIDIA_VISIBLE_DEVICES=none
+      - LLM_BACKEND=hf
+      - LLM_GPU_MAX_MEMORY=2GiB
+      - LLM_CPU_MAX_MEMORY=16GiB
+      - LLM_MAX_NEW_TOKENS=128
+    restart: unless-stopped
 
   verbal_analyzer:
     build:
