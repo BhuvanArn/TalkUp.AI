@@ -1,0 +1,27 @@
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    TORCH_CUDA_ARCH_LIST="8.0 8.6 8.9 9.0"
+
+RUN apt-get update && apt-get install -y \
+    python3.11 python3.11-dev python3-pip git build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3.11 -m pip install --upgrade pip setuptools wheel
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN python3.11 -m pip install --no-cache-dir \
+    torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+
+RUN python3.11 -m pip install --no-cache-dir \
+    "unsloth[cu124-torch240] @ git+https://github.com/unslothai/unsloth.git" \
+    --no-build-isolation
+
+RUN python3.11 -m pip install --no-cache-dir \
+    -r requirements.txt --no-deps
+
+CMD ["bash"]
