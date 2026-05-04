@@ -9,10 +9,14 @@ services:
     ports:
       - "8088:8088"
     depends_on:
-      - behavior_analyzer
-      - emotional_analyzer
-      - verbal_analyzer
-      - sts-service
+      behavior_analyzer:
+        condition: service_started
+      emotional_analyzer:
+        condition: service_started
+      verbal_analyzer:
+        condition: service_started
+      sts-service:
+        condition: service_healthy
 
   behavior_analyzer:
     build:
@@ -50,10 +54,16 @@ services:
       - CUDA_VISIBLE_DEVICES=-1
       - NVIDIA_VISIBLE_DEVICES=none
       - LLM_BACKEND=hf
-      - LLM_GPU_MAX_MEMORY=2GiB
-      - LLM_CPU_MAX_MEMORY=16GiB
+      - LLM_GPU_MAX_MEMORY=3GiB
+      - LLM_CPU_MAX_MEMORY=8GiB
       - LLM_MAX_NEW_TOKENS=128
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
 
   verbal_analyzer:
     build:
