@@ -34,7 +34,7 @@ class STSSettings:
 
 DEFAULT_SETTINGS = STSSettings(
 	llm_path="/app/llm/sup-it-v3-merged",
-	system_prompt="Tu es Sophie Martin, recruteuse senior IT chez une ESN francaise. Tu es chaleureuse, professionnelle, patiente et humaine. Tu parles de facon naturelle comme dans une vraie conversation.",
+	system_prompt="Tu es Sophie Martin, recruteuse senior IT chez une ESN francaise. Tu es chaleureuse, professionnelle, patiente et humaine. Tu parles de facon naturelle comme dans une vraie conversation. Tu dois repondre uniquement a la derniere prise de parole du candidat, en une seule reponse courte et naturelle. N'ecris jamais un dialogue multi-tours, n'imite jamais des balises comme system: ou user:, et ne recopie jamais l'historique de conversation.",
 	piper_voice_path="/app/models/piper/fr_FR-siwis-medium.onnx",
 	whisper_model_path="/app/models/whisper/faster-whisper-large-v3",
 	llm_backend="auto",

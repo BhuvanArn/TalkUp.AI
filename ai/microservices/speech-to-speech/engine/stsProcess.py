@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import traceback
 
@@ -25,6 +27,11 @@ NOTIFIER = Notifications()
 settings = load_settings()
 models: STSModels = load_models(settings)
 queue_service = StsQueueService(models=models, maxsize=settings.queue_maxsize)
+
+
+@app.get("/health")
+async def health() -> dict[str, str]:
+	return {"status": "ok"}
 
 @app.on_event("startup")
 async def startup_queue_worker() -> None:
@@ -52,35 +59,77 @@ async def websocket_endpoint(websocket: WebSocket):
 
 	try:
 		while True:
-			audio_bytes = await websocket.receive_bytes()
+			try:
+				message = await websocket.receive()
+			except (WebSocketDisconnect, ConnectionClosed, RuntimeError):
+				NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected")
+				return
+			audio_bytes = b""
+
+			if message.get("type") == "websocket.receive" and message.get("text") is not None:
+				try:
+					payload = json.loads(message["text"])
+				except Exception:
+					await websocket.send_text(json.dumps({"type": "error", "text": "Invalid JSON payload"}))
+					continue
+
+				if payload.get("type") == "ping":
+					pong = {
+						"type": "pong",
+						"key": payload.get("key", ""),
+						"data": payload.get("data", {}),
+					}
+					await websocket.send_text(json.dumps(pong))
+					continue
+
+				if payload.get("type") == "stream_chunk":
+					chunk_data = payload.get("data", {})
+					if isinstance(chunk_data, dict):
+						audio_b64 = chunk_data.get("chunk", "")
+					else:
+						audio_b64 = chunk_data
+
+					if not isinstance(audio_b64, str):
+						await websocket.send_text(json.dumps({"type": "error", "text": "Missing audio payload"}))
+						continue
+
+					try:
+						audio_bytes = base64.b64decode(audio_b64, validate=True)
+					except (binascii.Error, ValueError):
+						await websocket.send_text(json.dumps({"type": "error", "text": "Invalid base64 audio payload"}))
+						continue
+				else:
+					await websocket.send_text(json.dumps({"type": "error", "text": "Unsupported message type"}))
+					continue
+			elif message.get("type") == "websocket.receive" and message.get("bytes") is not None:
+				audio_bytes = message["bytes"]
+			else:
+				continue
+
 			result = await queue_service.submit(audio_bytes)
 
 			if not result.transcription:
 				continue
 
 			NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, f"User: {result.transcription}")
-			try:
-				await websocket.send_text(json.dumps({"type": "transcription", "text": result.transcription}))
-			except (WebSocketDisconnect, ConnectionClosed):
-				NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending transcription")
-				return
-
 			NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, f"AI: {result.ai_response[:100]}...")
 			try:
-				await websocket.send_text(json.dumps({"type": "response", "text": result.ai_response}))
+				encoded_chunks = [base64.b64encode(chunk).decode("ascii") for chunk in result.audio_chunks]
+				await websocket.send_text(
+					json.dumps(
+						{
+							"type": "sts_result",
+							"transcription": result.transcription,
+							"response": result.ai_response,
+							"audio_chunks": encoded_chunks,
+						}
+					)
+				)
 			except (WebSocketDisconnect, ConnectionClosed):
-				NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending LLM response")
+				NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending STS result")
 				return
-
-			try:
-				for chunk in result.audio_chunks:
-					try:
-						await websocket.send_bytes(chunk)
-					except (WebSocketDisconnect, ConnectionClosed):
-						NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending TTS stream")
-						return
 			except Exception as tts_err:
-				NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 2, f"TTS error: {tts_err}")
+				NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 2, f"STS response error: {tts_err}")
 				NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 2, traceback.format_exc().strip())
 				try:
 					await websocket.send_text(
@@ -92,7 +141,7 @@ async def websocket_endpoint(websocket: WebSocket):
 						)
 					)
 				except (WebSocketDisconnect, ConnectionClosed):
-					NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending TTS warning")
+					NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending STS warning")
 					return
 
 	except WebSocketDisconnect:
@@ -100,4 +149,7 @@ async def websocket_endpoint(websocket: WebSocket):
 	except Exception as err:
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 2, f"WebSocket error: {err}")
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 2, traceback.format_exc().strip())
-		await websocket.close()
+		try:
+			await websocket.close()
+		except RuntimeError:
+			pass

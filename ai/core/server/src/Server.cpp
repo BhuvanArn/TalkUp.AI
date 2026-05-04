@@ -21,6 +21,10 @@ talkup_network::Server::~Server()
 {
     Notifications n = Notifications();
 
+    if (__microservices_manager) {
+        __microservices_manager->shutdown();
+    }
+
     if (__console_notification) {
         talkup_network::Notifications::send_notification(
             "[SERVER] " + n.types[0].second + " TalkUp.AI server stopped successfully!");
@@ -55,6 +59,10 @@ bool talkup_network::Server::start_server(crow::SimpleApp &app)
 bool talkup_network::Server::stop_server(void)
 {
     Notifications notif = Notifications();
+
+    if (__microservices_manager) {
+        __microservices_manager->shutdown();
+    }
 
     if (__console_notification) {
         talkup_network::Notifications::send_notification(

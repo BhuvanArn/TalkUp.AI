@@ -17,6 +17,7 @@ import torch
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from faster_whisper import WhisperModel
 from piper import PiperVoice
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
@@ -46,6 +47,34 @@ class STSModels:
 	vllm_sampling_params: object | None
 	hf_model: object | None
 	hf_tokenizer: object | None
+
+
+_ROLE_LABEL_PATTERN = re.compile(r"(?im)(?:^|[\n\t])\s*(system|user|assistant)\s*:\s*")
+
+
+def _sanitize_llm_response(text: str) -> str:
+	"""
+	Removes accidental role markers and dialogue continuation from the generated text.
+	"""
+	if not text:
+		return ""
+
+	cleaned = text.replace("\r", "\n").strip()
+	cleaned = cleaned.replace("\t", " ")
+	match = _ROLE_LABEL_PATTERN.search(cleaned)
+	if match:
+		cleaned = cleaned[: match.start()].strip()
+
+	lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+	filtered_lines: list[str] = []
+	for line in lines:
+		if line.lower().startswith(("system:", "user:", "assistant:")):
+			break
+		filtered_lines.append(line)
+
+	cleaned = " ".join(filtered_lines).strip()
+	cleaned = re.sub(r"\s{2,}", " ", cleaned)
+	return cleaned
 
 
 def _is_valid_vllm_model_dir(model_path: str) -> tuple[bool, str]:
@@ -178,6 +207,7 @@ def _init_vllm(settings: STSSettings):
 				temperature=0.75,
 				top_p=0.92,
 				max_tokens=max_gen_tokens,
+				stop=["\nsystem:", "\nuser:", "\nassistant:", "\tsystem:", "\tuser:", "\tassistant:"],
 			)
 			NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "vLLM initialized successfully")
 			return vllm_engine, vllm_sampling_params, "vllm"
@@ -300,7 +330,7 @@ def generate_ai_response(models: STSModels, messages: list[dict[str, str]]) -> s
 	"""
 	if models.llm_backend == "vllm" and models.vllm_engine is not None and models.vllm_sampling_params is not None:
 		response = models.vllm_engine.chat(messages=messages, sampling_params=models.vllm_sampling_params)
-		return response.outputs[0].text.strip()
+		return _sanitize_llm_response(response.outputs[0].text)
 
 	if models.llm_backend == "hf" and models.hf_model is not None and models.hf_tokenizer is not None:
 		try:
@@ -332,7 +362,7 @@ def generate_ai_response(models: STSModels, messages: list[dict[str, str]]) -> s
 			generated_tokens = output[0][prompt_tokens:]
 			text = models.hf_tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
 			if text:
-				return text
+				return _sanitize_llm_response(text)
 		except Exception as err:
 			NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, f"Transformers generation failed ({type(err).__name__}): {err}")
 			NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, traceback.format_exc().strip())
