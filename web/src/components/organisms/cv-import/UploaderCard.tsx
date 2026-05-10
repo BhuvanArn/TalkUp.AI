@@ -18,8 +18,6 @@ export const UploaderCard = ({
 }: UploaderCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
 
-  // ─── DATE LOGIC ───
-
   const toInputValue = (date?: Date | null): string => {
     if (!date || isNaN(date.getTime())) return '';
     const year = date.getFullYear();
@@ -42,7 +40,6 @@ export const UploaderCard = ({
 
   const daysRemaining = getDaysRemaining(deadline);
 
-  // ─── EVENT HANDLERS ───
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -209,7 +206,6 @@ export const UploaderCard = ({
   );
 };
 
-/* ─── Styles ─── */
 
 const cardStyle: React.CSSProperties = {
   background: '#FFF',

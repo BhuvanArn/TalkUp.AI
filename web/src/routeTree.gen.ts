@@ -29,6 +29,7 @@ import { Route as ApplicationsIndexRouteImport } from './routes/applications/ind
 import { Route as SettingsSecurityRouteImport } from './routes/settings/security'
 import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
 import { Route as SettingsIntegrationsRouteImport } from './routes/settings/integrations'
+import { Route as SettingsCvAnalysisRouteImport } from './routes/settings/cv-analysis'
 import { Route as SettingsBillingRouteImport } from './routes/settings/billing'
 import { Route as NotesNoteIdRouteImport } from './routes/notes/$noteId'
 import { Route as ApplicationsApplicationIdIndexRouteImport } from './routes/applications/$applicationId/index'
@@ -136,6 +137,11 @@ const SettingsIntegrationsRoute = SettingsIntegrationsRouteImport.update({
   path: '/settings/integrations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsCvAnalysisRoute = SettingsCvAnalysisRouteImport.update({
+  id: '/settings/cv-analysis',
+  path: '/settings/cv-analysis',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsBillingRoute = SettingsBillingRouteImport.update({
   id: '/settings/billing',
   path: '/settings/billing',
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/settings/billing': typeof SettingsBillingRoute
+  '/settings/cv-analysis': typeof SettingsCvAnalysisRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/settings/billing': typeof SettingsBillingRoute
+  '/settings/cv-analysis': typeof SettingsCvAnalysisRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
   '/settings/billing': typeof SettingsBillingRoute
+  '/settings/cv-analysis': typeof SettingsCvAnalysisRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/notes/$noteId'
     | '/settings/billing'
+    | '/settings/cv-analysis'
     | '/settings/integrations'
     | '/settings/profile'
     | '/settings/security'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/notes/$noteId'
     | '/settings/billing'
+    | '/settings/cv-analysis'
     | '/settings/integrations'
     | '/settings/profile'
     | '/settings/security'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/notes/$noteId'
     | '/settings/billing'
+    | '/settings/cv-analysis'
     | '/settings/integrations'
     | '/settings/profile'
     | '/settings/security'
@@ -360,6 +372,7 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   NotesNoteIdRoute: typeof NotesNoteIdRoute
   SettingsBillingRoute: typeof SettingsBillingRoute
+  SettingsCvAnalysisRoute: typeof SettingsCvAnalysisRoute
   SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
@@ -514,6 +527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsIntegrationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/cv-analysis': {
+      id: '/settings/cv-analysis'
+      path: '/settings/cv-analysis'
+      fullPath: '/settings/cv-analysis'
+      preLoaderRoute: typeof SettingsCvAnalysisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/billing': {
       id: '/settings/billing'
       path: '/settings/billing'
@@ -576,6 +596,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   NotesNoteIdRoute: NotesNoteIdRoute,
   SettingsBillingRoute: SettingsBillingRoute,
+  SettingsCvAnalysisRoute: SettingsCvAnalysisRoute,
   SettingsIntegrationsRoute: SettingsIntegrationsRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,

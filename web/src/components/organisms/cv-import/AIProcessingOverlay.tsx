@@ -52,14 +52,11 @@ export const AIProcessingOverlay = ({
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
-        // Stop simulation at 100% and trigger final callback
         if (prev >= 100) {
           clearInterval(interval);
-          setTimeout(onFinished, 500); // Slight delay for smoother transition
-          return 100;
+          setTimeout(onFinished, 500); 
         }
 
-        // Calculate which message to show based on progress percentage
         const msgIndex = Math.floor((prev / 100) * messages.length);
         setCurrentMessage(messages[msgIndex] || messages[messages.length - 1]);
 
@@ -67,14 +64,13 @@ export const AIProcessingOverlay = ({
       });
     }, 100);
 
-    // Cleanup interval on component unmount
     return () => clearInterval(interval);
   }, [onFinished]);
 
   return (
     <div style={overlayStyle}>
       <div style={contentBox}>
-        <h2 style={{ marginBottom: '24px' }}>Analyse TalkUp.AI en cours</h2>
+        <h2 style={{ marginBottom: '24px' }}>Analys TalkUp.AI in processe</h2>
         
         <AnalysisStatus message={currentMessage} />
         
