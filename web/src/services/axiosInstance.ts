@@ -33,8 +33,9 @@ const PUBLIC_AUTH_ENDPOINTS = [
   '/auth/refresh',
 ];
 
-/** Routes where failed refresh must not assign `/login` (same guard re-runs status → loop). */
+/** Routes where failed refresh must not assign `/login` (public routes — landing + auth pages). */
 const NO_LOGIN_REDIRECT_AFTER_REFRESH_FAIL = new Set([
+  '/',
   '/login',
   '/register',
   '/verify-email',
