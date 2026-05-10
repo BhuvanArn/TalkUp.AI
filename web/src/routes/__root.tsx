@@ -1,11 +1,39 @@
 import Sidebar from '@/components/organisms/sidebar';
 import { NavigationProvider } from '@/contexts/NavigationContext';
-import { Outlet, createRootRoute } from '@tanstack/react-router';
+import {
+  Outlet,
+  createRootRoute,
+  useRouterState,
+} from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useState } from 'react';
 
+const PUBLIC_SHELL_PATHS = new Set<string>([
+  '/',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+]);
+
 const RootComponent = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const pathname = useRouterState({
+    select: (s) => s.resolvedLocation?.pathname ?? s.location.pathname,
+  });
+  const usePublicShell = PUBLIC_SHELL_PATHS.has(pathname);
+
+  if (usePublicShell) {
+    return (
+      <NavigationProvider>
+        <div className="min-h-screen w-full bg-background text-text">
+          <Outlet />
+          <TanStackRouterDevtools position="top-right" />
+        </div>
+      </NavigationProvider>
+    );
+  }
 
   return (
     <NavigationProvider>
