@@ -2,19 +2,30 @@ import React from 'react';
 import { iconMap } from '../../atoms/icon/icon-map';
 
 /**
- * @interface AnalysisResultProps
+ * Props for the AnalysisResultCard component.
  */
 interface AnalysisResultProps {
+  /** Callback function triggered when the user wants to perform a new analysis. */
   onRetry: () => void;
+  /** Optional callback function to navigate the user to their generated course. */
   onStartCourse?: () => void;
 }
 
+/**
+ * AnalysisResultCard Component
+ * * @description
+ * An organism component displayed after the AI has finished processing a user profile.
+ * It features a success state badge, a summary of validated highlights (Skills, Path, AI),
+ * and clear Call-to-Action (CTA) buttons to either start the training or restart the process.
+ *
+ * @param {AnalysisResultProps} props - The component props.
+ * @returns {JSX.Element} A centered card containing the analysis results and actions.
+ */
 export const AnalysisResultCard = ({
   onRetry,
   onStartCourse = () => console.log("Navigating to course..."),
 }: AnalysisResultProps) => {
   
-
   const SuccessIcon = iconMap['check-circle'];
   const SkillsIcon = iconMap['tasks'];
   const PathIcon = iconMap['progression'];
@@ -23,7 +34,7 @@ export const AnalysisResultCard = ({
 
   return (
     <div style={resultContainer}>
-      {/* Badge de succès principal */}
+      {/* Main Success Badge */}
       <div style={iconBadgeStyle}>
         <div style={checkCircle}>
           <SuccessIcon size={24} color="#1D9E75" />
@@ -35,7 +46,7 @@ export const AnalysisResultCard = ({
         Your profile has been fully processed. TalkUp has generated a personalized action plan based on your strengths and recruiter expectations.
       </p>
 
-      {/* Grille de points forts avec tes icônes */}
+      {/* Highlights Grid */}
       <div style={highlightsGrid}>
         <div style={highlightItem}>
           <span style={highlightIcon}><SkillsIcon /></span>
@@ -51,7 +62,7 @@ export const AnalysisResultCard = ({
         </div>
       </div>
 
-      {/* Zone d'action principale */}
+      {/* Primary Action Zone */}
       <div style={ctaBox}>
         <p style={ctaText}>Your custom training is ready.</p>
         <button
@@ -64,7 +75,7 @@ export const AnalysisResultCard = ({
         </button>
       </div>
 
-      {/* Bouton de retour avec icône "undo" de la map */}
+      {/* Secondary Action Link */}
       <button onClick={onRetry} style={retryLink}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
           <RetryIcon size={14} />
@@ -75,6 +86,9 @@ export const AnalysisResultCard = ({
   );
 };
 
+// --- Styles ---
+
+/** @type {React.CSSProperties} Main card container */
 const resultContainer: React.CSSProperties = {
   backgroundColor: 'white',
   padding: '60px 48px',
@@ -86,6 +100,7 @@ const resultContainer: React.CSSProperties = {
   border: '1px solid #F1F5F9',
 };
 
+/** @type {React.CSSProperties} Background container for the success icon */
 const iconBadgeStyle: React.CSSProperties = {
   display: 'inline-flex',
   justifyContent: 'center',
@@ -97,6 +112,7 @@ const iconBadgeStyle: React.CSSProperties = {
   marginBottom: '24px',
 };
 
+/** @type {React.CSSProperties} Circular wrapper for the success checkmark */
 const checkCircle: React.CSSProperties = {
   width: '44px',
   height: '44px',
@@ -108,6 +124,7 @@ const checkCircle: React.CSSProperties = {
   boxShadow: '0 2px 8px rgba(29, 158, 117, 0.1)',
 };
 
+/** @type {React.CSSProperties} Main success heading */
 const finalTitle: React.CSSProperties = {
   fontSize: '28px',
   fontWeight: 800,
@@ -115,6 +132,7 @@ const finalTitle: React.CSSProperties = {
   marginBottom: '12px',
 };
 
+/** @type {React.CSSProperties} Subtext description */
 const finalSubtitle: React.CSSProperties = {
   fontSize: '15px',
   color: '#64748B',
@@ -122,6 +140,7 @@ const finalSubtitle: React.CSSProperties = {
   lineHeight: '1.6',
 };
 
+/** @type {React.CSSProperties} Layout grid for badge items */
 const highlightsGrid: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'center',
@@ -130,6 +149,7 @@ const highlightsGrid: React.CSSProperties = {
   marginBottom: '40px',
 };
 
+/** @type {React.CSSProperties} Individual pill style for highlights */
 const highlightItem: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -140,18 +160,21 @@ const highlightItem: React.CSSProperties = {
   border: '1px solid #E2E8F0',
 };
 
+/** @type {React.CSSProperties} Icon styling within highlight pills */
 const highlightIcon: React.CSSProperties = { 
   display: 'flex', 
   color: '#2B70C9',
   fontSize: '16px' 
 };
 
+/** @type {React.CSSProperties} Text styling within highlight pills */
 const highlightText: React.CSSProperties = {
   fontSize: '13px',
   fontWeight: 600,
   color: '#475569',
 };
 
+/** @type {React.CSSProperties} Container for the primary CTA section */
 const ctaBox: React.CSSProperties = {
   backgroundColor: '#F0F9FF',
   padding: '32px',
@@ -159,6 +182,7 @@ const ctaBox: React.CSSProperties = {
   marginBottom: '24px',
 };
 
+/** @type {React.CSSProperties} Bold text inside CTA box */
 const ctaText: React.CSSProperties = {
   fontSize: '16px',
   fontWeight: 700,
@@ -166,6 +190,7 @@ const ctaText: React.CSSProperties = {
   marginBottom: '20px',
 };
 
+/** @type {React.CSSProperties} Main action button styling */
 const primaryStartBtn: React.CSSProperties = {
   backgroundColor: '#2B70C9',
   color: 'white',
@@ -180,6 +205,7 @@ const primaryStartBtn: React.CSSProperties = {
   boxShadow: '0 4px 12px rgba(43, 112, 201, 0.2)',
 };
 
+/** @type {React.CSSProperties} Secondary text button styling */
 const retryLink: React.CSSProperties = {
   background: 'none',
   border: 'none',

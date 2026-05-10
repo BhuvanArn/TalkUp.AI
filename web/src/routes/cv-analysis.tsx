@@ -4,11 +4,11 @@ import { useState } from 'react';
 import { AIProcessingOverlay } from '../components/organisms/cv-import/AIProcessingOverlay';
 import { AnalysisResultCard } from '../components/organisms/cv-import/AnalysisResultCard';
 import { UploaderCard } from '../components/organisms/cv-import/UploaderCard';
-
+import { iconMap } from '../components/atoms/icon/icon-map';
 /**
  * @route /cv-analysis
- * @description Main route for CV and Job Offer URL matching.
- * Orchestrates the 3 steps: Upload, AI Web Scraping/Analysis, and Results.
+ * @description Main route for CV and Job Offer matching analysis.
+ * Orchestrates the three-step workflow: Document Upload, AI Web Scraping/Processing, and Results Display.
  */
 export const Route = createFileRoute('/cv-analysis')({
   component: CVAnalysisPage,
@@ -16,30 +16,38 @@ export const Route = createFileRoute('/cv-analysis')({
 
 /**
  * CVAnalysisPage Component
- * Manages the global state for the CV analysis workflow.
+ * @description
+ * Manages the global state and business logic for the CV analysis workflow.
+ * Handles file management, URL tracking, and switching between the upload, 
+ * processing, and result screens.
+ * * @returns {JSX.Element} The rendered CV Analysis page.
  */
 function CVAnalysisPage() {
-  // --- States ---
+  
+  const CvIcon = iconMap.cv;
+  const LinkIcon = iconMap.search; 
+  const TrashIcon = iconMap.delete;
+
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [jobUrl, setJobUrl] = useState('');
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
-  // --- Handlers ---
 
   /**
-   * Starts the AI process.
+   * Triggers the AI analysis process.
+   * Validates that a file is uploaded and a valid URL is provided before starting.
    */
   const handleStartAnalysis = () => {
     if (cvFile && jobUrl.trim().startsWith('http')) {
       setIsAnalyzing(true);
-      // Data simulation happens inside the overlay/logic flow
     }
   };
 
   /**
-   * Resets the analysis to start over and clears all inputs.
+   * Resets the analysis workflow and clears all local states.
+   * Used to allow the user to analyze another profile.
    */
   const handleReset = () => {
     setIsFinished(false);
@@ -53,9 +61,9 @@ function CVAnalysisPage() {
       {/* 1. HEADER - Hidden when results are shown */}
       {!isFinished && (
         <header style={headerStyle}>
-          <h1 style={titleStyle}>Analyse de Compatibilité</h1>
+          <h1 style={titleStyle}>Compatibility Analysis</h1>
           <p style={subtitleStyle}>
-            Importez votre CV et collez le lien de l'offre pour débuter.
+            Upload your CV and paste the job offer link to begin.
           </p>
         </header>
       )}
@@ -72,17 +80,16 @@ function CVAnalysisPage() {
 
       {/* 3. MAIN CONTENT */}
       {isFinished ? (
-        /* Using the new premium version of the card we created */
         <AnalysisResultCard
           onRetry={handleReset}
-          onStartCourse={() => console.log("Navigation vers le parcours...")}
+          onStartCourse={() => console.log("Navigating to course path...")}
         />
       ) : (
         <>
           <div style={mainGrid}>
             {/* Column 1: CV Upload & Deadline */}
             <section style={columnStyle}>
-              <h2 style={sectionTitle}>1. Votre CV</h2>
+              <h2 style={sectionTitle}>1. Your CV</h2>
               {!cvFile ? (
                 <UploaderCard 
                   onFileSelect={(file) => setCvFile(file)} 
@@ -91,17 +98,20 @@ function CVAnalysisPage() {
                 />
               ) : (
                 <div style={fileSuccessCard}>
-                  <div style={fileIconCircle}>📄</div>
+                  <div style={fileIconCircle}>
+                    <CvIcon size={24} color="#1D9E75" />
+                  </div>
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <p style={{ fontWeight: 700, margin: 0, fontSize: '14px' }}>
                       {cvFile.name}
                     </p>
                     <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>
-                      {(cvFile.size / 1024 / 1024).toFixed(2)} MB • Prêt
+                      {(cvFile.size / 1024 / 1024).toFixed(2)} MB • Ready
                     </p>
                   </div>
                   <button onClick={() => setCvFile(null)} style={removeBtn}>
-                    Supprimer
+                    <TrashIcon size={16} style={{ marginRight: '4px' }} />
+                    Remove
                   </button>
                 </div>
               )}
@@ -109,20 +119,20 @@ function CVAnalysisPage() {
 
             {/* Column 2: Job URL Input */}
             <section style={columnStyle}>
-              <h2 style={sectionTitle}>2. L'Offre (Lien)</h2>
+              <h2 style={sectionTitle}>2. Job Offer (Link)</h2>
               <div style={jobCard}>
                 <div style={urlInputWrapper}>
-                  <span style={{ fontSize: '18px' }}>🔗</span>
+                  <LinkIcon size={18} color="#94A3B8" />
                   <input
                     type="url"
                     style={urlInputStyle}
-                    placeholder="Collez le lien LinkedIn, WTTJ..."
+                    placeholder="Paste LinkedIn, WTTJ link..."
                     value={jobUrl}
                     onChange={(e) => setJobUrl(e.target.value)}
                   />
                 </div>
                 <p style={helperText}>
-                  TalkUp extraira automatiquement les détails de l'annonce.
+                  TalkUp will automatically extract details from the listing.
                 </p>
               </div>
             </section>
@@ -143,7 +153,7 @@ function CVAnalysisPage() {
                     : 'not-allowed',
               }}
             >
-              Lancer l'analyse TalkUp 🚀
+              Start TalkUp Analysis
             </button>
           </footer>
         </>
@@ -152,8 +162,7 @@ function CVAnalysisPage() {
   );
 }
 
-// --- Styles ---
-
+/** @type {React.CSSProperties} Layout for the main page container */
 const pageContainer: React.CSSProperties = {
   backgroundColor: '#F8FAFC',
   minHeight: '100vh',
@@ -161,20 +170,26 @@ const pageContainer: React.CSSProperties = {
   fontFamily: 'Inter, system-ui, sans-serif',
 };
 
+/** @type {React.CSSProperties} Centered header layout */
 const headerStyle: React.CSSProperties = {
   textAlign: 'center',
   marginBottom: '48px',
 };
+
+/** @type {React.CSSProperties} Main title typography */
 const titleStyle: React.CSSProperties = {
   fontSize: '32px',
   fontWeight: 800,
   color: '#0F172A',
 };
+
+/** @type {React.CSSProperties} Subtitle typography */
 const subtitleStyle: React.CSSProperties = {
   color: '#64748B',
   marginTop: '8px',
 };
 
+/** @type {React.CSSProperties} Grid layout for the two main sections */
 const mainGrid: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
@@ -183,17 +198,21 @@ const mainGrid: React.CSSProperties = {
   margin: '0 auto',
 };
 
+/** @type {React.CSSProperties} Vertical column alignment */
 const columnStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: '16px',
 };
+
+/** @type {React.CSSProperties} Section heading typography */
 const sectionTitle: React.CSSProperties = {
   fontSize: '18px',
   fontWeight: 700,
   color: '#1E293B',
 };
 
+/** @type {React.CSSProperties} Card style for a successfully uploaded file */
 const fileSuccessCard: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -205,6 +224,7 @@ const fileSuccessCard: React.CSSProperties = {
   minHeight: '110px'
 };
 
+/** @type {React.CSSProperties} Icon container for the file preview */
 const fileIconCircle: React.CSSProperties = {
   width: '48px',
   height: '48px',
@@ -213,10 +233,12 @@ const fileIconCircle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: '20px',
 };
 
+/** @type {React.CSSProperties} Styling for the file removal button */
 const removeBtn: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
   background: 'none',
   border: 'none',
   color: '#EF4444',
@@ -225,6 +247,7 @@ const removeBtn: React.CSSProperties = {
   fontSize: '13px',
 };
 
+/** @type {React.CSSProperties} Card container for the job URL input */
 const jobCard: React.CSSProperties = {
   backgroundColor: '#FFF',
   padding: '24px',
@@ -237,6 +260,7 @@ const jobCard: React.CSSProperties = {
   minHeight: '110px'
 };
 
+/** @type {React.CSSProperties} Visual wrapper for the URL text field */
 const urlInputWrapper: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -247,6 +271,7 @@ const urlInputWrapper: React.CSSProperties = {
   padding: '12px 16px',
 };
 
+/** @type {React.CSSProperties} The text input for the URL */
 const urlInputStyle: React.CSSProperties = {
   flex: 1,
   border: 'none',
@@ -256,6 +281,7 @@ const urlInputStyle: React.CSSProperties = {
   color: '#1E293B',
 };
 
+/** @type {React.CSSProperties} Small help text below inputs */
 const helperText: React.CSSProperties = {
   fontSize: '12px',
   color: '#94A3B8',
@@ -263,11 +289,13 @@ const helperText: React.CSSProperties = {
   fontStyle: 'italic'
 };
 
+/** @type {React.CSSProperties} Centered footer area */
 const footerStyle: React.CSSProperties = {
   textAlign: 'center',
   marginTop: '48px',
 };
 
+/** @type {React.CSSProperties} The primary button to start the analysis */
 const analyzeButton: React.CSSProperties = {
   color: 'white',
   padding: '16px 56px',
