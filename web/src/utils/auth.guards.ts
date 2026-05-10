@@ -71,6 +71,23 @@ export const createAuthGuard = (routePath: string) => {
 };
 
 /**
+ * Creates a guard for routes that render different content based on auth status.
+ * If authenticated, redirects to the given target route.
+ * If not authenticated, allows the route to render.
+ *
+ * @param target - Route to redirect authenticated users to.
+ */
+export const createAuthRedirectGuard = (target: string) => {
+  return async () => {
+    const isAuthenticated = await checkAuthStatus();
+
+    if (isAuthenticated) {
+      throw redirect({ to: target });
+    }
+  };
+};
+
+/**
  * Creates a guard function for public routes such as '/login' and '/register'.
  * If the user is already authenticated, they are redirected to '/'.
  * Otherwise, the route is accessible.

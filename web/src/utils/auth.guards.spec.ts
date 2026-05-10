@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createAuthGuard, createPublicRouteGuard } from './auth.guards';
+import {
+  createAuthGuard,
+  createAuthRedirectGuard,
+  createPublicRouteGuard,
+} from './auth.guards';
 
 const axiosGet = vi.hoisted(() => vi.fn());
 const getRouteConfigMock = vi.hoisted(() => vi.fn());
@@ -101,6 +105,35 @@ describe('auth.guards', () => {
       await expect(createAuthGuard('/dashboard')()).rejects.toThrow('REDIRECT');
       expect(spy).toHaveBeenCalled();
       spy.mockRestore();
+    });
+  });
+
+  describe('createAuthRedirectGuard', () => {
+    it('redirects to target when authenticated', async () => {
+      axiosGet.mockResolvedValue({ data: { authenticated: true } });
+      await expect(createAuthRedirectGuard('/simulations')()).rejects.toThrow(
+        'REDIRECT',
+      );
+      expect(redirectMock).toHaveBeenCalledWith({ to: '/simulations' });
+      expect(emitAuthMock).toHaveBeenCalledWith(true);
+    });
+
+    it('resolves without redirect when not authenticated', async () => {
+      axiosGet.mockResolvedValue({ data: { authenticated: false } });
+      await expect(
+        createAuthRedirectGuard('/simulations')(),
+      ).resolves.toBeUndefined();
+      expect(redirectMock).not.toHaveBeenCalled();
+      expect(emitAuthMock).toHaveBeenCalledWith(false);
+    });
+
+    it('resolves without redirect when auth status request fails', async () => {
+      axiosGet.mockRejectedValue(new Error('network'));
+      await expect(
+        createAuthRedirectGuard('/simulations')(),
+      ).resolves.toBeUndefined();
+      expect(redirectMock).not.toHaveBeenCalled();
+      expect(emitAuthMock).toHaveBeenCalledWith(false);
     });
   });
 
