@@ -4,6 +4,8 @@ import React from 'react';
 import { ButtonProps } from './types';
 import { buttonVariants } from './variants';
 
+export { buttonVariants };
+
 /**
  * A customizable button component that supports different variants, colors, and sizes.
  *
@@ -31,6 +33,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       disabled = false,
       squared = false,
       circled = false,
+      asChild = false,
       className,
       children,
       ...props
@@ -38,22 +41,42 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const isDisabled = disabled || loading;
+    const mergedClassName = cn(
+      buttonVariants({
+        variant,
+        color,
+        size,
+        disabled,
+        loading,
+        squared,
+        circled,
+      }),
+      className,
+    );
+
+    if (asChild && React.isValidElement(children)) {
+      const child = children as React.ReactElement<{
+        className?: string;
+        children?: React.ReactNode;
+      }>;
+      return React.cloneElement(child, {
+        ...props,
+        className: cn(mergedClassName, child.props.className),
+        children: (
+          <>
+            {loading && (
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            )}
+            {child.props.children}
+          </>
+        ),
+      });
+    }
 
     return (
       <button
         ref={ref}
-        className={cn(
-          buttonVariants({
-            variant,
-            color,
-            size,
-            disabled,
-            loading,
-            squared,
-            circled,
-          }),
-          className,
-        )}
+        className={mergedClassName}
         disabled={isDisabled}
         aria-disabled={isDisabled}
         aria-busy={loading}

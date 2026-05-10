@@ -1,19 +1,22 @@
 import { Button } from '@/components/atoms/button';
 import Logo from '@/components/molecules/logo';
 import ThemeToggle from '@/components/molecules/theme-toggle';
-import { useAuth } from '@/contexts/AuthContext';
-import { Link } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
 const NAV_LINKS = [
-  { href: '#features', label: 'Features' },
-  { href: '#how', label: 'How it works' },
-  { href: '#pricing', label: 'Pricing' },
-  { href: '#testimonials', label: 'Testimonials' },
+  { hash: 'features', label: 'Features' },
+  { hash: 'how', label: 'How it works' },
+  { hash: 'pricing', label: 'Pricing' },
+  { hash: 'testimonials', label: 'Testimonials' },
 ];
 
 const LandingNav = () => {
-  const { isAuthenticated } = useAuth();
+  const pathname = useRouterState({
+    select: (s) => s.resolvedLocation?.pathname ?? s.location.pathname,
+  });
+  const onLanding = pathname === '/';
+  const buildHref = (hash: string) => (onLanding ? `#${hash}` : `/#${hash}`);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -43,9 +46,9 @@ const LandingNav = () => {
 
         <ul className="hidden items-center gap-8 lg:flex">
           {NAV_LINKS.map((link) => (
-            <li key={link.href}>
+            <li key={link.hash}>
               <a
-                href={link.href}
+                href={buildHref(link.hash)}
                 className="text-body-m text-text-weak hover:text-accent transition-colors"
               >
                 {link.label}
@@ -56,26 +59,12 @@ const LandingNav = () => {
 
         <div className="hidden items-center gap-3 lg:flex">
           <ThemeToggle />
-          {isAuthenticated ? (
-            <Link to="/profile">
-              <Button variant="contained" color="accent" size="sm">
-                Open app
-              </Button>
-            </Link>
-          ) : (
-            <>
-              <Link to="/login">
-                <Button variant="text" color="neutral" size="sm">
-                  Log in
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button variant="contained" color="accent" size="sm">
-                  Get started
-                </Button>
-              </Link>
-            </>
-          )}
+          <Button asChild variant="text" color="neutral" size="sm">
+            <Link to="/login">Log in</Link>
+          </Button>
+          <Button asChild variant="contained" color="accent" size="sm">
+            <Link to="/register">Get started</Link>
+          </Button>
         </div>
 
         <button
@@ -98,9 +87,9 @@ const LandingNav = () => {
         <div className="lg:hidden border-t border-border bg-background">
           <ul className="flex flex-col gap-2 px-6 py-4">
             {NAV_LINKS.map((link) => (
-              <li key={link.href}>
+              <li key={link.hash}>
                 <a
-                  href={link.href}
+                  href={buildHref(link.hash)}
                   onClick={() => setOpen(false)}
                   className="block py-2 text-body-l text-text hover:text-accent"
                 >
@@ -110,41 +99,28 @@ const LandingNav = () => {
             ))}
             <li className="mt-2 flex flex-col gap-2">
               <ThemeToggle />
-              {isAuthenticated ? (
-                <Link to="/profile" onClick={() => setOpen(false)}>
-                  <Button
-                    variant="contained"
-                    color="accent"
-                    size="sm"
-                    className="w-full"
-                  >
-                    Open app
-                  </Button>
+              <Button
+                asChild
+                variant="outlined"
+                color="neutral"
+                size="sm"
+                className="w-full"
+              >
+                <Link to="/login" onClick={() => setOpen(false)}>
+                  Log in
                 </Link>
-              ) : (
-                <>
-                  <Link to="/login" onClick={() => setOpen(false)}>
-                    <Button
-                      variant="outlined"
-                      color="neutral"
-                      size="sm"
-                      className="w-full"
-                    >
-                      Log in
-                    </Button>
-                  </Link>
-                  <Link to="/register" onClick={() => setOpen(false)}>
-                    <Button
-                      variant="contained"
-                      color="accent"
-                      size="sm"
-                      className="w-full"
-                    >
-                      Get started
-                    </Button>
-                  </Link>
-                </>
-              )}
+              </Button>
+              <Button
+                asChild
+                variant="contained"
+                color="accent"
+                size="sm"
+                className="w-full"
+              >
+                <Link to="/register" onClick={() => setOpen(false)}>
+                  Get started
+                </Link>
+              </Button>
             </li>
           </ul>
         </div>

@@ -1,4 +1,5 @@
 import Logo from '@/components/molecules/logo';
+import { Link } from '@tanstack/react-router';
 import { FaGithub, FaInstagram, FaLinkedin } from 'react-icons/fa6';
 
 const COLUMNS: {
@@ -82,16 +83,25 @@ const LandingFooter = () => {
                 {col.title}
               </h3>
               <ul className="flex flex-col gap-2">
-                {col.items.map((item) => (
-                  <li key={item.label}>
-                    <a
-                      href={item.href}
-                      className="text-body-m text-text-weaker hover:text-accent transition-colors"
-                    >
-                      {item.label}
-                    </a>
-                  </li>
-                ))}
+                {col.items.map((item) => {
+                  const isInternal =
+                    item.href.startsWith('/') && !item.href.startsWith('//');
+                  const linkClass =
+                    'text-body-m text-text-weaker hover:text-accent transition-colors';
+                  return (
+                    <li key={item.label}>
+                      {isInternal ? (
+                        <Link to={item.href} className={linkClass}>
+                          {item.label}
+                        </Link>
+                      ) : (
+                        <a href={item.href} className={linkClass}>
+                          {item.label}
+                        </a>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

@@ -5,7 +5,7 @@ import reviews from '@/components/molecules/convincing-banner/reviews.json';
 import LandingFooter from '@/components/organisms/landing-footer';
 import LandingNav from '@/components/organisms/landing-nav';
 import { Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { FaCheck, FaStar } from 'react-icons/fa6';
 
 interface Feature {
@@ -209,26 +209,24 @@ const Hero = () => (
           sessions.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Link to="/register">
-            <Button
-              variant="contained"
-              color="accent"
-              size="lg"
-              className="w-full sm:w-auto"
-            >
-              Get started — it's free
-            </Button>
-          </Link>
-          <a href="#how" className="w-full sm:w-auto">
-            <Button
-              variant="outlined"
-              color="neutral"
-              size="lg"
-              className="w-full sm:w-auto"
-            >
-              See how it works
-            </Button>
-          </a>
+          <Button
+            asChild
+            variant="contained"
+            color="accent"
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            <Link to="/register">Get started — it's free</Link>
+          </Button>
+          <Button
+            asChild
+            variant="outlined"
+            color="neutral"
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            <a href="#how">See how it works</a>
+          </Button>
         </div>
         <ul className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-body-s text-text-weaker">
           <li className="flex items-center gap-2">
@@ -374,27 +372,21 @@ const HowItWorks = () => (
   </section>
 );
 
-const PricingCta = ({ tier }: { tier: PricingTier }) => {
-  const button = (
-    <Button
-      variant={tier.highlight ? 'contained' : 'outlined'}
-      color="accent"
-      size="md"
-      className="w-full"
-    >
-      {tier.cta}
-    </Button>
-  );
-
-  if (tier.ctaHref.startsWith('/')) {
-    return <Link to={tier.ctaHref}>{button}</Link>;
-  }
-  return (
-    <a href={tier.ctaHref} className="block">
-      {button}
-    </a>
-  );
-};
+const PricingCta = ({ tier }: { tier: PricingTier }) => (
+  <Button
+    asChild
+    variant={tier.highlight ? 'contained' : 'outlined'}
+    color="accent"
+    size="md"
+    className="w-full"
+  >
+    {tier.ctaHref.startsWith('/') ? (
+      <Link to={tier.ctaHref}>{tier.cta}</Link>
+    ) : (
+      <a href={tier.ctaHref}>{tier.cta}</a>
+    )}
+  </Button>
+);
 
 const PricingCard = ({ tier }: { tier: PricingTier }) => (
   <article
@@ -434,6 +426,14 @@ const PricingCard = ({ tier }: { tier: PricingTier }) => (
   </article>
 );
 
+const PRICING_TABS: { id: PricingAudience; label: string }[] = [
+  { id: 'candidates', label: 'For candidates' },
+  { id: 'organizations', label: 'For organizations' },
+];
+
+const tabId = (id: PricingAudience) => `pricing-tab-${id}`;
+const panelId = (id: PricingAudience) => `pricing-panel-${id}`;
+
 const PricingTabs = ({
   audience,
   onChange,
@@ -441,10 +441,38 @@ const PricingTabs = ({
   audience: PricingAudience;
   onChange: (a: PricingAudience) => void;
 }) => {
-  const tabs: { id: PricingAudience; label: string }[] = [
-    { id: 'candidates', label: 'For candidates' },
-    { id: 'organizations', label: 'For organizations' },
-  ];
+  const tabRefs = React.useRef<
+    Record<PricingAudience, HTMLButtonElement | null>
+  >({
+    candidates: null,
+    organizations: null,
+  });
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (
+      e.key !== 'ArrowLeft' &&
+      e.key !== 'ArrowRight' &&
+      e.key !== 'Home' &&
+      e.key !== 'End'
+    ) {
+      return;
+    }
+    e.preventDefault();
+    const idx = PRICING_TABS.findIndex((t) => t.id === audience);
+    let nextIdx = idx;
+    if (e.key === 'ArrowLeft') {
+      nextIdx = (idx - 1 + PRICING_TABS.length) % PRICING_TABS.length;
+    } else if (e.key === 'ArrowRight') {
+      nextIdx = (idx + 1) % PRICING_TABS.length;
+    } else if (e.key === 'Home') {
+      nextIdx = 0;
+    } else if (e.key === 'End') {
+      nextIdx = PRICING_TABS.length - 1;
+    }
+    const next = PRICING_TABS[nextIdx].id;
+    onChange(next);
+    tabRefs.current[next]?.focus();
+  };
 
   return (
     <div
@@ -452,15 +480,22 @@ const PricingTabs = ({
       aria-label="Pricing audience"
       className="inline-flex items-center gap-1 rounded-full border border-border bg-surface p-1"
     >
-      {tabs.map((tab) => {
+      {PRICING_TABS.map((tab) => {
         const active = audience === tab.id;
         return (
           <button
             key={tab.id}
+            ref={(el) => {
+              tabRefs.current[tab.id] = el;
+            }}
             type="button"
             role="tab"
+            id={tabId(tab.id)}
             aria-selected={active}
+            aria-controls={panelId(tab.id)}
+            tabIndex={active ? 0 : -1}
             onClick={() => onChange(tab.id)}
+            onKeyDown={onKeyDown}
             className={`rounded-full px-4 py-1.5 text-body-m transition-colors ${
               active
                 ? 'bg-accent text-white'
@@ -496,6 +531,9 @@ const Pricing = () => {
         </div>
       </div>
       <div
+        role="tabpanel"
+        id={panelId(audience)}
+        aria-labelledby={tabId(audience)}
         className={`mt-12 grid gap-6 ${cols} ${
           tiers.length === 2 ? 'mx-auto max-w-4xl' : ''
         }`}

@@ -14,7 +14,7 @@ const AuthPageShell = ({ children }: AuthPageShellProps) => {
         to="/"
         className="absolute top-6 left-6 inline-flex items-center gap-1 text-body-m text-text-weak hover:text-accent transition-colors"
       >
-        <Icon icon="arrow-left" size="sm" />
+        <Icon icon="arrow-left" size="sm" aria-hidden focusable={false} />
         Back to home
       </Link>
       <Link to="/" aria-label="TalkUp home">

@@ -20,5 +20,6 @@ export interface ButtonProps
   loading?: boolean;
   squared?: boolean;
   circled?: boolean;
+  asChild?: boolean;
   children?: React.ReactNode;
 }
