@@ -84,14 +84,25 @@ const LandingFooter = () => {
               </h3>
               <ul className="flex flex-col gap-2">
                 {col.items.map((item) => {
-                  const isInternal =
-                    item.href.startsWith('/') && !item.href.startsWith('//');
                   const linkClass =
                     'text-body-m text-text-weaker hover:text-accent transition-colors';
+                  const isInternalPath =
+                    item.href.startsWith('/') && !item.href.startsWith('//');
+                  const isHashOnly =
+                    item.href.startsWith('#') && item.href.length > 1;
                   return (
                     <li key={item.label}>
-                      {isInternal ? (
+                      {isInternalPath ? (
                         <Link to={item.href} className={linkClass}>
+                          {item.label}
+                        </Link>
+                      ) : isHashOnly ? (
+                        <Link
+                          to="/"
+                          hash={item.href.slice(1)}
+                          resetScroll={false}
+                          className={linkClass}
+                        >
                           {item.label}
                         </Link>
                       ) : (

@@ -178,7 +178,7 @@ describe('Button Component', () => {
       const buttonElement = screen.getByRole('button', { name: 'Loading' });
       expect(buttonElement).toBeDisabled();
       expect(buttonElement).toHaveAttribute('aria-busy', 'true');
-      expect(buttonElement).toHaveClass('cursor-wait');
+      expect(buttonElement).toHaveClass('!cursor-wait');
     });
 
     it('shows loading spinner when loading', () => {
@@ -201,7 +201,7 @@ describe('Button Component', () => {
       expect(handleClick).not.toHaveBeenCalled();
     });
 
-    it('maintains original colors when loading (not disabled styling)', () => {
+    it('applies disabled styling when loading', () => {
       render(
         <Button loading color="primary">
           Loading Primary
@@ -210,8 +210,8 @@ describe('Button Component', () => {
       const buttonElement = screen.getByRole('button', {
         name: 'Loading Primary',
       });
-      expect(buttonElement).toHaveClass('cursor-wait');
-      expect(buttonElement).not.toHaveClass('opacity-50');
+      expect(buttonElement).toHaveClass('!cursor-wait');
+      expect(buttonElement).toHaveClass('opacity-50');
     });
   });
 

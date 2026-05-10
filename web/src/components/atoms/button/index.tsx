@@ -46,7 +46,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         variant,
         color,
         size,
-        disabled,
+        disabled: isDisabled,
         loading,
         squared,
         circled,
@@ -55,13 +55,40 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     );
 
     if (asChild && React.isValidElement(children)) {
-      const child = children as React.ReactElement<{
-        className?: string;
-        children?: React.ReactNode;
-      }>;
+      const child = children as React.ReactElement<
+        Record<string, unknown> & {
+          className?: string;
+          children?: React.ReactNode;
+          onClick?: (e: React.MouseEvent) => void;
+          onKeyDown?: (e: React.KeyboardEvent) => void;
+        }
+      >;
+      const childOnClick = child.props.onClick;
+      const childOnKeyDown = child.props.onKeyDown;
+      const guardedOnClick = (e: React.MouseEvent) => {
+        if (isDisabled) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        childOnClick?.(e);
+      };
+      const guardedOnKeyDown = (e: React.KeyboardEvent) => {
+        if (isDisabled && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        childOnKeyDown?.(e);
+      };
       return React.cloneElement(child, {
         ...props,
         className: cn(mergedClassName, child.props.className),
+        'aria-disabled': isDisabled || undefined,
+        'aria-busy': loading || undefined,
+        tabIndex: isDisabled ? -1 : undefined,
+        onClick: guardedOnClick,
+        onKeyDown: guardedOnKeyDown,
         children: (
           <>
             {loading && (

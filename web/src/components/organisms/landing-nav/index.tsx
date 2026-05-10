@@ -1,7 +1,7 @@
 import { Button } from '@/components/atoms/button';
 import Logo from '@/components/molecules/logo';
 import ThemeToggle from '@/components/molecules/theme-toggle';
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
 const NAV_LINKS = [
@@ -12,11 +12,6 @@ const NAV_LINKS = [
 ];
 
 const LandingNav = () => {
-  const pathname = useRouterState({
-    select: (s) => s.resolvedLocation?.pathname ?? s.location.pathname,
-  });
-  const onLanding = pathname === '/';
-  const buildHref = (hash: string) => (onLanding ? `#${hash}` : `/#${hash}`);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -47,12 +42,14 @@ const LandingNav = () => {
         <ul className="hidden items-center gap-8 lg:flex">
           {NAV_LINKS.map((link) => (
             <li key={link.hash}>
-              <a
-                href={buildHref(link.hash)}
+              <Link
+                to="/"
+                hash={link.hash}
+                resetScroll={false}
                 className="text-body-m text-text-weak hover:text-accent transition-colors"
               >
                 {link.label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
@@ -88,13 +85,15 @@ const LandingNav = () => {
           <ul className="flex flex-col gap-2 px-6 py-4">
             {NAV_LINKS.map((link) => (
               <li key={link.hash}>
-                <a
-                  href={buildHref(link.hash)}
+                <Link
+                  to="/"
+                  hash={link.hash}
+                  resetScroll={false}
                   onClick={() => setOpen(false)}
                   className="block py-2 text-body-l text-text hover:text-accent"
                 >
                   {link.label}
-                </a>
+                </Link>
               </li>
             ))}
             <li className="mt-2 flex flex-col gap-2">

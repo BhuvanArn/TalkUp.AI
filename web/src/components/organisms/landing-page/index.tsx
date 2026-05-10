@@ -225,7 +225,9 @@ const Hero = () => (
             size="lg"
             className="w-full sm:w-auto"
           >
-            <a href="#how">See how it works</a>
+            <Link to="/" hash="how" resetScroll={false}>
+              See how it works
+            </Link>
           </Button>
         </div>
         <ul className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-body-s text-text-weaker">
