@@ -106,6 +106,20 @@ describe('auth.guards', () => {
       expect(spy).toHaveBeenCalled();
       spy.mockRestore();
     });
+
+    it('does not log on 401 status check (anonymous visitor)', async () => {
+      getRouteConfigMock.mockReturnValue({ requiresAuth: true });
+      const axiosError = Object.assign(new Error('Request failed'), {
+        isAxiosError: true,
+        response: { status: 401 },
+      });
+      axiosGet.mockRejectedValue(axiosError);
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      await expect(createAuthGuard('/dashboard')()).rejects.toThrow('REDIRECT');
+      expect(spy).not.toHaveBeenCalled();
+      expect(emitAuthMock).toHaveBeenCalledWith(false);
+      spy.mockRestore();
+    });
   });
 
   describe('createAuthRedirectGuard', () => {

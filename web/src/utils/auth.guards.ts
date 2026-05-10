@@ -2,6 +2,7 @@ import { getRouteConfig } from '@/config/routes.config';
 import axiosInstance from '@/services/axiosInstance';
 import { emit as emitAuth } from '@/utils/authEmitter';
 import { redirect } from '@tanstack/react-router';
+import axios from 'axios';
 
 export interface AuthGuardContext {
   isAuthenticated: boolean;
@@ -27,8 +28,12 @@ const checkAuthStatus = async (): Promise<boolean> => {
 
     return isAuth;
   } catch (error) {
-    console.error('Error on auth status check', error);
-    // Backend throws 401 Unauthorized when not authenticated or token is invalid
+    // 401 = anonymous visitor; not an error worth logging.
+    const isUnauthorized =
+      axios.isAxiosError(error) && error.response?.status === 401;
+    if (!isUnauthorized) {
+      console.error('Error on auth status check', error);
+    }
     try {
       emitAuth(false);
     } catch (emitError) {
