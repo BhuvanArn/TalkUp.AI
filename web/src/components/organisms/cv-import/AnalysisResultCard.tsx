@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { iconMap } from '../../atoms/icon/icon-map';
 
 /**
@@ -23,9 +24,8 @@ interface AnalysisResultProps {
  */
 export const AnalysisResultCard = ({
   onRetry,
-  onStartCourse = () => console.log("Navigating to course..."),
+  onStartCourse = () => console.log('Navigating to course...'),
 }: AnalysisResultProps) => {
-  
   const SuccessIcon = iconMap['check-circle'];
   const SkillsIcon = iconMap['tasks'];
   const PathIcon = iconMap['progression'];
@@ -43,21 +43,29 @@ export const AnalysisResultCard = ({
 
       <h2 style={finalTitle}>Analysis Complete!</h2>
       <p style={finalSubtitle}>
-        Your profile has been fully processed. TalkUp has generated a personalized action plan based on your strengths and recruiter expectations.
+        Your profile has been fully processed. TalkUp has generated a
+        personalized action plan based on your strengths and recruiter
+        expectations.
       </p>
 
       {/* Highlights Grid */}
       <div style={highlightsGrid}>
         <div style={highlightItem}>
-          <span style={highlightIcon}><SkillsIcon /></span>
+          <span style={highlightIcon}>
+            <SkillsIcon />
+          </span>
           <span style={highlightText}>Skills Validated</span>
         </div>
         <div style={highlightItem}>
-          <span style={highlightIcon}><PathIcon /></span>
+          <span style={highlightIcon}>
+            <PathIcon />
+          </span>
           <span style={highlightText}>Optimized Path</span>
         </div>
         <div style={highlightItem}>
-          <span style={highlightIcon}><AiIcon /></span>
+          <span style={highlightIcon}>
+            <AiIcon />
+          </span>
           <span style={highlightText}>Personalized AI</span>
         </div>
       </div>
@@ -68,8 +76,12 @@ export const AnalysisResultCard = ({
         <button
           onClick={onStartCourse}
           style={primaryStartBtn}
-          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#1e5bb3')}
-          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#2B70C9')}
+          onMouseOver={(e) =>
+            (e.currentTarget.style.backgroundColor = '#1e5bb3')
+          }
+          onMouseOut={(e) =>
+            (e.currentTarget.style.backgroundColor = '#2B70C9')
+          }
         >
           Start My Training 🚀
         </button>
@@ -77,7 +89,14 @@ export const AnalysisResultCard = ({
 
       {/* Secondary Action Link */}
       <button onClick={onRetry} style={retryLink}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+          }}
+        >
           <RetryIcon size={14} />
           Analyze another profile
         </div>
@@ -85,8 +104,6 @@ export const AnalysisResultCard = ({
     </div>
   );
 };
-
-// --- Styles ---
 
 /** @type {React.CSSProperties} Main card container */
 const resultContainer: React.CSSProperties = {
@@ -161,10 +178,10 @@ const highlightItem: React.CSSProperties = {
 };
 
 /** @type {React.CSSProperties} Icon styling within highlight pills */
-const highlightIcon: React.CSSProperties = { 
-  display: 'flex', 
+const highlightIcon: React.CSSProperties = {
+  display: 'flex',
   color: '#2B70C9',
-  fontSize: '16px' 
+  fontSize: '16px',
 };
 
 /** @type {React.CSSProperties} Text styling within highlight pills */

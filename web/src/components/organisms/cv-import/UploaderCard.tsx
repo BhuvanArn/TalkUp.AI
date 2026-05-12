@@ -3,13 +3,27 @@ import React, { useCallback, useState } from 'react';
 import { FileBadge } from '../../atoms/cv-import/FileBadge';
 import { Stepper } from '../../molecules/cv-import/Stepper';
 
+/**
+ * Props for the UploaderCard component.
+ */
 interface UploaderCardProps {
+  /** Callback triggered when a file is successfully selected or dropped. */
   onFileSelect: (file: File) => void;
+  /** Current step in the multi-step analysis process. Defaults to 1. */
   step?: number;
+  /** The application deadline date. */
   deadline?: Date | null;
+  /** Callback triggered when the deadline date is changed or cleared. */
   onDeadlineChange?: (date: Date | null) => void;
 }
 
+/**
+ * UploaderCard Component
+ * * Provides a drag-and-drop interface for CV uploading and an optional
+ * deadline picker to help users prioritize their job applications.
+ * * @param {UploaderCardProps} props - Component properties.
+ * @returns {JSX.Element} The rendered Uploader card.
+ */
 export const UploaderCard = ({
   onFileSelect,
   step = 1,
@@ -18,6 +32,11 @@ export const UploaderCard = ({
 }: UploaderCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
 
+  /**
+   * Converts a Date object to a string format compatible with HTML date inputs (YYYY-MM-DD).
+   * * @param {Date | null} date - The date to convert.
+   * @returns {string} Formatted date string or empty string if invalid.
+   */
   const toInputValue = (date?: Date | null): string => {
     if (!date || isNaN(date.getTime())) return '';
     const year = date.getFullYear();
@@ -26,11 +45,16 @@ export const UploaderCard = ({
     return `${year}-${month}-${day}`;
   };
 
+  /**
+   * Calculates the number of days between today and the provided deadline.
+   * * @param {Date | null} date - The target deadline.
+   * @returns {number | null} Number of days remaining (can be negative).
+   */
   const getDaysRemaining = (date?: Date | null): number | null => {
     if (!date || isNaN(date.getTime())) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
 
@@ -40,7 +64,9 @@ export const UploaderCard = ({
 
   const daysRemaining = getDaysRemaining(deadline);
 
-
+  /**
+   * Toggles the dragging state visually when a file is hovered over the zone.
+   */
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -48,6 +74,9 @@ export const UploaderCard = ({
     else if (e.type === 'dragleave') setIsDragging(false);
   }, []);
 
+  /**
+   * Processes the dropped file and triggers the onFileSelect callback.
+   */
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -60,13 +89,23 @@ export const UploaderCard = ({
     [onFileSelect],
   );
 
+  /**
+   * Determines the color scheme for the urgency badge based on remaining days.
+   * * @returns {React.CSSProperties} CSS styles for the urgency badge.
+   */
   const getUrgencyStyle = (): React.CSSProperties => {
     if (daysRemaining === null) return {};
-    if (daysRemaining < 0) return { backgroundColor: '#FEE2E2', color: '#DC2626' };
-    if (daysRemaining <= 3) return { backgroundColor: '#FEF3C7', color: '#D97706' };
+    if (daysRemaining < 0)
+      return { backgroundColor: '#FEE2E2', color: '#DC2626' };
+    if (daysRemaining <= 3)
+      return { backgroundColor: '#FEF3C7', color: '#D97706' };
     return { backgroundColor: '#DCFCE7', color: '#16A34A' };
   };
 
+  /**
+   * Returns a user-friendly label for the deadline urgency.
+   * * @returns {string} Relative time label (e.g., "Tomorrow!", "3 days left").
+   */
   const getUrgencyLabel = (): string => {
     if (daysRemaining === null) return '';
     if (daysRemaining < 0) return 'Overdue';
@@ -194,7 +233,9 @@ export const UploaderCard = ({
         </div>
 
         {!deadline && (
-          <p style={deadlineHint}>Optional — helps prioritize your applications</p>
+          <p style={deadlineHint}>
+            Optional helps prioritize your applications
+          </p>
         )}
         {deadline && daysRemaining !== null && daysRemaining < 0 && (
           <p style={{ ...deadlineHint, color: '#DC2626' }}>
@@ -205,7 +246,6 @@ export const UploaderCard = ({
     </div>
   );
 };
-
 
 const cardStyle: React.CSSProperties = {
   background: '#FFF',

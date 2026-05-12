@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
+import { iconMap } from '../components/atoms/icon/icon-map';
 import { AIProcessingOverlay } from '../components/organisms/cv-import/AIProcessingOverlay';
 import { AnalysisResultCard } from '../components/organisms/cv-import/AnalysisResultCard';
 import { UploaderCard } from '../components/organisms/cv-import/UploaderCard';
-import { iconMap } from '../components/atoms/icon/icon-map';
+
 /**
  * @route /cv-analysis
  * @description Main route for CV and Job Offer matching analysis.
@@ -18,14 +19,13 @@ export const Route = createFileRoute('/cv-analysis')({
  * CVAnalysisPage Component
  * @description
  * Manages the global state and business logic for the CV analysis workflow.
- * Handles file management, URL tracking, and switching between the upload, 
+ * Handles file management, URL tracking, and switching between the upload,
  * processing, and result screens.
  * * @returns {JSX.Element} The rendered CV Analysis page.
  */
 function CVAnalysisPage() {
-  
   const CvIcon = iconMap.cv;
-  const LinkIcon = iconMap.search; 
+  const LinkIcon = iconMap.search;
   const TrashIcon = iconMap.delete;
 
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -33,7 +33,6 @@ function CVAnalysisPage() {
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
-
 
   /**
    * Triggers the AI analysis process.
@@ -82,7 +81,7 @@ function CVAnalysisPage() {
       {isFinished ? (
         <AnalysisResultCard
           onRetry={handleReset}
-          onStartCourse={() => console.log("Navigating to course path...")}
+          onStartCourse={() => console.log('Navigating to course path...')}
         />
       ) : (
         <>
@@ -91,8 +90,8 @@ function CVAnalysisPage() {
             <section style={columnStyle}>
               <h2 style={sectionTitle}>1. Your CV</h2>
               {!cvFile ? (
-                <UploaderCard 
-                  onFileSelect={(file) => setCvFile(file)} 
+                <UploaderCard
+                  onFileSelect={(file) => setCvFile(file)}
                   deadline={deadline}
                   onDeadlineChange={(date) => setDeadline(date)}
                 />
@@ -105,7 +104,9 @@ function CVAnalysisPage() {
                     <p style={{ fontWeight: 700, margin: 0, fontSize: '14px' }}>
                       {cvFile.name}
                     </p>
-                    <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>
+                    <p
+                      style={{ fontSize: '12px', color: '#64748B', margin: 0 }}
+                    >
                       {(cvFile.size / 1024 / 1024).toFixed(2)} MB • Ready
                     </p>
                   </div>
@@ -146,7 +147,9 @@ function CVAnalysisPage() {
               style={{
                 ...analyzeButton,
                 backgroundColor:
-                  cvFile && jobUrl.trim().startsWith('http') ? '#2B70C9' : '#CBD5E1',
+                  cvFile && jobUrl.trim().startsWith('http')
+                    ? '#2B70C9'
+                    : '#CBD5E1',
                 cursor:
                   cvFile && jobUrl.trim().startsWith('http')
                     ? 'pointer'
@@ -221,7 +224,7 @@ const fileSuccessCard: React.CSSProperties = {
   backgroundColor: '#F0FDF4',
   border: '2px solid #1D9E75',
   borderRadius: '24px',
-  minHeight: '110px'
+  minHeight: '110px',
 };
 
 /** @type {React.CSSProperties} Icon container for the file preview */
@@ -257,7 +260,7 @@ const jobCard: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',
-  minHeight: '110px'
+  minHeight: '110px',
 };
 
 /** @type {React.CSSProperties} Visual wrapper for the URL text field */
@@ -286,7 +289,7 @@ const helperText: React.CSSProperties = {
   fontSize: '12px',
   color: '#94A3B8',
   marginTop: '10px',
-  fontStyle: 'italic'
+  fontStyle: 'italic',
 };
 
 /** @type {React.CSSProperties} Centered footer area */

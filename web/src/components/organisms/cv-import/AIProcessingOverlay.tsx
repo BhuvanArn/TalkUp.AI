@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+
 import { ProgressBar } from '../../atoms/cv-import/ProgressBar';
 import { AnalysisStatus } from '../../molecules/cv-import/AnalysisStatus';
 
@@ -13,7 +14,7 @@ interface AIProcessingOverlayProps {
 
 /**
  * AIProcessingOverlay Organism
- * @description Manages the "Step 2: Analysis" UI logic. It simulates an AI processing 
+ * @description Manages the "Step 2: Analysis" UI logic. It simulates an AI processing
  * phase by cycling through status messages and incrementing a progress bar.
  * * @param {AIProcessingOverlayProps} props - Component props.
  * @returns {JSX.Element} A full-screen fixed overlay with a progress indicator.
@@ -21,19 +22,19 @@ interface AIProcessingOverlayProps {
 export const AIProcessingOverlay = ({
   onFinished,
 }: AIProcessingOverlayProps) => {
-  /** * @type {number} 
+  /** * @type {number}
    * Current progress percentage (0-100).
    */
   const [progress, setProgress] = useState(0);
 
-  /** * @type {string} 
+  /** * @type {string}
    * Current status message being displayed to the user.
    */
   const [currentMessage, setCurrentMessage] = useState(
     'Initializing AI Engine...',
   );
 
-  /** * @constant {string[]} 
+  /** * @constant {string[]}
    * List of sequential messages to display during the simulation.
    */
   const messages = [
@@ -54,7 +55,7 @@ export const AIProcessingOverlay = ({
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
-          setTimeout(onFinished, 500); 
+          setTimeout(onFinished, 500);
         }
 
         const msgIndex = Math.floor((prev / 100) * messages.length);
@@ -71,9 +72,9 @@ export const AIProcessingOverlay = ({
     <div style={overlayStyle}>
       <div style={contentBox}>
         <h2 style={{ marginBottom: '24px' }}>Analys TalkUp.AI in processe</h2>
-        
+
         <AnalysisStatus message={currentMessage} />
-        
+
         <div style={{ marginTop: '24px' }}>
           <ProgressBar progress={progress} />
           <p
