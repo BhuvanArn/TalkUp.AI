@@ -7,7 +7,12 @@ import { InternalServerErrorException } from "@nestjs/common";
 import { AxiosResponse } from "axios";
 
 import { LinkedInService } from "./linkedin.service";
-import { user, user_email, user_oauth } from "@entities/user.entity";
+import {
+  user,
+  user_email,
+  user_oauth,
+  user_profile,
+} from "@entities/user.entity";
 import { LinkedInProfile, LinkedInTokenDatas } from "@common/utils/types";
 import { AuthProvider } from "@common/enums/AuthProvider";
 
@@ -18,6 +23,7 @@ describe("LinkedInService", () => {
   let mockUserRepo: Partial<Repository<user>>;
   let mockUserEmailRepo: Partial<Repository<user_email>>;
   let mockUserOauthRepo: Partial<Repository<user_oauth>>;
+  let mockUserProfileRepo: Partial<Repository<user_profile>>;
   let mockJwtService: Partial<JwtService>;
   let mockHttpService: Partial<HttpService>;
 
@@ -43,7 +49,6 @@ describe("LinkedInService", () => {
   const mockUser = {
     user_id: "test-user-id",
     username: "John Doe",
-    profile_picture: "https://example.com/profile.jpg",
     provider: AuthProvider.LINKEDIN,
     created_at: new Date(),
     updated_at: new Date(),
@@ -75,6 +80,11 @@ describe("LinkedInService", () => {
       save: jest.fn(),
     };
 
+    mockUserProfileRepo = {
+      create: jest.fn().mockReturnValue({ user_id: "test-user-id" }),
+      save: jest.fn().mockResolvedValue({ user_id: "test-user-id" }),
+    };
+
     mockJwtService = {
       signAsync: jest.fn(),
     };
@@ -100,6 +110,10 @@ describe("LinkedInService", () => {
         {
           provide: getRepositoryToken(user_oauth),
           useValue: mockUserOauthRepo,
+        },
+        {
+          provide: getRepositoryToken(user_profile),
+          useValue: mockUserProfileRepo,
         },
         {
           provide: JwtService,
@@ -260,6 +274,12 @@ describe("LinkedInService", () => {
       mockUserOauthRepo.save = jest
         .fn()
         .mockResolvedValue({} as Partial<user_oauth>);
+      const mockProf = {
+        user_id: newUser.user_id,
+        profile_picture: mockProfile.picture,
+      };
+      mockUserProfileRepo.create = jest.fn().mockReturnValue(mockProf);
+      mockUserProfileRepo.save = jest.fn().mockResolvedValue(mockProf);
       mockJwtService.signAsync = jest.fn().mockResolvedValue("new-jwt-token");
 
       const result = await service.saveLinkedInUser(mockProfile, mockTokenData);
@@ -267,10 +287,16 @@ describe("LinkedInService", () => {
       expect(result).toEqual({ accessToken: "new-jwt-token" });
       expect(mockUserRepo.create).toHaveBeenCalledWith({
         username: "John Doe",
-        profile_picture: "https://example.com/profile.jpg",
         provider: AuthProvider.LINKEDIN,
       });
       expect(mockUserRepo.save).toHaveBeenCalledWith(newUser);
+      expect(mockUserProfileRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: newUser.user_id,
+          profile_picture: "https://example.com/profile.jpg",
+        }),
+      );
+      expect(mockUserProfileRepo.save).toHaveBeenCalledWith(mockProf);
       expect(mockUserEmailRepo.create).toHaveBeenCalledWith(mockEmail);
       expect(mockUserEmailRepo.save).toHaveBeenCalledWith(mockEmail);
     });

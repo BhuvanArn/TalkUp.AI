@@ -1,63 +1,97 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { InternalServerErrorException } from "@nestjs/common";
+
+import { ProfileVisibility } from "@common/enums/ProfileVisibility";
+import { UserStatus } from "@common/enums/UserStatus";
 import {
-  InternalServerErrorException,
-  NotFoundException,
-} from "@nestjs/common";
+  user,
+  user_email,
+  user_phone_number,
+  user_profile,
+} from "@entities/user.entity";
 
 import { UsersService } from "./users.service";
-import { user, user_email, user_password } from "@entities/user.entity";
 
 describe("UsersService", () => {
   let service: UsersService;
-  let mockUserRepo: Partial<Repository<user>>;
-  let mockEmailRepo: Partial<Repository<user_email>>;
-  let mockPasswordRepo: Partial<Repository<user_password>>;
-
-  const mockEmail = {
-    email_id: 1,
-    user_id: "test-user-id",
-    email: "test@example.com",
-    is_verified: false,
+  let userRepo: {
+    save: jest.Mock;
+    delete: jest.Mock;
+  };
+  let profileRepo: {
+    findOne: jest.Mock;
+    create: jest.Mock;
+    save: jest.Mock;
+  };
+  let emailRepo: {
+    findOne: jest.Mock;
+  };
+  let phoneRepo: {
+    findOne: jest.Mock;
   };
 
-  const mockPassword = {
-    password_id: 1,
-    user_id: "test-user-id",
-    password: "hashedpassword123",
-    user: null as any,
+  const baseUser = {
+    user_id: "uid-1",
+    username: "alice",
+    created_at: new Date(),
+    last_accessed_at: new Date(),
+    updated_at: new Date(),
+    tokenVersion: 1,
+    status: UserStatus.ACTIVE,
+    provider: "manual",
+    organization_id: null,
+    user_role: "none",
+  } as user;
+
+  const baseProfile = {
+    user_id: "uid-1",
+    first_name: "Alice",
+    last_name: "Bee",
+    bio: null,
+    job_title: null,
+    linkedin_url: null,
+    profile_picture: null,
+    avatar_accent_color: "#2B70C9",
+    banner_gradient: null,
+    profile_visibility: ProfileVisibility.PUBLIC,
+    notification_prefs: null,
+  } as user_profile;
+
+  const emailRow: user_email = {
+    email_id: 1,
+    user_id: "uid-1",
+    email: "alice@example.com",
+    is_verified: true,
+    user: undefined as never,
   };
 
   beforeEach(async () => {
-    mockUserRepo = {
+    userRepo = {
+      save: jest.fn((u: user) => Promise.resolve(u)),
+      delete: jest.fn(),
+    };
+    profileRepo = {
+      findOne: jest.fn(),
+      create: jest.fn((p: Partial<user_profile>) => p as user_profile),
+      save: jest.fn((p: user_profile) => Promise.resolve(p)),
+    };
+    emailRepo = {
       findOne: jest.fn(),
     };
-
-    mockEmailRepo = {
+    phoneRepo = {
       findOne: jest.fn(),
     };
-
-    mockPasswordRepo = {
-      findOne: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
-    } as Partial<Repository<user_password>>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
+        { provide: getRepositoryToken(user), useValue: userRepo },
+        { provide: getRepositoryToken(user_profile), useValue: profileRepo },
+        { provide: getRepositoryToken(user_email), useValue: emailRepo },
         {
-          provide: getRepositoryToken(user),
-          useValue: mockUserRepo,
-        },
-        {
-          provide: getRepositoryToken(user_email),
-          useValue: mockEmailRepo,
-        },
-        {
-          provide: getRepositoryToken(user_password),
-          useValue: mockPasswordRepo,
+          provide: getRepositoryToken(user_phone_number),
+          useValue: phoneRepo,
         },
       ],
     }).compile();
@@ -69,91 +103,84 @@ describe("UsersService", () => {
     expect(service).toBeDefined();
   });
 
-  describe("changeUserPassword", () => {
-    it("should throw NotFoundException when email not found", async () => {
-      mockEmailRepo.findOne = jest.fn().mockResolvedValue(null);
+  describe("getProfile", () => {
+    it("returns assembled camelCase view", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+
+      const v = await service.getProfile(baseUser);
+      expect(v.userId).toBe("uid-1");
+      expect(v.email).toBe("alice@example.com");
+      expect(v.firstName).toBe("Alice");
+      expect(v.profilePicture).toBeNull();
+    });
+  });
+
+  describe("updateProfile", () => {
+    it("creates profile when missing and updates first name", async () => {
+      profileRepo.findOne.mockResolvedValueOnce(null);
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+
+      const v = await service.updateProfile(baseUser, {
+        firstName: "Zed",
+      });
+      expect(profileRepo.create).toHaveBeenCalled();
+      expect(profileRepo.save).toHaveBeenCalled();
+      expect(v.firstName).toBe("Zed");
+    });
+
+    it("updates existing profile", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+
+      const v = await service.updateProfile(baseUser, {
+        firstName: "Zed",
+      });
+      expect(userRepo.save).toHaveBeenCalled();
+      expect(profileRepo.save).toHaveBeenCalled();
+      expect(v.firstName).toBe("Zed");
+    });
+
+    it("maps profilePicture to profile_picture", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+
+      const dataUrl = "data:image/jpeg;base64,abcd";
+      await service.updateProfile(baseUser, { profilePicture: dataUrl });
+
+      expect(profileRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ profile_picture: dataUrl }),
+      );
+    });
+
+    it("wraps unexpected errors", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      userRepo.save.mockRejectedValue(new Error("db"));
 
       await expect(
-        service.changeUserPassword("test@example.com", "newPassword123"),
-      ).rejects.toThrow(
-        new NotFoundException("There is no user with that email"),
-      );
+        service.updateProfile(baseUser, { bio: "x" }),
+      ).rejects.toThrow(InternalServerErrorException);
+    });
+  });
 
-      expect(mockEmailRepo.findOne).toHaveBeenCalledWith({
-        where: { email: "test@example.com" },
+  describe("deleteAccount", () => {
+    it("deletes existing account", async () => {
+      userRepo.delete.mockResolvedValue({ affected: 1 });
+      await expect(service.deleteAccount(baseUser)).resolves.toBeUndefined();
+      expect(userRepo.delete).toHaveBeenCalledWith({
+        user_id: baseUser.user_id,
       });
     });
 
-    it("should create new password entry when user has no password", async () => {
-      const newPasswordEntity: user_password = {
-        ...mockPassword,
-        password: "newHashedPassword",
-      };
-
-      mockEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
-      mockPasswordRepo.findOne = jest.fn().mockResolvedValue(null);
-      mockPasswordRepo.create = jest.fn().mockReturnValue(newPasswordEntity);
-      mockPasswordRepo.save = jest.fn((_entity: user_password) =>
-        Promise.resolve(newPasswordEntity),
-      ) as unknown as typeof mockPasswordRepo.save;
-
-      jest.doMock("@common/utils/passwordHasher", () => ({
-        hashPassword: jest.fn().mockResolvedValue("newHashedPassword"),
-      }));
-
-      const result = await service.changeUserPassword(
-        "test@example.com",
-        "newPassword123",
+    it("throws when account does not exist", async () => {
+      userRepo.delete.mockResolvedValue({ affected: 0 });
+      await expect(service.deleteAccount(baseUser)).rejects.toThrow(
+        "User not found.",
       );
-
-      expect(result).toBe(true);
-      expect(mockPasswordRepo.create).toHaveBeenCalledWith({
-        password: expect.stringContaining("") as unknown,
-        user_id: "test-user-id",
-      });
-      expect(mockPasswordRepo.save).toHaveBeenCalledWith(newPasswordEntity);
-    });
-
-    it("should update existing password when user has password", async () => {
-      const existingPassword = { ...mockPassword };
-      mockEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
-      mockPasswordRepo.findOne = jest.fn().mockResolvedValue(existingPassword);
-      const updatedPassword: user_password = {
-        ...existingPassword,
-        password: "newHashedPassword",
-      };
-      mockPasswordRepo.save = jest.fn((_entity: Partial<user_password>) =>
-        Promise.resolve(updatedPassword),
-      ) as unknown as typeof mockPasswordRepo.save;
-
-      const result = await service.changeUserPassword(
-        "test@example.com",
-        "newPassword123",
-      );
-
-      expect(result).toBe(true);
-      expect(mockPasswordRepo.save).toHaveBeenCalledWith({
-        ...existingPassword,
-        password: expect.stringContaining("") as unknown,
-      });
-    });
-
-    it("should throw InternalServerErrorException when save fails", async () => {
-      mockEmailRepo.findOne = jest
-        .fn()
-        .mockRejectedValueOnce(new Error("DB error"));
-
-      await expect(
-        service.changeUserPassword("test@example.com", "newPassword123"),
-      ).rejects.toThrow(
-        new InternalServerErrorException(
-          "Internal server error while changing password.",
-        ),
-      );
-
-      expect(mockEmailRepo.findOne).toHaveBeenCalledWith({
-        where: { email: "test@example.com" },
-      });
     });
   });
 });

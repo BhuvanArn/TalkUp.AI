@@ -14,15 +14,17 @@ import * as bcrypt from "bcrypt";
 
 import { AuthService } from "./auth.service";
 import { CreateUserDto } from "./dto/createUser.dto";
-import { EditUserDto } from "./dto/editUser.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
 
 import { OtpPurpose } from "@common/enums/OtpPurpose";
 import { UserStatus } from "@common/enums/UserStatus";
+import { OrganizationUserRole } from "@common/enums/organizationUserRole";
+
 import { Otp } from "@entities/otp.entity";
 import { user, user_password, user_email } from "@entities/user.entity";
-import { OrganizationUserRole } from "@common/enums/organizationUserRole";
+
+import { ITokenStorage } from "@common/interfaces/token-storage";
 
 jest.mock("bcrypt");
 const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
@@ -40,11 +42,17 @@ describe("AuthService", () => {
   let mockJwtService: Partial<JwtService>;
   let mockDataSource: { transaction: jest.Mock };
   let mockEventEmitter: { emit: jest.Mock };
+  let mockTokenStorage: {
+    blacklistToken: jest.Mock;
+    consumeRefreshJti: jest.Mock;
+    isJtiBlacklisted: jest.Mock;
+    getTokenVersion: jest.Mock;
+    incrementTokenVersion: jest.Mock;
+  };
 
   const mockUser: user = {
     user_id: "test-user-id",
     username: "testuser",
-    profile_picture: "",
     provider: "",
     verification_code: "",
     status: UserStatus.ACTIVE,
@@ -123,6 +131,14 @@ describe("AuthService", () => {
       transaction: jest.fn(),
     };
 
+    mockTokenStorage = {
+      blacklistToken: jest.fn().mockResolvedValue(undefined),
+      consumeRefreshJti: jest.fn().mockResolvedValue(true),
+      isJtiBlacklisted: jest.fn().mockResolvedValue(false),
+      getTokenVersion: jest.fn().mockResolvedValue(1),
+      incrementTokenVersion: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -153,6 +169,10 @@ describe("AuthService", () => {
         {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
+        },
+        {
+          provide: ITokenStorage,
+          useValue: mockTokenStorage,
         },
       ],
     }).compile();
@@ -546,6 +566,34 @@ describe("AuthService", () => {
 
       expect(mockEventEmitter.emit).not.toHaveBeenCalled();
     });
+
+    it("creates OTP and emits reset event when email exists", async () => {
+      mockedBcrypt.hash.mockResolvedValue("hash" as never);
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: () => ({
+            delete: jest.fn().mockResolvedValue(undefined),
+            save: jest.fn().mockResolvedValue(undefined),
+            create: jest.fn().mockImplementation((x) => x),
+          }),
+        }),
+      );
+
+      const dto: PasswordResetRequestDto = { email: "test@example.com" };
+      const promise = service.passwordResetRequest(dto);
+      await jest.runAllTimersAsync();
+      await promise;
+
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        "auth.reset_password_requested",
+        expect.objectContaining({
+          email: "test@example.com",
+          purpose: OtpPurpose.RESET_PASSWORD,
+        }),
+      );
+    });
   });
 
   describe("passwordResetVerify", () => {
@@ -587,6 +635,49 @@ describe("AuthService", () => {
 
       await expect(service.passwordResetVerify(dto)).rejects.toThrow(
         BadRequestException,
+      );
+    });
+
+    it("increments OTP attempts when code does not match", async () => {
+      const dto: PasswordResetVerifyDto = {
+        email: "test@example.com",
+        code: "wrong-code",
+        purpose: OtpPurpose.RESET_PASSWORD,
+      };
+
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+
+      const otpEntity = {
+        id: "otp-1",
+        codeHash: "hash",
+        attempts: 0,
+        expiresAt: new Date(Date.now() + 60000),
+      };
+
+      const save = jest.fn().mockResolvedValue(undefined);
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: () => ({
+            createQueryBuilder: jest.fn().mockReturnValue({
+              setLock: jest.fn().mockReturnThis(),
+              where: jest.fn().mockReturnThis(),
+              andWhere: jest.fn().mockReturnThis(),
+              getOne: jest.fn().mockResolvedValue(otpEntity),
+            }),
+            delete: jest.fn(),
+            save,
+          }),
+        }),
+      );
+
+      mockedBcrypt.compare.mockResolvedValue(false as never);
+
+      await expect(service.passwordResetVerify(dto)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({ attempts: 1 }),
       );
     });
 
@@ -664,6 +755,57 @@ describe("AuthService", () => {
       ).resolves.toBeUndefined();
       expect(passwordRepo.save).toHaveBeenCalled();
     });
+
+    it("creates password row when none exists", async () => {
+      const userRepo = {
+        findOne: jest.fn().mockResolvedValue(mockUser),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          update: jest.fn().mockReturnThis(),
+          set: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          execute: jest.fn().mockResolvedValue({ affected: 1 }),
+        }),
+      };
+      const passwordRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+        save: jest.fn().mockResolvedValue(mockPassword),
+        create: jest.fn().mockImplementation((x) => x),
+      };
+
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) return userRepo;
+            if (entity === user_password) return passwordRepo;
+            return {};
+          },
+        }),
+      );
+
+      await service.passwordUpdate("test-user-id", "Firstpass1!");
+
+      expect(passwordRepo.create).toHaveBeenCalled();
+      expect(passwordRepo.save).toHaveBeenCalled();
+    });
+
+    it("throws when user row is missing", async () => {
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) {
+              return {
+                findOne: jest.fn().mockResolvedValue(null),
+              };
+            }
+            return { findOne: jest.fn() };
+          },
+        }),
+      );
+
+      await expect(service.passwordUpdate("ghost-id", "x")).rejects.toThrow(
+        BadRequestException,
+      );
+    });
   });
 
   describe("resendOtp", () => {
@@ -688,6 +830,18 @@ describe("AuthService", () => {
       await expect(
         service.resendOtp("missing@example.com", OtpPurpose.REGISTER),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it("throws when REGISTER resend is requested for an already active account", async () => {
+      mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserRepo.findOne = jest
+        .fn()
+        .mockResolvedValue({ ...mockUser, status: UserStatus.ACTIVE });
+
+      await expect(
+        service.resendOtp("test@example.com", OtpPurpose.REGISTER),
+      ).rejects.toThrow(ConflictException);
     });
 
     it("emits event when resend succeeds", async () => {
@@ -765,31 +919,204 @@ describe("AuthService", () => {
     });
   });
 
-  describe("editUser", () => {
-    it("updates username and email", async () => {
-      mockUserRepo.findOneByOrFail = jest.fn().mockResolvedValue({
-        ...mockUser,
+  describe("refreshTokens", () => {
+    it("issues new token pair and consumes old jti atomically", async () => {
+      const now = Math.floor(Date.now() / 1000);
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValueOnce({
+        userId: "test-user-id",
+        tv: 1,
+        typ: "refresh",
+        jti: "old-jti",
+        exp: now + 3600,
       });
-      mockUserRepo.save = jest.fn().mockResolvedValue(mockUser);
-      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+      mockJwtService.signAsync = jest
+        .fn()
+        .mockResolvedValueOnce("new-at")
+        .mockResolvedValueOnce("new-rt");
 
-      const dto: EditUserDto = {
-        username: "newname",
-        email: "new@example.com",
-      };
+      const result = await service.refreshTokens("old-refresh-jwt");
 
-      const result = await service.editUser("test-user-id", dto);
-      expect(result).toBeDefined();
-      expect(mockUserEmailRepo.save).toHaveBeenCalled();
+      expect(result).toEqual({
+        accessToken: "new-at",
+        refreshToken: "new-rt",
+      });
+      expect(mockTokenStorage.consumeRefreshJti).toHaveBeenCalledWith(
+        "old-jti",
+        expect.any(Number),
+      );
+      expect(mockTokenStorage.blacklistToken).not.toHaveBeenCalled();
     });
 
-    it("wraps unexpected errors", async () => {
-      mockUserRepo.findOneByOrFail = jest.fn().mockResolvedValue(mockUser);
-      mockUserRepo.save = jest.fn().mockRejectedValue(new Error("db"));
+    it("rejects when RT has wrong typ", async () => {
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValueOnce({
+        userId: "test-user-id",
+        tv: 1,
+        typ: "access",
+        jti: "jti-1",
+      });
 
-      await expect(
-        service.editUser("test-user-id", { username: "x" } as EditUserDto),
-      ).rejects.toThrow(InternalServerErrorException);
+      await expect(service.refreshTokens("bad-rt")).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it("rejects when jti was already consumed or revoked", async () => {
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValueOnce({
+        userId: "test-user-id",
+        tv: 1,
+        typ: "refresh",
+        jti: "revoked-jti",
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+      mockTokenStorage.consumeRefreshJti.mockResolvedValueOnce(false);
+
+      await expect(service.refreshTokens("revoked-rt")).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it("rejects when tokenVersion mismatches", async () => {
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValueOnce({
+        userId: "test-user-id",
+        tv: 99,
+        typ: "refresh",
+        jti: "jti-1",
+      });
+      mockUserRepo.findOne = jest
+        .fn()
+        .mockResolvedValue({ ...mockUser, tokenVersion: 1 });
+
+      await expect(service.refreshTokens("stale-rt")).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it("rejects when RT signature is invalid", async () => {
+      mockJwtService.verifyAsync = jest
+        .fn()
+        .mockRejectedValueOnce(new Error("invalid signature"));
+
+      await expect(service.refreshTokens("tampered-rt")).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it("rejects when RT TTL is expired", async () => {
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValueOnce({
+        userId: "test-user-id",
+        tv: 1,
+        typ: "refresh",
+        jti: "jti-1",
+        exp: Math.floor(Date.now() / 1000) - 1,
+      });
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+      await expect(service.refreshTokens("expired-rt")).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it("accepts tv as string in payload", async () => {
+      const now = Math.floor(Date.now() / 1000);
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValueOnce({
+        userId: "test-user-id",
+        tv: "1",
+        typ: "refresh",
+        jti: "old-jti",
+        exp: now + 3600,
+      });
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+      mockJwtService.signAsync = jest
+        .fn()
+        .mockResolvedValueOnce("new-at")
+        .mockResolvedValueOnce("new-rt");
+
+      await expect(service.refreshTokens("rt")).resolves.toEqual({
+        accessToken: "new-at",
+        refreshToken: "new-rt",
+      });
+    });
+
+    it("uses REFRESH max age when exp claim is absent", async () => {
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValueOnce({
+        userId: "test-user-id",
+        tv: 1,
+        typ: "refresh",
+        jti: "no-exp-jti",
+      });
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
+      mockJwtService.signAsync = jest
+        .fn()
+        .mockResolvedValueOnce("new-at")
+        .mockResolvedValueOnce("new-rt");
+
+      await service.refreshTokens("rt-no-exp");
+
+      expect(mockTokenStorage.consumeRefreshJti).toHaveBeenCalledWith(
+        "no-exp-jti",
+        expect.any(Number),
+      );
+    });
+
+    it("rejects when jti is missing from payload", async () => {
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValueOnce({
+        userId: "test-user-id",
+        tv: 1,
+        typ: "refresh",
+        exp: Math.floor(Date.now() / 1000) + 100,
+      });
+
+      await expect(service.refreshTokens("rt")).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it("rejects when user is not found", async () => {
+      mockJwtService.verifyAsync = jest.fn().mockResolvedValueOnce({
+        userId: "missing-user",
+        tv: 1,
+        typ: "refresh",
+        jti: "jti-x",
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(service.refreshTokens("rt")).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
+
+  describe("incrementTokenVersion", () => {
+    it("delegates to token storage", async () => {
+      await service.incrementTokenVersion("uid-1");
+      expect(mockTokenStorage.incrementTokenVersion).toHaveBeenCalledWith(
+        "uid-1",
+      );
+    });
+  });
+
+  describe("logout", () => {
+    it("increments tokenVersion and blacklists jti", async () => {
+      await service.logout("test-user-id", "rt-jti-1");
+
+      expect(mockTokenStorage.incrementTokenVersion).toHaveBeenCalledWith(
+        "test-user-id",
+      );
+      expect(mockTokenStorage.blacklistToken).toHaveBeenCalledWith(
+        "rt-jti-1",
+        7 * 24 * 60 * 60,
+      );
+    });
+
+    it("increments tokenVersion without blacklist when no jti", async () => {
+      await service.logout("test-user-id");
+
+      expect(mockTokenStorage.incrementTokenVersion).toHaveBeenCalledWith(
+        "test-user-id",
+      );
+      expect(mockTokenStorage.blacklistToken).not.toHaveBeenCalled();
     });
   });
 });

@@ -13,11 +13,27 @@ services:
     environment:
       - DOCKER_RUN=true
       - POSTGRES_DOCKER_HOST=postgres_db
+      - REDIS_URL=redis:6379
     depends_on:
       postgres_db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - server-tier
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - server-tier
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: on-failure
 
   postgres_db:
     image: "postgres:17.4"

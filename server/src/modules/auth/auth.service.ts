@@ -1,4 +1,4 @@
-import { randomInt } from "crypto";
+import { randomInt, randomUUID } from "crypto";
 import { DataSource, Repository } from "typeorm";
 
 import {
@@ -16,7 +16,6 @@ import { EventEmitter2 } from "@nestjs/event-emitter";
 import * as bcrypt from "bcrypt";
 
 import { CreateUserDto } from "./dto/createUser.dto";
-import { EditUserDto } from "./dto/editUser.dto";
 import { VerifyEmailDto } from "./dto/verifyEmail.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
@@ -30,6 +29,13 @@ import { OtpGeneratedEvent } from "./events/otp-generated.event";
 import { hashPassword } from "@common/utils/passwordHasher";
 import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 import { Organization } from "@entities/organization.entity";
+import { ITokenStorage } from "@common/interfaces/token-storage";
+import {
+  ACCESS_TOKEN_EXPIRY,
+  REFRESH_TOKEN_EXPIRY,
+  REFRESH_SECRET,
+  REFRESH_TOKEN_MAX_AGE_MS,
+} from "@common/constants/auth.constants";
 
 type AuthTokens = {
   accessToken: string;
@@ -62,6 +68,7 @@ export class AuthService {
     private readonly dataSource: DataSource,
     private jwtService: JwtService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tokenStorage: ITokenStorage,
   ) {}
 
   /**
@@ -588,6 +595,10 @@ export class AuthService {
     });
   }
 
+  async incrementTokenVersion(userId: string): Promise<void> {
+    await this.tokenStorage.incrementTokenVersion(userId);
+  }
+
   async validateUser(email: string, password: string): Promise<user> {
     const emailEntity = await this.userEmailRepository.findOne({
       where: { email },
@@ -625,56 +636,112 @@ export class AuthService {
     return await this.createAuthTokens(user);
   }
 
-  async editUser(userId: string, EditUserDto: EditUserDto) {
-    const user = await this.userRepository.findOneByOrFail({
-      user_id: userId,
-    });
-    try {
-      if (EditUserDto.username) user.username = EditUserDto.username;
-      // This part will be uncommented when those arguments will be added in the user's infos
-      // if (EditUserDto.phone) user.phone = EditUserDto.phone;
-      // if (EditUserDto.profilePicture) user.profilePicture = EditUserDto.profilePicture;
-      // if (EditUserDto.cv) user.cv = EditUserDto.cv;
-      // if (EditUserDto.activitySector) user.activitySector = EditUserDto.activitySector;
-      if (EditUserDto.email) {
-        const emailEntity = await this.userEmailRepository.findOne({
-          where: { user_id: userId },
-        });
-        if (emailEntity) {
-          emailEntity.email = EditUserDto.email;
-          await this.userEmailRepository.save(emailEntity);
-        }
-      }
-      return await this.userRepository.save(user);
-    } catch {
-      throw new InternalServerErrorException(
-        "Internal server error while editing the user's info.",
-      );
-    }
-  }
-
   async getUserById(userId: string): Promise<user | null> {
     return this.userRepository.findOne({
       where: { user_id: userId },
     });
   }
 
+  /**
+   * Strict refresh-token rotation (RTR): one successful use consumes the old RT JTI,
+   * then issues a new AT+RT pair. Concurrent refreshes with the same RT: only one
+   * wins consumeRefreshJti; the other gets 401 (client should single-flight refresh).
+   *
+   * `jti`, `iat`, `exp` on the payload come from jsonwebtoken (jwtid + registered claims).
+   */
+  async refreshTokens(refreshTokenJwt: string): Promise<AuthTokens> {
+    let payload: Record<string, unknown>;
+    try {
+      payload = (await this.jwtService.verifyAsync(refreshTokenJwt, {
+        secret: REFRESH_SECRET,
+      })) as Record<string, unknown>;
+    } catch {
+      throw new UnauthorizedException("Invalid or expired refresh token");
+    }
+
+    if (payload.typ !== "refresh") {
+      throw new UnauthorizedException("Invalid token type");
+    }
+
+    // jti comes from the jsonwebtoken library and is used to identify the refresh token
+    const jti = payload.jti as string | undefined;
+    const userId = payload.userId as string | undefined;
+    const tv =
+      typeof payload.tv === "number"
+        ? payload.tv
+        : typeof payload.tv === "string"
+          ? Number(payload.tv)
+          : NaN;
+
+    if (!jti || !userId || Number.isNaN(tv)) {
+      throw new UnauthorizedException("Invalid refresh token payload");
+    }
+
+    const foundUser = await this.userRepository.findOne({
+      where: { user_id: userId },
+    });
+    if (!foundUser || (foundUser.tokenVersion ?? 1) !== tv) {
+      throw new UnauthorizedException("Session is no longer valid");
+    }
+
+    // exp comes from the jsonwebtoken library and is used to get the expiration time of the refresh token
+    const exp = payload.exp as number | undefined;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const ttlSeconds = exp
+      ? exp - nowSec
+      : Math.floor(REFRESH_TOKEN_MAX_AGE_MS / 1000);
+    if (ttlSeconds <= 0) {
+      throw new UnauthorizedException("Invalid or expired refresh token");
+    }
+
+    // Atomic claim: implements "use once" for this RT instance (see ITokenStorage).
+    if (!(await this.tokenStorage.consumeRefreshJti(jti, ttlSeconds))) {
+      throw new UnauthorizedException("Refresh token has been revoked");
+    }
+
+    return this.createAuthTokens(foundUser);
+  }
+
+  /**
+   * Primary logout: bump tokenVersion so every JWT with the old `tv` fails validation.
+   * Optional refreshJti blacklist is defense-in-depth when SessionGuard authenticated
+   * via RT (see SessionGuard); omitting it when AT was used is fine — tv bump is enough.
+   */
+  async logout(userId: string, refreshJti?: string): Promise<void> {
+    await this.tokenStorage.incrementTokenVersion(userId);
+
+    if (refreshJti) {
+      const blacklistTtlSeconds = Math.floor(REFRESH_TOKEN_MAX_AGE_MS / 1000);
+      await this.tokenStorage.blacklistToken(refreshJti, blacklistTtlSeconds);
+    }
+  }
+
+  /**
+   * AT: default JWT secret + typ access.
+   * RT: REFRESH_SECRET + typ refresh — prevents swap attacks.
+   */
   private async createAuthTokens(userEntity: user): Promise<AuthTokens> {
-    const payload = {
+    const basePayload = {
       userId: userEntity.user_id,
       username: userEntity.username,
       tv: userEntity.tokenVersion ?? 1,
     };
 
-    const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || "7d") as any,
-    });
+    const accessToken = await this.jwtService.signAsync(
+      { ...basePayload, typ: "access" },
+      { expiresIn: ACCESS_TOKEN_EXPIRY as any, jwtid: randomUUID() },
+    );
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    const refreshToken = await this.jwtService.signAsync(
+      { ...basePayload, typ: "refresh" },
+      {
+        expiresIn: REFRESH_TOKEN_EXPIRY as any,
+        jwtid: randomUUID(),
+        secret: REFRESH_SECRET,
+      },
+    );
+
+    return { accessToken, refreshToken };
   }
 
   private generateOtpCode(): string {
