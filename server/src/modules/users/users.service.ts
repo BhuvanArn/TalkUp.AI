@@ -18,7 +18,7 @@ import {
 import { UpdateProfileDto } from "./dto/updateProfile.dto";
 import { GetProfileDto } from "./dto/getProfile.dto";
 import { type Request, type Response } from "express";
-import  {user_cv} from "@entities/userCV.entity";
+import { user_cv } from "@entities/userCV.entity";
 
 @Injectable()
 export class UsersService {
@@ -257,7 +257,9 @@ export class UsersService {
           .json({ message: "Failed to parse extracted CV data." });
       }
 
-      const existingCV = await this.user_cvRepo.findOne({ where: { user_id: userId } });
+      const existingCV = await this.user_cvRepo.findOne({
+        where: { user_id: userId },
+      });
 
       if (existingCV) {
         await this.user_cvRepo.update(
@@ -269,7 +271,7 @@ export class UsersService {
             education: extractedData.education ?? [],
             technical_skills: extractedData.technical_skills ?? [],
             languages: extractedData.languages ?? [],
-          }
+          },
         );
         console.log("CV updated for user ID:", userId);
         return res.status(200).json({ message: "CV updated successfully" });
