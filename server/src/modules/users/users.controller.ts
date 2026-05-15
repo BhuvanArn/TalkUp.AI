@@ -92,4 +92,10 @@ export class UsersController {
   async uploadCV(@Req() req: Request, @Res() res: Response) {
     return this.usersService.uploadCV(req, res);
   }
+
+  @UseGuards(AccessTokenGuard)
+  @Post("uploadJobOffer")
+  async uploadJobOffer(@Req() req: Request, @Res() res: Response) {
+    return this.usersService.uploadJobOffer(req, res);
+  }
 }

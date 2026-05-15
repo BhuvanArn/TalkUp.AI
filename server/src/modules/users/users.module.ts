@@ -9,6 +9,7 @@ import {
   user_profile,
 } from "@entities/user.entity";
 import { user_cv } from "@entities/userCV.entity";
+import { user_job_offer } from "@entities/userJobOffer.entity";
 import { UsersController } from "./users.controller";
 import { UsersService } from "./users.service";
 import { AuthModule } from "../auth/auth.module";
@@ -22,6 +23,7 @@ import { AuthModule } from "../auth/auth.module";
       user_phone_number,
       user_password,
       user_cv,
+      user_job_offer,
     ]),
     AuthModule,
   ],
