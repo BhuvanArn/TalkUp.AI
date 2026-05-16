@@ -309,7 +309,9 @@ export class UsersService {
       const { url } = req.body;
 
       if (!url) {
-        return res.status(400).json({ message: "Please provide a job offer URL." });
+        return res
+          .status(400)
+          .json({ message: "Please provide a job offer URL." });
       }
 
       try {
@@ -328,7 +330,8 @@ export class UsersService {
 
       if (!pageText) {
         return res.status(400).json({
-          message: "Could not extract content from this URL. The website may be too protected.",
+          message:
+            "Could not extract content from this URL. The website may be too protected.",
         });
       }
 
@@ -390,7 +393,9 @@ export class UsersService {
         extractedData = JSON.parse(cleaned);
       } catch (parseError) {
         console.error("JSON parse error:", parseError);
-        return res.status(500).json({ message: "Failed to parse extracted job offer data." });
+        return res
+          .status(500)
+          .json({ message: "Failed to parse extracted job offer data." });
       }
 
       const existingJobOffer = await this.user_job_offerRepo.findOne({
@@ -418,7 +423,7 @@ export class UsersService {
             company_values: extractedData.company_values ?? [],
             team_description: extractedData.team_description ?? null,
             offer_url: url,
-          }
+          },
         );
         console.log("Job offer updated for user ID:", userId);
         return res.status(200).json({
@@ -451,7 +456,6 @@ export class UsersService {
           message: "Job offer parsed successfully",
         });
       }
-
     } catch (error) {
       console.error("Error processing job offer:", error);
       res.status(500).json({ message: "Error processing the job offer." });
