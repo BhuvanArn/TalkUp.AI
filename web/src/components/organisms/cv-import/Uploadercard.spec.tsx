@@ -20,8 +20,6 @@ const defaultProps = {
 };
 
 describe('UploaderCard', () => {
-  // ── Render ────────────────────────────────────────────────────────────────
-
   describe('Initial render', () => {
     it('renders without crashing', () => {
       render(<UploaderCard {...defaultProps} />);
@@ -67,8 +65,6 @@ describe('UploaderCard', () => {
     });
   });
 
-  // ── File input ────────────────────────────────────────────────────────────
-
   describe('File selection via input', () => {
     it('calls onFileSelect when a file is chosen via input', () => {
       const onFileSelect = vi.fn();
@@ -91,8 +87,6 @@ describe('UploaderCard', () => {
       expect(onFileSelect).not.toHaveBeenCalled();
     });
   });
-
-  // ── Drag and drop ─────────────────────────────────────────────────────────
 
   describe('Drag and drop', () => {
     it('calls onFileSelect when a file is dropped', () => {
@@ -125,8 +119,6 @@ describe('UploaderCard', () => {
       expect(dropZone.style.backgroundColor).not.toBe('#F0F9FF');
     });
   });
-
-  // ── Deadline ──────────────────────────────────────────────────────────────
 
   describe('Deadline section', () => {
     it('renders the Application Deadline label', () => {
