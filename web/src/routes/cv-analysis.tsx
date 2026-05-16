@@ -91,9 +91,9 @@ function CVAnalysisPage() {
               <h2 style={sectionTitle}>1. Your CV</h2>
               {!cvFile ? (
                 <UploaderCard
-                  onFileSelect={(file) => setCvFile(file)}
+                  onFileSelect={(file: File) => setCvFile(file)}
                   deadline={deadline}
-                  onDeadlineChange={(date) => setDeadline(date)}
+                  onDeadlineChange={(date: Date | null) => setDeadline(date)}
                 />
               ) : (
                 <div style={fileSuccessCard}>

@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { iconMap } from '../../atoms/icon/icon-map';
 
 /**
@@ -82,6 +80,8 @@ export const AnalysisResultCard = ({
           onMouseOut={(e) =>
             (e.currentTarget.style.backgroundColor = '#2B70C9')
           }
+          onFocus={(e) => (e.currentTarget.style.backgroundColor = '#1e5bb3')}
+          onBlur={(e) => (e.currentTarget.style.backgroundColor = '#2B70C9')}
         >
           Start My Training 🚀
         </button>

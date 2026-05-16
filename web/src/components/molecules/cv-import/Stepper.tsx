@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { StepIndicator } from '../../atoms/cv-import/StepIndicator';
 
 /**

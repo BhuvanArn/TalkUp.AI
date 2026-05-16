@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { ProgressBar } from '../../atoms/cv-import/ProgressBar';
 import { AnalysisStatus } from '../../molecules/cv-import/AnalysisStatus';
@@ -36,15 +36,19 @@ export const AIProcessingOverlay = ({
 
   /** * @constant {string[]}
    * List of sequential messages to display during the simulation.
+   * Wrapped in useMemo to prevent unnecessary re-runs of the useEffect hook.
    */
-  const messages = [
-    'Reading CV structure...',
-    'Extracting key skills...',
-    'Analyzing job requirements...',
-    'Comparing experiences with job keywords...',
-    'Calculating matching score...',
-    'Generating final report...',
-  ];
+  const messages = useMemo(
+    () => [
+      'Reading CV structure...',
+      'Extracting key skills...',
+      'Analyzing job requirements...',
+      'Comparing experiences with job keywords...',
+      'Calculating matching score...',
+      'Generating final report...',
+    ],
+    [],
+  );
 
   /**
    * Effect hook to run the progress simulation.
@@ -66,7 +70,7 @@ export const AIProcessingOverlay = ({
     }, 100);
 
     return () => clearInterval(interval);
-  }, [onFinished]);
+  }, [onFinished, messages]); // Les dépendances sont maintenant complètes et stables !
 
   return (
     <div style={overlayStyle}>
