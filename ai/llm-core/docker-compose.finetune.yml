@@ -1,0 +1,21 @@
+services:
+  finetune:
+    image: unsloth/unsloth:latest
+    container_name: lucie-finetune
+    volumes:
+      - .:/app
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      - ./models:/app/models
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: python finetuningScript.py
