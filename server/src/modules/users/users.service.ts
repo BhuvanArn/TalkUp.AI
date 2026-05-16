@@ -14,6 +14,11 @@ import {
   user_phone_number,
   user_profile,
 } from "@entities/user.entity";
+import {
+  scrapeLinkedin,
+  scrapeAxios,
+  scrapePuppeteer,
+} from "../../common/utils/JobOfferExtraction";
 
 import { UpdateProfileDto } from "./dto/updateProfile.dto";
 import { GetProfileDto } from "./dto/getProfile.dto";
@@ -313,163 +318,13 @@ export class UsersService {
         return res.status(400).json({ message: "Invalid URL format." });
       }
 
-      console.log("Fetching job offer from URL:", url);
-
       let pageText: string = "";
-      const axios = require("axios");
-      const cheerio = require("cheerio");
 
-      const isWTTJ = url.includes("welcometothejungle.com");
       const isLinkedIn = url.includes("linkedin.com/jobs");
 
-      // ─── STRATÉGIE LINKEDIN (si URL contient linkedin.com/jobs) ──────────────────
-      if (isLinkedIn && !pageText) {
-        try {
-          // Extraire le job ID depuis l'URL
-          // Formats possibles :
-          // https://www.linkedin.com/jobs/view/3812345678
-          // https://www.linkedin.com/jobs/view/titre-du-poste-3812345678
-          const jobIdMatch = url.match(/(\d{8,})/);
-
-          if (!jobIdMatch) {
-            throw new Error("Could not extract LinkedIn job ID from URL");
-          }
-
-          const jobId = jobIdMatch[1];
-          console.log(`LinkedIn detected - job ID: ${jobId}`);
-
-          const guestApiUrl = `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${jobId}`;
-
-          const response = await axios.get(guestApiUrl, {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-              "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8",
-              "Referer": "https://www.linkedin.com/",
-            },
-            timeout: 10000,
-          });
-
-          const cheerio = require("cheerio");
-          const $ = cheerio.load(response.data);
-
-          // Extraire les champs structurés exposés par LinkedIn guest API
-          const jobTitle = $("h2.top-card-layout__title, h1.top-card-layout__title").text().trim();
-          const companyName = $("a.topcard__org-name-link, span.topcard__org-name-link").text().trim();
-          const location = $("span.topcard__flavor--bullet").first().text().trim();
-          const description = $("div.show-more-less-html__markup").text().replace(/\s+/g, " ").trim();
-
-          // Critères structurés (type de contrat, niveau d'expérience, etc.)
-          const criteria: Record<string, string> = {};
-          $("li.description__job-criteria-item").each((_: number, el: any) => {
-            const label = $(el).find("h3").text().trim();
-            const value = $(el).find("span").text().trim();
-            if (label && value) criteria[label] = value;
-          });
-
-          pageText = `
-            Job Title: ${jobTitle}
-            Company: ${companyName}
-            Location: ${location}
-            Contract Type: ${criteria["Type de poste"] || criteria["Employment type"] || ""}
-            Seniority Level: ${criteria["Niveau hiérarchique"] || criteria["Seniority level"] || ""}
-            Industry: ${criteria["Secteur"] || criteria["Industries"] || ""}
-            Job Function: ${criteria["Fonction"] || criteria["Job function"] || ""}
-            Description: ${description}
-          `.replace(/\s+/g, " ").trim();
-
-          if (pageText.length >= 100) {
-            console.log("Strategy LinkedIn (guest API) succeeded");
-          } else {
-            throw new Error("Extracted content too short");
-          }
-
-        } catch (err) {
-          console.log("Strategy LinkedIn failed:", err);
-        }
-      }
-
-      if (!pageText) {
-        // STRATÉGIE axios
-        try {
-          const response = await axios.get(url, {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-              "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
-              "Accept-Encoding": "gzip, deflate, br",
-              "Connection": "keep-alive",
-              "Upgrade-Insecure-Requests": "1",
-              "Sec-Fetch-Dest": "document",
-              "Sec-Fetch-Mode": "navigate",
-              "Sec-Fetch-Site": "none",
-              "Cache-Control": "max-age=0",
-            },
-            timeout: 10000,
-            maxRedirects: 5,
-          });
-
-          const temp = cheerio.load(response.data);
-          temp("script, style, nav, footer, header, iframe, noscript, [aria-hidden='true']").remove();
-          const extracted = temp("body").text().replace(/\s+/g, " ").trim();
-
-          if (extracted.length >= 300) {
-            pageText = extracted;
-            console.log("Strategy 1 (axios) succeeded");
-          }
-        } catch (err) {
-          console.log("Strategy 1 (axios) failed, trying next...");
-        }
-      }
-
-      // STRATÉGIE Puppeteer
-      if (!pageText) {
-        try {
-          const puppeteer = require("puppeteer");
-
-          const browser = await puppeteer.launch({
-            headless: true,
-            args: [
-              "--no-sandbox",
-              "--disable-setuid-sandbox",
-              "--disable-blink-features=AutomationControlled",
-              "--disable-infobars",
-              "--window-size=1920,1080",
-            ],
-          });
-
-          const page = await browser.newPage();
-
-          await page.evaluateOnNewDocument(() => {
-            Object.defineProperty(navigator, "webdriver", { get: () => false });
-            (window as any).chrome = { runtime: {} };
-          });
-
-          await page.setUserAgent(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-          );
-
-          await page.setViewport({ width: 1920, height: 1080 });
-          await page.goto(url, { waitUntil: "networkidle2", timeout: 20000 });
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          const html = await page.content();
-          await browser.close();
-
-          const temp = cheerio.load(html);
-          temp("script, style, nav, footer, header, iframe, noscript").remove();
-          const extracted = temp("body").text().replace(/\s+/g, " ").trim();
-
-          if (extracted.length >= 300) {
-            pageText = extracted;
-            console.log("Strategy 2 (puppeteer) succeeded");
-          }
-        } catch (err) {
-          console.log("Strategy 2 (puppeteer) failed, trying next...");
-        }
-      }
+      if (isLinkedIn) pageText = await scrapeLinkedin(url);
+      if (!pageText) pageText = await scrapeAxios(url);
+      if (!pageText) pageText = await scrapePuppeteer(url);
 
       if (!pageText) {
         return res.status(400).json({
@@ -523,8 +378,6 @@ export class UsersService {
       });
 
       const responseText = completion.choices[0]?.message?.content;
-
-      console.log("Raw response from Groq:", responseText);
 
       if (!responseText) {
         console.error("Empty response from Groq");
