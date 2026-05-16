@@ -16,7 +16,7 @@ interface AIProcessingOverlayProps {
  * AIProcessingOverlay Organism
  * @description Manages the "Step 2: Analysis" UI logic. It simulates an AI processing
  * phase by cycling through status messages and incrementing a progress bar.
- * * @param {AIProcessingOverlayProps} props - Component props.
+ * @param {AIProcessingOverlayProps} props - Component props.
  * @returns {JSX.Element} A full-screen fixed overlay with a progress indicator.
  */
 export const AIProcessingOverlay = ({
@@ -55,22 +55,36 @@ export const AIProcessingOverlay = ({
    * Increments progress every 100ms and updates the message index.
    */
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const interval = setInterval(() => {
       setProgress((prev) => {
+        // Si on est déjà à 100 ou plus, on arrête tout
         if (prev >= 100) {
           clearInterval(interval);
-          setTimeout(onFinished, 500);
+          timeoutId = setTimeout(onFinished, 500);
+          return 100;
         }
 
-        const msgIndex = Math.floor((prev / 100) * messages.length);
+        // On calcule la prochaine étape sans jamais dépasser 100
+        const nextProgress = Math.min(prev + 2, 100);
+
+        // Mise à jour du message en fonction de la progression réelle corrigée
+        const msgIndex = Math.floor((nextProgress / 100) * messages.length);
         setCurrentMessage(messages[msgIndex] || messages[messages.length - 1]);
 
-        return prev + 2;
+        return nextProgress;
       });
     }, 100);
 
-    return () => clearInterval(interval);
-  }, [onFinished, messages]); // Les dépendances sont maintenant complètes et stables !
+    // Nettoyage de l'intervalle ET du timeout au démontage du composant
+    return () => {
+      clearInterval(interval);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [onFinished, messages]);
 
   return (
     <div style={overlayStyle}>

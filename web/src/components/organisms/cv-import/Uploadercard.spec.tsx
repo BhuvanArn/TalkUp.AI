@@ -66,13 +66,16 @@ describe('UploaderCard', () => {
   });
 
   describe('File selection via input', () => {
-    it('calls onFileSelect when a file is chosen via input', () => {
+    it('calls onFileSelect when a valid file is chosen via input', () => {
       const onFileSelect = vi.fn();
       render(<UploaderCard {...defaultProps} onFileSelect={onFileSelect} />);
       const input = document.querySelector(
         'input[type="file"]',
       ) as HTMLInputElement;
+
       const file = new File(['content'], 'cv.pdf', { type: 'application/pdf' });
+      Object.defineProperty(file, 'size', { value: 1024 });
+
       fireEvent.change(input, { target: { files: [file] } });
       expect(onFileSelect).toHaveBeenCalledWith(file);
     });
@@ -89,10 +92,13 @@ describe('UploaderCard', () => {
   });
 
   describe('Drag and drop', () => {
-    it('calls onFileSelect when a file is dropped', () => {
+    it('calls onFileSelect when a valid file is dropped', () => {
       const onFileSelect = vi.fn();
       render(<UploaderCard {...defaultProps} onFileSelect={onFileSelect} />);
+
       const file = new File(['content'], 'cv.pdf', { type: 'application/pdf' });
+      Object.defineProperty(file, 'size', { value: 1024 });
+
       const dropZone = screen
         .getByText('Drag and drop your CV here')
         .closest('div')!.parentElement!;
@@ -117,6 +123,64 @@ describe('UploaderCard', () => {
       fireEvent.dragEnter(dropZone);
       fireEvent.dragLeave(dropZone);
       expect(dropZone.style.backgroundColor).not.toBe('#F0F9FF');
+    });
+  });
+
+  describe('File validation constraints', () => {
+    it('blocks file and shows error when file is larger than 5 MB', () => {
+      const onFileSelect = vi.fn();
+      render(<UploaderCard {...defaultProps} onFileSelect={onFileSelect} />);
+      const input = document.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+
+      const largeFile = new File([''], 'huge_cv.pdf', {
+        type: 'application/pdf',
+      });
+      Object.defineProperty(largeFile, 'size', { value: 6 * 1024 * 1024 });
+
+      fireEvent.change(input, { target: { files: [largeFile] } });
+
+      expect(onFileSelect).not.toHaveBeenCalled();
+      expect(screen.getByText(/trop grand/i)).toBeInTheDocument();
+    });
+
+    it('blocks file and shows error when file format is not supported', () => {
+      const onFileSelect = vi.fn();
+      render(<UploaderCard {...defaultProps} onFileSelect={onFileSelect} />);
+      const input = document.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+
+      // Simulation d'un format non supporté (ex: image/gif)
+      const invalidFile = new File([''], 'avatar.gif', { type: 'image/gif' });
+      Object.defineProperty(invalidFile, 'size', { value: 1024 });
+
+      fireEvent.change(input, { target: { files: [invalidFile] } });
+
+      expect(onFileSelect).not.toHaveBeenCalled();
+      expect(
+        screen.getByText(/Format de fichier non supporté/i),
+      ).toBeInTheDocument();
+    });
+
+    it('applies validation constraints on drag and drop zone too', () => {
+      const onFileSelect = vi.fn();
+      render(<UploaderCard {...defaultProps} onFileSelect={onFileSelect} />);
+
+      const dropZone = screen
+        .getByText('Drag and drop your CV here')
+        .closest('div')!.parentElement!;
+
+      const largeFile = new File([''], 'huge_cv.pdf', {
+        type: 'application/pdf',
+      });
+      Object.defineProperty(largeFile, 'size', { value: 6 * 1024 * 1024 });
+
+      fireEvent.drop(dropZone, { dataTransfer: { files: [largeFile] } });
+
+      expect(onFileSelect).not.toHaveBeenCalled();
+      expect(screen.getByText(/trop grand/i)).toBeInTheDocument();
     });
   });
 
