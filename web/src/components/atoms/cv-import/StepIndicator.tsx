@@ -1,5 +1,3 @@
-
-
 /**
  * @interface StepIndicatorProps
  * @description Properties for an individual step in the stepper.
