@@ -22,22 +22,11 @@ interface AIProcessingOverlayProps {
 export const AIProcessingOverlay = ({
   onFinished,
 }: AIProcessingOverlayProps) => {
-  /** * @type {number}
-   * Current progress percentage (0-100).
-   */
   const [progress, setProgress] = useState(0);
-
-  /** * @type {string}
-   * Current status message being displayed to the user.
-   */
   const [currentMessage, setCurrentMessage] = useState(
     'Initializing AI Engine...',
   );
 
-  /** * @constant {string[]}
-   * List of sequential messages to display during the simulation.
-   * Wrapped in useMemo to prevent unnecessary re-runs of the useEffect hook.
-   */
   const messages = useMemo(
     () => [
       'Reading CV structure...',
@@ -50,26 +39,20 @@ export const AIProcessingOverlay = ({
     [],
   );
 
-  /**
-   * Effect hook to run the progress simulation.
-   * Increments progress every 100ms and updates the message index.
-   */
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    // Initialisé à undefined pour satisfaire la vérification stricte de TypeScript
+    let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
 
     const interval = setInterval(() => {
       setProgress((prev) => {
-        // Si on est déjà à 100 ou plus, on arrête tout
         if (prev >= 100) {
           clearInterval(interval);
           timeoutId = setTimeout(onFinished, 500);
           return 100;
         }
 
-        // On calcule la prochaine étape sans jamais dépasser 100
         const nextProgress = Math.min(prev + 2, 100);
 
-        // Mise à jour du message en fonction de la progression réelle corrigée
         const msgIndex = Math.floor((nextProgress / 100) * messages.length);
         setCurrentMessage(messages[msgIndex] || messages[messages.length - 1]);
 
@@ -77,10 +60,9 @@ export const AIProcessingOverlay = ({
       });
     }, 100);
 
-    // Nettoyage de l'intervalle ET du timeout au démontage du composant
     return () => {
       clearInterval(interval);
-      if (timeoutId) {
+      if (timeoutId !== undefined) {
         clearTimeout(timeoutId);
       }
     };
@@ -89,7 +71,8 @@ export const AIProcessingOverlay = ({
   return (
     <div style={overlayStyle}>
       <div style={contentBox}>
-        <h2 style={{ marginBottom: '24px' }}>Analys TalkUp.AI in processe</h2>
+        {/* Titre corrigé sans fautes d'orthographe */}
+        <h2 style={{ marginBottom: '24px' }}>TalkUp.AI analysis in progress</h2>
 
         <AnalysisStatus message={currentMessage} />
 
@@ -111,7 +94,6 @@ export const AIProcessingOverlay = ({
   );
 };
 
-/** @type {React.CSSProperties} Styles for the full-screen background */
 const overlayStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0,
@@ -125,7 +107,6 @@ const overlayStyle: React.CSSProperties = {
   zIndex: 1000,
 };
 
-/** @type {React.CSSProperties} Styles for the central information card */
 const contentBox: React.CSSProperties = {
   width: '100%',
   maxWidth: '500px',

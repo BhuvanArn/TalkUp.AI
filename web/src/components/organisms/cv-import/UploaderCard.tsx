@@ -19,10 +19,8 @@ interface UploaderCardProps {
 
 /**
  * UploaderCard Component
- * * Provides a drag-and-drop interface for CV uploading and an optional
+ * Provides a drag-and-drop interface for CV uploading and an optional
  * deadline picker to help users prioritize their job applications.
- * * @param {UploaderCardProps} props - Component properties.
- * @returns {JSX.Element} The rendered Uploader card.
  */
 export const UploaderCard = ({
   onFileSelect,
@@ -31,11 +29,48 @@ export const UploaderCard = ({
   onDeadlineChange,
 }: UploaderCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const MAX_SIZE_MB = 5;
+  const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+  const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx'];
+  const ALLOWED_MIME_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ];
+
+  /**
+   * Validates file size and format before calling onFileSelect
+   */
+  const validateAndProcessFile = useCallback(
+    (file: File) => {
+      setError(null);
+
+      const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
+      const isValidType =
+        ALLOWED_MIME_TYPES.includes(file.type) ||
+        ALLOWED_EXTENSIONS.includes(fileExtension);
+
+      if (!isValidType) {
+        setError(
+          'Format de fichier non supporté. Veuillez utiliser un PDF, DOC ou DOCX.',
+        );
+        return;
+      }
+
+      if (file.size > MAX_SIZE_BYTES) {
+        setError(`Le fichier est trop grand. Taille max : ${MAX_SIZE_MB} Mo.`);
+        return;
+      }
+
+      onFileSelect(file);
+    },
+    [onFileSelect],
+  );
 
   /**
    * Converts a Date object to a string format compatible with HTML date inputs (YYYY-MM-DD).
-   * * @param {Date | null} date - The date to convert.
-   * @returns {string} Formatted date string or empty string if invalid.
    */
   const toInputValue = (date?: Date | null): string => {
     if (!date || isNaN(date.getTime())) return '';
@@ -47,8 +82,6 @@ export const UploaderCard = ({
 
   /**
    * Calculates the number of days between today and the provided deadline.
-   * * @param {Date | null} date - The target deadline.
-   * @returns {number | null} Number of days remaining (can be negative).
    */
   const getDaysRemaining = (date?: Date | null): number | null => {
     if (!date || isNaN(date.getTime())) return null;
@@ -75,7 +108,7 @@ export const UploaderCard = ({
   }, []);
 
   /**
-   * Processes the dropped file and triggers the onFileSelect callback.
+   * Processes the dropped file and triggers validation.
    */
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -83,15 +116,14 @@ export const UploaderCard = ({
       e.stopPropagation();
       setIsDragging(false);
       if (e.dataTransfer.files?.[0]) {
-        onFileSelect(e.dataTransfer.files[0]);
+        validateAndProcessFile(e.dataTransfer.files[0]);
       }
     },
-    [onFileSelect],
+    [validateAndProcessFile],
   );
 
   /**
    * Determines the color scheme for the urgency badge based on remaining days.
-   * * @returns {React.CSSProperties} CSS styles for the urgency badge.
    */
   const getUrgencyStyle = (): React.CSSProperties => {
     if (daysRemaining === null) return {};
@@ -104,7 +136,6 @@ export const UploaderCard = ({
 
   /**
    * Returns a user-friendly label for the deadline urgency.
-   * * @returns {string} Relative time label (e.g., "Tomorrow!", "3 days left").
    */
   const getUrgencyLabel = (): string => {
     if (daysRemaining === null) return '';
@@ -163,9 +194,11 @@ export const UploaderCard = ({
             type="file"
             hidden
             accept=".pdf,.doc,.docx"
-            onChange={(e) =>
-              e.target.files?.[0] && onFileSelect(e.target.files[0])
-            }
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                validateAndProcessFile(e.target.files[0]);
+              }
+            }}
           />
 
           <div style={badgeContainer}>
@@ -175,6 +208,21 @@ export const UploaderCard = ({
           </div>
 
           <span style={footerText}>Max size: 5 MB</span>
+
+          {/* Affichage de l'erreur de validation */}
+          {error && (
+            <p
+              style={{
+                color: '#DC2626',
+                fontSize: '14px',
+                marginTop: '16px',
+                fontWeight: 500,
+                margin: '16px 0 0 0',
+              }}
+            >
+              {error}
+            </p>
+          )}
         </div>
       </div>
 
@@ -232,9 +280,10 @@ export const UploaderCard = ({
           )}
         </div>
 
+        {/* Typo de rephrasage corrigée ici (Optional: helps...) */}
         {!deadline && (
           <p style={deadlineHint}>
-            Optional helps prioritize your applications
+            Optional: helps prioritize your applications
           </p>
         )}
         {deadline && daysRemaining !== null && daysRemaining < 0 && (
