@@ -1,40 +1,29 @@
-import React from 'react';
+/**
+ * TypingIndicator
+ *
+ * Displays an animated three-dot indicator to signal that the TalkUp AI
+ * is currently generating a response. Uses CSS animations via Tailwind.
+ *
+ * @returns An animated typing indicator as a React functional component.
+ *
+ * @example
+ * {isTyping && <TypingIndicator />}
+ */
 
 export const TypingIndicator = () => {
   return (
-    <div style={containerStyle}>
-      <div style={{ ...dotStyle, animationDelay: '0s' }} className="dot-blink" />
-      <div style={{ ...dotStyle, animationDelay: '0.2s' }} className="dot-blink" />
-      <div style={{ ...dotStyle, animationDelay: '0.4s' }} className="dot-blink" />
-      
-      {/* Petit hack CSS inline injecté pour l'animation des points */}
-      <style>{`
-        @keyframes blink {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.1); }
-        }
-        .dot-blink {
-          animation: blink 1.4s infinite both;
-        }
-      `}</style>
+    <div
+      className="flex items-center gap-1 px-3 py-2"
+      aria-label="TalkUp AI is typing"
+      role="status"
+    >
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce"
+          style={{ animationDelay: `${i * 0.2}s` }}
+        />
+      ))}
     </div>
   );
-};
-
-const containerStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '4px',
-  padding: '14px 18px',
-  backgroundColor: '#FFFFFF',
-  border: '1px solid #E2E8F0',
-  borderRadius: '16px 16px 16px 4px',
-  width: 'fit-content',
-};
-
-const dotStyle: React.CSSProperties = {
-  width: '6px',
-  height: '6px',
-  backgroundColor: '#64748B',
-  borderRadius: '50%',
 };

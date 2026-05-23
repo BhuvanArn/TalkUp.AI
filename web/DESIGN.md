@@ -28,37 +28,37 @@ Use **semantic CSS variables** in components (Tailwind: `bg-background`, `text-t
 
 ### Brand and interactive
 
-| Role | Variable | Light default | Usage |
-|------|-----------|---------------|--------|
-| Accent | `--color-accent` | `#2b70c9` | Links, primary buttons, focus rings, key highlights |
-| Accent hover / active | `--color-accent-hover`, `--color-accent-active` | `#205497`, `#163865` | Pressed / hover states |
-| Primary (brand weight) | `--color-primary` | `#29457a` | Strong brand moments (varies by screen) |
-| Text link | `--color-text-link` | `#2b70c9` | Inline links |
+| Role                   | Variable                                        | Light default        | Usage                                               |
+| ---------------------- | ----------------------------------------------- | -------------------- | --------------------------------------------------- |
+| Accent                 | `--color-accent`                                | `#2b70c9`            | Links, primary buttons, focus rings, key highlights |
+| Accent hover / active  | `--color-accent-hover`, `--color-accent-active` | `#205497`, `#163865` | Pressed / hover states                              |
+| Primary (brand weight) | `--color-primary`                               | `#29457a`            | Strong brand moments (varies by screen)             |
+| Text link              | `--color-text-link`                             | `#2b70c9`            | Inline links                                        |
 
 ### Surfaces
 
-| Role | Variable | Light default |
-|------|-----------|---------------|
-| Page background | `--color-background` | `#fff` |
-| Soft panels | `--color-surface` | `#f8f9ff` |
-| Raised / cards / sidebar | `--color-surface-raised`, `--color-surface-sidebar` | `#ecedf6` |
-| Note cards | `--color-note-card` | `#ecedf6` |
+| Role                     | Variable                                            | Light default |
+| ------------------------ | --------------------------------------------------- | ------------- |
+| Page background          | `--color-background`                                | `#fff`        |
+| Soft panels              | `--color-surface`                                   | `#f8f9ff`     |
+| Raised / cards / sidebar | `--color-surface-raised`, `--color-surface-sidebar` | `#ecedf6`     |
+| Note cards               | `--color-note-card`                                 | `#ecedf6`     |
 
 ### Text
 
-| Role | Variable | Light default |
-|------|-----------|---------------|
-| Primary | `--color-text` | `#24242d` |
+| Role      | Variable                                     | Light default         |
+| --------- | -------------------------------------------- | --------------------- |
+| Primary   | `--color-text`                               | `#24242d`             |
 | Secondary | `--color-text-weak` … `--color-text-weakest` | `#383850` → `#a4a4b2` |
-| Muted UI | `--color-text-idle` | `#57585e` |
+| Muted UI  | `--color-text-idle`                          | `#57585e`             |
 
 ### Borders and icons
 
-| Role | Variable | Light default |
-|------|-----------|---------------|
-| Default border | `--color-border` | `#d9dbeb` |
-| Strong border | `--color-border-strong` | `#c8c8d4` |
-| Icons | `--color-icon` | `#5f5f77` |
+| Role           | Variable                | Light default |
+| -------------- | ----------------------- | ------------- |
+| Default border | `--color-border`        | `#d9dbeb`     |
+| Strong border  | `--color-border-strong` | `#c8c8d4`     |
+| Icons          | `--color-icon`          | `#5f5f77`     |
 
 ### Status (use full scale: base + weak/weaker + hover/active)
 
@@ -76,10 +76,10 @@ Some flows (e.g. profile appearance) allow a **user accent** such as `#2B70C9`, 
 
 ### Font families
 
-| Role | Variable / stack | Usage |
-|------|------------------|--------|
-| Display | `--font-display`: **Saira**, `sans-serif` | Headings (`text-h1` … `text-h6`), button text utilities |
-| Body / UI | `--font-body`: **Inter**, `sans-serif` | Body copy, labels, dense UI |
+| Role      | Variable / stack                          | Usage                                                   |
+| --------- | ----------------------------------------- | ------------------------------------------------------- |
+| Display   | `--font-display`: **Saira**, `sans-serif` | Headings (`text-h1` … `text-h6`), button text utilities |
+| Body / UI | `--font-body`: **Inter**, `sans-serif`    | Body copy, labels, dense UI                             |
 
 Google Fonts are loaded from `index.html` (Inter + Saira, variable weights).
 
@@ -87,16 +87,16 @@ Google Fonts are loaded from `index.html` (Inter + Saira, variable weights).
 
 Sizes are defined as `@theme` variables and applied via classes in `@layer utilities` in `tailwind.css`:
 
-| Utility | Font | Size | Weight (typical) |
-|---------|------|------|-------------------|
-| `text-h1` … `text-h4` | Saira | 40px … 24px | 700 |
-| `text-h5` | Saira | 20px | 500 |
-| `text-h6` | Saira | 18px | 400 |
-| `text-body-xl-strong` | Inter | 18px | 700 |
-| `text-body-l`, `text-body-l-strong` | Inter | 16px | 400 / 700 |
-| `text-body-m`, `text-label-*` | Inter | 14px | 400 |
-| `text-body-s`, `text-body-s-strong` | Inter | 12px | 400 / 700 |
-| `text-button-m`, `text-button-s` | Saira | 14px / 12px | 400 |
+| Utility                             | Font  | Size        | Weight (typical) |
+| ----------------------------------- | ----- | ----------- | ---------------- |
+| `text-h1` … `text-h4`               | Saira | 40px … 24px | 700              |
+| `text-h5`                           | Saira | 20px        | 500              |
+| `text-h6`                           | Saira | 18px        | 400              |
+| `text-body-xl-strong`               | Inter | 18px        | 700              |
+| `text-body-l`, `text-body-l-strong` | Inter | 16px        | 400 / 700        |
+| `text-body-m`, `text-label-*`       | Inter | 14px        | 400              |
+| `text-body-s`, `text-body-s-strong` | Inter | 12px        | 400 / 700        |
+| `text-button-m`, `text-button-s`    | Saira | 14px / 12px | 400              |
 
 ### Principles
 
@@ -199,9 +199,9 @@ There is no single “hamburger at 1024px” rule in this doc — match each rou
 
 ### Example prompts
 
-- *“Build a settings card: background `var(--color-surface-raised)`, 10px radius, border `var(--color-border)`. Section title Saira 13px semibold, body Inter 13px `var(--color-text-weaker)`. Primary button filled `var(--color-accent)` white text.”*
-- *“Create a form row: label Inter 12px `var(--color-text-idle)`, input border `var(--color-border)`, focus ring using `var(--color-accent)` at ~22% opacity.”*
-- *“Hero for TalkUp: headline Saira `text-h1`, subcopy Inter `text-body-l`, CTA primary accent — cool white/lavender surfaces, not warm beige.”*
+- _“Build a settings card: background `var(--color-surface-raised)`, 10px radius, border `var(--color-border)`. Section title Saira 13px semibold, body Inter 13px `var(--color-text-weaker)`. Primary button filled `var(--color-accent)` white text.”_
+- _“Create a form row: label Inter 12px `var(--color-text-idle)`, input border `var(--color-border)`, focus ring using `var(--color-accent)` at ~22% opacity.”_
+- _“Hero for TalkUp: headline Saira `text-h1`, subcopy Inter `text-body-l`, CTA primary accent — cool white/lavender surfaces, not warm beige.”_
 
 ### Iteration checklist
 
@@ -214,4 +214,4 @@ There is no single “hamburger at 1024px” rule in this doc — match each rou
 
 ## 10. Relation to external inspiration
 
-Earlier drafts referenced **ElevenLabs**-style marketing aesthetics (warm stone, Waldenburg, extreme pill buttons, layered shadows). **That is not the TalkUp baseline.** You may still borrow *ideas* (clarity, whitespace, strong hierarchy) as long as **colors, fonts, and tokens** stay consistent with this file and `src/styles/tailwind.css`.
+Earlier drafts referenced **ElevenLabs**-style marketing aesthetics (warm stone, Waldenburg, extreme pill buttons, layered shadows). **That is not the TalkUp baseline.** You may still borrow _ideas_ (clarity, whitespace, strong hierarchy) as long as **colors, fonts, and tokens** stay consistent with this file and `src/styles/tailwind.css`.
