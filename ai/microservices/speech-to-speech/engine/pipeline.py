@@ -11,6 +11,7 @@ from __future__ import annotations
 import numpy as np
 
 from dataclasses import dataclass
+from .audio_decode import decode_audio_to_float32
 from .models import STSModels, generate_ai_response, synthesize_tts_chunks
 
 @dataclass
@@ -26,7 +27,7 @@ def process_sts_request(models: STSModels, audio_bytes: bytes) -> STSResult:
 	"""
 	Processes a Speech-to-Speech request by transcribing the input audio, generating an AI response, and synthesizing the response into audio chunks.
 	"""
-	audio_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+	audio_np = decode_audio_to_float32(audio_bytes)
 	segments, _ = models.whisper_model.transcribe(
 		audio_np,
 		beam_size=5,

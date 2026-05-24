@@ -87,13 +87,38 @@ describe("AuthController", () => {
     };
 
     it("should successfully register a new user", async () => {
-      mockAuthService.register = jest.fn().mockResolvedValue(undefined);
+      const mockResponse = {
+        status: jest.fn(),
+        cookie: jest.fn(),
+      } as unknown as import("express").Response;
+      mockAuthService.register = jest.fn().mockResolvedValue(null);
 
-      const result = await controller.register(createUserDto);
+      const result = await controller.register(createUserDto, mockResponse);
 
       expect(result).toEqual({ message: "Verification email sent" });
+      expect(mockResponse.status).toHaveBeenCalledWith(202);
       expect(mockAuthService.register).toHaveBeenCalledWith(createUserDto);
       expect(mockAuthService.register).toHaveBeenCalledTimes(1);
+    });
+
+    it("should register with cookies when email verification is skipped", async () => {
+      const mockResponse = {
+        status: jest.fn(),
+        cookie: jest.fn(),
+      } as unknown as import("express").Response;
+      mockAuthService.register = jest.fn().mockResolvedValue({
+        accessToken: "at",
+        refreshToken: "rt",
+      });
+
+      const result = await controller.register(createUserDto, mockResponse);
+
+      expect(result).toEqual({
+        message: "Account created",
+        emailVerificationSkipped: true,
+      });
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
     });
 
     it("should throw ConflictException when email already exists", async () => {
@@ -102,9 +127,14 @@ describe("AuthController", () => {
       );
       mockAuthService.register = jest.fn().mockRejectedValue(conflictError);
 
-      await expect(controller.register(createUserDto)).rejects.toThrow(
-        conflictError,
-      );
+      const mockResponse = {
+        status: jest.fn(),
+        cookie: jest.fn(),
+      } as unknown as import("express").Response;
+
+      await expect(
+        controller.register(createUserDto, mockResponse),
+      ).rejects.toThrow(conflictError);
 
       expect(mockAuthService.register).toHaveBeenCalledWith(createUserDto);
       expect(mockAuthService.register).toHaveBeenCalledTimes(1);
@@ -113,10 +143,14 @@ describe("AuthController", () => {
     it("should handle service errors properly", async () => {
       const serviceError = new Error("Database connection failed");
       mockAuthService.register = jest.fn().mockRejectedValue(serviceError);
+      const mockResponse = {
+        status: jest.fn(),
+        cookie: jest.fn(),
+      } as unknown as import("express").Response;
 
-      await expect(controller.register(createUserDto)).rejects.toThrow(
-        serviceError,
-      );
+      await expect(
+        controller.register(createUserDto, mockResponse),
+      ).rejects.toThrow(serviceError);
 
       expect(mockAuthService.register).toHaveBeenCalledWith(createUserDto);
     });

@@ -95,6 +95,8 @@ function Simulations() {
   }, []);
 
   const {
+    isListening,
+    isSpeaking,
     isRecording,
     packetsSent,
     supportedMimeType,
@@ -104,7 +106,6 @@ function Simulations() {
     interviewID,
     onAudioPacket: handleAudioPacket,
     isActive: isCallActive && readyState === ReadyState.OPEN,
-    timeSlice: 10000,
   });
 
   const staticTranscriptions: TranscriptionProps[] = [
@@ -159,6 +160,8 @@ function Simulations() {
             sendPing={sendPing}
             lastMessage={lastMessage}
             lastJsonMessage={lastJsonMessage}
+            isListening={isListening}
+            isSpeaking={isSpeaking}
             isRecording={isRecording}
             packetsSent={packetsSent}
             supportedMimeType={supportedMimeType}

@@ -1,5 +1,5 @@
 import { randomInt, randomUUID } from "crypto";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, EntityManager, Repository } from "typeorm";
 
 import {
   BadRequestException,
@@ -81,8 +81,9 @@ export class AuthService {
     createUserDto: CreateUserDto,
     trusted = false,
     inviteEmailContext?: { organizationName: string },
-  ): Promise<void> {
+  ): Promise<AuthTokens | null> {
     let otpEvent: OtpGeneratedEvent | null = null;
+    let autoVerifiedUser: user | null = null;
 
     const { organizationId, userRole } = this.resolveRegistrationOrgFields(
       createUserDto,
@@ -92,7 +93,7 @@ export class AuthService {
     // Retry once when a concurrent registration causes a unique-key race.
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
-        otpEvent = await this.dataSource.transaction(async (manager) => {
+        const txResult = await this.dataSource.transaction(async (manager) => {
           const userRepo = manager.getRepository(user);
           const userPasswordRepo = manager.getRepository(user_password);
           const userEmailRepo = manager.getRepository(user_email);
@@ -168,6 +169,14 @@ export class AuthService {
             }
           }
 
+          if (this.isEmailVerificationSkipped()) {
+            const activated = await this.completeRegistration(
+              manager,
+              createUserDto.email,
+            );
+            return { kind: "auto_verified" as const, user: activated };
+          }
+
           const existingOtp = await otpRepo
             .createQueryBuilder("otp")
             .setLock("pessimistic_write")
@@ -185,7 +194,7 @@ export class AuthService {
             now - existingOtp.createdAt.getTime() >= OTP_RESEND_COOLDOWN_MS;
 
           if (!shouldGenerateNewOtp) {
-            return null;
+            return { kind: "noop" as const };
           }
 
           if (existingOtp) {
@@ -208,11 +217,23 @@ export class AuthService {
           );
 
           return {
-            email: createUserDto.email,
-            plainOtp,
-            purpose: OtpPurpose.REGISTER,
+            kind: "otp_pending" as const,
+            event: {
+              email: createUserDto.email,
+              plainOtp,
+              purpose: OtpPurpose.REGISTER,
+            },
           };
         });
+
+        if (txResult.kind === "auto_verified") {
+          autoVerifiedUser = txResult.user;
+          otpEvent = null;
+        } else if (txResult.kind === "otp_pending") {
+          otpEvent = txResult.event;
+        } else {
+          otpEvent = null;
+        }
         break;
       } catch (error) {
         const shouldRetry = attempt === 0 && this.isPgUniqueViolation(error);
@@ -220,6 +241,10 @@ export class AuthService {
           throw error;
         }
       }
+    }
+
+    if (autoVerifiedUser) {
+      return await this.createAuthTokens(autoVerifiedUser);
     }
 
     if (otpEvent) {
@@ -231,6 +256,8 @@ export class AuthService {
         }),
       );
     }
+
+    return null;
   }
 
   async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<AuthTokens> {
@@ -742,6 +769,54 @@ export class AuthService {
     );
 
     return { accessToken, refreshToken };
+  }
+
+  private isEmailVerificationSkipped(): boolean {
+    return process.env.AUTH_SKIP_EMAIL_VERIFICATION === "true";
+  }
+
+  private async completeRegistration(
+    manager: EntityManager,
+    email: string,
+  ): Promise<user> {
+    const emailRepo = manager.getRepository(user_email);
+    const emailEntity = await emailRepo.findOne({ where: { email } });
+
+    if (!emailEntity) {
+      throw new InternalServerErrorException("User account data is invalid");
+    }
+
+    const userUpdate = await manager.update(
+      user,
+      { user_id: emailEntity.user_id },
+      { status: UserStatus.ACTIVE },
+    );
+    const emailUpdate = await emailRepo.update(
+      { email },
+      { is_verified: true },
+    );
+
+    if (
+      (userUpdate.affected ?? 0) === 0 ||
+      (emailUpdate.affected ?? 0) === 0
+    ) {
+      throw new BadRequestException("Invalid verification request");
+    }
+
+    await manager.getRepository(Otp).delete({
+      email,
+      purpose: OtpPurpose.REGISTER,
+    });
+
+    const userEntity = await manager.getRepository(user).findOne({
+      where: { user_id: emailEntity.user_id },
+    });
+
+    if (!userEntity) {
+      throw new InternalServerErrorException("User account data is invalid");
+    }
+
+    return userEntity;
   }
 
   private generateOtpCode(): string {

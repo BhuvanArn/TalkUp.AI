@@ -5,7 +5,7 @@
 	"WHISPER_MODEL_PATH": "/app/models/whisper/faster-whisper-large-v3",
 	"LLM_BACKEND": "auto",
 	"LLM_GPU_MAX_MEMORY": "3GiB",
-	"LLM_CPU_MAX_MEMORY": "8GiB",
+	"LLM_CPU_MAX_MEMORY": "3GiB",
 	"LLM_MAX_NEW_TOKENS": 160,
 	"QUEUE_MAXSIZE": 32
 }

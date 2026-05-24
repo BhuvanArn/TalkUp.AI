@@ -8,6 +8,9 @@ services:
     container_name: ai_server
     ports:
       - "8088:8088"
+    networks:
+      - default
+      - talkup-ai
     depends_on:
       behavior_analyzer:
         condition: service_started
@@ -73,3 +76,8 @@ services:
       - PYTHONUNBUFFERED=1
     ports:
       - "5055:5000"
+
+networks:
+  talkup-ai:
+    external: true
+    name: talkup-ai

@@ -75,6 +75,8 @@ vi.mock('@/hooks/simulation', () => ({
     disconnect: mockDisconnect,
   })),
   useAudioStreaming: vi.fn(() => ({
+    isListening: false,
+    isSpeaking: false,
     isRecording: false,
     packetsSent: 0,
     supportedMimeType: 'audio/webm',

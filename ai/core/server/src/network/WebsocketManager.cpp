@@ -106,11 +106,12 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
             .timestamp = timestamp,
             .data = "audio chunk received"
         }).dump());
+        crow::websocket::connection *client_conn = &conn;
         microservices_manager->send_to_sts_microservice(json,
-            [this, &conn, key, stream_id](const nlohmann::json& sts_resp) {
-                if (sts_resp.contains("error") ||
-                    (sts_resp.contains("type") && sts_resp["type"].is_string() && sts_resp["type"] == "error")) {
-                    conn.send_text(set_respond_json_format({
+            [this, client_conn, key, stream_id](const nlohmann::json& sts_resp) {
+                const std::string sts_type = sts_resp.value("type", "");
+                if (sts_resp.contains("error") || sts_type == "error" || sts_type == "warning") {
+                    client_conn->send_text(set_respond_json_format({
                         .type = "error",
                         .key = key,
                         .stream_id = stream_id,
@@ -122,7 +123,7 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
                     return;
                 }
 
-                conn.send_text(set_respond_json_format({
+                client_conn->send_text(set_respond_json_format({
                     .type = "sts_result",
                     .key = key,
                     .stream_id = stream_id,

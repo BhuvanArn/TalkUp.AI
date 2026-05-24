@@ -20,7 +20,7 @@ export default class AuthService {
     username: string,
     email: string,
     password: string,
-  ): Promise<{ message: string }> => {
+  ): Promise<{ message: string; emailVerificationSkipped?: boolean }> => {
     const response = await axiosInstance.post(`${API_ROUTES.auth}/register`, {
       username,
       email,

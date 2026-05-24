@@ -18,6 +18,7 @@ const authService = new AuthService();
  */
 export const usePostRegister = () => {
   const router = useRouter();
+  const { login } = useAuth();
 
   return useMutation({
     mutationFn: async ({
@@ -31,7 +32,14 @@ export const usePostRegister = () => {
     }) => {
       return await authService.postRegister(username, email, password);
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
+      if (data.emailVerificationSkipped) {
+        login();
+        toast.success('Account created');
+        router.navigate({ to: '/' });
+        return;
+      }
+
       toast.success('Check your email for a verification code');
       router.navigate({
         to: '/verify-email',

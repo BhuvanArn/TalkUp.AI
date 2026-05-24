@@ -4,7 +4,7 @@ WORKDIR /app
 ENV PYTHONPATH=/app:$PYTHONPATH
 
 RUN apt-get update && apt-get install -y \
-    python3.11 python3.11-dev python3-pip git espeak-ng wget \
+    python3.11 python3.11-dev python3-pip git espeak-ng wget ffmpeg \
     libasound2-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
