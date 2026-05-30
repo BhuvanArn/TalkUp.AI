@@ -1,4 +1,9 @@
 import { AuthProvider } from '@/contexts/AuthContext';
+import {
+  useAudioPlayback,
+  useAudioStreaming,
+  useInterviewSession,
+} from '@/hooks/simulation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   RouterProvider,
@@ -13,7 +18,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { ReadyState } from 'react-use-websocket';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Route as SimulationsRoute } from './simulations';
 
@@ -196,6 +201,51 @@ describe('Simulations', () => {
 
     await waitFor(() => {
       expect(mockHandleStreamToggle).toHaveBeenCalledWith(true);
+    });
+  });
+
+  describe('mic gating while AI speaks', () => {
+    // Restore the factory defaults so the surrounding suite keeps observing
+    // isAiSpeaking=false / isCallActive=false (vi.clearAllMocks resets call
+    // history but not the implementations declared in the vi.mock factory).
+    afterEach(() => {
+      vi.mocked(useAudioPlayback).mockReturnValue({
+        isAiSpeaking: false,
+        stopPlayback: vi.fn(),
+        error: null,
+      });
+      vi.mocked(useInterviewSession).mockReturnValue({
+        isCallActive: false,
+        inputUrl: '',
+        interviewID: null,
+        handleStreamToggle: mockHandleStreamToggle,
+      });
+    });
+
+    // Force the call active + socket open so the mic would otherwise stream;
+    // the AI speaking is then the only thing that can flip isActive to false.
+    it('pauses mic streaming (isActive false) when AI is speaking', async () => {
+      vi.mocked(useInterviewSession).mockReturnValue({
+        isCallActive: true,
+        inputUrl: '',
+        interviewID: null,
+        handleStreamToggle: mockHandleStreamToggle,
+      });
+      vi.mocked(useAudioPlayback).mockReturnValue({
+        isAiSpeaking: true,
+        stopPlayback: vi.fn(),
+        error: null,
+      });
+
+      renderWithProviders(<RouterProvider router={router} />);
+
+      await screen.findByRole('heading', { name: /^Simulations$/i });
+
+      const lastCall = vi.mocked(useAudioStreaming).mock.calls.at(-1);
+      expect(lastCall?.[0].isActive).toBe(false);
+      // Sanity: with the call active + socket open, the only thing forcing the
+      // mic off here is the AI speaking, so this asserts the gate, not the setup.
+      expect(lastCall?.[0].isActive).not.toBe(true);
     });
   });
 });
