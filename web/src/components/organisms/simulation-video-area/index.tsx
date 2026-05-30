@@ -115,7 +115,7 @@ const SimulationVideoArea = ({
       {isStreaming && (
         <div
           className={cn(
-            'absolute inset-0 transition-all',
+            'absolute inset-0 rounded-lg transition-all',
             isAiSpeaking ? 'ring-4 ring-inset ring-accent' : '',
           )}
         >
