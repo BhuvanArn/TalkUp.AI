@@ -99,4 +99,42 @@ describe('useAudioPlayback', () => {
     });
     expect(result.current.isAiSpeaking).toBe(false);
   });
+
+  it('stopPlayback stops sources and clears isAiSpeaking', async () => {
+    const sources: MockAudioBufferSourceNode[] = [];
+    const ctx = new MockAudioContext();
+    ctx.createBufferSource = vi.fn(() => {
+      const s = new MockAudioBufferSourceNode();
+      sources.push(s);
+      return s;
+    });
+    global.AudioContext = vi.fn(() => ctx) as unknown as typeof AudioContext;
+
+    const { result, rerender } = renderHook(
+      ({ message }) => useAudioPlayback({ message }),
+      { initialProps: { message: null as unknown } },
+    );
+    await act(async () => {
+      rerender({ message: buildPacket(['QUFB']) as unknown });
+    });
+    await waitFor(() => expect(result.current.isAiSpeaking).toBe(true));
+
+    act(() => result.current.stopPlayback());
+    expect(result.current.isAiSpeaking).toBe(false);
+    expect(sources[0].stop).toHaveBeenCalled();
+  });
+
+  it('sets error on malformed data', () => {
+    const { result, rerender } = renderHook(
+      ({ message }) => useAudioPlayback({ message }),
+      { initialProps: { message: null as unknown } },
+    );
+    act(() => {
+      rerender({
+        message: { type: 'sts_result', data: 'not-json' } as unknown,
+      });
+    });
+    expect(result.current.error).toBe('Malformed AI answer payload');
+    expect(result.current.isAiSpeaking).toBe(false);
+  });
 });

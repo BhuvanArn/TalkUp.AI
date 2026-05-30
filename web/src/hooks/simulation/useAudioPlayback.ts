@@ -46,10 +46,17 @@ export function useAudioPlayback({
   const audioContextRef = useRef<AudioContext | null>(null);
   const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
   const lastHandledRef = useRef<unknown>(null);
+  const playGenRef = useRef(0);
 
   const getAudioContext = useCallback((): AudioContext => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext();
+      const ctx = new AudioContext();
+      ctx.onstatechange = () => {
+        if (ctx.state !== 'running') {
+          setIsAiSpeaking(false);
+        }
+      };
+      audioContextRef.current = ctx;
     }
     return audioContextRef.current;
   }, []);
@@ -69,6 +76,7 @@ export function useAudioPlayback({
 
   const playAnswer = useCallback(
     async (chunks: string[]) => {
+      const generation = ++playGenRef.current;
       const audioContext = getAudioContext();
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
@@ -83,11 +91,15 @@ export function useAudioPlayback({
         } catch {
           // skip undecodable chunk, keep the rest of the answer playing
         }
+        if (generation !== playGenRef.current) return;
       }
 
       if (buffers.length === 0) {
+        stopPlayback();
         return;
       }
+
+      if (generation !== playGenRef.current) return;
 
       stopPlayback();
       setIsAiSpeaking(true);
