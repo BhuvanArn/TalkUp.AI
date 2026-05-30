@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAudioPlayback } from './useAudioPlayback';
@@ -67,5 +67,34 @@ describe('useAudioPlayback', () => {
     );
     expect(result.current.isAiSpeaking).toBe(false);
     expect(result.current.error).toBeNull();
+  });
+
+  it('plays audio_chunks and sets isAiSpeaking true, then false on end', async () => {
+    const sources: MockAudioBufferSourceNode[] = [];
+    const ctx = new MockAudioContext();
+    ctx.createBufferSource = vi.fn(() => {
+      const s = new MockAudioBufferSourceNode();
+      sources.push(s);
+      return s;
+    });
+    global.AudioContext = vi.fn(() => ctx) as unknown as typeof AudioContext;
+
+    const { result, rerender } = renderHook(
+      ({ message }) => useAudioPlayback({ message }),
+      { initialProps: { message: null as unknown } },
+    );
+
+    await act(async () => {
+      rerender({ message: buildPacket(['QUFB', 'QkJC']) as unknown });
+    });
+
+    await waitFor(() => expect(result.current.isAiSpeaking).toBe(true));
+    expect(ctx.decodeAudioData).toHaveBeenCalledTimes(2);
+    expect(sources.length).toBe(2);
+
+    await act(async () => {
+      sources[sources.length - 1].onended?.();
+    });
+    expect(result.current.isAiSpeaking).toBe(false);
   });
 });
