@@ -49,7 +49,19 @@ def load_settings(config_path: Path | None = None) -> STSSettings:
 	Loads the settings for the Speech-to-Speech processing module.
 	"""
 	resolved_config_path = config_path or Path(__file__).resolve().parent.parent / "config.json"
-	defaults = DEFAULT_SETTINGS.__dict__.copy()
+	# config.json (and the reads below) use UPPERCASE keys; map the lowercase
+	# dataclass fields so the defaults survive a missing/empty/invalid config.
+	defaults = {
+		"LLM_PATH": DEFAULT_SETTINGS.llm_path,
+		"SYSTEM_PROMPT": DEFAULT_SETTINGS.system_prompt,
+		"PIPER_VOICE_PATH": DEFAULT_SETTINGS.piper_voice_path,
+		"WHISPER_MODEL_PATH": DEFAULT_SETTINGS.whisper_model_path,
+		"LLM_BACKEND": DEFAULT_SETTINGS.llm_backend,
+		"LLM_GPU_MAX_MEMORY": DEFAULT_SETTINGS.llm_gpu_max_memory,
+		"LLM_CPU_MAX_MEMORY": DEFAULT_SETTINGS.llm_cpu_max_memory,
+		"LLM_MAX_NEW_TOKENS": DEFAULT_SETTINGS.llm_max_new_tokens,
+		"QUEUE_MAXSIZE": DEFAULT_SETTINGS.queue_maxsize,
+	}
 
 	try:
 		raw_config = resolved_config_path.read_text(encoding="utf-8")
