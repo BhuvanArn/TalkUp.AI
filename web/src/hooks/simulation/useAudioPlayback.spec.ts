@@ -91,6 +91,8 @@ describe('useAudioPlayback', () => {
     await waitFor(() => expect(result.current.isAiSpeaking).toBe(true));
     expect(ctx.decodeAudioData).toHaveBeenCalledTimes(2);
     expect(sources.length).toBe(2);
+    expect(sources[0].start).toHaveBeenCalledWith(0);
+    expect(sources[1].start).toHaveBeenCalledWith(1);
 
     await act(async () => {
       sources[sources.length - 1].onended?.();
