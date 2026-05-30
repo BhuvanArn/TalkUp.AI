@@ -137,4 +137,23 @@ describe('useAudioPlayback', () => {
     expect(result.current.error).toBe('Malformed AI answer payload');
     expect(result.current.isAiSpeaking).toBe(false);
   });
+
+  it('skips undecodable chunks but still plays the rest', async () => {
+    const ctx = new MockAudioContext();
+    ctx.decodeAudioData = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('bad chunk'))
+      .mockResolvedValueOnce({ duration: 1 });
+    global.AudioContext = vi.fn(() => ctx) as unknown as typeof AudioContext;
+
+    const { result, rerender } = renderHook(
+      ({ message }) => useAudioPlayback({ message }),
+      { initialProps: { message: null as unknown } },
+    );
+    await act(async () => {
+      rerender({ message: buildPacket(['QUFB', 'QkJC']) as unknown });
+    });
+    await waitFor(() => expect(result.current.isAiSpeaking).toBe(true));
+    expect(ctx.createBufferSource).toHaveBeenCalledTimes(1);
+  });
 });
