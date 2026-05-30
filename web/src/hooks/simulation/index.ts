@@ -16,3 +16,10 @@ export type {
   UseInterviewSessionProps,
   UseInterviewSessionReturn,
 } from './useInterviewSession';
+
+export { useAudioPlayback } from './useAudioPlayback';
+export type {
+  AiAnswer,
+  UseAudioPlaybackProps,
+  UseAudioPlaybackReturn,
+} from './useAudioPlayback';
