@@ -58,6 +58,7 @@ export function useAudioStreaming({
   const interviewIDRef = useRef(interviewID);
   const vadIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const timeDomainBufferRef = useRef<Float32Array | null>(null);
   const selectedMimeTypeRef = useRef<string | null>(null);
@@ -212,9 +213,25 @@ export function useAudioStreaming({
       vadIntervalRef.current = null;
     }
 
-    if (isCapturingUtteranceRef.current) {
+    const recorder = mediaRecorderRef.current;
+    if (recorder) {
+      recorder.ondataavailable = null;
+      recorder.onerror = null;
+      recorder.onstop = null;
+      if (recorder.state !== 'inactive') {
+        try {
+          recorder.stop();
+        } catch {
+          // recorder already torn down; nothing to release
+        }
+      }
       mediaRecorderRef.current = null;
-      isCapturingUtteranceRef.current = false;
+    }
+    isCapturingUtteranceRef.current = false;
+
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
     }
 
     if (audioContextRef.current) {
@@ -270,6 +287,7 @@ export function useAudioStreaming({
         const source = audioContext.createMediaStreamSource(audioStream);
         source.connect(analyser);
 
+        sourceRef.current = source;
         audioContextRef.current = audioContext;
         analyserRef.current = analyser;
         timeDomainBufferRef.current = new Float32Array(analyser.fftSize);
@@ -387,4 +405,4 @@ export function useAudioStreaming({
     supportedMimeType,
     error,
   };
-};
+}

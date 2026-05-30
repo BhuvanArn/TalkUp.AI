@@ -43,7 +43,10 @@ describe('useAudioStreaming', () => {
       resume = vi.fn().mockResolvedValue(undefined);
       close = vi.fn().mockResolvedValue(undefined);
       createAnalyser = vi.fn(() => new MockAnalyserNode());
-      createMediaStreamSource = vi.fn(() => ({ connect: vi.fn() }));
+      createMediaStreamSource = vi.fn(() => ({
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+      }));
     }
 
     global.MediaStream = vi.fn(
@@ -275,11 +278,11 @@ describe('useAudioStreaming', () => {
 
   describe('Error Handling', () => {
     it('should handle AudioContext initialization errors', async () => {
-      (global.AudioContext as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-        () => {
-          throw new Error('AudioContext not available');
-        },
-      );
+      (
+        global.AudioContext as unknown as ReturnType<typeof vi.fn>
+      ).mockImplementation(() => {
+        throw new Error('AudioContext not available');
+      });
 
       const onAudioPacket = vi.fn();
       const { result } = renderHook(() =>
