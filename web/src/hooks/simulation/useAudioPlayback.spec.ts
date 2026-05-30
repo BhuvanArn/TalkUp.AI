@@ -56,15 +56,15 @@ describe('useAudioPlayback', () => {
       ({ message }) => useAudioPlayback({ message }),
       { initialProps: { message: { type: 'pong' } as unknown } },
     );
-
     expect(result.current.isAiSpeaking).toBe(false);
-
     rerender({ message: { type: 'error', data: '{}' } as unknown });
     expect(result.current.isAiSpeaking).toBe(false);
+  });
 
-    // A well-formed sts_result with no audio chunks is a text-only answer:
-    // parsing succeeds but nothing should play.
-    rerender({ message: buildPacket([]) as unknown });
+  it('does not speak on a valid sts_result with empty audio_chunks', () => {
+    const { result } = renderHook(() =>
+      useAudioPlayback({ message: buildPacket([]) as unknown }),
+    );
     expect(result.current.isAiSpeaking).toBe(false);
     expect(result.current.error).toBeNull();
   });

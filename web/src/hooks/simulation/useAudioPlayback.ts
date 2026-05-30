@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import type { WebSocketPacket } from './useSimulationWebSocket';
 
 export interface AiAnswer {
   type: string;
@@ -20,17 +22,13 @@ export interface UseAudioPlaybackReturn {
   error: string | null;
 }
 
-interface OuterPacket {
-  type: string;
-  data: string;
-  timestamp: number | string;
-}
-
-function asOuterPacket(message: unknown): OuterPacket | null {
+function asOuterPacket(
+  message: unknown,
+): Pick<WebSocketPacket, 'type' | 'data'> | null {
   if (!message || typeof message !== 'object') return null;
   const m = message as Record<string, unknown>;
   if (m.type !== 'sts_result' || typeof m.data !== 'string') return null;
-  return m as unknown as OuterPacket;
+  return m as Pick<WebSocketPacket, 'type' | 'data'>;
 }
 
 export function useAudioPlayback({
@@ -40,9 +38,9 @@ export function useAudioPlayback({
   const [error, setError] = useState<string | null>(null);
   const lastHandledRef = useRef<unknown>(null);
 
-  const stopPlayback = () => {
+  const stopPlayback = useCallback(() => {
     setIsAiSpeaking(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (!message || message === lastHandledRef.current) return;
@@ -50,6 +48,7 @@ export function useAudioPlayback({
 
     const packet = asOuterPacket(message);
     if (!packet) return;
+    setError(null);
 
     let answer: AiAnswer;
     try {
