@@ -496,35 +496,67 @@ void talkup_network::MicroservicesManager::start_service_worker(const std::strin
 
 void talkup_network::MicroservicesManager::stop_service_worker(const std::string &service_name)
 {
-    std::lock_guard<std::mutex> lock(__ws_mutex);
-    auto it = __ws_connections.find(service_name);
-    if (it == __ws_connections.end()) return;
-    auto &conn = it->second;
+    std::thread worker_to_join;
 
-    if (!conn.worker_running) return;
     {
-        std::lock_guard<std::mutex> qlock(conn.queue_mutex);
-        conn.worker_running = false;
+        std::lock_guard<std::mutex> lock(__ws_mutex);
+        auto it = __ws_connections.find(service_name);
+        if (it == __ws_connections.end()) return;
+        auto &conn = it->second;
+
+        if (!conn.worker_running && !conn.worker_thread.joinable()) return;
+        {
+            std::lock_guard<std::mutex> qlock(conn.queue_mutex);
+            conn.worker_running = false;
+        }
+        conn.queue_cv.notify_all();
+        // Move the thread out and join after releasing __ws_mutex: the worker
+        // loop re-acquires __ws_mutex each iteration, so joining while holding
+        // it would deadlock.
+        worker_to_join = std::move(conn.worker_thread);
     }
-    conn.queue_cv.notify_all();
-    if (conn.worker_thread.joinable()) conn.worker_thread.join();
+
+    if (worker_to_join.joinable())
+        worker_to_join.join();
 }
 
 void talkup_network::MicroservicesManager::shutdown()
 {
-    std::lock_guard<std::mutex> lock(__ws_mutex);
-    for (auto &[service_name, conn] : __ws_connections) {
+    // Snapshot the service names under a brief lock, then release __ws_mutex:
+    // stop_service_worker() re-locks __ws_mutex and joins the worker thread,
+    // both of which would deadlock if we held the lock across this loop.
+    std::vector<std::string> service_names;
+    {
+        std::lock_guard<std::mutex> lock(__ws_mutex);
+        service_names.reserve(__ws_connections.size());
+        for (const auto &[service_name, conn] : __ws_connections)
+            service_names.push_back(service_name);
+    }
+
+    for (const auto &service_name : service_names) {
         stop_service_worker(service_name);
-        if (conn.ws && conn.ws->is_open()) {
-            boost::system::error_code ec;
-            conn.ws->close(boost::beast::websocket::close_code::normal, ec);
-            if (ec) {
-                std::cerr << "[MicroservicesManager] Error closing WebSocket for service " << service_name << ": " << ec.message() << std::endl;
+
+        std::thread io_to_join;
+        {
+            std::lock_guard<std::mutex> lock(__ws_mutex);
+            auto it = __ws_connections.find(service_name);
+            if (it == __ws_connections.end()) continue;
+            auto &conn = it->second;
+
+            if (conn.ws && conn.ws->is_open()) {
+                boost::system::error_code ec;
+                conn.ws->close(boost::beast::websocket::close_code::normal, ec);
+                if (ec) {
+                    std::cerr << "[MicroservicesManager] Error closing WebSocket for service " << service_name << ": " << ec.message() << std::endl;
+                }
             }
+            if (conn.io_context)
+                conn.io_context->stop();
+            // Join the io thread outside __ws_mutex for the same reason as the worker.
+            io_to_join = std::move(conn.io_thread);
         }
-        if (conn.io_context)
-            conn.io_context->stop();
-        if (conn.io_thread.joinable())
-            conn.io_thread.join();
+
+        if (io_to_join.joinable())
+            io_to_join.join();
     }
 }
