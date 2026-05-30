@@ -144,6 +144,7 @@ function Simulations() {
       <div className="grid grid-cols-[1fr_20rem] gap-6">
         <div>
           <SimulationVideoArea
+            isAiSpeaking={isAiSpeaking}
             onStreamToggle={handleStreamToggle}
             onStreamChange={setMediaStream}
             onToggleRef={(toggleFn) => {
