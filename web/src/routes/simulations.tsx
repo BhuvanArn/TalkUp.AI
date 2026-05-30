@@ -6,6 +6,7 @@ import SimulationVideoArea from '@/components/organisms/simulation-video-area';
 import { WebSocketDebugPanel } from '@/components/organisms/websocket-debug-panel';
 import {
   WebSocketPacket,
+  useAudioPlayback,
   useAudioStreaming,
   useInterviewSession,
   useSimulationWebSocket,
@@ -94,6 +95,8 @@ function Simulations() {
     }
   }, []);
 
+  const { isAiSpeaking } = useAudioPlayback({ message: lastJsonMessage });
+
   const {
     isListening,
     isSpeaking,
@@ -105,7 +108,7 @@ function Simulations() {
     stream: mediaStream,
     interviewID,
     onAudioPacket: handleAudioPacket,
-    isActive: isCallActive && readyState === ReadyState.OPEN,
+    isActive: isCallActive && readyState === ReadyState.OPEN && !isAiSpeaking,
   });
 
   const staticTranscriptions: TranscriptionProps[] = [

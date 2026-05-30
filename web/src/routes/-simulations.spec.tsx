@@ -74,6 +74,11 @@ vi.mock('@/hooks/simulation', () => ({
     connect: mockConnect,
     disconnect: mockDisconnect,
   })),
+  useAudioPlayback: vi.fn(() => ({
+    isAiSpeaking: false,
+    stopPlayback: vi.fn(),
+    error: null,
+  })),
   useAudioStreaming: vi.fn(() => ({
     isListening: false,
     isSpeaking: false,
