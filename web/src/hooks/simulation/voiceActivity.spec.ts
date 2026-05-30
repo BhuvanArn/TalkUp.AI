@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  computeRms,
-  isSpeechLevel,
-  updateNoiseFloor,
-} from './voiceActivity';
+import { computeRms, isSpeechLevel, updateNoiseFloor } from './voiceActivity';
 
 describe('voiceActivity', () => {
   it('computeRms returns 0 for silence', () => {
