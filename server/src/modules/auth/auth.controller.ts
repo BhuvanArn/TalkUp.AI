@@ -69,30 +69,10 @@ export class AuthController {
   })
   @UsePipes(new PostValidationPipe())
   @Post("register")
-  async register(
-    @Body() createUserDto: CreateUserDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    const tokens = await this.authService.register(createUserDto);
+  @HttpCode(HttpStatus.ACCEPTED)
+  async register(@Body() createUserDto: CreateUserDto) {
+    await this.authService.register(createUserDto);
 
-    if (tokens) {
-      response.status(HttpStatus.OK);
-      response.cookie(ACCESS_COOKIE_NAME, tokens.accessToken, {
-        ...BASE_COOKIE_OPTIONS,
-        maxAge: ACCESS_TOKEN_MAX_AGE_MS,
-      });
-      response.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {
-        ...BASE_COOKIE_OPTIONS,
-        maxAge: REFRESH_TOKEN_MAX_AGE_MS,
-      });
-
-      return {
-        message: "Account created",
-        emailVerificationSkipped: true,
-      };
-    }
-
-    response.status(HttpStatus.ACCEPTED);
     return { message: "Verification email sent" };
   }
 
