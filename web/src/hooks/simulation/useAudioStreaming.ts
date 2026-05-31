@@ -60,7 +60,7 @@ export function useAudioStreaming({
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const timeDomainBufferRef = useRef<Float32Array | null>(null);
+  const timeDomainBufferRef = useRef<Float32Array<ArrayBuffer> | null>(null);
   const selectedMimeTypeRef = useRef<string | null>(null);
 
   const noiseFloorRef = useRef(0.01);
