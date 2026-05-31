@@ -133,10 +133,6 @@ namespace talkup_network {
 
             static inline std::unordered_map<std::string, WebSocketConnection> __ws_connections;
             static inline std::mutex __ws_mutex;
-            static inline std::mutex __keepalive_mutex;
-            static inline std::condition_variable __keepalive_cv;
-            static inline bool __keepalive_running = false;
-            static inline std::thread __keepalive_thread;
 
             /**
              * @brief Connect to a single microservice via WebSocket.
