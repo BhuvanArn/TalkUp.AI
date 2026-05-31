@@ -15,9 +15,8 @@ import { user_job_offer } from "@entities/userJobOffer.entity";
 
 import { UsersService } from "./users.service";
 
-// ─── Mocks modules externes ───────────────────────────────────────────────────
-
-jest.mock("pdf-parse-debugging-disabled", () => jest.fn());
+const mockPdfParse = jest.fn();
+jest.mock("pdf-parse-debugging-disabled", () => mockPdfParse);
 
 jest.mock("groq-sdk", () => {
   return jest.fn().mockImplementation(() => ({
@@ -42,8 +41,6 @@ const mockScrapeLinkedin = scrapeLinkedin as jest.Mock;
 const mockScrapeAxios = scrapeAxios as jest.Mock;
 const mockScrapePuppeteer = scrapePuppeteer as jest.Mock;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const mockRes = () => {
   const res: any = {};
   res.status = jest.fn().mockReturnValue(res);
@@ -55,6 +52,32 @@ const mockReq = (overrides: Record<string, any> = {}): any => ({
   userId: "uid-1",
   body: {},
   ...overrides,
+});
+
+const mockReqWithFile = (overrides: Record<string, any> = {}): any => ({
+  userId: "uid-1",
+  file: {
+    buffer: Buffer.from("fake pdf content"),
+    mimetype: "application/pdf",
+    originalname: "cv.pdf",
+  },
+  ...overrides,
+});
+
+const validCvGroqResponse = JSON.stringify({
+  desired_job: "Software Engineer",
+  resume: "Experienced developer",
+  experiences: [
+    {
+      company: "Acme",
+      title: "Dev",
+      description: "stuff",
+      duration: "2020-2022",
+    },
+  ],
+  education: [{ degree: "BSc", school_name: "MIT", duration: "2016-2020" }],
+  technical_skills: ["TypeScript", "Node.js"],
+  languages: [{ language: "English", level: "C2" }],
 });
 
 const validJobOfferGroqResponse = JSON.stringify({
@@ -75,8 +98,6 @@ const validJobOfferGroqResponse = JSON.stringify({
   company_values: ["Innovation"],
   team_description: "Small agile team",
 });
-
-// ─── Suite principale ─────────────────────────────────────────────────────────
 
 describe("UsersService", () => {
   let service: UsersService;
@@ -172,6 +193,7 @@ describe("UsersService", () => {
 
     service = module.get<UsersService>(UsersService);
 
+    mockPdfParse.mockReset();
     mockGroqCreate.mockReset();
     mockScrapeLinkedin.mockReset();
     mockScrapeAxios.mockReset();
@@ -181,8 +203,6 @@ describe("UsersService", () => {
   it("should be defined", () => {
     expect(service).toBeDefined();
   });
-
-  // ─── getProfile ─────────────────────────────────────────────────────────────
 
   describe("getProfile", () => {
     it("returns assembled camelCase view", async () => {
@@ -197,8 +217,6 @@ describe("UsersService", () => {
       expect(v.profilePicture).toBeNull();
     });
   });
-
-  // ─── updateProfile ──────────────────────────────────────────────────────────
 
   describe("updateProfile", () => {
     it("creates profile when missing and updates first name", async () => {
@@ -246,8 +264,6 @@ describe("UsersService", () => {
     });
   });
 
-  // ─── deleteAccount ──────────────────────────────────────────────────────────
-
   describe("deleteAccount", () => {
     it("deletes existing account", async () => {
       userRepo.delete.mockResolvedValue({ affected: 1 });
@@ -265,7 +281,152 @@ describe("UsersService", () => {
     });
   });
 
-  // ─── uploadJobOffer ─────────────────────────────────────────────────────────
+  // ─── uploadCV ───────────────────────────────────────────────────────────────
+
+  describe("uploadCV", () => {
+    it("retourne 400 si aucun fichier n'est fourni", async () => {
+      const req = mockReqWithFile({ file: undefined });
+      const res = mockRes();
+
+      await service.uploadCV(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: "Upload a PDF file." });
+    });
+
+    it("retourne 400 si le texte extrait du PDF est vide", async () => {
+      mockPdfParse.mockResolvedValue({ text: "" });
+
+      const req = mockReqWithFile();
+      const res = mockRes();
+
+      await service.uploadCV(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "The PDF file is empty or could not be parsed.",
+      });
+    });
+
+    it("retourne 500 si Groq retourne une réponse vide", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: null } }],
+      });
+
+      const req = mockReqWithFile();
+      const res = mockRes();
+
+      await service.uploadCV(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Empty response from AI.",
+      });
+    });
+
+    it("retourne 500 si Groq retourne un JSON invalide", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: "not valid json }{" } }],
+      });
+
+      const req = mockReqWithFile();
+      const res = mockRes();
+
+      await service.uploadCV(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Failed to parse extracted CV data.",
+      });
+    });
+
+    it("crée un nouveau CV et retourne 200 si aucun CV n'existe", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      const req = mockReqWithFile();
+      const res = mockRes();
+
+      await service.uploadCV(req, res);
+
+      expect(cvRepo.findOne).toHaveBeenCalledWith({
+        where: { user_id: "uid-1" },
+      });
+      expect(cvRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ desired_job: "Software Engineer" }),
+      );
+      expect(cvRepo.save).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "CV uploaded successfully",
+      });
+    });
+
+    it("met à jour le CV existant et retourne 200", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue({
+        user_id: "uid-1",
+        desired_job: "old job",
+      });
+
+      const req = mockReqWithFile();
+      const res = mockRes();
+
+      await service.uploadCV(req, res);
+
+      expect(cvRepo.update).toHaveBeenCalledWith(
+        { user_id: "uid-1" },
+        expect.objectContaining({ desired_job: "Software Engineer" }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "CV updated successfully",
+      });
+    });
+
+    it("nettoie les backticks markdown avant de parser le JSON", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: "```json\n" + validCvGroqResponse + "\n```",
+            },
+          },
+        ],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      const req = mockReqWithFile();
+      const res = mockRes();
+
+      await service.uploadCV(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("retourne 500 en cas d'erreur inattendue", async () => {
+      mockPdfParse.mockRejectedValue(new Error("unexpected crash"));
+
+      const req = mockReqWithFile();
+      const res = mockRes();
+
+      await service.uploadCV(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Error processing the CV file.",
+      });
+    });
+  });
 
   describe("uploadJobOffer", () => {
     it("retourne 400 si aucune URL n'est fournie", async () => {
