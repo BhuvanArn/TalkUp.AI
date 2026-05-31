@@ -95,7 +95,31 @@ function Simulations() {
     }
   }, []);
 
-  const { isAiSpeaking } = useAudioPlayback({ message: lastJsonMessage });
+  const { isAiSpeaking, transcript } = useAudioPlayback({
+    message: lastJsonMessage,
+  });
+
+  const [transcriptions, setTranscriptions] = useState<TranscriptionProps[]>(
+    [],
+  );
+
+  useEffect(() => {
+    if (!transcript) return;
+    const turns: TranscriptionProps[] = [];
+    if (transcript.transcription) {
+      turns.push({
+        isIA: false,
+        speaker: 'You',
+        text: transcript.transcription,
+      });
+    }
+    if (transcript.response) {
+      turns.push({ isIA: true, speaker: 'AI', text: transcript.response });
+    }
+    if (turns.length > 0) {
+      setTranscriptions((prev) => [...prev, ...turns]);
+    }
+  }, [transcript]);
 
   const {
     isListening,
@@ -110,24 +134,6 @@ function Simulations() {
     onAudioPacket: handleAudioPacket,
     isActive: isCallActive && readyState === ReadyState.OPEN && !isAiSpeaking,
   });
-
-  const staticTranscriptions: TranscriptionProps[] = [
-    {
-      isIA: true,
-      speaker: 'AI',
-      text: "Hello, thank you for joining me. Let's start the interview.",
-    },
-    {
-      isIA: false,
-      speaker: 'You',
-      text: "Hello, I'm delighted to be here. I look forward to discussing how my experience can benefit your team.",
-    },
-    {
-      isIA: true,
-      speaker: 'AI',
-      text: 'Excellent. Can you tell me about a recent project where you faced a particularly difficult technical challenge, and how you overcame it?',
-    },
-  ];
 
   return (
     <div className="p-6 h-full">
@@ -151,7 +157,7 @@ function Simulations() {
               videoStreamToggleRef.current = toggleFn;
             }}
           />
-          <SimulationTranscriptionArea transcriptions={staticTranscriptions} />
+          <SimulationTranscriptionArea transcriptions={transcriptions} />
         </div>
 
         <div className="space-y-6">

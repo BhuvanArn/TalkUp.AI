@@ -9,6 +9,13 @@ export interface AiAnswer {
   audio_chunks?: string[];
 }
 
+export interface AiTranscript {
+  /** What the user said, as transcribed by speech-to-text. */
+  transcription: string;
+  /** The AI's textual reply for this turn. */
+  response: string;
+}
+
 export interface UseAudioPlaybackProps {
   message: unknown;
 }
@@ -17,6 +24,8 @@ export interface UseAudioPlaybackReturn {
   isAiSpeaking: boolean;
   stopPlayback: () => void;
   error: string | null;
+  /** Transcript text from the latest sts_result message, or null. */
+  transcript: AiTranscript | null;
 }
 
 function asOuterPacket(
@@ -42,6 +51,7 @@ export function useAudioPlayback({
 }: UseAudioPlaybackProps): UseAudioPlaybackReturn {
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<AiTranscript | null>(null);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
@@ -142,6 +152,20 @@ export function useAudioPlayback({
       return;
     }
 
+    if (answer.transcription || answer.response) {
+      const next: AiTranscript = {
+        transcription: answer.transcription ?? '',
+        response: answer.response ?? '',
+      };
+      setTranscript((prev) =>
+        prev &&
+        prev.transcription === next.transcription &&
+        prev.response === next.response
+          ? prev
+          : next,
+      );
+    }
+
     const chunks = answer.audio_chunks ?? [];
     if (chunks.length === 0) return;
 
@@ -166,5 +190,5 @@ export function useAudioPlayback({
     };
   }, []);
 
-  return { isAiSpeaking, stopPlayback, error };
+  return { isAiSpeaking, stopPlayback, error, transcript };
 }

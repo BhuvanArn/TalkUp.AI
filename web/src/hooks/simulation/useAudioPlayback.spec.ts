@@ -138,6 +138,40 @@ describe('useAudioPlayback', () => {
     expect(result.current.isAiSpeaking).toBe(false);
   });
 
+  it('exposes the transcription and response from the latest sts_result', () => {
+    const { result, rerender } = renderHook(
+      ({ message }) => useAudioPlayback({ message }),
+      { initialProps: { message: null as unknown } },
+    );
+    expect(result.current.transcript).toBeNull();
+
+    rerender({ message: buildPacket([]) as unknown });
+    expect(result.current.transcript).toEqual({
+      transcription: 'hi',
+      response: 'hello there',
+    });
+  });
+
+  it('keeps transcript null for non-sts_result messages', () => {
+    const { result } = renderHook(() =>
+      useAudioPlayback({ message: { type: 'pong' } as unknown }),
+    );
+    expect(result.current.transcript).toBeNull();
+  });
+
+  it('keeps transcript null when sts_result data is malformed', () => {
+    const { result, rerender } = renderHook(
+      ({ message }) => useAudioPlayback({ message }),
+      { initialProps: { message: null as unknown } },
+    );
+    act(() => {
+      rerender({
+        message: { type: 'sts_result', data: 'not-json' } as unknown,
+      });
+    });
+    expect(result.current.transcript).toBeNull();
+  });
+
   it('skips undecodable chunks but still plays the rest', async () => {
     const ctx = new MockAudioContext();
     ctx.decodeAudioData = vi

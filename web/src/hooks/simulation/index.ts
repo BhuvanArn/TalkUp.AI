@@ -20,6 +20,7 @@ export type {
 export { useAudioPlayback } from './useAudioPlayback';
 export type {
   AiAnswer,
+  AiTranscript,
   UseAudioPlaybackProps,
   UseAudioPlaybackReturn,
 } from './useAudioPlayback';

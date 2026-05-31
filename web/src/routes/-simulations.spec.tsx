@@ -83,6 +83,7 @@ vi.mock('@/hooks/simulation', () => ({
     isAiSpeaking: false,
     stopPlayback: vi.fn(),
     error: null,
+    transcript: null,
   })),
   useAudioStreaming: vi.fn(() => ({
     isListening: false,
@@ -204,6 +205,47 @@ describe('Simulations', () => {
     });
   });
 
+  describe('transcriptions', () => {
+    afterEach(() => {
+      vi.mocked(useAudioPlayback).mockReturnValue({
+        isAiSpeaking: false,
+        stopPlayback: vi.fn(),
+        error: null,
+        transcript: null,
+      });
+    });
+
+    it('renders the user and AI turns from the latest transcript', async () => {
+      vi.mocked(useAudioPlayback).mockReturnValue({
+        isAiSpeaking: false,
+        stopPlayback: vi.fn(),
+        error: null,
+        transcript: {
+          transcription: 'I have five years of experience.',
+          response: 'Great, tell me about a challenge you faced.',
+        },
+      });
+
+      renderWithProviders(<RouterProvider router={router} />);
+
+      expect(
+        await screen.findByText(/I have five years of experience\./i),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/Great, tell me about a challenge you faced\./i),
+      ).toBeInTheDocument();
+    });
+
+    it('does not render the old static placeholder transcript', async () => {
+      renderWithProviders(<RouterProvider router={router} />);
+
+      await screen.findByRole('heading', { name: /^Simulations$/i });
+      expect(
+        screen.queryByText(/Let's start the interview/i),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   describe('mic gating while AI speaks', () => {
     // Restore the factory defaults so the surrounding suite keeps observing
     // isAiSpeaking=false / isCallActive=false (vi.clearAllMocks resets call
@@ -213,6 +255,7 @@ describe('Simulations', () => {
         isAiSpeaking: false,
         stopPlayback: vi.fn(),
         error: null,
+        transcript: null,
       });
       vi.mocked(useInterviewSession).mockReturnValue({
         isCallActive: false,
@@ -235,6 +278,7 @@ describe('Simulations', () => {
         isAiSpeaking: true,
         stopPlayback: vi.fn(),
         error: null,
+        transcript: null,
       });
 
       renderWithProviders(<RouterProvider router={router} />);
