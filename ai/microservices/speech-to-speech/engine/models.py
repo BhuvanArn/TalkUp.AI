@@ -370,13 +370,36 @@ def generate_ai_response(models: STSModels, messages: list[dict[str, str]]) -> s
 
 	return "Je rencontre une indisponibilite temporaire du modele de reponse. Peux-tu reformuler ta phrase ?"
 
+def _pcm_chunk_to_wav(chunk) -> bytes:
+	"""
+	Wraps a streamed Piper PCM chunk in a self-contained WAV container.
+
+	The web client decodes each chunk via AudioContext.decodeAudioData, which
+	only accepts self-contained encoded files (WAV/Ogg/...), not raw PCM frames.
+	"""
+	pcm_bytes = getattr(chunk, "audio_int16_bytes", None)
+	if pcm_bytes is None:
+		pcm_bytes = bytes(chunk)
+	wav_buffer = io.BytesIO()
+	with wave.open(wav_buffer, "wb") as wav_file:
+		wav_file.setnchannels(getattr(chunk, "sample_channels", 1))
+		wav_file.setsampwidth(getattr(chunk, "sample_width", 2))
+		wav_file.setframerate(getattr(chunk, "sample_rate", 22050))
+		wav_file.writeframes(pcm_bytes)
+	return wav_buffer.getvalue()
+
 def synthesize_tts_chunks(models: STSModels, text: str):
 	"""
 	Synthesizes TTS chunks from the given text using the specified models.
+
+	Every yielded chunk is a self-contained WAV so the web client can decode it
+	directly with AudioContext.decodeAudioData.
 	"""
 	if hasattr(models.piper_voice, "synthesize_stream"):
 		for chunk in models.piper_voice.synthesize_stream(text):
-			yield chunk
+			wav_bytes = _pcm_chunk_to_wav(chunk)
+			if wav_bytes:
+				yield wav_bytes
 		return
 
 	if hasattr(models.piper_voice, "synthesize"):
