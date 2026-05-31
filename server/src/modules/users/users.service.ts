@@ -182,7 +182,7 @@ export class UsersService {
     };
   }
 
-  async uploadCV(req: Request, res: Response) {
+  async uploadCV(req: Request & { file?: any }, res: Response) {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Upload a PDF file." });
