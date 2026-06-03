@@ -6,7 +6,6 @@ import {
   BadRequestException,
   ConflictException,
   HttpStatus,
-  InternalServerErrorException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";

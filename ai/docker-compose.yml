@@ -8,12 +8,18 @@ services:
     container_name: ai_server
     ports:
       - "8088:8088"
+    networks:
+      - default
+      - talkup-ai
     depends_on:
-      - behavior_analyzer
-      - emotional_analyzer
-      - speech_to_text
-      - text_to_speech
-      - verbal_analyzer
+      behavior_analyzer:
+        condition: service_started
+      emotional_analyzer:
+        condition: service_started
+      verbal_analyzer:
+        condition: service_started
+      sts-service:
+        condition: service_healthy
 
   behavior_analyzer:
     build:
@@ -33,30 +39,34 @@ services:
     ports:
       - "5052:5000"
 
-  speech_to_text:
-    build:
-      context: .
-      dockerfile: ./microservices/speech-to-text/Dockerfile
-    container_name: speech_to_text_services
-    environment:
-      - PYTHONUNBUFFERED=1
-      - STT_HOST=speech_to_text
-      - STT_PORT=8002
-      - VOSK_MODEL_PATH=/app/models/vosk-fr
+  sts-service:
+    build: ./microservices/speech-to-speech
+    container_name: talkup-sts
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     ports:
       - "8002:8002"
-
-  text_to_speech:
-    build:
-      context: .
-      dockerfile: ./microservices/text-to-speech/Dockerfile
-    container_name: text_to_speech_services
+    volumes:
+      - ./llm-core/models/sup-it-v3-merged:/app/llm/sup-it-v3-merged
     environment:
-      - PYTHONUNBUFFERED=1
-      - TTS_HOST=text_to_speech
-      - TTS_PORT=8005
-    ports:
-      - "8005:8005"
+      - CUDA_VISIBLE_DEVICES=-1
+      - NVIDIA_VISIBLE_DEVICES=none
+      - LLM_BACKEND=hf
+      - LLM_GPU_MAX_MEMORY=3GiB
+      - LLM_CPU_MAX_MEMORY=8GiB
+      - LLM_MAX_NEW_TOKENS=128
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
 
   verbal_analyzer:
     build:
@@ -66,3 +76,8 @@ services:
       - PYTHONUNBUFFERED=1
     ports:
       - "5055:5000"
+
+networks:
+  talkup-ai:
+    external: true
+    name: talkup-ai
