@@ -13,6 +13,11 @@ import numpy as np
 from dataclasses import dataclass
 from .audio_decode import decode_audio_to_float32
 from .models import STSModels, generate_ai_response, synthesize_tts_chunks
+from .session_context import (
+	append_session_history,
+	build_messages_from_context,
+	fetch_session_context,
+)
 
 @dataclass
 class STSResult:
@@ -23,7 +28,11 @@ class STSResult:
 	ai_response: str
 	audio_chunks: list[bytes]
 
-def process_sts_request(models: STSModels, audio_bytes: bytes) -> STSResult:
+def process_sts_request(
+	models: STSModels,
+	audio_bytes: bytes,
+	interview_id: str | None = None,
+) -> STSResult:
 	"""
 	Processes a Speech-to-Speech request by transcribing the input audio, generating an AI response, and synthesizing the response into audio chunks.
 	"""
@@ -40,11 +49,17 @@ def process_sts_request(models: STSModels, audio_bytes: bytes) -> STSResult:
 	if not user_text or len(user_text) < 2:
 		return STSResult(transcription="", ai_response="", audio_chunks=[])
 
-	messages = [
-		{"role": "system", "content": models.settings.system_prompt},
-		{"role": "user", "content": user_text},
-	]
+	session = fetch_session_context(interview_id) if interview_id else None
+	messages = build_messages_from_context(
+		models.settings.system_prompt,
+		session,
+		user_text,
+	)
 
 	ai_response = generate_ai_response(models, messages)
 	audio_chunks = list(synthesize_tts_chunks(models, ai_response))
+
+	if interview_id and ai_response:
+		append_session_history(interview_id, user_text, ai_response)
+
 	return STSResult(transcription=user_text, ai_response=ai_response, audio_chunks=audio_chunks)

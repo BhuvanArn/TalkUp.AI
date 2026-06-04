@@ -389,8 +389,13 @@ void talkup_network::MicroservicesManager::process_sts_job(const nlohmann::json 
 
         std::unique_lock<std::mutex> io_lock(*io_mutex);
         const uint64_t request_id = ++g_sts_request_id;
+        std::string interview_id;
+        if (data.contains("stream_id") && data["stream_id"].is_string())
+            interview_id = data["stream_id"].get<std::string>();
         nlohmann::json audio_json = {{"services", {"STS"}}, {"type", "stream_chunk"}, {"request_id", request_id},
             {"timestamp", std::time(nullptr)}, {"data", {{"chunk", chunk_val}, {"eof", true}}}};
+        if (!interview_id.empty())
+            audio_json["interview_id"] = interview_id;
         ws->write(boost::asio::buffer(audio_json.dump()));
         std::cout << "[MicroservicesManager] Sent STS stream_chunk request_id=" << request_id << std::endl;
 

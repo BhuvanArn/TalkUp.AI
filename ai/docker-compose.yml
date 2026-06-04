@@ -54,6 +54,8 @@ services:
     volumes:
       - ./llm-core/models/sup-it-v3-merged:/app/llm/sup-it-v3-merged
     environment:
+      - BACKEND_URL=${BACKEND_URL:-http://host.docker.internal:3000/v1/api}
+      - SIM_INTERNAL_API_KEY=${SIM_INTERNAL_API_KEY:-talkup-dev-internal-key}
       - CUDA_VISIBLE_DEVICES=-1
       - NVIDIA_VISIBLE_DEVICES=none
       - LLM_BACKEND=hf

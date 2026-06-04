@@ -42,6 +42,7 @@ async def _process_stream_and_reply(
 	send_lock: asyncio.Lock,
 	audio_bytes: bytes,
 	request_id: int | None = None,
+	interview_id: str | None = None,
 ) -> None:
 	"""Process one utterance and reply (responses stay in FIFO order per connection)."""
 	try:
@@ -63,7 +64,7 @@ async def _process_stream_and_reply(
 				)
 			return
 
-		result = await queue_service.submit(audio_bytes)
+		result = await queue_service.submit(audio_bytes, interview_id=interview_id)
 
 		if not result.transcription:
 			payload: dict = {
@@ -133,7 +134,7 @@ async def websocket_endpoint(websocket: WebSocket):
 	await websocket.accept()
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "Client connected to the STS service")
 	send_lock = asyncio.Lock()
-	audio_queue: asyncio.Queue[tuple[int | None, bytes] | None] = asyncio.Queue()
+	audio_queue: asyncio.Queue[tuple[int | None, str | None, bytes] | None] = asyncio.Queue()
 
 	async def audio_worker() -> None:
 		while True:
@@ -141,8 +142,14 @@ async def websocket_endpoint(websocket: WebSocket):
 			try:
 				if item is None:
 					return
-				request_id, audio_bytes = item
-				await _process_stream_and_reply(websocket, send_lock, audio_bytes, request_id)
+				request_id, interview_id, audio_bytes = item
+				await _process_stream_and_reply(
+					websocket,
+					send_lock,
+					audio_bytes,
+					request_id,
+					interview_id,
+				)
 			finally:
 				audio_queue.task_done()
 
@@ -157,6 +164,7 @@ async def websocket_endpoint(websocket: WebSocket):
 				return
 			audio_bytes = b""
 			request_id: int | None = None
+			interview_id: str | None = None
 
 			if message.get("type") == "websocket.receive" and message.get("text") is not None:
 				try:
@@ -179,6 +187,12 @@ async def websocket_endpoint(websocket: WebSocket):
 
 				if payload.get("type") == "stream_chunk":
 					request_id = payload.get("request_id")
+					interview_id = payload.get("interview_id")
+					if isinstance(interview_id, str):
+						interview_id = interview_id.strip() or None
+					else:
+						interview_id = None
+
 					if request_id is not None and not isinstance(request_id, int):
 						try:
 							request_id = int(request_id)
@@ -217,7 +231,7 @@ async def websocket_endpoint(websocket: WebSocket):
 			if not audio_bytes:
 				continue
 
-			await audio_queue.put((request_id, audio_bytes))
+			await audio_queue.put((request_id, interview_id, audio_bytes))
 
 	except WebSocketDisconnect:
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected")
