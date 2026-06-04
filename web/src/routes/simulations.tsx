@@ -1,4 +1,5 @@
 import InfoBox from '@/components/molecules/info-box';
+import SimulationQueueBanner from '@/components/molecules/simulation-queue-banner';
 import NotesEditor from '@/components/molecules/notes-editor/notes-editor';
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
@@ -68,6 +69,9 @@ function Simulations() {
 
   const {
     isCallActive,
+    isQueued,
+    queuePosition,
+    estimatedWaitSec,
     inputUrl,
     interviewID: sessionInterviewID,
     handleStreamToggle,
@@ -146,6 +150,15 @@ function Simulations() {
           </p>
         </div>
       </div>
+
+      {isQueued && (
+        <div className="mb-4">
+          <SimulationQueueBanner
+            queuePosition={queuePosition}
+            estimatedWaitSec={estimatedWaitSec}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-[1fr_20rem] gap-6">
         <div>

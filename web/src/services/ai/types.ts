@@ -8,7 +8,11 @@ export interface CreateAiInterviewDto {
   language: string;
   /** Optional initial status of the interview */
   status?: string;
+  /** CV / job offer / preparation notes for the AI persona */
+  jobContext?: string;
 }
+
+export type SimulationSessionPhase = 'ready' | 'queued' | 'active';
 
 /**
  * Response object returned when an AI interview is created.
@@ -16,8 +20,30 @@ export interface CreateAiInterviewDto {
 export interface AiInterviewResponse {
   /** Unique identifier for the created interview */
   interviewID: string;
-  /** WebSocket endpoint URL to connect to for the interview session */
-  entrypoint: string;
+  /** Whether the session can connect immediately or must wait in queue */
+  status: SimulationSessionPhase;
+  /** WebSocket endpoint URL when status is ready */
+  entrypoint?: string | null;
+  /** 0 when ready; 1-based position when queued */
+  queuePosition: number;
+  /** Rough wait estimate in seconds when queued */
+  estimatedWaitSec?: number;
+}
+
+export interface InterviewSessionResponse {
+  interviewID: string;
+  dbStatus: string;
+  sessionStatus: 'ready' | 'queued' | 'active' | 'ended';
+  queuePosition: number;
+  entrypoint?: string | null;
+  estimatedWaitSec?: number;
+}
+
+export interface SimulationCapacityResponse {
+  active: number;
+  max: number;
+  queueLength: number;
+  accepting: boolean;
 }
 
 /**
@@ -25,7 +51,7 @@ export interface AiInterviewResponse {
  */
 export interface UpdateAiInterviewDto {
   /** Updated status of the interview */
-  status?: 'asked' | 'in_progress' | 'completed' | 'cancelled';
+  status?: 'asked' | 'queued' | 'in_progress' | 'completed' | 'cancelled' | 'expired';
   /** Score assigned to the interview (if applicable) */
   score?: number;
   /** Feedback text for the interview */

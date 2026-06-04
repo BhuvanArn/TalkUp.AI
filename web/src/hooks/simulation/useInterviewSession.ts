@@ -1,4 +1,9 @@
-import { createInterview, updateInterview } from '@/services/ai/http';
+import {
+  cancelInterview,
+  createInterview,
+  getInterviewSession,
+  updateInterview,
+} from '@/services/ai/http';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -10,6 +15,8 @@ const STORAGE_KEYS = {
 
 const WEBSOCKET_CLOSE_CODE_NORMAL = 1000;
 const STREAM_RESUME_DELAY_MS = 100;
+const QUEUE_POLL_INTERVAL_MS = 3000;
+const QUEUE_POLL_MAX_MS = 20 * 60 * 1000;
 
 /**
  * Props for the useInterviewSession hook.
@@ -29,6 +36,12 @@ export interface UseInterviewSessionProps {
 export interface UseInterviewSessionReturn {
   /** Whether an interview call is currently active */
   isCallActive: boolean;
+  /** Whether the user is waiting in the simulation queue */
+  isQueued: boolean;
+  /** Queue position when isQueued (1-based) */
+  queuePosition: number;
+  /** Estimated wait in seconds when queued */
+  estimatedWaitSec?: number;
   /** WebSocket URL for the current interview session */
   inputUrl: string;
   /** ID of the current interview session, if any */
@@ -37,27 +50,33 @@ export interface UseInterviewSessionReturn {
   handleStreamToggle: (streaming: boolean) => Promise<void>;
 }
 
+async function waitForReadyEntrypoint(
+  interviewId: string,
+  signal: AbortSignal,
+): Promise<string> {
+  const started = Date.now();
+
+  while (Date.now() - started < QUEUE_POLL_MAX_MS) {
+    if (signal.aborted) {
+      throw new Error('Queue wait aborted');
+    }
+
+    const session = await getInterviewSession(interviewId);
+    if (session.sessionStatus === 'ready' && session.entrypoint) {
+      return session.entrypoint;
+    }
+    if (session.sessionStatus === 'ended') {
+      throw new Error('Simulation session ended before start');
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, QUEUE_POLL_INTERVAL_MS));
+  }
+
+  throw new Error('Queue wait timed out');
+}
+
 /**
  * Custom hook to manage AI interview session lifecycle.
- *
- * Features:
- * - Creates new interview sessions via API
- * - Manages WebSocket connection lifecycle
- * - Persists session state to localStorage
- * - Auto-resumes interrupted sessions after page refresh
- * - Updates interview status on completion
- *
- * @param props - Configuration for interview session management
- * @returns Interview session state and control functions
- *
- * @example
- * ```tsx
- * const { isCallActive, inputUrl, handleStreamToggle } = useInterviewSession({
- *   onConnect: (url) => websocket.connect(url),
- *   onDisconnect: (code, reason) => websocket.disconnect(code, reason),
- *   onResumeStream: () => videoStream.start(),
- * });
- * ```
  */
 export function useInterviewSession({
   onConnect,
@@ -67,8 +86,12 @@ export function useInterviewSession({
   const [inputUrl, setInputUrl] = useState('');
   const [interviewID, setInterviewID] = useState<string | null>(null);
   const [isCallActive, setIsCallActive] = useState(false);
+  const [isQueued, setIsQueued] = useState(false);
+  const [queuePosition, setQueuePosition] = useState(0);
+  const [estimatedWaitSec, setEstimatedWaitSec] = useState<number | undefined>();
   const processingRef = useRef(false);
   const hasResumedRef = useRef(false);
+  const queueAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (hasResumedRef.current) return;
@@ -80,7 +103,6 @@ export function useInterviewSession({
       localStorage.getItem(STORAGE_KEYS.IS_STREAMING) === 'true';
 
     if (savedInterviewID && savedInterviewURL) {
-      console.log('Resuming interrupted interview:', savedInterviewID);
       setInputUrl(savedInterviewURL);
       setInterviewID(savedInterviewID);
       setIsCallActive(true);
@@ -96,6 +118,12 @@ export function useInterviewSession({
     }
   }, [onConnect, onResumeStream]);
 
+  useEffect(() => {
+    return () => {
+      queueAbortRef.current?.abort();
+    };
+  }, []);
+
   const handleStreamToggle = useCallback(
     async (streaming: boolean) => {
       if (processingRef.current) return;
@@ -103,25 +131,69 @@ export function useInterviewSession({
 
       if (streaming) {
         try {
-          const { entrypoint, interviewID } = await createInterview({
+          const created = await createInterview({
             type: 'technical',
-            language: 'English',
+            language: 'French',
           });
-          setInterviewID(interviewID);
-          localStorage.setItem(STORAGE_KEYS.INTERVIEW_ID, interviewID);
+
+          setInterviewID(created.interviewID);
+          localStorage.setItem(STORAGE_KEYS.INTERVIEW_ID, created.interviewID);
+
+          let entrypoint = created.entrypoint ?? null;
+
+          if (created.status === 'queued') {
+            setIsQueued(true);
+            setQueuePosition(created.queuePosition);
+            setEstimatedWaitSec(created.estimatedWaitSec);
+            toast.loading('En file d\'attente…', { id: 'sim-queue' });
+
+            queueAbortRef.current?.abort();
+            queueAbortRef.current = new AbortController();
+
+            entrypoint = await waitForReadyEntrypoint(
+              created.interviewID,
+              queueAbortRef.current.signal,
+            );
+
+            toast.dismiss('sim-queue');
+            setIsQueued(false);
+            setQueuePosition(0);
+            toast.success('C\'est votre tour — démarrage de la simulation');
+          }
+
+          if (!entrypoint) {
+            throw new Error('No WebSocket entrypoint returned');
+          }
+
           localStorage.setItem(STORAGE_KEYS.INTERVIEW_URL, entrypoint);
           localStorage.setItem(STORAGE_KEYS.IS_STREAMING, 'true');
           setInputUrl(entrypoint);
           setIsCallActive(true);
           onConnect(entrypoint);
+
+          await updateInterview(created.interviewID, { status: 'in_progress' });
         } catch (error) {
           console.error('Failed to start interview:', error);
+          toast.dismiss('sim-queue');
+          setIsQueued(false);
+          const interviewId = localStorage.getItem(STORAGE_KEYS.INTERVIEW_ID);
+          if (interviewId) {
+            try {
+              await cancelInterview(interviewId);
+            } catch {
+              /* ignore cleanup errors */
+            }
+          }
+          localStorage.removeItem(STORAGE_KEYS.INTERVIEW_ID);
+          localStorage.removeItem(STORAGE_KEYS.INTERVIEW_URL);
+          localStorage.removeItem(STORAGE_KEYS.IS_STREAMING);
           toast.error('Failed to start interview. Please try again.');
         } finally {
           processingRef.current = false;
         }
       } else {
-        const interviewID = localStorage.getItem(STORAGE_KEYS.INTERVIEW_ID);
+        const interviewId = localStorage.getItem(STORAGE_KEYS.INTERVIEW_ID);
+        queueAbortRef.current?.abort();
 
         try {
           onDisconnect(WEBSOCKET_CLOSE_CODE_NORMAL, 'Call ended');
@@ -129,9 +201,9 @@ export function useInterviewSession({
           console.error('Failed to disconnect WebSocket:', error);
         }
 
-        if (interviewID) {
+        if (interviewId) {
           try {
-            await updateInterview(interviewID, { status: 'completed' });
+            await updateInterview(interviewId, { status: 'completed' });
             localStorage.removeItem(STORAGE_KEYS.INTERVIEW_ID);
             localStorage.removeItem(STORAGE_KEYS.INTERVIEW_URL);
             localStorage.removeItem(STORAGE_KEYS.IS_STREAMING);
@@ -140,6 +212,10 @@ export function useInterviewSession({
           }
         }
 
+        setIsCallActive(false);
+        setIsQueued(false);
+        setInputUrl('');
+        setInterviewID(null);
         processingRef.current = false;
       }
     },
@@ -148,6 +224,9 @@ export function useInterviewSession({
 
   return {
     isCallActive,
+    isQueued,
+    queuePosition,
+    estimatedWaitSec,
     inputUrl,
     interviewID,
     handleStreamToggle,
