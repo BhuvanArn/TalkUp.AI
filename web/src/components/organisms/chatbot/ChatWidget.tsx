@@ -30,7 +30,9 @@ export const ChatWidget = () => {
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const replyIndex = useRef(0);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
 
   const getTimestamp = () =>
     new Date().toLocaleTimeString('fr-FR', {
@@ -53,7 +55,6 @@ export const ChatWidget = () => {
     setInputValue('');
     setIsTyping(true);
 
-    // ✅ Fix 1: store timeout id for cleanup
     timeoutRef.current = setTimeout(() => {
       const aiMsg: Message = {
         id: `ai-${Date.now()}`,
