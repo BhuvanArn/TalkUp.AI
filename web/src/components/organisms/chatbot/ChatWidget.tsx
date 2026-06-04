@@ -30,8 +30,7 @@ export const ChatWidget = () => {
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const replyIndex = useRef(0);
-  // ✅ Fix 1: cleanup timeout ref
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const getTimestamp = () =>
     new Date().toLocaleTimeString('fr-FR', {
@@ -68,7 +67,6 @@ export const ChatWidget = () => {
     }, 1200);
   }, [inputValue, isTyping]);
 
-  // ✅ Fix 1: clear timeout on unmount
   useEffect(() => {
     return () => clearTimeout(timeoutRef.current);
   }, []);
@@ -114,7 +112,6 @@ export const ChatWidget = () => {
       };
 
       const onTouchMove = (ev: TouchEvent) => {
-        // ✅ Fix 2: prevent page scroll while dragging
         ev.preventDefault();
         const t = ev.touches[0];
         isDragging.current = true;
@@ -154,7 +151,6 @@ export const ChatWidget = () => {
         right: `${24 - position.x}px`,
       }}
     >
-      {/* ✅ Fix 3: unmount ChatWindow when closed */}
       {isOpen && (
         <div className="absolute bottom-16 right-0 transition-all duration-200 origin-bottom-right">
           <ChatWindow
