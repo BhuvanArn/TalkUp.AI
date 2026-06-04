@@ -13,9 +13,12 @@ services:
     environment:
       - DOCKER_RUN=true
       - POSTGRES_DOCKER_HOST=postgres_db
-      - REDIS_URL=redis:6379
       # Overrides server/.env — localhost inside this container is not the host.
       - AI_SERVER_URL=http://ai_server:8088
+      - AI_WS_PUBLIC_URL=${AI_WS_PUBLIC_URL:-ws://localhost:8088/ws}
+      - REDIS_URL=redis://redis:6379
+      - SIM_MAX_CONCURRENT=${SIM_MAX_CONCURRENT:-2}
+      - SIM_INTERNAL_API_KEY=${SIM_INTERNAL_API_KEY:-talkup-dev-internal-key}
     depends_on:
       postgres_db:
         condition: service_healthy

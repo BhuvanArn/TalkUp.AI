@@ -4,27 +4,34 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from "@nestjs/common";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { FindOptionsOrder, Repository } from "typeorm";
-
-import { HttpService } from "@nestjs/axios";
-import { AxiosResponse } from "axios";
+import { FindOptionsOrder, In, Repository } from "typeorm";
 
 import { ai_interview } from "@entities/aiInterview.entity";
 import { ai_transcript } from "@entities/aiTranscript.entity";
 
-import { AiInterviewStatus } from "@common/enums/AiInterviewStatus";
+import {
+  ACTIVE_SIMULATION_STATUSES,
+  AiInterviewStatus,
+} from "@common/enums/AiInterviewStatus";
 
 import { CreateAiInterviewDto } from "./dto/createAiInterview.dto";
 import { PutAiInterviewDto } from "./dto/putAiInterview.dto";
 import { GetInterviewsQueryDto } from "./dto/getInterviewsQuery.dto";
 import { CreateAiTranscriptsDto } from "./dto/createAiTranscripts.dto";
+import { CreateAiInterviewResponseDto } from "./dto/createAiInterviewResponse.dto";
+import { InterviewSessionDto } from "./dto/interviewSession.dto";
+
+import { SimulationCapacityService } from "../simulation/simulation-capacity.service";
+import { SimulationContextService } from "../simulation/simulation-context.service";
+import { SimulationPromotionService } from "../simulation/simulation-promotion.service";
+import { loadSimulationConfig } from "../simulation/simulation.config";
 
 @Injectable()
 export class AiService {
-  private AI_SERVER_URL = process.env.AI_SERVER_URL ?? "";
   private readonly logger: Logger;
 
   constructor(
@@ -32,95 +39,193 @@ export class AiService {
     private aiInterviewRepository: Repository<ai_interview>,
     @InjectRepository(ai_transcript)
     private aiTranscriptRepository: Repository<ai_transcript>,
-    private readonly httpService: HttpService,
+    private readonly capacity: SimulationCapacityService,
+    private readonly context: SimulationContextService,
+    private readonly promotion: SimulationPromotionService,
   ) {
     this.logger = new Logger(AiService.name);
   }
 
-  async createInterview(dto: CreateAiInterviewDto, userId: string) {
-    let AIresponse: AxiosResponse<{
-      key: string;
-      type: string;
-      format: string;
-      data: string;
-    }>;
-    let alreadyExists;
+  async getCapacity() {
+    return this.capacity.getSnapshot();
+  }
 
-    // Check if an interview is already asked and not completed
+  async createInterview(
+    dto: CreateAiInterviewDto,
+    userId: string,
+  ): Promise<CreateAiInterviewResponseDto> {
     try {
-      alreadyExists = await this.aiInterviewRepository.findOne({
-        where: { user_id: userId, status: AiInterviewStatus.ASKED },
-      });
-    } catch (error) {
-      this.logger.error(
-        `Failed to check existing interview for user ${userId}: ${error.message}`,
-        error.stack,
-      );
-      throw new InternalServerErrorException(
-        "Internal server error while checking existing interview.",
-      );
-    }
+      const redisActiveId =
+        await this.capacity.getUserActiveInterviewId(userId);
+      if (redisActiveId) {
+        throw new ConflictException(
+          "A simulation is already active or queued for this user.",
+        );
+      }
 
-    if (alreadyExists) {
-      this.logger.warn(
-        `AI interview already asked for user ${userId}, creating duplicate request blocked.`,
-      );
-      throw new ConflictException("AI interview already asked.");
-    }
-
-    // Call AI server to init interview
-    try {
-      AIresponse = await this.httpService.axiosRef.post(
-        `${this.AI_SERVER_URL}/process/initialization`,
-        {
-          key: "c7yPY8u644OE", // Temporary key for testing purposes
-          type: "initialization",
-          format: "text",
-          data: "",
+      const alreadyExists = await this.aiInterviewRepository.findOne({
+        where: {
+          user_id: userId,
+          status: In(ACTIVE_SIMULATION_STATUSES),
         },
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to call AI server for user ${userId}: ${error.message}` +
-          (error.response?.data
-            ? ` | Response data: ${JSON.stringify(error.response.data)}`
-            : ""),
-        error.stack,
-      );
-      throw new InternalServerErrorException(
-        "Internal server error while contacting AI server.",
-      );
-    }
+      });
 
-    if (AIresponse.status !== 200) {
-      this.logger.error(
-        `AI server responded with status ${AIresponse.status} for user ${userId}: ${JSON.stringify(AIresponse.data)}`,
-      );
-      throw new InternalServerErrorException("AI server error.");
-    }
+      if (alreadyExists) {
+        this.logger.warn(
+          `Active simulation already exists for user ${userId}`,
+        );
+        throw new ConflictException(
+          "A simulation is already active or queued for this user.",
+        );
+      }
 
-    // Create and save new interview record
-    const newInterview = this.aiInterviewRepository.create({
-      user_id: userId,
-      ...dto,
-    });
+      const newInterview = this.aiInterviewRepository.create({
+        user_id: userId,
+        type: dto.type,
+        language: dto.language,
+        status: AiInterviewStatus.QUEUED,
+      });
 
-    try {
       await this.aiInterviewRepository.save(newInterview);
+
+      const acquired = await this.capacity.tryAcquireSlot(
+        newInterview.interview_id,
+        userId,
+      );
+
+      if (acquired.acquired) {
+        const { entrypoint } = await this.promotion.prepareReadySession(
+          newInterview,
+          dto,
+        );
+
+        return {
+          interviewID: newInterview.interview_id,
+          status: "ready",
+          entrypoint,
+          queuePosition: 0,
+        };
+      }
+
+      const enqueued = await this.capacity.enqueue(newInterview.interview_id);
+      if (!enqueued.ok) {
+        await this.aiInterviewRepository.delete({
+          interview_id: newInterview.interview_id,
+        });
+        throw new ServiceUnavailableException(
+          "Simulation queue is full. Please try again later.",
+        );
+      }
+
+      const queuePosition = await this.capacity.getQueuePosition(
+        newInterview.interview_id,
+      );
+      const { estimatedTurnSec } = loadSimulationConfig();
+
+      return {
+        interviewID: newInterview.interview_id,
+        status: "queued",
+        entrypoint: null,
+        queuePosition,
+        estimatedWaitSec: queuePosition * estimatedTurnSec,
+      };
     } catch (error) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof ServiceUnavailableException
+      ) {
+        throw error;
+      }
+
       this.logger.error(
-        `Failed to create AI interview for user ${userId}: ${error.message}`,
-        error.stack,
+        `Failed to create AI interview for user ${userId}: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw new InternalServerErrorException(
         "Internal server error while creating AI interview.",
       );
     }
+  }
 
+  async getInterviewSession(
+    interviewId: string,
+    userId: string,
+  ): Promise<InterviewSessionDto> {
+    const interview = await this.getInterviewById(interviewId, userId);
+    const { estimatedTurnSec } = loadSimulationConfig();
+
+    if (
+      interview.status === AiInterviewStatus.COMPLETED ||
+      interview.status === AiInterviewStatus.CANCELLED ||
+      interview.status === AiInterviewStatus.EXPIRED
+    ) {
+      return {
+        interviewID: interviewId,
+        dbStatus: interview.status,
+        sessionStatus: "ended",
+        queuePosition: 0,
+        entrypoint: null,
+      };
+    }
+
+    if (interview.status === AiInterviewStatus.IN_PROGRESS) {
+      const ready = await this.promotion.getReadyPayload(interviewId);
+      return {
+        interviewID: interviewId,
+        dbStatus: interview.status,
+        sessionStatus: "active",
+        queuePosition: 0,
+        entrypoint: ready?.entrypoint ?? null,
+      };
+    }
+
+    if (interview.status === AiInterviewStatus.QUEUED) {
+      const queuePosition = await this.capacity.getQueuePosition(interviewId);
+      return {
+        interviewID: interviewId,
+        dbStatus: interview.status,
+        sessionStatus: "queued",
+        queuePosition,
+        entrypoint: null,
+        estimatedWaitSec: queuePosition * estimatedTurnSec,
+      };
+    }
+
+    const ready = await this.promotion.getReadyPayload(interviewId);
     return {
-      interviewID: newInterview.interview_id,
-      entrypoint: AIresponse.data.data,
+      interviewID: interviewId,
+      dbStatus: interview.status,
+      sessionStatus: "ready",
+      queuePosition: 0,
+      entrypoint: ready?.entrypoint ?? null,
     };
+  }
+
+  async cancelInterview(interviewId: string, userId: string): Promise<true> {
+    const interview = await this.getInterviewById(interviewId, userId);
+
+    if (
+      interview.status === AiInterviewStatus.COMPLETED ||
+      interview.status === AiInterviewStatus.CANCELLED
+    ) {
+      return true;
+    }
+
+    if (interview.status === AiInterviewStatus.QUEUED) {
+      await this.capacity.removeFromQueue(interviewId);
+    } else {
+      await this.capacity.releaseSlot(interviewId, userId);
+      await this.promotion.promoteNextFromQueue();
+    }
+
+    await this.context.deleteContext(interviewId);
+    await this.promotion.clearReady(interviewId);
+
+    interview.status = AiInterviewStatus.CANCELLED;
+    interview.ended_at = new Date();
+    await this.aiInterviewRepository.save(interview);
+
+    return true;
   }
 
   async editAiInterview(
@@ -130,15 +235,14 @@ export class AiService {
   ) {
     let alreadyExists = await this.getInterviewById(interviewId, userId);
 
-    // if interview is completed, set ended_at date
     if (
       dto.status &&
       alreadyExists.status !== AiInterviewStatus.COMPLETED &&
       dto.status === AiInterviewStatus.COMPLETED
-    )
+    ) {
       alreadyExists.ended_at = new Date();
+    }
 
-    // Update the interview record with the new data
     Object.assign(alreadyExists, {
       ...dto,
     });
@@ -147,23 +251,40 @@ export class AiService {
       await this.aiInterviewRepository.save(alreadyExists);
     } catch (error) {
       this.logger.error(
-        `Failed to edit AI interview for user ${userId} and id ${interviewId}: ${error.message}`,
-        error.stack,
+        `Failed to edit AI interview for user ${userId} and id ${interviewId}: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw new InternalServerErrorException(
         "Internal server error while editing AI interview.",
       );
     }
 
+    if (
+      dto.status === AiInterviewStatus.COMPLETED ||
+      dto.status === AiInterviewStatus.CANCELLED
+    ) {
+      await this.finalizeSimulation(interviewId, userId);
+    } else if (dto.status === AiInterviewStatus.IN_PROGRESS) {
+      await this.capacity.touchHeartbeat(interviewId, userId);
+    }
+
     return true;
   }
 
+  private async finalizeSimulation(
+    interviewId: string,
+    userId: string,
+  ): Promise<void> {
+    await this.capacity.releaseSlot(interviewId, userId);
+    await this.context.deleteContext(interviewId);
+    await this.promotion.clearReady(interviewId);
+    await this.promotion.promoteNextFromQueue();
+  }
+
   async getUserInterviews(query: GetInterviewsQueryDto, userId: string) {
-    // build order object to sort depending on query
     const order: FindOptionsOrder<any> = {};
     order[query.sort ?? "created_at"] = query.order ?? "DESC";
 
-    // no pagination parameters provided, return all items
     if (!query.page && !query.limit) {
       try {
         const items = await this.aiInterviewRepository.find({
@@ -177,8 +298,8 @@ export class AiService {
         };
       } catch (error) {
         this.logger.error(
-          `Failed to retrieve AI interviews for user ${userId}: ${error.message}`,
-          error.stack,
+          `Failed to retrieve AI interviews for user ${userId}: ${(error as Error).message}`,
+          (error as Error).stack,
         );
         throw new InternalServerErrorException(
           "Internal server error while retrieving AI interviews.",
@@ -186,7 +307,6 @@ export class AiService {
       }
     }
 
-    // Set default pagination values because otherwise typescript complains
     const page = query.page || 1;
     const limit = query.limit || 20;
     const skip = (page - 1) * limit;
@@ -205,8 +325,8 @@ export class AiService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to retrieve AI interviews for user ${userId}: ${error.message}`,
-        error.stack,
+        `Failed to retrieve AI interviews for user ${userId}: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw new InternalServerErrorException(
         "Internal server error while retrieving AI interviews.",
@@ -219,7 +339,6 @@ export class AiService {
     dto: CreateAiTranscriptsDto,
     userId: string,
   ) {
-    // Check that interview exists and belongs to user, if not throw error
     await this.getInterviewById(interviewId, userId);
 
     const records = dto.transcripts.map((t) =>
@@ -235,8 +354,8 @@ export class AiService {
       return { inserted: saved.length, data: saved };
     } catch (error) {
       this.logger.error(
-        `Failed to save transcripts for interview ${interviewId} (user ${userId}): ${error.message}`,
-        error.stack,
+        `Failed to save transcripts for interview ${interviewId} (user ${userId}): ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw new InternalServerErrorException(
         "Internal server error while saving transcripts.",
@@ -244,15 +363,6 @@ export class AiService {
     }
   }
 
-  /*----------- UTILITY FUNCTIONS -----------*/
-
-  /**
-   * UTILS function
-   * Check if an interview exists for a given user and interview ID (if no ID provided, returns null)
-   * @param interviewId id of the interview to check
-   * @param userId id of the user owning the interview
-   * @returns The interview entity if found, null otherwise
-   */
   async getInterviewById(
     interviewId: string,
     userId: string,
@@ -281,8 +391,8 @@ export class AiService {
       if (error instanceof NotFoundException) throw error;
 
       this.logger.error(
-        `Failed to check existing interview for user ${userId} and id ${interviewId}: ${error.message}`,
-        error.stack,
+        `Failed to check existing interview for user ${userId} and id ${interviewId}: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw new InternalServerErrorException(
         "Internal server error while getting the interview.",
