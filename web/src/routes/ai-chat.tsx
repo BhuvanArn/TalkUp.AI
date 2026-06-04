@@ -10,6 +10,7 @@ export const Route = createFileRoute('/ai-chat')({
   component: AiChatPage,
 });
 
+
 function AiChatPage() {
   return (
     <div className="relative min-h-screen bg-[#F4F7FB] flex items-center justify-center">

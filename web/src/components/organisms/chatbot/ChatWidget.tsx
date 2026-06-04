@@ -1,29 +1,6 @@
 import { ChatWindow, Message } from '@/components/organisms/chatbot/ChatWindow';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-/**
- * ChatWidget
- *
- * The root chatbot organism. Renders a draggable floating action button (FAB)
- * that toggles the ChatWindow open/closed.
- *
- * Features:
- * - Draggable FAB that can be repositioned anywhere on screen
- * - Smooth open/close animation on the chat window
- * - Local message state management
- * - Simulated AI typing indicator before response
- * - Auto-scroll to latest message
- *
- * Place this component once at the root layout level so it persists
- * across all routes.
- *
- * @returns The floating chatbot widget as a React functional component.
- *
- * @example
- * // In __root.tsx or a layout component
- * <ChatWidget />
- */
-
 const INITIAL_MESSAGES: Message[] = [
   {
     id: 'welcome',
@@ -39,7 +16,7 @@ const INITIAL_MESSAGES: Message[] = [
 const AI_REPLIES = [
   'For a Product Manager interview, focus on prioritization frameworks like RICE or MoSCoW.',
   'Practice the STAR method: Situation, Task, Action, Result. It structures your answers clearly.',
-  'Research the company’s products and be ready to discuss how you would improve them.',
+  'Research the company',
 ];
 
 export const ChatWidget = () => {
@@ -53,6 +30,8 @@ export const ChatWidget = () => {
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const replyIndex = useRef(0);
+  // ✅ Fix 1: cleanup timeout ref
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const getTimestamp = () =>
     new Date().toLocaleTimeString('fr-FR', {
@@ -75,7 +54,8 @@ export const ChatWidget = () => {
     setInputValue('');
     setIsTyping(true);
 
-    setTimeout(() => {
+    // ✅ Fix 1: store timeout id for cleanup
+    timeoutRef.current = setTimeout(() => {
       const aiMsg: Message = {
         id: `ai-${Date.now()}`,
         text: AI_REPLIES[replyIndex.current % AI_REPLIES.length],
@@ -87,6 +67,11 @@ export const ChatWidget = () => {
       setIsTyping(false);
     }, 1200);
   }, [inputValue, isTyping]);
+
+  // ✅ Fix 1: clear timeout on unmount
+  useEffect(() => {
+    return () => clearTimeout(timeoutRef.current);
+  }, []);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -129,6 +114,8 @@ export const ChatWidget = () => {
       };
 
       const onTouchMove = (ev: TouchEvent) => {
+        // ✅ Fix 2: prevent page scroll while dragging
+        ev.preventDefault();
         const t = ev.touches[0];
         isDragging.current = true;
         setPosition({
@@ -167,23 +154,18 @@ export const ChatWidget = () => {
         right: `${24 - position.x}px`,
       }}
     >
-      {/* ── Chat window ── */}
-      <div
-        className={`absolute bottom-16 right-0 transition-all duration-200 origin-bottom-right ${
-          isOpen
-            ? 'opacity-100 scale-100 translate-y-0'
-            : 'opacity-0 scale-90 translate-y-2 pointer-events-none'
-        }`}
-        aria-hidden={!isOpen}
-      >
-        <ChatWindow
-          messages={messages}
-          inputValue={inputValue}
-          onInputChange={setInputValue}
-          onSend={handleSend}
-          isTyping={isTyping}
-        />
-      </div>
+      {/* ✅ Fix 3: unmount ChatWindow when closed */}
+      {isOpen && (
+        <div className="absolute bottom-16 right-0 transition-all duration-200 origin-bottom-right">
+          <ChatWindow
+            messages={messages}
+            inputValue={inputValue}
+            onInputChange={setInputValue}
+            onSend={handleSend}
+            isTyping={isTyping}
+          />
+        </div>
+      )}
 
       {/* ── FAB ── */}
       <button
@@ -194,7 +176,6 @@ export const ChatWidget = () => {
         aria-label={isOpen ? 'Close chat' : 'Open TalkUp chat'}
         className="w-14 h-14 rounded-full bg-gradient-to-br from-[#2B70C9] to-[#1D9E75] border-none flex items-center justify-center shadow-lg cursor-grab active:cursor-grabbing select-none transition-transform hover:scale-105"
       >
-        {/* Chat icon */}
         <svg
           className={`absolute transition-all duration-300 ${
             isOpen
@@ -213,7 +194,6 @@ export const ChatWidget = () => {
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
 
-        {/* Close icon */}
         <svg
           className={`absolute transition-all duration-300 ${
             isOpen
