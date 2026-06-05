@@ -61,7 +61,7 @@ const getPRNumber = (env: Record<string, any>): string | null => {
  * @example
  * // Production mode
  * getBackendUrl({ VITE_VERCEL_ENV: 'production' })
- * // returns 'https://talk-up-ai.up.railway.app'
+ * // returns 'https://api.talkupai.online'
  */
 export const getBackendUrl = (env: Record<string, any>): string => {
   if (env.DEV) {
@@ -74,8 +74,7 @@ export const getBackendUrl = (env: Record<string, any>): string => {
     (env.PROD && env.VITE_VERCEL_ENV !== 'preview');
 
   if (isProduction) {
-    const url =
-      env.VITE_BASE_URL_PRODUCTION || 'https://talk-up-ai.up.railway.app';
+    const url = env.VITE_BASE_URL_PRODUCTION || 'https://api.talkupai.online';
     return url;
   }
 
@@ -88,7 +87,7 @@ export const getBackendUrl = (env: Record<string, any>): string => {
     }
 
     const fallbackUrl =
-      env.VITE_BASE_URL_PRODUCTION || 'https://talk-up-ai.up.railway.app';
+      env.VITE_BASE_URL_PRODUCTION || 'https://api.talkupai.online';
     return fallbackUrl;
   }
 
