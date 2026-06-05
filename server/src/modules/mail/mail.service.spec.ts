@@ -34,6 +34,7 @@ describe("MailService", () => {
     expect(mockedCreateTransport).toHaveBeenCalledWith({
       service: "gmail",
       auth: { user: "u", pass: "p" },
+      family: 4,
     });
 
     await service.sendMail({
