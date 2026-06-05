@@ -30,6 +30,7 @@ except Exception:
 
 from .enumMcs import EnumMcs
 from .notifications import Notifications
+from .openrouter import generate_openrouter_response
 from .settings import STSSettings
 
 NOTIFIER = Notifications()
@@ -284,13 +285,28 @@ def load_models(settings: STSSettings) -> STSModels:
 	hf_tokenizer = None
 	llm_backend = "none"
 
-	if settings.llm_backend in {"auto", "vllm"}:
+	if settings.llm_backend == "openrouter":
+		if settings.openrouter_api_key:
+			llm_backend = "openrouter"
+			NOTIFIER.send_notification(
+				EnumMcs.MicroservicesNames.STS,
+				0,
+				f"LLM: ACTIVE (OpenRouter model={settings.openrouter_model})",
+			)
+		else:
+			NOTIFIER.send_notification(
+				EnumMcs.MicroservicesNames.STS,
+				1,
+				"LLM_BACKEND=openrouter but OPENROUTER_API_KEY is missing",
+			)
+
+	if llm_backend == "none" and settings.llm_backend in {"auto", "vllm"}:
 		llm_engine, llm_sampling_params, llm_backend = _init_vllm(settings)
 
 	if llm_backend == "none" and settings.llm_backend in {"auto", "hf"}:
 		hf_model, hf_tokenizer, llm_backend = _init_hf_offload(settings)
 
-	if llm_backend == "none":
+	if llm_backend == "none" and settings.llm_backend != "openrouter":
 		NOTIFIER.send_notification(
 			EnumMcs.MicroservicesNames.STS,
 			1,
@@ -303,11 +319,13 @@ def load_models(settings: STSSettings) -> STSModels:
 
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "============================================================")
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "All models loaded successfully!")
-	if llm_backend == "vllm":
+	if llm_backend == "openrouter":
+		pass  # already logged
+	elif llm_backend == "vllm":
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "LLM: ACTIVE (vLLM)")
 	elif llm_backend == "hf":
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "LLM: ACTIVE (Transformers offload)")
-	else:
+	elif llm_backend == "none":
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 2, "LLM: DISABLED (fallback mode)")
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "STT: ACTIVE")
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "TTS: ACTIVE")
@@ -328,6 +346,19 @@ def generate_ai_response(models: STSModels, messages: list[dict[str, str]]) -> s
 	"""
 	Generates an AI response based on the provided messages and models.
 	"""
+	if models.llm_backend == "openrouter":
+		try:
+			text = generate_openrouter_response(
+				messages,
+				api_key=models.settings.openrouter_api_key,
+				model=models.settings.openrouter_model,
+				max_tokens=models.settings.llm_max_new_tokens,
+				base_url=models.settings.openrouter_base_url,
+			)
+			return _sanitize_llm_response(text)
+		except Exception:
+			return "Je rencontre une indisponibilite temporaire du modele de reponse. Peux-tu reformuler ta phrase ?"
+
 	if models.llm_backend == "vllm" and models.vllm_engine is not None and models.vllm_sampling_params is not None:
 		response = models.vllm_engine.chat(messages=messages, sampling_params=models.vllm_sampling_params)
 		return _sanitize_llm_response(response.outputs[0].text)

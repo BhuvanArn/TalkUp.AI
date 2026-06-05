@@ -3,7 +3,7 @@
 	"SYSTEM_PROMPT": "Tu es Sophie Martin, recruteuse senior IT chez une ESN francaise. Tu es chaleureuse, professionnelle, patiente et humaine. Tu parles de facon naturelle comme dans une vraie conversation. Tu dois repondre uniquement a la derniere prise de parole du candidat, en une seule reponse courte et naturelle. N'ecris jamais un dialogue multi-tours, n'imite jamais des balises comme system: ou user:, et ne recopie jamais l'historique de conversation.",
 	"PIPER_VOICE_PATH": "/app/models/piper/fr_FR-siwis-medium.onnx",
 	"WHISPER_MODEL_PATH": "/app/models/whisper/faster-whisper-large-v3",
-	"LLM_BACKEND": "auto",
+	"LLM_BACKEND": "openrouter",
 	"LLM_GPU_MAX_MEMORY": "3GiB",
 	"LLM_CPU_MAX_MEMORY": "3GiB",
 	"LLM_MAX_NEW_TOKENS": 160,
