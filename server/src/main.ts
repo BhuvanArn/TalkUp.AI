@@ -20,13 +20,34 @@ async function bootstrap() {
     const port = process.env.PORT ?? process.env.SERVER_PORT ?? 3000;
     process.stdout.write(`Using port: ${port}\n`);
 
+    // Use explicit proxy trust configuration to avoid spoofed client IPs.
+    const trustProxyValue = process.env.TRUST_PROXY;
+    const trustProxy =
+      trustProxyValue === "true"
+        ? true
+        : trustProxyValue === "false" || !trustProxyValue
+          ? false
+          : trustProxyValue;
+    app.getHttpAdapter().getInstance().set("trust proxy", trustProxy);
+
     app.useGlobalPipes(new ValidationPipe());
     app.use(cookieParser());
     app.setGlobalPrefix("v1/api");
 
     const corsOrigin = process.env.CORS_ORIGIN;
     const allowedOrigins =
-      corsOrigin === "*" ? null : (corsOrigin?.split(",") ?? []);
+      corsOrigin === "*"
+        ? null
+        : new Set(
+            (corsOrigin ?? "")
+              .split(",")
+              .map((origin) => origin.trim())
+              .filter(Boolean),
+          );
+    const localhostPattern = /^localhost$|^127\.0\.0\.1$|^\[::1\]$/;
+    const vercelPreviewPattern = /^[a-zA-Z0-9-]+\.talk-up-ai\.vercel\.app$/;
+    /** Prod SPA + API share registrable domain; still list explicit origins + CORS_ORIGIN for others. */
+    const productionPattern = /^(api\.)?talkupai\.online$/;
 
     app.enableCors({
       origin: (
@@ -37,13 +58,26 @@ async function bootstrap() {
 
         if (corsOrigin === "*") return callback(null, true);
 
-        if (allowedOrigins?.includes(origin)) return callback(null, true);
+        if (allowedOrigins?.has(origin)) return callback(null, true);
 
-        if (origin.includes("talk-up-ai") && origin.endsWith(".vercel.app")) {
-          return callback(null, true);
+        try {
+          const parsedOrigin = new URL(origin);
+          const hostname = parsedOrigin.hostname.toLowerCase();
+
+          if (localhostPattern.test(hostname)) {
+            return callback(null, true);
+          }
+
+          if (vercelPreviewPattern.test(hostname)) {
+            return callback(null, true);
+          }
+
+          if (productionPattern.test(hostname)) {
+            return callback(null, true);
+          }
+        } catch {
+          return callback(new Error("Invalid origin format"), false);
         }
-
-        if (origin.includes("localhost")) return callback(null, true);
 
         callback(new Error("Not allowed by CORS"), false);
       },
@@ -89,9 +123,9 @@ async function bootstrap() {
       }
     };
 
-    process.on("SIGINT", () => shutdown("SIGINT"));
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
-    process.on("SIGUSR2", () => shutdown("SIGUSR2"));
+    process.on("SIGINT", async () => await shutdown("SIGINT"));
+    process.on("SIGTERM", async () => await shutdown("SIGTERM"));
+    process.on("SIGUSR2", async () => await shutdown("SIGUSR2"));
 
     // Log unhandled errors
     process.on("uncaughtException", (error) => {

@@ -1,20 +1,42 @@
 services:
   server:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: server/Dockerfile
     security_opt:
       - seccomp:unconfined
       - label:disable
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
+    env_file:
+      - .env
     environment:
       - DOCKER_RUN=true
+      - POSTGRES_DOCKER_HOST=postgres_db
+      - REDIS_URL=redis:6379
+      # Overrides server/.env — localhost inside this container is not the host.
+      - AI_SERVER_URL=http://ai_server:8088
     depends_on:
       postgres_db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - server-tier
+      - talkup-ai
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - server-tier
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: on-failure
 
   postgres_db:
     image: "postgres:17.4"
@@ -37,6 +59,8 @@ services:
 
 networks:
   server-tier:
+  talkup-ai:
+    name: talkup-ai
 
 volumes:
   postgres-data:

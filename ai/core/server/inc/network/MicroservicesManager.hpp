@@ -17,15 +17,21 @@
 #include <cstring>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <atomic>
 #include <mutex>
+#include <condition_variable>
+#include <queue>
 #include <memory>
 #include <crow.h>
 
 #include "ExceptionManager.hpp"
+
+using ResponseCallback = std::function<void(const nlohmann::json&)>;
 
 namespace talkup_network {
     class MicroservicesManager {
@@ -59,15 +65,14 @@ namespace talkup_network {
                 std::unordered_map<std::string, std::string>>& get_services_list();
 
             /**
-             * @brief Send data to the STT microservice.
-             * This function will send audio data to the STT microservice for processing.
-             * It will first check if the STT microservice is registered in the services list.
-             * If it is, it will send a ping request to ensure the microservice is reachable. If the ping is successful,
-             * it will then send the audio data to the microservice.
+             * @brief Send audio data to the STS microservice.
+             * This function will send the incoming audio chunk to the STS service for processing.
+             * It will first check if the STS microservice is registered in the services list.
+             * If it is, it will send a ping request to ensure the microservice is reachable.
              *
-             * @param data Json data containing the audio information to be sent to the STT microservice.
+             * @param data Json data containing the audio information to be sent to the STS microservice.
              */
-            static void send_to_stt_microservice(const nlohmann::json &data);
+            static void send_to_sts_microservice(const nlohmann::json &data, ResponseCallback callback);
 
             /**
              * @brief Initialize WebSocket connections to all registered microservices.
@@ -95,19 +100,73 @@ namespace talkup_network {
              */
             static bool ping_service(const std::string &service_name);
 
+            /**
+             * @brief Gracefully stop workers and close all WS connections.
+             */
+            static void shutdown();
+
         protected:
         private:
             struct WebSocketConnection {
+                struct StsJob {
+                    nlohmann::json data;
+                    ResponseCallback callback;
+                };
+
                 std::shared_ptr<boost::asio::io_context> io_context;
                 std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
                 std::thread io_thread;
                 bool is_connected = false;
+                std::mutex io_mutex;
+                std::queue<StsJob> job_queue;
+                std::thread worker_thread;
+                std::mutex queue_mutex;
+                std::condition_variable queue_cv;
+                bool worker_running = false;
+                bool reconnecting = false;
             };
+
+            static bool reconnect_service_connection(const std::string& service_name);
 
             static inline std::unordered_map<std::string,
                 std::unordered_map<std::string, std::string>> __services_list;
 
             static inline std::unordered_map<std::string, WebSocketConnection> __ws_connections;
             static inline std::mutex __ws_mutex;
+
+            /**
+             * @brief Connect to a single microservice via WebSocket.
+             *
+             * @param service_name The name of the service to connect to.
+             * @param service_info The connection information (IP, Port, RouteWs).
+             * @return true if connection was successful, false otherwise.
+             */
+            static bool connect_to_service(
+                const std::string &service_name,
+                const std::unordered_map<std::string, std::string> &service_info);
+
+            /**
+             * @brief Create and start a worker thread for processing service jobs.
+             *
+             * @param service_name The name of the service.
+             */
+            static void create_service_worker(const std::string &service_name);
+
+            /**
+             * @brief Start a worker thread for a specific microservice.
+             */
+            static void start_service_worker(const std::string &service_name);
+
+            /**
+             * @brief Stop the worker thread for a specific microservice.
+             */
+            static void stop_service_worker(const std::string &service_name);
+
+            /**
+             * @brief Process a job for the STS microservice.
+             *
+             * @param data The JSON data containing the job information.
+             */
+            static void process_sts_job(const nlohmann::json &data, ResponseCallback callback);
     };
 }

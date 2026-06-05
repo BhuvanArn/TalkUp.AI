@@ -1,8 +1,13 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 
-export const UserId = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext) => getUserIdFromContext(ctx),
-);
+export function userIdParamFactory(
+  _data: unknown,
+  ctx: ExecutionContext,
+): string | undefined {
+  return getUserIdFromContext(ctx);
+}
+
+export const UserId = createParamDecorator(userIdParamFactory);
 
 // exported for testability
 export function getUserIdFromContext(ctx: ExecutionContext) {

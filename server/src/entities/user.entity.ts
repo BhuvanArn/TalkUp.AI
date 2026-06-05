@@ -1,43 +1,54 @@
 import {
   Entity,
   Column,
+  PrimaryColumn,
   PrimaryGeneratedColumn,
   OneToOne,
   JoinColumn,
   BeforeInsert,
+  ManyToOne,
 } from "typeorm";
 import { uuidv7 } from "uuidv7";
+import { Organization } from "./organization.entity";
 
 import { AuthProvider } from "@common/enums/AuthProvider";
+import { ProfileVisibility } from "@common/enums/ProfileVisibility";
+import { UserStatus } from "@common/enums/UserStatus";
 
 @Entity()
 export class user {
   @PrimaryGeneratedColumn("uuid")
-  user_id: string;
+  user_id!: string;
 
   @Column({ nullable: false })
-  username: string;
+  username!: string;
 
   @Column({
     nullable: true,
-    comment: "user's profile picture as a base64 string",
-  })
-  profile_picture: string;
-
-  @Column({
-    nullable: true,
+    default: null,
     comment: "used for password reset/verification code",
   })
-  verification_code: string;
+  verification_code?: string;
 
   @Column({ default: new Date() })
-  created_at: Date;
+  created_at!: Date;
 
   @Column({ default: new Date() })
-  last_accessed_at: Date;
+  last_accessed_at!: Date;
 
   @Column({ default: new Date() })
-  updated_at: Date;
+  updated_at!: Date;
+
+  @Column({ type: "int", default: 1 })
+  tokenVersion?: number;
+
+  @Column({
+    enum: UserStatus,
+    type: "enum",
+    nullable: false,
+    default: UserStatus.PENDING,
+  })
+  status!: UserStatus;
 
   @Column({
     enum: AuthProvider,
@@ -46,7 +57,21 @@ export class user {
     default: AuthProvider.MANUAL,
     comment: "Authentication provider (e.g., manual, linkedin)",
   })
-  provider: string;
+  provider!: string;
+
+  @ManyToOne(() => Organization, (organization) => organization.users, {
+    nullable: true,
+    onDelete: "SET NULL",
+  })
+  @JoinColumn({ name: "organization_id" })
+  organization_id?: Organization | null;
+
+  @Column({
+    nullable: false,
+    default: "none",
+    comment: "the role of the user in the organization",
+  })
+  user_role: string;
 
   // ------ UUID manual generation to ensure V7 format ------ //
 
@@ -56,10 +81,62 @@ export class user {
   }
 }
 
+/**
+ * Optional 1:1 profile payload (names, UI prefs, avatar asset). Created on demand.
+ */
+@Entity()
+export class user_profile {
+  @PrimaryColumn("uuid")
+  user_id!: string;
+
+  @OneToOne(() => user, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "user_id" })
+  user!: user;
+
+  @Column({
+    type: "text",
+    nullable: true,
+    default: null,
+    comment: "Avatar image: URL or base64 depending on client",
+  })
+  profile_picture?: string | null;
+
+  @Column({ type: "varchar", length: 80, nullable: true, default: null })
+  first_name?: string | null;
+
+  @Column({ type: "varchar", length: 80, nullable: true, default: null })
+  last_name?: string | null;
+
+  @Column({ type: "text", nullable: true, default: null })
+  bio?: string | null;
+
+  @Column({ type: "varchar", length: 120, nullable: true, default: null })
+  job_title?: string | null;
+
+  @Column({ type: "varchar", length: 512, nullable: true, default: null })
+  linkedin_url?: string | null;
+
+  @Column({ type: "varchar", length: 16, nullable: true, default: null })
+  avatar_accent_color?: string | null;
+
+  @Column({ type: "text", nullable: true, default: null })
+  banner_gradient?: string | null;
+
+  @Column({
+    type: "enum",
+    enum: ProfileVisibility,
+    default: ProfileVisibility.PUBLIC,
+  })
+  profile_visibility!: ProfileVisibility;
+
+  @Column({ type: "jsonb", nullable: true, default: null })
+  notification_prefs?: Record<string, boolean> | null;
+}
+
 @Entity()
 export class user_oauth {
   @PrimaryGeneratedColumn()
-  oauth_id: number;
+  oauth_id!: number;
 
   @Column({
     enum: AuthProvider,
@@ -68,29 +145,29 @@ export class user_oauth {
     default: AuthProvider.LINKEDIN,
     comment: "Authentication provider (e.g., manual, linkedin)",
   })
-  provider: string;
+  provider!: string;
 
   @Column({ nullable: false })
-  access_token: string;
+  access_token!: string;
 
-  @Column({ nullable: true })
-  refresh_token: string;
+  @Column({ nullable: true, default: null })
+  refresh_token?: string;
 
-  @Column({ nullable: true })
-  expires_in: string;
+  @Column({ nullable: true, default: null })
+  expires_in?: string;
 
-  @Column({ nullable: true })
-  refresh_token_expires_in: string;
+  @Column({ nullable: true, default: null })
+  refresh_token_expires_in?: string;
 
-  @Column({ nullable: true })
-  scope: string; // Scopes granted by oauth
+  @Column({ nullable: true, default: null })
+  scope?: string; // Scopes granted by oauth
 
-  @OneToOne(() => user)
+  @OneToOne(() => user, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
-  user_id: string;
+  user_id!: string;
 
   @Column({ nullable: true, default: new Date() })
-  last_updated_at: Date;
+  last_updated_at!: Date;
 }
 
 /**
@@ -101,23 +178,23 @@ export class user_oauth {
 @Entity()
 export class user_email {
   @PrimaryGeneratedColumn()
-  email_id: number;
+  email_id!: number;
 
   @Column({ nullable: false, unique: true })
-  email: string;
+  email!: string;
 
   @Column({ nullable: false })
-  user_id: string;
+  user_id!: string;
 
   @OneToOne(() => user, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
-  user: user;
+  user!: user;
 
   @Column({
     default: false,
     comment: "to check if the user has verified their email",
   })
-  is_verified: boolean;
+  is_verified!: boolean;
 }
 
 /**
@@ -128,17 +205,17 @@ export class user_email {
 @Entity()
 export class user_password {
   @PrimaryGeneratedColumn()
-  password_id: number;
+  password_id!: number;
 
   @Column({ nullable: false })
-  user_id: string;
+  user_id!: string;
 
-  @OneToOne(() => user)
+  @OneToOne(() => user, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
-  user: user;
+  user!: user;
 
   @Column({ nullable: false })
-  password: string;
+  password!: string;
 }
 
 /**
@@ -149,21 +226,21 @@ export class user_password {
 @Entity()
 export class user_phone_number {
   @PrimaryGeneratedColumn()
-  phone_number_id: number;
+  phone_number_id!: number;
 
   @Column({ nullable: false })
-  user_id: string;
+  user_id!: string;
 
-  @OneToOne(() => user)
+  @OneToOne(() => user, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
-  user: user;
+  user!: user;
 
   @Column({ unique: true, nullable: false })
-  phone_number: string;
+  phone_number!: string;
 
   @Column({
     default: false,
     comment: "to check if the user has verified their phone number",
   })
-  is_verified: boolean;
+  is_verified!: boolean;
 }

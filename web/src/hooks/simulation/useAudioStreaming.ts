@@ -1,22 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export interface AudioPacket {
-  type: 'audio';
-  data: string;
-  timestamp: number;
-  mimeType: string;
-  sequenceNumber: number;
-}
+import type { WebSocketPacket } from './useSimulationWebSocket';
+import {
+  MAX_UTTERANCE_MS,
+  MIN_SPEECH_MS,
+  SILENCE_END_MS,
+  VAD_TICK_MS,
+  computeRms,
+  isSpeechLevel,
+  updateNoiseFloor,
+} from './voiceActivity';
 
 export interface UseAudioStreamingProps {
   stream: MediaStream | null;
-  onAudioPacket: (packet: AudioPacket) => void;
+  interviewID?: string | null;
+  onAudioPacket: (packet: WebSocketPacket) => void;
   isActive: boolean;
-  timeSlice?: number;
   mimeType?: string;
 }
 
 export interface UseAudioStreamingReturn {
+  /** VAD is armed and waiting for speech. */
+  isListening: boolean;
+  /** User is currently speaking (above VAD threshold). */
+  isSpeaking: boolean;
+  /** MediaRecorder is capturing an utterance. */
   isRecording: boolean;
   startStreaming: () => void;
   stopStreaming: () => void;
@@ -26,67 +34,18 @@ export interface UseAudioStreamingReturn {
 }
 
 /**
- * Hook for recording audio from a provided MediaStream and emitting encoded audio packets.
- *
- * This hook manages a MediaRecorder instance that captures audio from the supplied stream,
- * splits the recording into periodic chunks (timeSlice), converts each chunk to a base64 string,
- * and forwards those chunks via the provided onAudioPacket callback as an AudioPacket object.
- * It also exposes controls for starting/stopping the recording and exposes status and error info.
- *
- * @param props.stream - The MediaStream to capture audio from. If null or if the stream has no audio tracks,
- *                       the hook will set an appropriate error and will not start recording.
- * @param props.onAudioPacket - Callback invoked for each recorded audio chunk. The callback receives an
- *                              AudioPacket with the following shape:
- *                                {
- *                                  type: 'audio',
- *                                  data: string,          // base64-encoded chunk
- *                                  timestamp: number,     // Date.now() when the chunk was processed
- *                                  mimeType: string,      // MIME type used by MediaRecorder
- *                                  sequenceNumber: number // increasing sequence number
- *                                }
- *                              The hook captures the latest callback via a ref, so updates to the callback
- *                              are safe without restarting the recorder.
- * @param props.isActive - When true the hook will attempt to start streaming (if a valid stream is present);
- *                         when false it will stop streaming.
- * @param props.timeSlice - (Optional) Interval in milliseconds passed to MediaRecorder.start(timeSlice) to
- *                           determine how often ondataavailable events are emitted. Defaults to 100 ms.
- * @param props.mimeType - (Optional) Preferred MIME type for recording. If provided and supported by
- *                          MediaRecorder.isTypeSupported it will be used; otherwise the hook probes a
- *                          prioritized list of common audio MIME types and selects the first supported one.
- *
- * @returns An object with:
- *  - isRecording: boolean         // whether recording is currently active
- *  - startStreaming: () => void   // imperative function to start recording
- *  - stopStreaming: () => void    // imperative function to stop recording
- *  - packetsSent: number          // count of audio packets emitted via onAudioPacket
- *  - supportedMimeType: string | null // selected MIME type in use, or null if none found
- *  - error: string | null         // human-readable error message if an operation failed
- *
- * @remarks
- * - The MediaRecorder instance is created using only the audio tracks from the provided stream.
- * - Each Blob chunk emitted by MediaRecorder is converted to an ArrayBuffer and then to a base64 string.
- *   This conversion is performed on the main thread and may have memory/performance implications for
- *   very large chunks or high-frequency chunks; tune timeSlice accordingly.
- * - The hook calls mediaRecorder.requestData() before stopping to ensure the last chunk is emitted.
- * - Errors arising from missing stream/audio tracks, unsupported MIME types, MediaRecorder runtime errors,
- *   or chunk-processing failures are surfaced via the returned `error` string and cause recording to stop
- *   where appropriate.
- * - The startStreaming and stopStreaming functions are stable (wrapped in useCallback) and safe to call
- *   from components. The hook also automatically starts/stops recording when isActive or stream change,
- *   and performs cleanup on unmount.
- *
- * @example
- * const {
- *   isRecording, startStreaming, stopStreaming, packetsSent, supportedMimeType, error
- * } = useAudioStreaming({ stream, onAudioPacket, isActive });
+ * Records complete utterances using voice-activity detection, then sends one
+ * WebSocket packet per phrase when the user stops speaking (Siri-style).
  */
 export function useAudioStreaming({
   stream,
+  interviewID,
   onAudioPacket,
   isActive,
-  timeSlice = 100,
   mimeType,
 }: UseAudioStreamingProps): UseAudioStreamingReturn {
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [packetsSent, setPacketsSent] = useState(0);
   const [supportedMimeType, setSupportedMimeType] = useState<string | null>(
@@ -95,12 +54,29 @@ export function useAudioStreaming({
   const [error, setError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const sequenceNumberRef = useRef(0);
   const onAudioPacketRef = useRef(onAudioPacket);
+  const interviewIDRef = useRef(interviewID);
+  const vadIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const timeDomainBufferRef = useRef<Float32Array<ArrayBuffer> | null>(null);
+  const selectedMimeTypeRef = useRef<string | null>(null);
+
+  const noiseFloorRef = useRef(0.01);
+  const speechStartedAtRef = useRef<number | null>(null);
+  const lastSpeechAtRef = useRef<number | null>(null);
+  const silenceStartedAtRef = useRef<number | null>(null);
+  const isCapturingUtteranceRef = useRef(false);
+  const MIN_UTTERANCE_BYTES = 2048;
 
   useEffect(() => {
     onAudioPacketRef.current = onAudioPacket;
   }, [onAudioPacket]);
+
+  useEffect(() => {
+    interviewIDRef.current = interviewID;
+  }, [interviewID]);
 
   const getSupportedMimeType = useCallback((): string | null => {
     if (mimeType && MediaRecorder.isTypeSupported(mimeType)) {
@@ -133,78 +109,263 @@ export function useAudioStreaming({
     return btoa(binary);
   }, []);
 
+  const emitAudioPacket = useCallback(
+    async (blob: Blob) => {
+      if (!blob.size || blob.size < MIN_UTTERANCE_BYTES) return;
+
+      try {
+        const arrayBuffer = await blob.arrayBuffer();
+        const base64Data = arrayBufferToBase64(arrayBuffer);
+
+        const packet: WebSocketPacket = {
+          type: 'stream_chunk',
+          data: base64Data,
+          stream_id: interviewIDRef.current || 'unknown',
+          key: import.meta.env.VITE_WEBSOCKET_KEY,
+          timestamp: Date.now(),
+          format: 'audio',
+        };
+
+        onAudioPacketRef.current(packet);
+        setPacketsSent((prev) => prev + 1);
+      } catch {
+        setError('Error processing audio chunk');
+      }
+    },
+    [arrayBufferToBase64],
+  );
+
+  const finalizeUtterance = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') {
+      isCapturingUtteranceRef.current = false;
+      setIsRecording(false);
+      return;
+    }
+
+    try {
+      recorder.requestData();
+      recorder.stop();
+    } catch {
+      setError('Error stopping recording');
+      isCapturingUtteranceRef.current = false;
+      setIsRecording(false);
+    }
+  }, []);
+
+  const resetUtteranceTimers = useCallback(() => {
+    speechStartedAtRef.current = null;
+    lastSpeechAtRef.current = null;
+    silenceStartedAtRef.current = null;
+  }, []);
+
+  const startUtteranceCapture = useCallback(
+    (audioStream: MediaStream, selectedMimeType: string) => {
+      if (isCapturingUtteranceRef.current) return;
+
+      try {
+        const mediaRecorder = new MediaRecorder(audioStream, {
+          mimeType: selectedMimeType,
+        });
+
+        mediaRecorder.ondataavailable = async (event: BlobEvent) => {
+          if (event.data && event.data.size > 0) {
+            await emitAudioPacket(event.data);
+          }
+        };
+
+        mediaRecorder.onerror = () => {
+          setError('MediaRecorder error occurred');
+          isCapturingUtteranceRef.current = false;
+          setIsRecording(false);
+          resetUtteranceTimers();
+        };
+
+        mediaRecorder.onstop = () => {
+          isCapturingUtteranceRef.current = false;
+          setIsRecording(false);
+          mediaRecorderRef.current = null;
+          resetUtteranceTimers();
+        };
+
+        const now = Date.now();
+        speechStartedAtRef.current = now;
+        lastSpeechAtRef.current = now;
+        silenceStartedAtRef.current = null;
+        isCapturingUtteranceRef.current = true;
+        setIsRecording(true);
+
+        mediaRecorder.start();
+        mediaRecorderRef.current = mediaRecorder;
+      } catch (err) {
+        setError(`Failed to start recording: ${err}`);
+        isCapturingUtteranceRef.current = false;
+        setIsRecording(false);
+        resetUtteranceTimers();
+      }
+    },
+    [emitAudioPacket, resetUtteranceTimers],
+  );
+
+  const stopVad = useCallback(() => {
+    if (vadIntervalRef.current) {
+      clearInterval(vadIntervalRef.current);
+      vadIntervalRef.current = null;
+    }
+
+    const recorder = mediaRecorderRef.current;
+    if (recorder) {
+      recorder.ondataavailable = null;
+      recorder.onerror = null;
+      recorder.onstop = null;
+      if (recorder.state !== 'inactive') {
+        try {
+          recorder.stop();
+        } catch {
+          // recorder already torn down; nothing to release
+        }
+      }
+      mediaRecorderRef.current = null;
+    }
+    isCapturingUtteranceRef.current = false;
+
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      void audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    analyserRef.current = null;
+    timeDomainBufferRef.current = null;
+    noiseFloorRef.current = 0.01;
+    resetUtteranceTimers();
+    setIsListening(false);
+    setIsSpeaking(false);
+    setIsRecording(false);
+  }, [resetUtteranceTimers]);
+
+  const startVad = useCallback(
+    async (mediaStream: MediaStream) => {
+      const audioTracks = mediaStream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        setError('No audio tracks in stream');
+        return;
+      }
+
+      const selectedMimeType = getSupportedMimeType();
+      if (!selectedMimeType) {
+        setError('No supported audio MIME type found');
+        return;
+      }
+
+      selectedMimeTypeRef.current = selectedMimeType;
+      setSupportedMimeType(selectedMimeType);
+      setError(null);
+      noiseFloorRef.current = 0.01;
+      resetUtteranceTimers();
+
+      let audioStream: MediaStream;
+      try {
+        audioStream = new MediaStream(audioTracks);
+      } catch (err) {
+        setError(`Failed to start voice detection: ${err}`);
+        return;
+      }
+
+      try {
+        const audioContext = new AudioContext();
+        await audioContext.resume();
+
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.4;
+
+        const source = audioContext.createMediaStreamSource(audioStream);
+        source.connect(analyser);
+
+        sourceRef.current = source;
+        audioContextRef.current = audioContext;
+        analyserRef.current = analyser;
+        timeDomainBufferRef.current = new Float32Array(analyser.fftSize);
+
+        setIsListening(true);
+
+        vadIntervalRef.current = setInterval(() => {
+          const analyserNode = analyserRef.current;
+          const buffer = timeDomainBufferRef.current;
+          const mime = selectedMimeTypeRef.current;
+          if (!analyserNode || !buffer || !mime) return;
+
+          analyserNode.getFloatTimeDomainData(buffer);
+          const rms = computeRms(buffer);
+          const now = Date.now();
+          const speaking = isSpeechLevel(rms, noiseFloorRef.current);
+
+          setIsSpeaking(speaking);
+
+          if (!isCapturingUtteranceRef.current) {
+            if (!speaking) {
+              noiseFloorRef.current = updateNoiseFloor(
+                noiseFloorRef.current,
+                rms,
+              );
+              return;
+            }
+
+            startUtteranceCapture(audioStream, mime);
+            return;
+          }
+
+          if (speaking) {
+            lastSpeechAtRef.current = now;
+            silenceStartedAtRef.current = null;
+            return;
+          }
+
+          const speechStartedAt = speechStartedAtRef.current;
+          if (!speechStartedAt || now - speechStartedAt < MIN_SPEECH_MS) {
+            return;
+          }
+
+          if (!silenceStartedAtRef.current) {
+            silenceStartedAtRef.current = now;
+            return;
+          }
+
+          if (now - silenceStartedAtRef.current >= SILENCE_END_MS) {
+            finalizeUtterance();
+            return;
+          }
+
+          if (now - speechStartedAt >= MAX_UTTERANCE_MS) {
+            finalizeUtterance();
+          }
+        }, VAD_TICK_MS);
+      } catch (err) {
+        setError(`Failed to start voice detection: ${err}`);
+        stopVad();
+      }
+    },
+    [
+      finalizeUtterance,
+      getSupportedMimeType,
+      resetUtteranceTimers,
+      startUtteranceCapture,
+      stopVad,
+    ],
+  );
+
   const startStreaming = useCallback(() => {
     if (!stream) {
       setError('No media stream available');
       return;
     }
-
-    const audioTracks = stream.getAudioTracks();
-    if (audioTracks.length === 0) {
-      setError('No audio tracks in stream');
-      return;
-    }
-
-    const selectedMimeType = getSupportedMimeType();
-    if (!selectedMimeType) {
-      setError('No supported audio MIME type found');
-      return;
-    }
-
-    try {
-      setSupportedMimeType(selectedMimeType);
-      setError(null);
-      sequenceNumberRef.current = 0;
-      setPacketsSent(0);
-
-      const audioStream = new MediaStream(audioTracks);
-      const mediaRecorder = new MediaRecorder(audioStream, {
-        mimeType: selectedMimeType,
-      });
-
-      mediaRecorder.ondataavailable = async (event: BlobEvent) => {
-        if (event.data && event.data.size > 0) {
-          try {
-            const arrayBuffer = await event.data.arrayBuffer();
-            const base64Data = arrayBufferToBase64(arrayBuffer);
-
-            const packet: AudioPacket = {
-              type: 'audio',
-              data: base64Data,
-              timestamp: Date.now(),
-              mimeType: selectedMimeType,
-              sequenceNumber: sequenceNumberRef.current++,
-            };
-
-            onAudioPacketRef.current(packet);
-            setPacketsSent((prev) => prev + 1);
-          } catch {
-            setError('Error processing audio chunk');
-          }
-        }
-      };
-
-      mediaRecorder.onerror = () => {
-        setError('MediaRecorder error occurred');
-        setIsRecording(false);
-      };
-
-      mediaRecorder.onstop = () => {
-        setIsRecording(false);
-        mediaRecorderRef.current = null;
-      };
-
-      mediaRecorder.onstart = () => {
-        setIsRecording(true);
-      };
-
-      mediaRecorder.start(timeSlice);
-      mediaRecorderRef.current = mediaRecorder;
-    } catch (err) {
-      setError(`Failed to start recording: ${err}`);
-      setIsRecording(false);
-    }
-  }, [stream, getSupportedMimeType, arrayBufferToBase64, timeSlice]);
+    void startVad(stream);
+  }, [stream, startVad]);
 
   const stopStreaming = useCallback(() => {
     if (
@@ -218,12 +379,12 @@ export function useAudioStreaming({
         setError('Error stopping recording');
       }
     }
-    setIsRecording(false);
-  }, []);
+    stopVad();
+  }, [stopVad]);
 
   useEffect(() => {
     if (isActive && stream) {
-      startStreaming();
+      void startVad(stream);
     } else {
       stopStreaming();
     }
@@ -234,17 +395,9 @@ export function useAudioStreaming({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, stream]);
 
-  useEffect(() => {
-    return () => {
-      if (mediaRecorderRef.current) {
-        try {
-          mediaRecorderRef.current.stop();
-        } catch {}
-      }
-    };
-  }, []);
-
   return {
+    isListening,
+    isSpeaking,
     isRecording,
     startStreaming,
     stopStreaming,

@@ -1,0 +1,110 @@
+{
+  "backend": {
+    "questions": [
+      ["scaling", "Comment gères-tu la scalabilité d’un backend ?"],
+      ["api", "Quelle est la différence entre REST et GraphQL ?"]
+    ],
+    "answers": {
+      "scaling": {
+        "bon": "J’utilise du caching avec Redis, du load balancing et parfois du sharding de base de données.",
+        "moyen": "On peut ajouter plus de serveurs et utiliser du load balancing.",
+        "faible": "On augmente juste la puissance du serveur."
+      },
+      "api": {
+        "bon": "REST utilise des endpoints fixes alors que GraphQL permet de requêter uniquement les données nécessaires.",
+        "moyen": "GraphQL est plus flexible que REST.",
+        "faible": "Je ne connais pas vraiment la différence."
+      }
+    }
+  },
+  "frontend": {
+    "questions": [
+      ["react", "Quelle est la différence entre state et props ?"],
+      ["perf", "Comment optimises-tu les performances frontend ?"]
+    ],
+    "answers": {
+      "react": {
+        "bon": "Le state est interne au composant, les props sont passées par le parent.",
+        "moyen": "Les props viennent du parent, le state est local.",
+        "faible": "Je confonds un peu les deux."
+      },
+      "perf": {
+        "bon": "J’utilise le lazy loading, memoization et optimisation du rendu.",
+        "moyen": "J’essaie d’optimiser les composants.",
+        "faible": "Je ne fais pas vraiment d’optimisation."
+      }
+    }
+  },
+  "devops": {
+    "questions": [
+      ["docker", "Quelle est la différence entre Docker et Kubernetes ?"],
+      ["cicd", "Comment fonctionne une CI/CD ?"]
+    ],
+    "answers": {
+      "docker": {
+        "bon": "Docker crée des conteneurs, Kubernetes les orchestre.",
+        "moyen": "Docker sert à containeriser, Kubernetes à gérer plusieurs conteneurs.",
+        "faible": "C’est un peu la même chose."
+      },
+      "cicd": {
+        "bon": "Pipeline automatisé pour build, test et déploiement continu.",
+        "moyen": "Ça automatise le déploiement.",
+        "faible": "Je ne l’ai jamais utilisé."
+      }
+    }
+  },
+  "QA": {
+    "questions": [
+      ["tests", "Quelle est la différence entre tests unitaires et end-to-end ?"],
+      ["strategy", "Comment construis-tu une stratégie de test ?"]
+    ],
+    "answers": {
+      "tests": {
+        "bon": "Les tests unitaires testent des composants isolés, les E2E testent le système complet.",
+        "moyen": "Les E2E testent plus globalement que les unitaires.",
+        "faible": "Je ne suis pas sûr."
+      },
+      "strategy": {
+        "bon": "Je définis les cas critiques, automatise les tests et priorise selon les risques.",
+        "moyen": "Je teste les fonctionnalités principales.",
+        "faible": "Je teste un peu tout au hasard."
+      }
+    }
+  },
+  "Data Scientist": {
+    "questions": [
+      ["model", "Comment évalues-tu un modèle de machine learning ?"],
+      ["overfit", "Qu’est-ce que l’overfitting ?"]
+    ],
+    "answers": {
+      "model": {
+        "bon": "Avec des métriques comme précision, recall et validation croisée.",
+        "moyen": "Avec des métriques comme l’accuracy.",
+        "faible": "Je regarde si ça marche."
+      },
+      "overfit": {
+        "bon": "Le modèle apprend trop les données d'entraînement et généralise mal.",
+        "moyen": "Le modèle est trop adapté aux données.",
+        "faible": "Je ne sais pas."
+      }
+    }
+  },
+  "default": {
+    "questions": [
+      ["archi", "Peux-tu expliquer une architecture microservices ?"],
+      ["debug", "Comment résous-tu un problème complexe ?"]
+    ],
+    "answers": {
+      "archi": {
+        "bon": "Services indépendants, déployables séparément.",
+        "moyen": "Plusieurs services séparés.",
+        "faible": "Je ne sais pas."
+      },
+      "debug": {
+        "bon": "Analyse logs, reproduction, isolation du problème.",
+        "moyen": "Je regarde les logs.",
+        "faible": "Je teste au hasard."
+      }
+    }
+  }
+}

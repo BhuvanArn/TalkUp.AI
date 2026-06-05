@@ -1,15 +1,27 @@
-import { Body, Controller, Put } from "@nestjs/common";
-import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
-
 import {
-  ApiTags,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  UseGuards,
+  UsePipes,
+} from "@nestjs/common";
+import {
   ApiOkResponse,
-  ApiNotFoundResponse,
-  ApiBadRequestResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 
-import { UpdatePasswordDto } from "./dto/updatePassword.dto";
+import { AccessTokenGuard } from "@common/guards/accessToken.guard";
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
+import { CurrentUser } from "@common/decorators/currentUser.decorator";
+
+import { user } from "@entities/user.entity";
+
+import { UpdateProfileDto } from "./dto/updateProfile.dto";
 import { UsersService } from "./users.service";
 
 @ApiTags("Users")
@@ -17,19 +29,30 @@ import { UsersService } from "./users.service";
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @ApiOkResponse({
-    description: "The password has successfully changed",
-    type: String,
-  })
-  @ApiBadRequestResponse({
-    description: "Invalid request data in body (UpdatePasswordDto)",
-  })
-  @ApiNotFoundResponse({
-    description: "User with the provided email was not found",
-  })
+  @ApiOkResponse({ description: "Current user profile" })
+  @ApiUnauthorizedResponse()
+  @UseGuards(AccessTokenGuard)
+  @Get("me")
+  async getMe(@CurrentUser() user: user) {
+    return this.usersService.getProfile(user);
+  }
+
+  @ApiOkResponse({ description: "Updated profile" })
+  @ApiUnauthorizedResponse()
+  @UseGuards(AccessTokenGuard)
   @UsePipes(new PostValidationPipe())
-  @Put("password")
-  async updatePassword(@Body() body: UpdatePasswordDto) {
-    return this.usersService.changeUserPassword(body.email, body.newPassword);
+  @Patch("me")
+  @HttpCode(HttpStatus.OK)
+  async patchMe(@CurrentUser() user: user, @Body() body: UpdateProfileDto) {
+    return this.usersService.updateProfile(user, body);
+  }
+
+  @ApiOkResponse({ description: "Account deleted" })
+  @ApiUnauthorizedResponse()
+  @UseGuards(AccessTokenGuard)
+  @Delete("me")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMe(@CurrentUser() user: user): Promise<void> {
+    await this.usersService.deleteAccount(user);
   }
 }

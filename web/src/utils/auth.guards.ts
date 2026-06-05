@@ -2,6 +2,7 @@ import { getRouteConfig } from '@/config/routes.config';
 import axiosInstance from '@/services/axiosInstance';
 import { emit as emitAuth } from '@/utils/authEmitter';
 import { redirect } from '@tanstack/react-router';
+import axios from 'axios';
 
 export interface AuthGuardContext {
   isAuthenticated: boolean;
@@ -27,8 +28,12 @@ const checkAuthStatus = async (): Promise<boolean> => {
 
     return isAuth;
   } catch (error) {
-    console.error('Error on auth status check', error);
-    // Backend throws 401 Unauthorized when not authenticated or token is invalid
+    // 401 = anonymous visitor; not an error worth logging.
+    const isUnauthorized =
+      axios.isAxiosError(error) && error.response?.status === 401;
+    if (!isUnauthorized) {
+      console.error('Error on auth status check', error);
+    }
     try {
       emitAuth(false);
     } catch (emitError) {
@@ -71,6 +76,23 @@ export const createAuthGuard = (routePath: string) => {
 };
 
 /**
+ * Creates a guard for routes that render different content based on auth status.
+ * If authenticated, redirects to the given target route.
+ * If not authenticated, allows the route to render.
+ *
+ * @param target - Route to redirect authenticated users to.
+ */
+export const createAuthRedirectGuard = (target: string) => {
+  return async () => {
+    const isAuthenticated = await checkAuthStatus();
+
+    if (isAuthenticated) {
+      throw redirect({ to: target });
+    }
+  };
+};
+
+/**
  * Creates a guard function for public routes such as '/login' and '/register'.
  * If the user is already authenticated, they are redirected to '/'.
  * Otherwise, the route is accessible.
@@ -82,7 +104,11 @@ export const createAuthGuard = (routePath: string) => {
  */
 export const createPublicRouteGuard = (routePath: string) => {
   return async () => {
-    if (routePath !== '/login' && routePath !== '/register') {
+    if (
+      routePath !== '/login' &&
+      routePath !== '/register' &&
+      routePath !== '/verify-email'
+    ) {
       return;
     }
 

@@ -4,12 +4,17 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 
-import { AuthService } from "../../modules/auth/auth.service";
+import { user } from "@entities/user.entity";
+
+import { ACCESS_COOKIE_NAME } from "@common/constants/auth.constants";
 
 /**
  * Guard that verifies the presence and validity of an access token in cookies.
- * If valid, it attaches the userId to the request object.
+ * If valid, it attaches the userId and full user entity to the request object.
  *
  * Throws UnauthorizedException if the token is missing, malformed, or invalid.
  *
@@ -31,12 +36,16 @@ import { AuthService } from "../../modules/auth/auth.service";
  */
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    @InjectRepository(user)
+    private readonly userRepository: Repository<user>,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
 
-    const token = req.cookies?.accessToken;
+    const token = req.cookies?.[ACCESS_COOKIE_NAME];
 
     if (!token || typeof token !== "string") {
       throw new UnauthorizedException(
@@ -44,9 +53,44 @@ export class AccessTokenGuard implements CanActivate {
       );
     }
 
-    const user = await this.authService.verifyAccessToken(token);
+    let payload: Record<string, unknown>;
 
-    req.userId = user.user_id;
+    try {
+      payload = (await this.jwtService.verifyAsync(token)) as Record<
+        string,
+        unknown
+      >;
+    } catch {
+      throw new UnauthorizedException("Invalid or expired access token");
+    }
+
+    const userId =
+      typeof payload.userId === "string"
+        ? payload.userId
+        : typeof payload.sub === "string"
+          ? payload.sub
+          : null;
+    const tokenVersion =
+      typeof payload.tv === "number"
+        ? payload.tv
+        : typeof payload.tv === "string"
+          ? Number(payload.tv)
+          : NaN;
+
+    if (!userId || Number.isNaN(tokenVersion)) {
+      throw new UnauthorizedException("Invalid token payload");
+    }
+
+    const foundUser = await this.userRepository.findOne({
+      where: { user_id: userId },
+    });
+
+    if (!foundUser || (foundUser.tokenVersion ?? 1) !== tokenVersion) {
+      throw new UnauthorizedException("Session is no longer valid");
+    }
+
+    req.userId = foundUser.user_id;
+    req.user = foundUser;
 
     return true;
   }

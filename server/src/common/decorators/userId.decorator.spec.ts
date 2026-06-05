@@ -1,4 +1,4 @@
-import { getUserIdFromContext } from "./userId.decorator";
+import { getUserIdFromContext, userIdParamFactory } from "./userId.decorator";
 
 describe("UserId decorator", () => {
   it("extracts userId from request", () => {
@@ -8,8 +8,16 @@ describe("UserId decorator", () => {
       }),
     };
 
-    // call the helper directly
     const res = getUserIdFromContext(ctx as any);
     expect(res).toBe("u-123");
+  });
+
+  it("userIdParamFactory delegates to getUserIdFromContext", () => {
+    const ctx = {
+      switchToHttp: () => ({
+        getRequest: () => ({ userId: "from-factory" }),
+      }),
+    };
+    expect(userIdParamFactory(undefined, ctx as any)).toBe("from-factory");
   });
 });

@@ -9,7 +9,6 @@ import { useNavigation } from '@/contexts/NavigationContext';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 
-import { ActionNavigation } from './ActionNavigation';
 import { ContextNavigation } from './ContextNavigation';
 import { PublicNavigation } from './PublicNavigation';
 import { RootNavigation } from './RootNavigation';
@@ -24,7 +23,7 @@ import { SidebarProps } from './types';
  * - Three-part navigation system:
  *   1. Root navigation (Applications, CV, Notes)
  *   2. Context navigation (Application-specific items with label)
- *   3. Action navigation (Settings, Help - always at bottom)
+ *   3. Account menu (Settings, docs, help, theme, logout) on the profile control
  * - Notification banner
  * - User profile switcher
  *
@@ -112,9 +111,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                 onDismiss={() => setNotificationVisible(false)}
               />
             )}
-
-            {/* Action navigation (Settings & Help) */}
-            <ActionNavigation isCollapsed={isCollapsed} />
 
             <hr className="border-border" />
 

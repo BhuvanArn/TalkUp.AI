@@ -18,7 +18,7 @@ const NextEventCard = () => {
   if (!nextEvent) {
     return (
       <div className="p-4 bg-white rounded-[10px] text-center text-body-m text-gray-500">
-        No events this month.
+        No upcoming events.
       </div>
     );
   }

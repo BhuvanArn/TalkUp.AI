@@ -21,6 +21,7 @@ import {
 import { FcGoogle } from 'react-icons/fc';
 import { HiOutlineSquaresPlus } from 'react-icons/hi2';
 import {
+  PiAppleLogoFill,
   PiArrowClockwise,
   PiArrowCounterClockwise,
   PiArrowDown,
@@ -29,6 +30,7 @@ import {
   PiArrowUp,
   PiArrowUpRight,
   PiBell,
+  PiBookOpen,
   PiBookmarkSimple,
   PiBookmarkSimpleFill,
   PiCalendar,
@@ -67,6 +69,7 @@ import {
   PiPhoneSlashFill,
   PiPlug,
   PiPlus,
+  PiPower,
   PiQuestion,
   PiReadCvLogo,
   PiSealWarning,
@@ -144,6 +147,8 @@ export const iconMap = {
   'app-notes': PiNotePencil,
   settings: PiGear,
   'help-center': PiQuestion,
+  documentation: PiBookOpen,
+  power: PiPower,
   billing: PiWallet,
   integrations: PiPlug,
   security: PiFingerprint,
@@ -212,6 +217,7 @@ export const iconMap = {
   // Miscellaneous icons
   google: FcGoogle,
   linkedin: FaLinkedin,
+  apple: PiAppleLogoFill,
 } as const;
 
 export type IconName = keyof typeof iconMap;

@@ -1,9 +1,55 @@
-import IconAction from '@/components/atoms/icon-action';
+import { Avatar } from '@/components/atoms/avatar';
+import { Icon } from '@/components/atoms/icon';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useLogout } from '@/hooks/auth/useLogout';
-import { useState } from 'react';
+import { fetchMyProfile } from '@/services/users/http';
+import { cn } from '@/utils/cn';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ConfirmModal } from '../confirm-modal';
 import { UserProfileSwitcherProps } from './types';
+
+const DOCUMENTATION_URL =
+  import.meta.env.VITE_DOCUMENTATION_URL ?? 'https://talkupai.online';
+
+const menuPanelClass =
+  'min-w-[220px] rounded-xl border border-border bg-surface-raised p-1 shadow-lg ring-1 ring-black/5 dark:ring-white/10';
+
+const menuItemClass =
+  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-body-s font-medium text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+const DEFAULT_AVATAR_COLOR = '#2B70C9';
+
+function getDisplayName(
+  firstName?: string | null,
+  lastName?: string | null,
+  username?: string | null,
+) {
+  const fullName = [firstName?.trim(), lastName?.trim()]
+    .filter(Boolean)
+    .join(' ');
+  return fullName || username?.trim() || 'User';
+}
+
+function namesFromUsername(username?: string | null): {
+  first: string;
+  last: string;
+} {
+  const parts = (username ?? '').split(/[.\s_]+/).filter(Boolean);
+  if (parts.length === 0) {
+    return { first: '', last: '' };
+  }
+  const cap = (s: string) =>
+    s.length ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
+  if (parts.length === 1) {
+    return { first: cap(parts[0]), last: '' };
+  }
+  return {
+    first: cap(parts[0]),
+    last: parts.slice(1).map(cap).join(' '),
+  };
+}
 
 /**
  * UserProfileSwitcher
@@ -12,9 +58,9 @@ import { UserProfileSwitcherProps } from './types';
  * and provides a logout confirmation flow.
  *
  * Behavior:
- * - When isCollapsed is true, the component renders a centered avatar only.
- * - When isCollapsed is false, the component renders an avatar, the user's name and email, and an
- *   action button (caret) that opens a logout confirmation modal.
+ * - When isCollapsed is true, the component renders a centered avatar and a menu icon button.
+ * - When isCollapsed is false, the whole profile row (avatar, name, email, menu icon) is one
+ *   button that toggles the account menu; Log out still uses a confirmation modal.
  * - Opening the confirmation modal sets internal state; confirming invokes the logout() function
  *   obtained from useLogout() and closes the modal; cancelling simply closes the modal.
  *
@@ -45,42 +91,220 @@ import { UserProfileSwitcherProps } from './types';
 export const UserProfileSwitcher = ({
   isCollapsed,
 }: UserProfileSwitcherProps) => {
-  const [showLogoutMenu, setShowLogoutMenu] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { logout } = useLogout();
+  const { theme, toggleTheme } = useTheme();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const { data: profile } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: fetchMyProfile,
+    staleTime: Infinity,
+  });
+
+  const displayName = getDisplayName(
+    profile?.firstName,
+    profile?.lastName,
+    profile?.username,
+  );
+  const guessedNames = namesFromUsername(profile?.username);
+  const resolvedFirstName =
+    (profile?.firstName ?? '').trim() || guessedNames.first;
+  const resolvedLastName =
+    (profile?.lastName ?? '').trim() || guessedNames.last;
+  const displayEmail = profile?.email ?? 'No email set';
+  const avatarSrc = profile?.profilePicture ?? undefined;
+  const avatarColor = profile?.avatarAccentColor ?? DEFAULT_AVATAR_COLOR;
+  const initials =
+    (resolvedFirstName.charAt(0) || '').toUpperCase() +
+    (resolvedLastName.charAt(0) || '').toUpperCase();
+
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const toggleMenu = useCallback(() => setMenuOpen((open) => !open), []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const onDocMouseDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
+
+  const openDocumentation = () => {
+    window.open(DOCUMENTATION_URL, '_blank', 'noopener,noreferrer');
+    closeMenu();
+  };
 
   return (
     <div
-      className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} h-8`}
+      ref={rootRef}
+      className={cn(
+        'relative z-20',
+        isCollapsed
+          ? 'flex flex-col items-center gap-1'
+          : 'flex w-full min-h-10 items-stretch',
+      )}
     >
       {isCollapsed ? (
-        <img
-          src="/avatar.png"
+        <Avatar
+          src={avatarSrc}
           alt="User Avatar"
-          className="w-8 h-8 rounded-full object-cover border border-border"
+          fallback={initials}
+          size="sm"
+          className="!h-8 !w-8 !border border-border text-white font-semibold"
+          style={{ backgroundColor: avatarColor }}
         />
       ) : (
-        <>
-          <div className="flex gap-2 items-center">
-            <img
-              src="/avatar.png"
-              alt="User Avatar"
-              className="w-8 h-8 rounded-full object-cover border border-border"
+        <button
+          type="button"
+          className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg py-0.5 pl-0.5 pr-1 text-left transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          aria-label={`Open account menu, ${displayName}`}
+          onClick={toggleMenu}
+        >
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <Avatar
+              src={avatarSrc}
+              alt=""
+              fallback={initials}
+              size="sm"
+              className="!h-8 !w-8 shrink-0 !border border-border text-white font-semibold"
+              style={{ backgroundColor: avatarColor }}
             />
-            <div className="flex flex-col">
-              <p className="text-body-s text-idle">Adam Gouffy</p>
-              <p className="text-body-s text-idle/60">adam.gouffy@gmail.com</p>
+            <span className="min-w-0 flex flex-col text-left">
+              <span className="truncate text-body-s text-idle">
+                {displayName}
+              </span>
+              <span className="truncate text-body-s text-idle/60">
+                {displayEmail}
+              </span>
+            </span>
+          </span>
+          <Icon
+            icon="more-vert"
+            size="sm"
+            color="neutral"
+            className="pointer-events-none shrink-0"
+            aria-hidden
+          />
+        </button>
+      )}
+
+      {menuOpen && (
+        <div
+          className={cn(
+            'absolute z-[200]',
+            isCollapsed
+              ? 'bottom-full left-1/2 mb-1 -translate-x-1/2'
+              : 'bottom-full right-0 mb-1',
+          )}
+          role="menu"
+          aria-label="Account"
+        >
+          <div className={menuPanelClass}>
+            <Link
+              to="/profile"
+              className={menuItemClass}
+              role="menuitem"
+              onClick={closeMenu}
+            >
+              <Icon
+                icon="profile"
+                size="sm"
+                color="neutral"
+                className="shrink-0"
+              />
+              Profile
+            </Link>
+            <button
+              type="button"
+              role="menuitem"
+              className={menuItemClass}
+              onClick={openDocumentation}
+            >
+              <Icon
+                icon="documentation"
+                size="sm"
+                color="neutral"
+                className="shrink-0"
+              />
+              Documentation
+            </button>
+            <Link
+              to="/about"
+              className={menuItemClass}
+              role="menuitem"
+              onClick={closeMenu}
+            >
+              <Icon
+                icon="chat"
+                size="sm"
+                color="neutral"
+                className="shrink-0"
+              />
+              Help Center
+            </Link>
+
+            <hr className="my-1 border-border" />
+
+            <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+              <button
+                type="button"
+                role="menuitem"
+                className="flex size-9 items-center justify-center rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
+                aria-label={
+                  theme === 'light'
+                    ? 'Switch to dark theme'
+                    : 'Switch to light theme'
+                }
+                onClick={() => toggleTheme()}
+              >
+                <Icon
+                  icon={theme === 'light' ? 'moon' : 'sun'}
+                  size="sm"
+                  color="neutral"
+                />
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-body-s font-medium text-error transition-colors hover:bg-error-weaker/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
+                onClick={() => {
+                  closeMenu();
+                  setShowLogoutModal(true);
+                }}
+              >
+                <span>Log out</span>
+                <Icon
+                  icon="power"
+                  size="sm"
+                  color="error"
+                  className="shrink-0"
+                />
+              </button>
             </div>
           </div>
-          <IconAction
-            icon="caret-up-down"
-            size="sm"
-            onClick={() => setShowLogoutMenu(true)}
-          />
-        </>
+        </div>
       )}
 
       <ConfirmModal
-        isOpen={showLogoutMenu}
+        isOpen={showLogoutModal}
         title="Logout"
         message="Are you sure you want to logout?"
         confirmLabel="Logout"
@@ -88,9 +312,9 @@ export const UserProfileSwitcher = ({
         icon="warning"
         onConfirm={() => {
           logout();
-          setShowLogoutMenu(false);
+          setShowLogoutModal(false);
         }}
-        onCancel={() => setShowLogoutMenu(false)}
+        onCancel={() => setShowLogoutModal(false)}
       />
     </div>
   );

@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useSimulationWebSocket } from './useSimulationWebSocket';
 
+// Mock environment variables
+vi.stubEnv('VITE_WEBSOCKET_KEY', 'test-websocket-key');
+
 // Mock the useWebSocket hook
 const mockSendMessage = vi.fn();
 const mockSendJsonMessage = vi.fn();
@@ -162,13 +165,16 @@ describe('useSimulationWebSocket', () => {
     it('should send ping when connected', () => {
       const { result } = renderHook(() => useSimulationWebSocket());
 
-      result.current.sendPing({ message: 'test' });
+      result.current.sendPing();
 
       expect(mockSendJsonMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'ping',
-          timestamp: expect.any(String),
-          payload: { message: 'test' },
+          timestamp: expect.any(Number),
+          key: expect.any(String),
+          stream_id: expect.any(String),
+          format: '',
+          data: '',
         }),
       );
     });
@@ -348,25 +354,32 @@ describe('useSimulationWebSocket', () => {
       mockReadyState = ReadyState.OPEN;
     });
 
-    it('should format ping with ISO timestamp', () => {
+    it('should format ping with numeric timestamp', () => {
       const { result } = renderHook(() => useSimulationWebSocket());
 
       result.current.sendPing();
 
       const sentMessage = mockSendJsonMessage.mock.calls[0][0];
-      expect(sentMessage.timestamp).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
-      );
+      expect(typeof sentMessage.timestamp).toBe('number');
+      expect(sentMessage.timestamp).toBeGreaterThan(0);
     });
 
-    it('should include optional payload', () => {
-      const { result } = renderHook(() => useSimulationWebSocket());
-      const payload = { custom: 'data' };
+    it('should include required WebSocketPacket fields', () => {
+      const { result } = renderHook(() =>
+        useSimulationWebSocket({ interviewID: 'test-123' }),
+      );
 
-      result.current.sendPing(payload);
+      result.current.sendPing();
 
       const sentMessage = mockSendJsonMessage.mock.calls[0][0];
-      expect(sentMessage.payload).toEqual(payload);
+      expect(sentMessage).toMatchObject({
+        type: 'ping',
+        key: expect.any(String),
+        stream_id: 'test-123',
+        format: '',
+        data: '',
+        timestamp: expect.any(Number),
+      });
     });
   });
 });

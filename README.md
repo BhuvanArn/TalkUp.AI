@@ -108,3 +108,4 @@ The project follows a microservices architecture with:
 - Specialized microservices for different types of analysis
 
 Each component is containerized and can be deployed independently, ensuring scalability and maintainability.
+
