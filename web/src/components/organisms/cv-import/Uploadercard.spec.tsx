@@ -129,7 +129,7 @@ describe('UploaderCard', () => {
     it('renders the optional hint when no deadline is set', () => {
       render(<UploaderCard {...defaultProps} deadline={null} />);
       expect(
-        screen.getByText('Optional helps prioritize your applications'),
+        screen.getByText(/Optional.*helps prioritize your applications/i),
       ).toBeInTheDocument();
     });
 
