@@ -62,7 +62,7 @@ export const ChatWindow = ({
   }, [messages, isTyping]);
 
   return (
-    <div className="flex flex-col w-[340px] bg-background rounded-[20px] border border-border shadow-2xl overflow-hidden">
+    <div className="flex flex-col w-[340px] bg-background rounded-[20px] border border-border shadow-2xl overflow-hidden">
       {/* ── Header ── */}
       <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#2B70C9] to-[#1D9E75]">
         <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0">

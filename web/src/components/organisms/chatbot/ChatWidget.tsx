@@ -166,7 +166,7 @@ export const ChatWidget = () => {
 
       {/* ── FAB ── */}
       <button
-        type="button"
+        type="button"
         ref={fabRef}
         onClick={handleFabClick}
         onMouseDown={handleMouseDown}
