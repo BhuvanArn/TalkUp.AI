@@ -121,7 +121,10 @@ export class SimulationPromotionService {
         this.logger.error(
           `Failed to promote interview ${nextId}: ${(err as Error).message}`,
         );
-        await this.capacity.releaseSlot(nextId, interview.user_id as string);
+        await this.rollbackPreparedSession(
+          nextId,
+          interview.user_id as string,
+        );
         await this.interviewRepo.update(
           { interview_id: nextId },
           { status: AiInterviewStatus.EXPIRED },
@@ -133,6 +136,19 @@ export class SimulationPromotionService {
 
   async clearReady(interviewId: string): Promise<void> {
     await this.redis.del(this.readyKey(interviewId));
+  }
+
+  /**
+   * Releases Redis capacity and partial session artifacts when prepareReadySession fails
+   * after tryAcquireSlot succeeded.
+   */
+  async rollbackPreparedSession(
+    interviewId: string,
+    userId: string,
+  ): Promise<void> {
+    await this.capacity.releaseSlot(interviewId, userId);
+    await this.context.deleteContext(interviewId);
+    await this.clearReady(interviewId);
   }
 
   private async callAiInitialization(): Promise<void> {

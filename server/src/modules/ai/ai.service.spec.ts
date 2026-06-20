@@ -75,6 +75,7 @@ describe("AiService", () => {
       getReadyPayload: jest.fn(),
       promoteNextFromQueue: jest.fn(),
       clearReady: jest.fn(),
+      rollbackPreparedSession: jest.fn(),
     };
 
     mockContext = {
@@ -149,6 +150,34 @@ describe("AiService", () => {
       expect(res.status).toBe("queued");
       expect(res.entrypoint).toBeNull();
       expect(res.queuePosition).toBe(1);
+    });
+
+    it("releases slot and marks interview expired when prepareReadySession fails", async () => {
+      mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
+      mockAiInterviewRepo.save.mockResolvedValueOnce({
+        interview_id: "new-id",
+      });
+      mockPromotion.prepareReadySession.mockRejectedValueOnce(
+        new Error("AI init failed"),
+      );
+      mockAiInterviewRepo.update.mockResolvedValueOnce(undefined);
+
+      await expect(
+        service.createInterview(
+          { type: "Technical", language: "French" } as any,
+          "user-1",
+        ),
+      ).rejects.toThrow(InternalServerErrorException);
+
+      expect(mockPromotion.rollbackPreparedSession).toHaveBeenCalledWith(
+        "new-id",
+        "user-1",
+      );
+      expect(mockAiInterviewRepo.update).toHaveBeenCalledWith(
+        { interview_id: "new-id" },
+        { status: AiInterviewStatus.EXPIRED },
+      );
+      expect(mockPromotion.promoteNextFromQueue).toHaveBeenCalled();
     });
 
     it("throws ConflictException when interview already exists", async () => {

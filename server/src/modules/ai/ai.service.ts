@@ -94,17 +94,37 @@ export class AiService {
       );
 
       if (acquired.acquired) {
-        const { entrypoint } = await this.promotion.prepareReadySession(
-          newInterview,
-          dto,
-        );
+        try {
+          const { entrypoint } = await this.promotion.prepareReadySession(
+            newInterview,
+            dto,
+          );
 
-        return {
-          interviewID: newInterview.interview_id,
-          status: "ready",
-          entrypoint,
-          queuePosition: 0,
-        };
+          return {
+            interviewID: newInterview.interview_id,
+            status: "ready",
+            entrypoint,
+            queuePosition: 0,
+          };
+        } catch (prepError) {
+          await this.promotion.rollbackPreparedSession(
+            newInterview.interview_id,
+            userId,
+          );
+          await this.aiInterviewRepository.update(
+            { interview_id: newInterview.interview_id },
+            { status: AiInterviewStatus.EXPIRED },
+          );
+          await this.promotion.promoteNextFromQueue();
+
+          this.logger.error(
+            `Failed to prepare simulation session for interview ${newInterview.interview_id}: ${(prepError as Error).message}`,
+            (prepError as Error).stack,
+          );
+          throw new InternalServerErrorException(
+            "Internal server error while preparing simulation session.",
+          );
+        }
       }
 
       const enqueued = await this.capacity.enqueue(newInterview.interview_id);
@@ -132,7 +152,8 @@ export class AiService {
     } catch (error) {
       if (
         error instanceof ConflictException ||
-        error instanceof ServiceUnavailableException
+        error instanceof ServiceUnavailableException ||
+        error instanceof InternalServerErrorException
       ) {
         throw error;
       }
