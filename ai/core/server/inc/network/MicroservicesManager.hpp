@@ -75,6 +75,14 @@ namespace talkup_network {
             static void send_to_sts_microservice(const nlohmann::json &data, ResponseCallback callback);
 
             /**
+             * @brief Push structured simulation context (company, job offer) to STS for one interview.
+             * @return true if STS acknowledged registration.
+             */
+            static bool send_simulation_context_to_sts(
+                const std::string &interview_id,
+                const nlohmann::json &context_data);
+
+            /**
              * @brief Initialize WebSocket connections to all registered microservices.
              * It's establishes persistent WebSocket connections to each microservice
              * defined in the services list. It handles connection setup, error reporting,

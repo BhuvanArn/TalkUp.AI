@@ -349,6 +349,88 @@ void talkup_network::MicroservicesManager::send_to_sts_microservice(
     }
 }
 
+bool talkup_network::MicroservicesManager::send_simulation_context_to_sts(
+    const std::string &interview_id,
+    const nlohmann::json &context_data)
+{
+    if (interview_id.empty()) {
+        std::cerr << "[MicroservicesManager] simulation_context: missing interview_id" << std::endl;
+        return false;
+    }
+
+    try {
+        std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
+        std::mutex *io_mutex = nullptr;
+
+        {
+            std::lock_guard<std::mutex> lock(__ws_mutex);
+            auto it = __ws_connections.find("sts");
+            if (it == __ws_connections.end() || !it->second.is_connected ||
+                !it->second.ws || !it->second.ws->is_open()) {
+                if (!reconnect_service_connection("sts")) {
+                    std::cerr << "[MicroservicesManager] STS connection not available for simulation_context" << std::endl;
+                    return false;
+                }
+                it = __ws_connections.find("sts");
+            }
+            if (it == __ws_connections.end() || !it->second.ws) {
+                return false;
+            }
+            ws = it->second.ws;
+            io_mutex = &it->second.io_mutex;
+        }
+
+        std::unique_lock<std::mutex> io_lock(*io_mutex);
+        nlohmann::json payload = {
+            {"services", {"STS"}},
+            {"type", "simulation_context"},
+            {"interview_id", interview_id},
+            {"timestamp", std::time(nullptr)},
+            {"data", context_data},
+        };
+        ws->write(boost::asio::buffer(payload.dump()));
+        std::cout << "[MicroservicesManager] Sent simulation_context for interview_id="
+                  << interview_id << std::endl;
+
+        const int timeout_ms = 15000;
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
+
+        while (std::chrono::steady_clock::now() < deadline) {
+            const int remaining_ms = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                deadline - std::chrono::steady_clock::now()).count());
+            if (remaining_ms <= 0)
+                break;
+
+            nlohmann::json msg_json;
+            if (!read_sts_json_message(*ws, msg_json, std::min(remaining_ms, 5000)))
+                continue;
+
+            const std::string msg_type = msg_json.value("type", "");
+            if (msg_type == "pong")
+                continue;
+
+            if (msg_type == "simulation_context_ack") {
+                const std::string ack_id = msg_json.value("interview_id", "");
+                if (ack_id.empty() || ack_id == interview_id)
+                    return true;
+            }
+
+            if (msg_type == "error") {
+                std::cerr << "[MicroservicesManager] STS simulation_context error: "
+                          << msg_json.dump() << std::endl;
+                return false;
+            }
+        }
+
+        std::cerr << "[MicroservicesManager] simulation_context ack timeout for "
+                  << interview_id << std::endl;
+        return false;
+    } catch (const std::exception &e) {
+        std::cerr << "[MicroservicesManager] simulation_context exception: " << e.what() << std::endl;
+        return false;
+    }
+}
+
 void talkup_network::MicroservicesManager::process_sts_job(const nlohmann::json &data, ResponseCallback callback)
 {
     try {

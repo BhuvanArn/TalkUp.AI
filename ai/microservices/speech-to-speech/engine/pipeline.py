@@ -13,11 +13,8 @@ import numpy as np
 from dataclasses import dataclass
 from .audio_decode import decode_audio_to_float32
 from .models import STSModels, generate_ai_response, synthesize_tts_chunks
-from .session_context import (
-	append_session_history,
-	build_messages_from_context,
-	fetch_session_context,
-)
+from .simulation_brief import build_messages_for_turn
+from .session_context import append_session_history
 
 @dataclass
 class STSResult:
@@ -49,10 +46,9 @@ def process_sts_request(
 	if not user_text or len(user_text) < 2:
 		return STSResult(transcription="", ai_response="", audio_chunks=[])
 
-	session = fetch_session_context(interview_id) if interview_id else None
-	messages = build_messages_from_context(
+	messages = build_messages_for_turn(
 		models.settings.system_prompt,
-		session,
+		interview_id,
 		user_text,
 	)
 

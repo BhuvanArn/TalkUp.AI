@@ -20,6 +20,7 @@ from .models import STSModels, load_models
 from .notifications import Notifications
 from .queueService import StsQueueService
 from .settings import load_settings
+from .simulation_brief import SimulationBrief, SimulationBriefStore
 
 app = FastAPI(title="TalkUp STS Service")
 
@@ -35,6 +36,48 @@ MIN_AUDIO_BYTES = 2048
 async def _ws_send_json(websocket: WebSocket, send_lock: asyncio.Lock, payload: dict) -> None:
 	async with send_lock:
 		await websocket.send_text(json.dumps(payload))
+
+
+async def _handle_simulation_context(
+	websocket: WebSocket,
+	send_lock: asyncio.Lock,
+	payload: dict,
+) -> None:
+	interview_id = payload.get("interview_id") or payload.get("stream_id")
+	context_data = payload.get("data")
+
+	if not isinstance(interview_id, str) or not interview_id.strip():
+		await _ws_send_json(
+			websocket,
+			send_lock,
+			{"type": "error", "text": "simulation_context requires interview_id"},
+		)
+		return
+
+	if not isinstance(context_data, dict):
+		await _ws_send_json(
+			websocket,
+			send_lock,
+			{
+				"type": "error",
+				"text": "simulation_context requires data object",
+				"interview_id": interview_id,
+			},
+		)
+		return
+
+	brief = SimulationBrief.from_payload(context_data)
+	SimulationBriefStore.register(interview_id.strip(), brief)
+
+	await _ws_send_json(
+		websocket,
+		send_lock,
+		{
+			"type": "simulation_context_ack",
+			"interview_id": interview_id.strip(),
+			"status": "registered",
+		},
+	)
 
 
 async def _process_stream_and_reply(
@@ -183,6 +226,10 @@ async def websocket_endpoint(websocket: WebSocket):
 							"data": payload.get("data", {}),
 						},
 					)
+					continue
+
+				if payload.get("type") == "simulation_context":
+					await _handle_simulation_context(websocket, send_lock, payload)
 					continue
 
 				if payload.get("type") == "stream_chunk":

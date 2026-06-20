@@ -30,6 +30,10 @@ talkup_network::WsManager::WsManager()
         crow::websocket::connection& conn, std::shared_ptr<MicroservicesManager> microservices_manager) {
             handle_stream_chunk(json, conn, microservices_manager);
         };
+    _type_handlers["simulation_context"] = [this](const nlohmann::json& json,
+        crow::websocket::connection& conn, std::shared_ptr<MicroservicesManager> microservices_manager) {
+            handle_simulation_context(json, conn, microservices_manager);
+        };
 }
 
 void talkup_network::WsManager::connection_type_manager(nlohmann::json &json, crow::websocket::connection &conn,
@@ -212,6 +216,76 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
             }
         );
     }
+}
+
+void talkup_network::WsManager::handle_simulation_context(const nlohmann::json& json,
+    crow::websocket::connection& conn, std::shared_ptr<MicroservicesManager> microservices_manager)
+{
+    const std::string stream_id = json.value("stream_id", "");
+    const std::string key = json.value("key", "");
+    const int64_t timestamp = json.value("timestamp", static_cast<int64_t>(
+        std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count()));
+
+    if (stream_id.empty()) {
+        conn.send_text(set_respond_json_format({
+            .type = "error",
+            .key = key,
+            .stream_id = "",
+            .format = "text",
+            .timestamp = timestamp,
+            .data = "simulation_context requires stream_id"
+        }).dump());
+        return;
+    }
+
+    if (!json.contains("data") || !json["data"].is_object()) {
+        conn.send_text(set_respond_json_format({
+            .type = "error",
+            .key = key,
+            .stream_id = stream_id,
+            .format = "text",
+            .timestamp = timestamp,
+            .data = "simulation_context requires data object"
+        }).dump());
+        return;
+    }
+
+    if (!microservices_manager) {
+        conn.send_text(set_respond_json_format({
+            .type = "error",
+            .key = key,
+            .stream_id = stream_id,
+            .format = "text",
+            .timestamp = timestamp,
+            .data = "microservices manager unavailable"
+        }).dump());
+        return;
+    }
+
+    const bool ok = MicroservicesManager::send_simulation_context_to_sts(
+        stream_id, json["data"]);
+
+    if (!ok) {
+        conn.send_text(set_respond_json_format({
+            .type = "error",
+            .key = key,
+            .stream_id = stream_id,
+            .format = "text",
+            .timestamp = timestamp,
+            .data = "failed to register simulation context on STS"
+        }).dump());
+        return;
+    }
+
+    conn.send_text(set_respond_json_format({
+        .type = "simulation_context_ack",
+        .key = key,
+        .stream_id = stream_id,
+        .format = "text",
+        .timestamp = timestamp,
+        .data = "simulation context registered"
+    }).dump());
 }
 
 nlohmann::json talkup_network::WsManager::set_respond_json_format(const WebSocketConnectionInfo& info) const

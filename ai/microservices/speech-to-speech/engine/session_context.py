@@ -1,7 +1,7 @@
 ##
 ## Talkup Project, 2026
 ## TalkUp.AI
-## Fetches per-interview LLM context from NestJS (Scenario A).
+## Session context helpers (NestJS fallback + history sync).
 ##
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from typing import Any
 
 from .notifications import Notifications
 from .enumMcs import EnumMcs
+from .simulation_brief import SimulationBriefStore
 
 NOTIFIER = Notifications()
 
@@ -28,20 +29,11 @@ def _internal_key() -> str:
 
 
 def fetch_session_context(interview_id: str) -> dict[str, Any] | None:
-	"""
-	Loads system prompt and conversation history for one interview.
-	Returns None if unavailable (caller should fall back to global prompt).
-	"""
 	if not interview_id or interview_id == "unknown":
 		return None
 
 	key = _internal_key()
 	if not key:
-		NOTIFIER.send_notification(
-			EnumMcs.MicroservicesNames.STS,
-			1,
-			"SIM_INTERNAL_API_KEY not set; using default system prompt",
-		)
 		return None
 
 	url = f"{_backend_base()}/ai/internal/sessions/{interview_id}/context"
@@ -78,6 +70,8 @@ def append_session_history(
 	if not interview_id or interview_id == "unknown":
 		return
 
+	SimulationBriefStore.append_turn(interview_id, user_text, assistant_text)
+
 	key = _internal_key()
 	if not key:
 		return
@@ -107,17 +101,11 @@ def append_session_history(
 		)
 
 
-def build_messages_from_context(
+def build_messages_from_nest_session(
 	default_system_prompt: str,
-	session: dict[str, Any] | None,
+	session: dict[str, Any],
 	user_text: str,
 ) -> list[dict[str, str]]:
-	if not session:
-		return [
-			{"role": "system", "content": default_system_prompt},
-			{"role": "user", "content": user_text},
-		]
-
 	system_prompt = session.get("systemPrompt") or default_system_prompt
 	history = session.get("history") or []
 
