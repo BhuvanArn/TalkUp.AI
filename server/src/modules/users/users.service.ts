@@ -1,11 +1,13 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { ObjectLiteral, Repository } from "typeorm";
+import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 
 import { ProfileVisibility } from "@common/enums/ProfileVisibility";
 import {
@@ -23,7 +25,6 @@ import { isSafeFetchUrl } from "../../common/utils/urlGuard";
 
 import { UpdateProfileDto } from "./dto/updateProfile.dto";
 import { GetProfileDto } from "./dto/getProfile.dto";
-import { type Request, type Response } from "express";
 import { user_cv } from "@entities/userCV.entity";
 import { user_job_offer } from "@entities/userJobOffer.entity";
 import Groq from "groq-sdk";
@@ -31,6 +32,43 @@ import pdfParse from "pdf-parse-debugging-disabled";
 
 // Cap raw text sent to the LLM to bound token cost on large documents.
 const MAX_LLM_INPUT_CHARS = 8000;
+
+/** Minimal shape of the multer file we consume (avoids depending on the global
+ * Express.Multer namespace, which is not in this project's tsconfig `types`). */
+export interface UploadedPdf {
+  buffer: Buffer;
+}
+
+/** Shape returned by the CV extraction prompt. All fields optional — the model
+ * may omit any of them; defaults are applied at persistence time. */
+interface CvExtraction {
+  desired_job?: string | null;
+  resume?: string | null;
+  experiences?: unknown[];
+  education?: unknown[];
+  technical_skills?: string[];
+  languages?: unknown[];
+}
+
+/** Shape returned by the job-offer extraction prompt. */
+interface JobOfferExtraction {
+  job_title?: string | null;
+  company_name?: string | null;
+  company_description?: string | null;
+  sector?: string | null;
+  contract_type?: string | null;
+  location?: string | null;
+  required_skills?: string[];
+  preferred_skills?: string[];
+  required_experience?: string | null;
+  required_education?: string | null;
+  missions?: string[];
+  soft_skills?: string[];
+  languages_required?: string[];
+  salary_range?: string | null;
+  company_values?: string[];
+  team_description?: string | null;
+}
 
 @Injectable()
 export class UsersService {
@@ -189,25 +227,77 @@ export class UsersService {
     };
   }
 
-  async uploadCV(req: Request & { file?: any }, res: Response) {
+  /**
+   * Sends a prompt to Groq, strips any markdown fences from the reply, and parses
+   * it as JSON. Throws InternalServerErrorException on empty or unparsable output.
+   */
+  private async extractWithGroq<T>(prompt: string): Promise<T> {
+    const completion = await this.groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0,
+    });
+
+    const responseText = completion.choices[0]?.message?.content;
+
+    if (!responseText) {
+      this.logger.error("Empty response from Groq");
+      throw new InternalServerErrorException("Empty response from AI.");
+    }
+
     try {
-      if (!req.file) {
-        return res.status(400).json({ message: "Upload a PDF file." });
-      }
+      const cleaned = responseText.replace(/```json|```/g, "").trim();
+      return JSON.parse(cleaned) as T;
+    } catch (parseError) {
+      this.logger.error(`JSON parse error: ${parseError}`);
+      throw new InternalServerErrorException("Failed to parse extracted data.");
+    }
+  }
 
-      const userId = (req as any).userId;
-      const pdfData = await pdfParse(req.file.buffer);
-      const rawText = pdfData.text;
+  /**
+   * Find-or-update a single row keyed by user_id: updates when one exists,
+   * otherwise creates and saves. Used for the one-per-user CV / job-offer rows.
+   * Returns true when an existing row was updated, false when one was created.
+   */
+  private async upsertByUser<E extends ObjectLiteral>(
+    repo: Repository<E>,
+    userId: string,
+    data: QueryDeepPartialEntity<E>,
+  ): Promise<boolean> {
+    const existing = await repo.findOne({
+      where: { user_id: userId } as never,
+    });
 
-      if (!rawText || rawText.length === 0) {
-        return res
-          .status(400)
-          .json({ message: "The PDF file is empty or could not be parsed." });
-      }
+    if (existing) {
+      await repo.update({ user_id: userId } as never, data);
+      return true;
+    }
 
-      const cvText = rawText.substring(0, MAX_LLM_INPUT_CHARS);
+    const row = repo.create({ user_id: userId, ...data } as never);
+    await repo.save(row);
+    return false;
+  }
 
-      const prompt = `You are a specialized CV analysis assistant. Analyze the following text extracted from a CV and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
+  async uploadCV(
+    userId: string,
+    file?: UploadedPdf,
+  ): Promise<{ message: string }> {
+    if (!file) {
+      throw new BadRequestException("Upload a PDF file.");
+    }
+
+    const pdfData = await pdfParse(file.buffer);
+    const rawText = pdfData.text;
+
+    if (!rawText || rawText.length === 0) {
+      throw new BadRequestException(
+        "The PDF file is empty or could not be parsed.",
+      );
+    }
+
+    const cvText = rawText.substring(0, MAX_LLM_INPUT_CHARS);
+
+    const prompt = `You are a specialized CV analysis assistant. Analyze the following text extracted from a CV and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
       {
         "desired_job": "string or null",
         "resume": "string or null - candidate profile/summary",
@@ -245,111 +335,57 @@ export class UsersService {
       CV text:
       ${cvText}`;
 
-      const completion = await this.groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0,
-      });
+    const data = await this.extractWithGroq<CvExtraction>(prompt);
 
-      const responseText = completion.choices[0]?.message?.content;
+    const existed = await this.upsertByUser(this.user_cvRepo, userId, {
+      desired_job: data.desired_job ?? null,
+      resume: data.resume ?? null,
+      experiences: data.experiences ?? [],
+      education: data.education ?? [],
+      technical_skills: data.technical_skills ?? [],
+      languages: data.languages ?? [],
+    } as QueryDeepPartialEntity<user_cv>);
 
-      if (!responseText) {
-        this.logger.error("Empty response from Groq");
-        return res.status(500).json({ message: "Empty response from AI." });
-      }
-
-      let extractedData;
-      try {
-        const cleaned = responseText.replace(/```json|```/g, "").trim();
-        extractedData = JSON.parse(cleaned);
-      } catch (parseError) {
-        this.logger.error(`JSON parse error: ${parseError}`);
-        return res
-          .status(500)
-          .json({ message: "Failed to parse extracted CV data." });
-      }
-
-      const existingCV = await this.user_cvRepo.findOne({
-        where: { user_id: userId },
-      });
-
-      if (existingCV) {
-        await this.user_cvRepo.update(
-          { user_id: userId },
-          {
-            desired_job: extractedData.desired_job ?? null,
-            resume: extractedData.resume ?? null,
-            experiences: extractedData.experiences ?? [],
-            education: extractedData.education ?? [],
-            technical_skills: extractedData.technical_skills ?? [],
-            languages: extractedData.languages ?? [],
-          },
-        );
-        this.logger.log(`CV updated for user ID: ${userId}`);
-        return res.status(200).json({ message: "CV updated successfully" });
-      } else {
-        const newCV = this.user_cvRepo.create({
-          user_id: userId,
-          desired_job: extractedData.desired_job ?? null,
-          resume: extractedData.resume ?? null,
-          experiences: extractedData.experiences ?? [],
-          education: extractedData.education ?? [],
-          technical_skills: extractedData.technical_skills ?? [],
-          languages: extractedData.languages ?? [],
-        });
-        await this.user_cvRepo.save(newCV);
-        this.logger.log(`CV created for user ID: ${userId}`);
-        return res.status(200).json({ message: "CV uploaded successfully" });
-      }
-    } catch (error) {
-      this.logger.error(`uploadCV failed: ${error}`);
-      res.status(500).json({ message: "Error processing the CV file." });
-    }
+    this.logger.log(
+      `CV ${existed ? "updated" : "created"} for user ID: ${userId}`,
+    );
+    return {
+      message: existed ? "CV updated successfully" : "CV uploaded successfully",
+    };
   }
 
-  async uploadJobOffer(req: Request, res: Response) {
+  async uploadJobOffer(
+    userId: string,
+    url: string,
+  ): Promise<{ message: string }> {
     try {
-      const userId = (req as any).userId;
-      const { url } = req.body;
+      new URL(url);
+    } catch {
+      throw new BadRequestException("Invalid URL format.");
+    }
 
-      if (!url) {
-        return res
-          .status(400)
-          .json({ message: "Please provide a job offer URL." });
-      }
+    // SSRF guard: reject non-http(s) schemes and private/loopback/link-local
+    // targets (cloud metadata, localhost, internal services).
+    if (!isSafeFetchUrl(url)) {
+      throw new BadRequestException("This URL target is not allowed.");
+    }
 
-      try {
-        new URL(url);
-      } catch {
-        return res.status(400).json({ message: "Invalid URL format." });
-      }
+    let pageText = "";
+    const isLinkedIn = url.includes("linkedin.com/jobs");
 
-      // SSRF guard: reject non-http(s) schemes and private/loopback/link-local
-      // targets (cloud metadata, localhost, internal services).
-      if (!isSafeFetchUrl(url)) {
-        return res
-          .status(400)
-          .json({ message: "This URL target is not allowed." });
-      }
+    if (isLinkedIn) pageText = await scrapeLinkedin(url);
+    if (!pageText) pageText = await scrapeAxios(url);
+    if (!pageText) pageText = await scrapePuppeteer(url);
 
-      let pageText: string = "";
+    if (!pageText) {
+      throw new BadRequestException(
+        "Could not extract content from this URL. The website may be too protected.",
+      );
+    }
 
-      const isLinkedIn = url.includes("linkedin.com/jobs");
+    pageText = pageText.substring(0, MAX_LLM_INPUT_CHARS);
 
-      if (isLinkedIn) pageText = await scrapeLinkedin(url);
-      if (!pageText) pageText = await scrapeAxios(url);
-      if (!pageText) pageText = await scrapePuppeteer(url);
-
-      if (!pageText) {
-        return res.status(400).json({
-          message:
-            "Could not extract content from this URL. The website may be too protected.",
-        });
-      }
-
-      pageText = pageText.substring(0, MAX_LLM_INPUT_CHARS);
-
-      const prompt = `You are a specialized job offer analysis assistant. Analyze the following text extracted from a job offer page and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
+    const prompt = `You are a specialized job offer analysis assistant. Analyze the following text extracted from a job offer page and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
       {
         "job_title": "string or null",
         "company_name": "string or null",
@@ -379,91 +415,35 @@ export class UsersService {
       Job offer text:
       ${pageText}`;
 
-      const completion = await this.groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0,
-      });
+    const data = await this.extractWithGroq<JobOfferExtraction>(prompt);
 
-      const responseText = completion.choices[0]?.message?.content;
+    const existed = await this.upsertByUser(this.user_job_offerRepo, userId, {
+      job_title: data.job_title ?? null,
+      company_name: data.company_name ?? null,
+      company_description: data.company_description ?? null,
+      sector: data.sector ?? null,
+      contract_type: data.contract_type ?? null,
+      location: data.location ?? null,
+      required_skills: data.required_skills ?? [],
+      preferred_skills: data.preferred_skills ?? [],
+      required_experience: data.required_experience ?? null,
+      required_education: data.required_education ?? null,
+      missions: data.missions ?? [],
+      soft_skills: data.soft_skills ?? [],
+      languages_required: data.languages_required ?? [],
+      salary_range: data.salary_range ?? null,
+      company_values: data.company_values ?? [],
+      team_description: data.team_description ?? null,
+      offer_url: url,
+    } as QueryDeepPartialEntity<user_job_offer>);
 
-      if (!responseText) {
-        this.logger.error("Empty response from Groq");
-        return res.status(500).json({ message: "Empty response from AI." });
-      }
-
-      let extractedData;
-      try {
-        const cleaned = responseText.replace(/```json|```/g, "").trim();
-        extractedData = JSON.parse(cleaned);
-      } catch (parseError) {
-        this.logger.error(`JSON parse error: ${parseError}`);
-        return res
-          .status(500)
-          .json({ message: "Failed to parse extracted job offer data." });
-      }
-
-      const existingJobOffer = await this.user_job_offerRepo.findOne({
-        where: { user_id: userId },
-      });
-
-      if (existingJobOffer) {
-        await this.user_job_offerRepo.update(
-          { user_id: userId },
-          {
-            job_title: extractedData.job_title ?? null,
-            company_name: extractedData.company_name ?? null,
-            company_description: extractedData.company_description ?? null,
-            sector: extractedData.sector ?? null,
-            contract_type: extractedData.contract_type ?? null,
-            location: extractedData.location ?? null,
-            required_skills: extractedData.required_skills ?? [],
-            preferred_skills: extractedData.preferred_skills ?? [],
-            required_experience: extractedData.required_experience ?? null,
-            required_education: extractedData.required_education ?? null,
-            missions: extractedData.missions ?? [],
-            soft_skills: extractedData.soft_skills ?? [],
-            languages_required: extractedData.languages_required ?? [],
-            salary_range: extractedData.salary_range ?? null,
-            company_values: extractedData.company_values ?? [],
-            team_description: extractedData.team_description ?? null,
-            offer_url: url,
-          },
-        );
-        this.logger.log(`Job offer updated for user ID: ${userId}`);
-        return res.status(200).json({
-          message: "Job offer updated successfully",
-        });
-      } else {
-        const newJobOffer = this.user_job_offerRepo.create({
-          user_id: userId,
-          job_title: extractedData.job_title ?? null,
-          company_name: extractedData.company_name ?? null,
-          company_description: extractedData.company_description ?? null,
-          sector: extractedData.sector ?? null,
-          contract_type: extractedData.contract_type ?? null,
-          location: extractedData.location ?? null,
-          required_skills: extractedData.required_skills ?? [],
-          preferred_skills: extractedData.preferred_skills ?? [],
-          required_experience: extractedData.required_experience ?? null,
-          required_education: extractedData.required_education ?? null,
-          missions: extractedData.missions ?? [],
-          soft_skills: extractedData.soft_skills ?? [],
-          languages_required: extractedData.languages_required ?? [],
-          salary_range: extractedData.salary_range ?? null,
-          company_values: extractedData.company_values ?? [],
-          team_description: extractedData.team_description ?? null,
-          offer_url: url,
-        });
-        await this.user_job_offerRepo.save(newJobOffer);
-        this.logger.log(`Job offer created for user ID: ${userId}`);
-        return res.status(200).json({
-          message: "Job offer parsed successfully",
-        });
-      }
-    } catch (error) {
-      this.logger.error(`uploadJobOffer failed: ${error}`);
-      res.status(500).json({ message: "Error processing the job offer." });
-    }
+    this.logger.log(
+      `Job offer ${existed ? "updated" : "created"} for user ID: ${userId}`,
+    );
+    return {
+      message: existed
+        ? "Job offer updated successfully"
+        : "Job offer parsed successfully",
+    };
   }
 }

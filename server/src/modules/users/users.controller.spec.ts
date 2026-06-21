@@ -87,20 +87,25 @@ describe("UsersController", () => {
   });
 
   describe("uploadCV", () => {
-    it("delegates to uploadCV with req/res", async () => {
-      const req = {} as never;
-      const res = {} as never;
-      await controller.uploadCV(req, res);
-      expect(mockUsersService.uploadCV).toHaveBeenCalledWith(req, res);
+    it("delegates to uploadCV with the user id and file", async () => {
+      const file = { buffer: Buffer.from("pdf") } as never;
+      await controller.uploadCV(mockUser, file);
+      expect(mockUsersService.uploadCV).toHaveBeenCalledWith(
+        mockUser.user_id,
+        file,
+      );
     });
   });
 
   describe("uploadJobOffer", () => {
-    it("delegates to uploadJobOffer with req/res", async () => {
-      const req = {} as never;
-      const res = {} as never;
-      await controller.uploadJobOffer(req, res);
-      expect(mockUsersService.uploadJobOffer).toHaveBeenCalledWith(req, res);
+    it("delegates to uploadJobOffer with the user id and url", async () => {
+      await controller.uploadJobOffer(mockUser, {
+        url: "https://example.com/job/1",
+      });
+      expect(mockUsersService.uploadJobOffer).toHaveBeenCalledWith(
+        mockUser.user_id,
+        "https://example.com/job/1",
+      );
     });
   });
 });
