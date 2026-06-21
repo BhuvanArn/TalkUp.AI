@@ -10,6 +10,8 @@ import { Repository } from "typeorm";
 
 import { user } from "@entities/user.entity";
 
+import { ACCESS_COOKIE_NAME } from "@common/constants/auth.constants";
+
 /**
  * Guard that verifies the presence and validity of an access token in cookies.
  * If valid, it attaches the userId and full user entity to the request object.
@@ -43,7 +45,7 @@ export class AccessTokenGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
 
-    const token = req.cookies?.accessToken;
+    const token = req.cookies?.[ACCESS_COOKIE_NAME];
 
     if (!token || typeof token !== "string") {
       throw new UnauthorizedException(

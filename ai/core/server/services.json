@@ -1,10 +1,10 @@
 {
-  "stt": {
-    "Name": "STT",
-    "Description": "Converts audio to text",
+  "sts": {
+    "Name": "STS",
+    "Description": "Converts audio to text and generates the reply",
     "Port": "8002",
-    "Ip": "speech_to_text",
-    "RouteWs": "/ws/stt"
+    "Ip": "sts-service",
+    "RouteWs": "/ws"
   },
   "ba": {
     "Name": "BA",
@@ -19,13 +19,6 @@
     "Port": "8004",
     "Ip": "emotion_analysis",
     "RouteWs": "/ws/ea"
-  },
-  "tts": {
-    "Name": "TTS",
-    "Description": "Converts text to audio",
-    "Port": "8005",
-    "Ip": "text_to_speech",
-    "RouteWs": "/ws/tts"
   },
   "va": {
     "Name": "VA",

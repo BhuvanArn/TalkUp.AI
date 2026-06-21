@@ -1,29 +1,55 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { NotFoundException } from "@nestjs/common";
+
+import { applyMockAccessTokenGuard } from "@src/test/utils/mock-guards";
 
 import { UsersController } from "./users.controller";
 import { UsersService } from "./users.service";
-import { UpdatePasswordDto } from "./dto/updatePassword.dto";
+import { UpdateProfileDto } from "./dto/updateProfile.dto";
+
+import { ProfileVisibility } from "@common/enums/ProfileVisibility";
+import { UserStatus } from "@common/enums/UserStatus";
+import { user } from "@entities/user.entity";
 
 describe("UsersController", () => {
   let controller: UsersController;
   let mockUsersService: Partial<UsersService>;
 
+  const mockUser = {
+    user_id: "u1",
+    username: "alice",
+    status: UserStatus.ACTIVE,
+  } as user;
+
+  const profile = {
+    userId: "u1",
+    username: "alice",
+    email: "a@example.com",
+    phone: null,
+    firstName: "Alice",
+    lastName: "Bee",
+    bio: null,
+    jobTitle: null,
+    linkedinUrl: null,
+    profilePicture: null,
+    avatarAccentColor: "#2B70C9",
+    bannerGradient: null,
+    profileVisibility: ProfileVisibility.PUBLIC,
+    notificationPrefs: null,
+  };
+
   beforeEach(async () => {
     mockUsersService = {
-      changeUserPassword: jest.fn(),
+      getProfile: jest.fn().mockResolvedValue(profile),
+      updateProfile: jest.fn().mockResolvedValue(profile),
+      deleteAccount: jest.fn().mockResolvedValue(undefined),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleBuilder = Test.createTestingModule({
       controllers: [UsersController],
-      providers: [
-        {
-          provide: UsersService,
-          useValue: mockUsersService,
-        },
-      ],
-    }).compile();
-
+      providers: [{ provide: UsersService, useValue: mockUsersService }],
+    });
+    const module: TestingModule =
+      await applyMockAccessTokenGuard(moduleBuilder).compile();
     controller = module.get<UsersController>(UsersController);
   });
 
@@ -31,75 +57,30 @@ describe("UsersController", () => {
     expect(controller).toBeDefined();
   });
 
-  describe("updatePassword", () => {
-    const updatePasswordDto: UpdatePasswordDto = {
-      email: "test@example.com",
-      newPassword: "newPassword123",
-    };
-
-    it("should successfully update password", async () => {
-      mockUsersService.changeUserPassword = jest.fn().mockResolvedValue(true);
-
-      const result = await controller.updatePassword(updatePasswordDto);
-
-      expect(result).toBe(true);
-      expect(mockUsersService.changeUserPassword).toHaveBeenCalledWith(
-        "test@example.com",
-        "newPassword123",
-      );
-      expect(mockUsersService.changeUserPassword).toHaveBeenCalledTimes(1);
+  describe("getMe", () => {
+    it("returns profile from service", async () => {
+      const res = await controller.getMe(mockUser);
+      expect(res).toEqual(profile);
+      expect(mockUsersService.getProfile).toHaveBeenCalledWith(mockUser);
     });
+  });
 
-    it("should throw NotFoundException when user not found", async () => {
-      mockUsersService.changeUserPassword = jest
-        .fn()
-        .mockRejectedValue(
-          new NotFoundException("There is no user with that email"),
-        );
-
-      await expect(
-        controller.updatePassword(updatePasswordDto),
-      ).rejects.toThrow(
-        new NotFoundException("There is no user with that email"),
-      );
-
-      expect(mockUsersService.changeUserPassword).toHaveBeenCalledWith(
-        "test@example.com",
-        "newPassword123",
-      );
-      expect(mockUsersService.changeUserPassword).toHaveBeenCalledTimes(1);
-    });
-
-    it("should handle service errors properly", async () => {
-      const serviceError = new Error("Database connection failed");
-      mockUsersService.changeUserPassword = jest
-        .fn()
-        .mockRejectedValue(serviceError);
-
-      await expect(
-        controller.updatePassword(updatePasswordDto),
-      ).rejects.toThrow(serviceError);
-
-      expect(mockUsersService.changeUserPassword).toHaveBeenCalledWith(
-        "test@example.com",
-        "newPassword123",
+  describe("patchMe", () => {
+    it("delegates to updateProfile", async () => {
+      const dto: UpdateProfileDto = { firstName: "Bob" };
+      const res = await controller.patchMe(mockUser, dto);
+      expect(res).toEqual(profile);
+      expect(mockUsersService.updateProfile).toHaveBeenCalledWith(
+        mockUser,
+        dto,
       );
     });
+  });
 
-    it("should pass correct parameters to service", async () => {
-      const customDto: UpdatePasswordDto = {
-        email: "test@example.com",
-        newPassword: "superSecretPassword!@#",
-      };
-
-      mockUsersService.changeUserPassword = jest.fn().mockResolvedValue(true);
-
-      await controller.updatePassword(customDto);
-
-      expect(mockUsersService.changeUserPassword).toHaveBeenCalledWith(
-        "test@example.com",
-        "superSecretPassword!@#",
-      );
+  describe("deleteMe", () => {
+    it("delegates to deleteAccount", async () => {
+      await expect(controller.deleteMe(mockUser)).resolves.toBeUndefined();
+      expect(mockUsersService.deleteAccount).toHaveBeenCalledWith(mockUser);
     });
   });
 });

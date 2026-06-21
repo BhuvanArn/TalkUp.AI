@@ -58,11 +58,13 @@ import { OrganizationModule } from "./modules/organization/organization.module";
     }),
     AiModule,
     OrganizationModule,
+    // Global JwtService: default expiry matches access tokens; AuthService still passes
+    // explicit expiresIn + jwtid per token and REFRESH_SECRET for refresh JWTs.
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
       signOptions: {
-        expiresIn: (process.env.JWT_EXPIRES_IN || "2d") as any,
+        expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || "15m") as any,
       },
     }),
   ],

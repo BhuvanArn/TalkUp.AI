@@ -20,6 +20,8 @@ export function WebSocketDebugPanel({
   sendPing,
   lastMessage,
   lastJsonMessage,
+  isListening,
+  isSpeaking,
   isRecording,
   packetsSent,
   supportedMimeType,
@@ -69,13 +71,25 @@ export function WebSocketDebugPanel({
           <span
             className={cn(
               'font-medium',
-              isRecording ? 'text-green-600' : 'text-gray-600',
+              isRecording
+                ? 'text-green-600'
+                : isSpeaking
+                  ? 'text-amber-600'
+                  : isListening
+                    ? 'text-blue-600'
+                    : 'text-gray-600',
             )}
           >
-            {isRecording ? 'Streaming' : 'Idle'}
+            {isRecording
+              ? 'Recording utterance'
+              : isSpeaking
+                ? 'Speaking'
+                : isListening
+                  ? 'Listening'
+                  : 'Idle'}
           </span>
         </div>
-        {isRecording && (
+        {(isRecording || isListening) && (
           <div className="text-xs text-gray-600">
             Packets sent: {packetsSent}
             {supportedMimeType && (
