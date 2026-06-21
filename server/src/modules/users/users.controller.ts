@@ -6,7 +6,6 @@ import {
   BadRequestException,
   UseInterceptors,
   UseGuards,
-  Put,
   Post,
   Delete,
   Get,
@@ -15,6 +14,7 @@ import {
   Patch,
 } from "@nestjs/common";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
+import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
 
@@ -75,6 +75,7 @@ export class UsersController {
       "Invalid request data in body (e.g., missing file or incorrect format)",
   })
   @UsePipes(new PostValidationPipe())
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 10 * 1024 * 1024 },
@@ -93,6 +94,12 @@ export class UsersController {
     return this.usersService.uploadCV(req, res);
   }
 
+  @ApiOkResponse({ description: "The job offer was successfully parsed" })
+  @ApiBadRequestResponse({
+    description: "Missing/invalid URL, blocked target, or unscrapable page",
+  })
+  @ApiUnauthorizedResponse()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseGuards(AccessTokenGuard)
   @Post("uploadJobOffer")
   async uploadJobOffer(@Req() req: Request, @Res() res: Response) {

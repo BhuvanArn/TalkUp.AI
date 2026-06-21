@@ -16,13 +16,21 @@ import { user_job_offer } from "@entities/userJobOffer.entity";
 import { UsersService } from "./users.service";
 
 const mockPdfParse = jest.fn();
-jest.mock("pdf-parse-debugging-disabled", () => mockPdfParse);
+// Lazy wrappers: the service now imports these at module-load time, so the mock
+// factory must not touch the `mock*` consts until call time (avoids TDZ).
+jest.mock("pdf-parse-debugging-disabled", () => ({
+  __esModule: true,
+  default: (...args: unknown[]) => mockPdfParse(...args),
+}));
 
-jest.mock("groq-sdk", () => {
-  return jest.fn().mockImplementation(() => ({
-    chat: { completions: { create: mockGroqCreate } },
-  }));
-});
+jest.mock("groq-sdk", () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    chat: {
+      completions: { create: (...args: unknown[]) => mockGroqCreate(...args) },
+    },
+  })),
+}));
 
 jest.mock("../../common/utils/JobOfferExtraction", () => ({
   scrapeLinkedin: jest.fn(),
@@ -413,6 +421,50 @@ describe("UsersService", () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
+    it("applique les valeurs par défaut quand des champs sont absents", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      // Empty object → every field falls back to its `?? null` / `?? []` default.
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: "{}" } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      const req = mockReqWithFile();
+      const res = mockRes();
+
+      await service.uploadCV(req, res);
+
+      expect(cvRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          desired_job: null,
+          resume: null,
+          experiences: [],
+          education: [],
+          technical_skills: [],
+          languages: [],
+        }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("tronque le texte du CV avant l'envoi au LLM", async () => {
+      const longText = "a".repeat(20000);
+      mockPdfParse.mockResolvedValue({ text: longText });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      await service.uploadCV(mockReqWithFile(), mockRes());
+
+      const promptSent = mockGroqCreate.mock.calls[0][0].messages[0].content;
+      // Raw CV text is capped at 8000 chars: prompt = boilerplate + <=8000,
+      // far below the un-truncated 20000-char input.
+      expect(promptSent).not.toContain("a".repeat(8001));
+      expect(promptSent).toContain("a".repeat(8000));
+      expect(promptSent.length).toBeLessThan(12000);
+    });
+
     it("retourne 500 en cas d'erreur inattendue", async () => {
       mockPdfParse.mockRejectedValue(new Error("unexpected crash"));
 
@@ -449,6 +501,22 @@ describe("UsersService", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ message: "Invalid URL format." });
+    });
+
+    it("retourne 400 et ne scrape pas une cible SSRF (loopback/privée)", async () => {
+      const req = mockReq({ body: { url: "http://169.254.169.254/latest/" } });
+      const res = mockRes();
+
+      await service.uploadJobOffer(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "This URL target is not allowed.",
+      });
+      // Guard runs before any scraping is attempted.
+      expect(mockScrapeLinkedin).not.toHaveBeenCalled();
+      expect(mockScrapeAxios).not.toHaveBeenCalled();
+      expect(mockScrapePuppeteer).not.toHaveBeenCalled();
     });
 
     it("retourne 400 si aucun scraper ne retourne du contenu", async () => {
@@ -540,6 +608,32 @@ describe("UsersService", () => {
       expect(res.json).toHaveBeenCalledWith({
         message: "Job offer parsed successfully",
       });
+    });
+
+    it("applique les valeurs par défaut quand des champs sont absents", async () => {
+      mockScrapeAxios.mockResolvedValue("some job content");
+      // Empty object → every field falls back to its `?? null` / `?? []` default.
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: "{}" } }],
+      });
+      jobOfferRepo.findOne.mockResolvedValue(null);
+
+      const req = mockReq({ body: { url: "https://example.com/job/123" } });
+      const res = mockRes();
+
+      await service.uploadJobOffer(req, res);
+
+      expect(jobOfferRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          job_title: null,
+          company_name: null,
+          required_skills: [],
+          missions: [],
+          soft_skills: [],
+          offer_url: "https://example.com/job/123",
+        }),
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
     });
 
     it("met à jour l'offre existante et retourne 200", async () => {

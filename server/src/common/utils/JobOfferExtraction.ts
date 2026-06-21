@@ -1,5 +1,9 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import puppeteer from "puppeteer";
+import { Logger } from "@nestjs/common";
+
+const logger = new Logger("JobOfferExtraction");
 
 export const scrapeLinkedin = async (url: string): Promise<string> => {
   const maxRetries = 3;
@@ -17,7 +21,7 @@ export const scrapeLinkedin = async (url: string): Promise<string> => {
       // Délai croissant entre chaque tentative : 0ms, 2000ms, 4000ms
       if (attempt > 0) {
         const delay = attempt * 2000;
-        console.log(
+        logger.debug(
           `LinkedIn retry ${attempt}/${maxRetries - 1} - waiting ${delay}ms...`,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -83,20 +87,19 @@ export const scrapeLinkedin = async (url: string): Promise<string> => {
 
       if (extracted.length >= 100) {
         pageText = extracted;
-        console.log(`Strategy LinkedIn succeeded on attempt ${attempt + 1}`);
+        logger.debug(`Strategy LinkedIn succeeded on attempt ${attempt + 1}`);
       } else {
         throw new Error("Extracted content too short");
       }
     } catch (err) {
-      console.log(
-        `LinkedIn attempt ${attempt + 1} failed:`,
-        (err as any)?.code || err,
+      logger.debug(
+        `LinkedIn attempt ${attempt + 1} failed: ${(err as any)?.code || err}`,
       );
       attempt++;
     }
   }
   if (!pageText) {
-    console.log(
+    logger.debug(
       "All LinkedIn attempts failed, falling through to next strategy...",
     );
   }
@@ -135,10 +138,10 @@ export const scrapeAxios = async (url: string): Promise<string> => {
 
     if (extracted.length >= 300) {
       pageText = extracted;
-      console.log("Strategy Axios succeeded");
+      logger.debug("Strategy Axios succeeded");
     }
   } catch (err) {
-    console.log("Strategy Axios failed:", (err as any)?.code || err);
+    logger.debug(`Strategy Axios failed: ${(err as any)?.code || err}`);
   }
 
   return pageText;
@@ -149,11 +152,10 @@ export const scrapePuppeteer = async (url: string): Promise<string> => {
   let pageText = "";
 
   try {
-    const puppeteer = require("puppeteer");
-
+    // Use puppeteer's bundled Chromium. Override only via PUPPETEER_EXECUTABLE_PATH
+    // (respected by puppeteer natively) when a system Chrome is required.
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: "/usr/bin/google-chrome",
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -191,12 +193,11 @@ export const scrapePuppeteer = async (url: string): Promise<string> => {
 
     if (extracted.length >= 300) {
       pageText = extracted;
-      console.log("Strategy Puppeteer generic succeeded");
+      logger.debug("Strategy Puppeteer generic succeeded");
     }
   } catch (err) {
-    console.log(
-      "Strategy Puppeteer generic failed:",
-      (err as any)?.message || err,
+    logger.debug(
+      `Strategy Puppeteer generic failed: ${(err as any)?.message || err}`,
     );
   }
 

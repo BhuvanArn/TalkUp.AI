@@ -54,7 +54,7 @@ export class user_job_offer {
   @Column({ nullable: true })
   required_education: string;
 
-  @Column({ type: "json", nullable: true })
+  @Column({ type: "simple-array", nullable: true })
   missions: string[];
 
   @Column({ type: "simple-array", nullable: true })

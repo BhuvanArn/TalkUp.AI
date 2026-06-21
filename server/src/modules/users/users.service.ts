@@ -19,16 +19,23 @@ import {
   scrapeAxios,
   scrapePuppeteer,
 } from "../../common/utils/JobOfferExtraction";
+import { isSafeFetchUrl } from "../../common/utils/urlGuard";
 
 import { UpdateProfileDto } from "./dto/updateProfile.dto";
 import { GetProfileDto } from "./dto/getProfile.dto";
 import { type Request, type Response } from "express";
 import { user_cv } from "@entities/userCV.entity";
 import { user_job_offer } from "@entities/userJobOffer.entity";
+import Groq from "groq-sdk";
+import pdfParse from "pdf-parse-debugging-disabled";
+
+// Cap raw text sent to the LLM to bound token cost on large documents.
+const MAX_LLM_INPUT_CHARS = 8000;
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
+  private readonly groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
   constructor(
     @InjectRepository(user)
@@ -189,16 +196,16 @@ export class UsersService {
       }
 
       const userId = (req as any).userId;
-      const pdf = require("pdf-parse-debugging-disabled");
-      const pdfData = await pdf(req.file.buffer);
+      const pdfData = await pdfParse(req.file.buffer);
       const rawText = pdfData.text;
 
-      if (rawText.length === 0 || !rawText) {
-        console.log("The file is empty!!!");
+      if (!rawText || rawText.length === 0) {
         return res
           .status(400)
           .json({ message: "The PDF file is empty or could not be parsed." });
       }
+
+      const cvText = rawText.substring(0, MAX_LLM_INPUT_CHARS);
 
       const prompt = `You are a specialized CV analysis assistant. Analyze the following text extracted from a CV and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
       {
@@ -236,12 +243,9 @@ export class UsersService {
       - For durations, keep the original format from the CV (e.g. "Jan 2022 - Mar 2024")
 
       CV text:
-      ${rawText}`;
+      ${cvText}`;
 
-      const Groq = require("groq-sdk");
-      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-      const completion = await groq.chat.completions.create({
+      const completion = await this.groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
         messages: [{ role: "user", content: prompt }],
         temperature: 0,
@@ -250,7 +254,7 @@ export class UsersService {
       const responseText = completion.choices[0]?.message?.content;
 
       if (!responseText) {
-        console.error("Empty response from Groq");
+        this.logger.error("Empty response from Groq");
         return res.status(500).json({ message: "Empty response from AI." });
       }
 
@@ -259,7 +263,7 @@ export class UsersService {
         const cleaned = responseText.replace(/```json|```/g, "").trim();
         extractedData = JSON.parse(cleaned);
       } catch (parseError) {
-        console.error("JSON parse error:", parseError);
+        this.logger.error(`JSON parse error: ${parseError}`);
         return res
           .status(500)
           .json({ message: "Failed to parse extracted CV data." });
@@ -281,7 +285,7 @@ export class UsersService {
             languages: extractedData.languages ?? [],
           },
         );
-        console.log("CV updated for user ID:", userId);
+        this.logger.log(`CV updated for user ID: ${userId}`);
         return res.status(200).json({ message: "CV updated successfully" });
       } else {
         const newCV = this.user_cvRepo.create({
@@ -293,12 +297,12 @@ export class UsersService {
           technical_skills: extractedData.technical_skills ?? [],
           languages: extractedData.languages ?? [],
         });
-        console.log("CV created for user ID:", userId);
         await this.user_cvRepo.save(newCV);
+        this.logger.log(`CV created for user ID: ${userId}`);
         return res.status(200).json({ message: "CV uploaded successfully" });
       }
     } catch (error) {
-      console.error("Parsing error:", error);
+      this.logger.error(`uploadCV failed: ${error}`);
       res.status(500).json({ message: "Error processing the CV file." });
     }
   }
@@ -320,6 +324,14 @@ export class UsersService {
         return res.status(400).json({ message: "Invalid URL format." });
       }
 
+      // SSRF guard: reject non-http(s) schemes and private/loopback/link-local
+      // targets (cloud metadata, localhost, internal services).
+      if (!isSafeFetchUrl(url)) {
+        return res
+          .status(400)
+          .json({ message: "This URL target is not allowed." });
+      }
+
       let pageText: string = "";
 
       const isLinkedIn = url.includes("linkedin.com/jobs");
@@ -335,9 +347,7 @@ export class UsersService {
         });
       }
 
-      pageText = pageText.substring(0, 8000);
-
-      console.log("Final extracted page text length:", pageText.length);
+      pageText = pageText.substring(0, MAX_LLM_INPUT_CHARS);
 
       const prompt = `You are a specialized job offer analysis assistant. Analyze the following text extracted from a job offer page and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
       {
@@ -369,12 +379,7 @@ export class UsersService {
       Job offer text:
       ${pageText}`;
 
-      const Groq = require("groq-sdk");
-      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-      console.log("Sending job offer analysis prompt to Groq...");
-
-      const completion = await groq.chat.completions.create({
+      const completion = await this.groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
         messages: [{ role: "user", content: prompt }],
         temperature: 0,
@@ -383,7 +388,7 @@ export class UsersService {
       const responseText = completion.choices[0]?.message?.content;
 
       if (!responseText) {
-        console.error("Empty response from Groq");
+        this.logger.error("Empty response from Groq");
         return res.status(500).json({ message: "Empty response from AI." });
       }
 
@@ -392,7 +397,7 @@ export class UsersService {
         const cleaned = responseText.replace(/```json|```/g, "").trim();
         extractedData = JSON.parse(cleaned);
       } catch (parseError) {
-        console.error("JSON parse error:", parseError);
+        this.logger.error(`JSON parse error: ${parseError}`);
         return res
           .status(500)
           .json({ message: "Failed to parse extracted job offer data." });
@@ -425,7 +430,7 @@ export class UsersService {
             offer_url: url,
           },
         );
-        console.log("Job offer updated for user ID:", userId);
+        this.logger.log(`Job offer updated for user ID: ${userId}`);
         return res.status(200).json({
           message: "Job offer updated successfully",
         });
@@ -451,13 +456,13 @@ export class UsersService {
           offer_url: url,
         });
         await this.user_job_offerRepo.save(newJobOffer);
-        console.log("Job offer created for user ID:", userId);
+        this.logger.log(`Job offer created for user ID: ${userId}`);
         return res.status(200).json({
           message: "Job offer parsed successfully",
         });
       }
     } catch (error) {
-      console.error("Error processing job offer:", error);
+      this.logger.error(`uploadJobOffer failed: ${error}`);
       res.status(500).json({ message: "Error processing the job offer." });
     }
   }
