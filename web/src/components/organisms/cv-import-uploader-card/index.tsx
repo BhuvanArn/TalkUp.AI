@@ -2,7 +2,11 @@ import { cn } from '@/utils/cn';
 import React, { useCallback, useState } from 'react';
 
 import { FileBadge } from '../../atoms/cv-import-file-badge';
+import { iconMap } from '../../atoms/icon/icon-map';
 import { Stepper } from '../../molecules/cv-import-stepper';
+
+const UploadIcon = iconMap.upload;
+const CalendarIcon = iconMap.schedule;
 
 /**
  * Props for the UploaderCard component.
@@ -170,20 +174,7 @@ export const UploaderCard = ({
           )}
         >
           <div className="bg-surface mb-5 flex h-16 w-16 items-center justify-center rounded-2xl">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="text-success"
-              aria-hidden="true"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
+            <UploadIcon size={32} className="text-success" aria-hidden="true" />
           </div>
 
           <h3 className="text-body-xl-strong text-text mb-1">
@@ -230,23 +221,7 @@ export const UploaderCard = ({
       {/* ── Deadline section ── */}
       <div className="bg-surface border-border mx-10 mb-8 rounded-2xl border p-5">
         <div className="mb-3 flex items-center gap-2">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-accent"
-            aria-hidden="true"
-          >
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
+          <CalendarIcon size={16} className="text-accent" aria-hidden="true" />
           <span className="text-body-s-strong text-text flex-1">
             Application Deadline
           </span>

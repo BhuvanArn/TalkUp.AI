@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { ProgressBar } from '../../atoms/cv-import-progress-bar';
 import { AnalysisStatus } from '../../molecules/cv-import-analysis-status';
@@ -11,6 +11,16 @@ interface AIProcessingOverlayProps {
   /** Callback function triggered once the progress bar reaches 100% */
   onFinished: () => void;
 }
+
+/** Static rotation of simulated status messages shown during processing. */
+const PROCESSING_MESSAGES = [
+  'Reading CV structure...',
+  'Extracting key skills...',
+  'Analyzing job requirements...',
+  'Comparing experiences with job keywords...',
+  'Calculating matching score...',
+  'Generating final report...',
+];
 
 /**
  * AIProcessingOverlay Organism
@@ -35,18 +45,6 @@ export const AIProcessingOverlay = ({
   );
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  const messages = useMemo(
-    () => [
-      'Reading CV structure...',
-      'Extracting key skills...',
-      'Analyzing job requirements...',
-      'Comparing experiences with job keywords...',
-      'Calculating matching score...',
-      'Generating final report...',
-    ],
-    [],
-  );
-
   // Simulated progress timer — replace with real request lifecycle once the
   // backend analysis endpoint exists.
   useEffect(() => {
@@ -62,8 +60,13 @@ export const AIProcessingOverlay = ({
 
         const nextProgress = Math.min(prev + 2, 100);
 
-        const msgIndex = Math.floor((nextProgress / 100) * messages.length);
-        setCurrentMessage(messages[msgIndex] || messages[messages.length - 1]);
+        const msgIndex = Math.floor(
+          (nextProgress / 100) * PROCESSING_MESSAGES.length,
+        );
+        setCurrentMessage(
+          PROCESSING_MESSAGES[msgIndex] ||
+            PROCESSING_MESSAGES[PROCESSING_MESSAGES.length - 1],
+        );
 
         return nextProgress;
       });
@@ -75,7 +78,7 @@ export const AIProcessingOverlay = ({
         clearTimeout(timeoutId);
       }
     };
-  }, [onFinished, messages]);
+  }, [onFinished]);
 
   // Move focus into the dialog on mount so keyboard / screen-reader users are
   // anchored to the processing state rather than the now-inert page behind it.
