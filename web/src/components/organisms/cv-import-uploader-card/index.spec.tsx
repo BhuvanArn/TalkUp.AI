@@ -1,15 +1,15 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { UploaderCard } from './UploaderCard';
+import { UploaderCard } from './index';
 
-vi.mock('../../atoms/cv-import/FileBadge', () => ({
+vi.mock('../../atoms/cv-import-file-badge', () => ({
   FileBadge: ({ label }: { label: string }) => (
     <span data-testid={`badge-${label}`}>{label}</span>
   ),
 }));
 
-vi.mock('../../molecules/cv-import/Stepper', () => ({
+vi.mock('../../molecules/cv-import-stepper', () => ({
   Stepper: ({ currentStep }: { currentStep: number }) => (
     <div data-testid="stepper">Step {currentStep}</div>
   ),
@@ -86,6 +86,39 @@ describe('UploaderCard', () => {
       fireEvent.change(input, { target: { files: [] } });
       expect(onFileSelect).not.toHaveBeenCalled();
     });
+
+    it('shows an English error for an unsupported file format', () => {
+      const onFileSelect = vi.fn();
+      render(<UploaderCard {...defaultProps} onFileSelect={onFileSelect} />);
+      const input = document.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const file = new File(['x'], 'malware.exe', {
+        type: 'application/x-msdownload',
+      });
+      fireEvent.change(input, { target: { files: [file] } });
+      expect(onFileSelect).not.toHaveBeenCalled();
+      expect(
+        screen.getByText(
+          'Unsupported file format. Please use a PDF, DOC or DOCX file.',
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('shows an English error when the file is too large', () => {
+      const onFileSelect = vi.fn();
+      render(<UploaderCard {...defaultProps} onFileSelect={onFileSelect} />);
+      const input = document.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const big = new File(['x'], 'cv.pdf', { type: 'application/pdf' });
+      Object.defineProperty(big, 'size', { value: 6 * 1024 * 1024 });
+      fireEvent.change(input, { target: { files: [big] } });
+      expect(onFileSelect).not.toHaveBeenCalled();
+      expect(
+        screen.getByText('File is too large. Maximum size: 5 MB.'),
+      ).toBeInTheDocument();
+    });
   });
 
   describe('Drag and drop', () => {
@@ -100,23 +133,23 @@ describe('UploaderCard', () => {
       expect(onFileSelect).toHaveBeenCalledWith(file);
     });
 
-    it('updates background on dragenter', () => {
+    it('applies the drag-active surface class on dragenter', () => {
       render(<UploaderCard {...defaultProps} />);
       const dropZone = screen
         .getByText('Drag and drop your CV here')
         .closest('div')!.parentElement!;
       fireEvent.dragEnter(dropZone);
-      expect(dropZone).toHaveStyle({ backgroundColor: '#F0F9FF' });
+      expect(dropZone.className).toContain('bg-surface');
     });
 
-    it('resets background on dragleave', () => {
+    it('removes the drag-active surface class on dragleave', () => {
       render(<UploaderCard {...defaultProps} />);
       const dropZone = screen
         .getByText('Drag and drop your CV here')
         .closest('div')!.parentElement!;
       fireEvent.dragEnter(dropZone);
       fireEvent.dragLeave(dropZone);
-      expect(dropZone.style.backgroundColor).not.toBe('#F0F9FF');
+      expect(dropZone.className).not.toContain('bg-surface');
     });
   });
 
@@ -136,6 +169,11 @@ describe('UploaderCard', () => {
     it('renders the date input', () => {
       render(<UploaderCard {...defaultProps} />);
       expect(document.querySelector('input[type="date"]')).toBeInTheDocument();
+    });
+
+    it('labels the date input for accessibility', () => {
+      render(<UploaderCard {...defaultProps} />);
+      expect(screen.getByLabelText('Application deadline')).toBeInTheDocument();
     });
 
     it('calls onDeadlineChange with a Date when a date is set', () => {

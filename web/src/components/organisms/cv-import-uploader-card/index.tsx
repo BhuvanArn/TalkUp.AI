@@ -1,7 +1,8 @@
+import { cn } from '@/utils/cn';
 import React, { useCallback, useState } from 'react';
 
-import { FileBadge } from '../../atoms/cv-import/FileBadge';
-import { Stepper } from '../../molecules/cv-import/Stepper';
+import { FileBadge } from '../../atoms/cv-import-file-badge';
+import { Stepper } from '../../molecules/cv-import-stepper';
 
 /**
  * Props for the UploaderCard component.
@@ -17,6 +18,15 @@ interface UploaderCardProps {
   onDeadlineChange?: (date: Date | null) => void;
 }
 
+const MAX_SIZE_MB = 5;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx'];
+const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
 /**
  * UploaderCard Component
  * Provides a drag-and-drop interface for CV uploading and an optional
@@ -31,17 +41,12 @@ export const UploaderCard = ({
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const MAX_SIZE_MB = 5;
-  const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
-  const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx'];
-  const ALLOWED_MIME_TYPES = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  ];
-
   /**
-   * Validates file size and format before calling onFileSelect
+   * Validates file size and format before calling onFileSelect.
+   *
+   * NOTE: This is a best-effort *client-side* gate only. The MIME-type and
+   * extension checks are trivially spoofable; the authoritative validation must
+   * happen server-side on the actual upload once that endpoint exists.
    */
   const validateAndProcessFile = useCallback(
     (file: File) => {
@@ -54,13 +59,13 @@ export const UploaderCard = ({
 
       if (!isValidType) {
         setError(
-          'Format de fichier non supporté. Veuillez utiliser un PDF, DOC ou DOCX.',
+          'Unsupported file format. Please use a PDF, DOC or DOCX file.',
         );
         return;
       }
 
       if (file.size > MAX_SIZE_BYTES) {
-        setError(`Le fichier est trop grand. Taille max : ${MAX_SIZE_MB} Mo.`);
+        setError(`File is too large. Maximum size: ${MAX_SIZE_MB} MB.`);
         return;
       }
 
@@ -123,15 +128,13 @@ export const UploaderCard = ({
   );
 
   /**
-   * Determines the color scheme for the urgency badge based on remaining days.
+   * Returns the token-based color classes for the urgency badge.
    */
-  const getUrgencyStyle = (): React.CSSProperties => {
-    if (daysRemaining === null) return {};
-    if (daysRemaining < 0)
-      return { backgroundColor: '#FEE2E2', color: '#DC2626' };
-    if (daysRemaining <= 3)
-      return { backgroundColor: '#FEF3C7', color: '#D97706' };
-    return { backgroundColor: '#DCFCE7', color: '#16A34A' };
+  const getUrgencyClass = (): string => {
+    if (daysRemaining === null) return '';
+    if (daysRemaining < 0) return 'bg-error-weak text-error';
+    if (daysRemaining <= 3) return 'bg-warning-weak text-warning';
+    return 'bg-success-weak text-success';
   };
 
   /**
@@ -146,34 +149,36 @@ export const UploaderCard = ({
   };
 
   return (
-    <div style={cardStyle}>
+    <div className="bg-background w-full max-w-[800px] overflow-hidden rounded-3xl border border-border">
       <Stepper currentStep={step} />
 
       {/* ── Drop zone ── */}
       <div
-        style={{
-          ...dropZoneWrapper,
-          backgroundColor: isDragging ? '#F0F9FF' : 'transparent',
-        }}
+        className={cn(
+          'px-10 pt-10 pb-8 transition-colors',
+          isDragging && 'bg-surface',
+        )}
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
         onDragLeave={handleDrag}
         onDrop={handleDrop}
       >
         <div
-          style={{
-            ...dashedBox,
-            borderColor: isDragging ? '#2B70C9' : '#E2E8F0',
-          }}
+          className={cn(
+            'flex flex-col items-center rounded-2xl border-2 border-dashed px-5 py-15 text-center transition-colors',
+            isDragging ? 'border-accent' : 'border-border',
+          )}
         >
-          <div style={iconCircle}>
+          <div className="bg-surface mb-5 flex h-16 w-16 items-center justify-center rounded-2xl">
             <svg
               width="32"
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#1D9E75"
+              stroke="currentColor"
               strokeWidth="2"
+              className="text-success"
+              aria-hidden="true"
             >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
@@ -181,10 +186,15 @@ export const UploaderCard = ({
             </svg>
           </div>
 
-          <h3 style={mainTitle}>Drag and drop your CV here</h3>
-          <p style={subTitle}>
+          <h3 className="text-body-xl-strong text-text mb-1">
+            Drag and drop your CV here
+          </h3>
+          <p className="text-body-m text-text-weaker m-0">
             or{' '}
-            <label htmlFor="cv-input" style={browseLink}>
+            <label
+              htmlFor="cv-input"
+              className="text-text-link cursor-pointer font-semibold underline"
+            >
               browse your files
             </label>
           </p>
@@ -201,25 +211,16 @@ export const UploaderCard = ({
             }}
           />
 
-          <div style={badgeContainer}>
+          <div className="mt-6 mb-3 flex gap-2">
             <FileBadge label="PDF" />
             <FileBadge label="DOCX" />
             <FileBadge label="DOC" />
           </div>
 
-          <span style={footerText}>Max size: 5 MB</span>
+          <span className="text-body-s text-text-weakest">Max size: 5 MB</span>
 
-          {/* Affichage de l'erreur de validation */}
           {error && (
-            <p
-              style={{
-                color: '#DC2626',
-                fontSize: '14px',
-                marginTop: '16px',
-                fontWeight: 500,
-                margin: '16px 0 0 0',
-              }}
-            >
+            <p role="alert" className="text-body-m text-error mt-4 font-medium">
               {error}
             </p>
           )}
@@ -227,34 +228,47 @@ export const UploaderCard = ({
       </div>
 
       {/* ── Deadline section ── */}
-      <div style={deadlineSection}>
-        <div style={deadlineHeader}>
+      <div className="bg-surface border-border mx-10 mb-8 rounded-2xl border p-5">
+        <div className="mb-3 flex items-center gap-2">
           <svg
             width="16"
             height="16"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#2B70C9"
+            stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            className="text-accent"
+            aria-hidden="true"
           >
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
             <line x1="16" y1="2" x2="16" y2="6" />
             <line x1="8" y1="2" x2="8" y2="6" />
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
-          <span style={deadlineTitleStyle}>Application Deadline</span>
+          <span className="text-body-s-strong text-text flex-1">
+            Application Deadline
+          </span>
 
           {deadline && daysRemaining !== null && (
-            <span style={{ ...urgencyBadge, ...getUrgencyStyle() }}>
+            <span
+              className={cn(
+                'text-body-s-strong rounded-full px-2.5 py-0.5',
+                getUrgencyClass(),
+              )}
+            >
               {getUrgencyLabel()}
             </span>
           )}
         </div>
 
-        <div style={deadlineInputRow}>
+        <div className="flex items-center gap-2">
+          <label htmlFor="cv-deadline" className="sr-only">
+            Application deadline
+          </label>
           <input
+            id="cv-deadline"
             type="date"
             value={toInputValue(deadline)}
             onChange={(e) => {
@@ -267,12 +281,14 @@ export const UploaderCard = ({
               const newDate = new Date(year, month - 1, day);
               onDeadlineChange?.(newDate);
             }}
-            style={dateInput}
+            className="text-body-m text-text bg-background border-border-strong focus-visible:border-accent focus-visible:ring-accent flex-1 cursor-pointer rounded-lg border px-3 py-2 outline-none focus-visible:ring-1"
           />
           {deadline && (
             <button
-              style={clearButton}
+              type="button"
+              className="text-text-weakest border-border hover:bg-surface-hover rounded-lg border px-3 py-2 transition-colors"
               onClick={() => onDeadlineChange?.(null)}
+              aria-label="Clear date"
               title="Clear date"
             >
               ✕
@@ -280,149 +296,17 @@ export const UploaderCard = ({
           )}
         </div>
 
-        {/* Typo de rephrasage corrigée ici (Optional: helps...) */}
         {!deadline && (
-          <p style={deadlineHint}>
+          <p className="text-body-s text-text-weakest mt-2">
             Optional: helps prioritize your applications
           </p>
         )}
         {deadline && daysRemaining !== null && daysRemaining < 0 && (
-          <p style={{ ...deadlineHint, color: '#DC2626' }}>
+          <p className="text-body-s text-error mt-2">
             The deadline has passed.
           </p>
         )}
       </div>
     </div>
   );
-};
-
-const cardStyle: React.CSSProperties = {
-  background: '#FFF',
-  borderRadius: '24px',
-  width: '100%',
-  maxWidth: '800px',
-  boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
-  overflow: 'hidden',
-};
-
-const dropZoneWrapper: React.CSSProperties = {
-  padding: '40px 40px 32px',
-  transition: 'all 0.2s ease',
-};
-
-const dashedBox: React.CSSProperties = {
-  border: '2px dashed',
-  borderRadius: '20px',
-  padding: '60px 20px',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  textAlign: 'center',
-};
-
-const iconCircle: React.CSSProperties = {
-  width: '64px',
-  height: '64px',
-  backgroundColor: '#F0F9FF',
-  borderRadius: '16px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginBottom: '20px',
-};
-
-const mainTitle: React.CSSProperties = {
-  fontSize: '18px',
-  fontWeight: 700,
-  color: '#1E293B',
-  margin: '0 0 4px 0',
-};
-
-const subTitle: React.CSSProperties = {
-  fontSize: '15px',
-  color: '#64748B',
-  margin: 0,
-};
-
-const browseLink: React.CSSProperties = {
-  color: '#2B70C9',
-  fontWeight: 600,
-  cursor: 'pointer',
-  textDecoration: 'underline',
-};
-
-const badgeContainer: React.CSSProperties = {
-  display: 'flex',
-  gap: '8px',
-  marginTop: '24px',
-  marginBottom: '12px',
-};
-
-const footerText: React.CSSProperties = {
-  fontSize: '12px',
-  color: '#94A3B8',
-};
-
-const deadlineSection: React.CSSProperties = {
-  margin: '0 40px 32px',
-  padding: '18px 20px',
-  backgroundColor: '#F8FAFF',
-  border: '1.5px solid #DBEAFE',
-  borderRadius: '16px',
-};
-
-const deadlineHeader: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  marginBottom: '12px',
-};
-
-const deadlineTitleStyle: React.CSSProperties = {
-  fontSize: '13px',
-  fontWeight: 600,
-  color: '#1E293B',
-  flex: 1,
-};
-
-const urgencyBadge: React.CSSProperties = {
-  fontSize: '11px',
-  fontWeight: 700,
-  padding: '2px 10px',
-  borderRadius: '999px',
-};
-
-const deadlineInputRow: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-};
-
-const dateInput: React.CSSProperties = {
-  flex: 1,
-  padding: '9px 12px',
-  fontSize: '14px',
-  color: '#1E293B',
-  backgroundColor: '#FFFFFF',
-  border: '1.5px solid #CBD5E1',
-  borderRadius: '10px',
-  outline: 'none',
-  cursor: 'pointer',
-  fontFamily: 'inherit',
-};
-
-const clearButton: React.CSSProperties = {
-  padding: '8px 12px',
-  fontSize: '13px',
-  color: '#94A3B8',
-  backgroundColor: 'transparent',
-  border: '1.5px solid #E2E8F0',
-  borderRadius: '10px',
-  cursor: 'pointer',
-};
-
-const deadlineHint: React.CSSProperties = {
-  margin: '8px 0 0',
-  fontSize: '12px',
-  color: '#94A3B8',
 };

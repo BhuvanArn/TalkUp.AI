@@ -1,3 +1,5 @@
+import { cn } from '@/utils/cn';
+
 /**
  * @interface StepIndicatorProps
  * @description Properties for an individual step in the stepper.
@@ -22,37 +24,24 @@ export const StepIndicator = ({
   label,
 }: StepIndicatorProps) => (
   <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      paddingBottom: 12,
-      borderBottom: active ? '3px solid #2B70C9' : '3px solid transparent',
-      transition: 'all 0.3s ease',
-    }}
+    className={cn(
+      'flex items-center gap-2 border-b-[3px] pb-3 transition-all',
+      active ? 'border-accent' : 'border-transparent',
+    )}
   >
     <div
-      style={{
-        width: 24,
-        height: 24,
-        borderRadius: '50%',
-        backgroundColor: active ? '#2B70C9' : '#F3F4F6',
-        color: active ? 'white' : '#4B5563',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 12,
-        fontWeight: 700,
-      }}
+      className={cn(
+        'text-body-s-strong flex h-6 w-6 items-center justify-center rounded-full',
+        active ? 'bg-accent text-white' : 'bg-surface-raised text-text-weaker',
+      )}
     >
       {number}
     </div>
     <span
-      style={{
-        fontSize: 14,
-        fontWeight: active ? 600 : 400,
-        color: active ? '#2B70C9' : '#64748B',
-      }}
+      className={cn(
+        'text-body-m',
+        active ? 'text-accent font-semibold' : 'text-text-weaker',
+      )}
     >
       {label}
     </span>

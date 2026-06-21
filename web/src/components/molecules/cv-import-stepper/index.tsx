@@ -1,4 +1,4 @@
-import { StepIndicator } from '../../atoms/cv-import/StepIndicator';
+import { StepIndicator } from '../../atoms/cv-import-step-indicator';
 
 /**
  * @interface StepperProps
@@ -15,17 +15,9 @@ interface StepperProps {
  * @param {StepperProps} props - Component properties.
  */
 export const Stepper = ({ currentStep }: StepperProps) => (
-  <div style={stepperContainerStyle}>
+  <div className="border-border bg-background flex gap-10 border-b px-10 pt-6">
     <StepIndicator number={1} label="Upload" active={currentStep === 1} />
-    <StepIndicator number={2} label="Analyse" active={currentStep === 2} />
+    <StepIndicator number={2} label="Analysis" active={currentStep === 2} />
     <StepIndicator number={3} label="Confirmation" active={currentStep === 3} />
   </div>
 );
-
-const stepperContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: '40px',
-  padding: '24px 40px 0',
-  borderBottom: '1px solid #F1F5F9',
-  backgroundColor: '#FFF',
-};

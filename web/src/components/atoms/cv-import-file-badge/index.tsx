@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * @interface FileBadgeProps
  * @description Properties for the FileBadge component.
@@ -16,16 +14,7 @@ interface FileBadgeProps {
  * @returns {JSX.Element} The rendered badge.
  */
 export const FileBadge = ({ label }: FileBadgeProps) => (
-  <span style={badgeStyle}>{label}</span>
+  <span className="text-body-s-strong bg-surface-raised text-text-weaker rounded-md px-3 py-1 tracking-wide uppercase">
+    {label}
+  </span>
 );
-
-const badgeStyle: React.CSSProperties = {
-  backgroundColor: '#F1F5F9',
-  color: '#475569',
-  padding: '4px 12px',
-  borderRadius: '6px',
-  fontSize: '11px',
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '0.02em',
-};

@@ -1,17 +1,22 @@
+import { createAuthGuard } from '@/utils/auth.guards';
+import { isAllowedJobUrl } from '@/utils/validators';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 import { iconMap } from '../components/atoms/icon/icon-map';
-import { AIProcessingOverlay } from '../components/organisms/cv-import/AIProcessingOverlay';
-import { AnalysisResultCard } from '../components/organisms/cv-import/AnalysisResultCard';
-import { UploaderCard } from '../components/organisms/cv-import/UploaderCard';
+import { AIProcessingOverlay } from '../components/organisms/cv-import-ai-processing-overlay';
+import { AnalysisResultCard } from '../components/organisms/cv-import-analysis-result-card';
+import { UploaderCard } from '../components/organisms/cv-import-uploader-card';
 
 /**
  * @route /cv-analysis
  * @description Main route for CV and Job Offer matching analysis.
  * Orchestrates the three-step workflow: Document Upload, AI Web Scraping/Processing, and Results Display.
+ *
+ * NOTE: This page handles user CVs (PII), so the auth guard is mandatory.
  */
 export const Route = createFileRoute('/cv-analysis')({
+  beforeLoad: createAuthGuard('/cv-analysis'),
   component: CVAnalysisPage,
 });
 
@@ -24,6 +29,7 @@ export const Route = createFileRoute('/cv-analysis')({
  * * @returns {JSX.Element} The rendered CV Analysis page.
  */
 function CVAnalysisPage() {
+  const navigate = Route.useNavigate();
   const CvIcon = iconMap.cv;
   const LinkIcon = iconMap.search;
   const TrashIcon = iconMap.delete;
@@ -34,12 +40,14 @@ function CVAnalysisPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
+  const canStart = Boolean(cvFile) && isAllowedJobUrl(jobUrl);
+
   /**
    * Triggers the AI analysis process.
-   * Validates that a file is uploaded and a valid URL is provided before starting.
+   * Requires a CV file and an allowlisted (https) job URL before starting.
    */
   const handleStartAnalysis = () => {
-    if (cvFile && jobUrl.trim().startsWith('http')) {
+    if (canStart) {
       setIsAnalyzing(true);
     }
   };
@@ -55,13 +63,20 @@ function CVAnalysisPage() {
     setDeadline(null);
   };
 
+  /**
+   * Navigates the user to their generated training path.
+   */
+  const handleStartCourse = () => {
+    navigate({ to: '/progression' });
+  };
+
   return (
-    <div style={pageContainer}>
+    <div className="bg-surface min-h-screen px-5 py-15">
       {/* 1. HEADER - Hidden when results are shown */}
       {!isFinished && (
-        <header style={headerStyle}>
-          <h1 style={titleStyle}>Compatibility Analysis</h1>
-          <p style={subtitleStyle}>
+        <header className="mb-12 text-center">
+          <h1 className="text-h2 text-text">Compatibility Analysis</h1>
+          <p className="text-body-l text-text-weaker mt-2">
             Upload your CV and paste the job offer link to begin.
           </p>
         </header>
@@ -81,14 +96,14 @@ function CVAnalysisPage() {
       {isFinished ? (
         <AnalysisResultCard
           onRetry={handleReset}
-          onStartCourse={() => console.log('Navigating to course path...')}
+          onStartCourse={handleStartCourse}
         />
       ) : (
         <>
-          <div style={mainGrid}>
+          <div className="mx-auto grid max-w-[1100px] grid-cols-[repeat(auto-fit,minmax(350px,1fr))] gap-8">
             {/* Column 1: CV Upload & Deadline */}
-            <section style={columnStyle}>
-              <h2 style={sectionTitle}>1. Your CV</h2>
+            <section className="flex flex-col gap-4">
+              <h2 className="text-h6 text-text">1. Your CV</h2>
               {!cvFile ? (
                 <UploaderCard
                   onFileSelect={(file: File) => setCvFile(file)}
@@ -96,22 +111,24 @@ function CVAnalysisPage() {
                   onDeadlineChange={(date: Date | null) => setDeadline(date)}
                 />
               ) : (
-                <div style={fileSuccessCard}>
-                  <div style={fileIconCircle}>
-                    <CvIcon size={24} color="#1D9E75" />
+                <div className="bg-success-weaker border-success flex min-h-[110px] items-center gap-4 rounded-3xl border-2 p-6">
+                  <div className="bg-success-weak flex h-12 w-12 items-center justify-center rounded-xl">
+                    <CvIcon size={24} className="text-success" />
                   </div>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <p style={{ fontWeight: 700, margin: 0, fontSize: '14px' }}>
+                  <div className="flex-1 text-left">
+                    <p className="text-body-m text-text font-bold">
                       {cvFile.name}
                     </p>
-                    <p
-                      style={{ fontSize: '12px', color: '#64748B', margin: 0 }}
-                    >
+                    <p className="text-body-s text-text-weaker">
                       {(cvFile.size / 1024 / 1024).toFixed(2)} MB • Ready
                     </p>
                   </div>
-                  <button onClick={() => setCvFile(null)} style={removeBtn}>
-                    <TrashIcon size={16} style={{ marginRight: '4px' }} />
+                  <button
+                    type="button"
+                    onClick={() => setCvFile(null)}
+                    className="text-body-s text-error flex items-center font-semibold"
+                  >
+                    <TrashIcon size={16} className="mr-1" />
                     Remove
                   </button>
                 </div>
@@ -119,20 +136,25 @@ function CVAnalysisPage() {
             </section>
 
             {/* Column 2: Job URL Input */}
-            <section style={columnStyle}>
-              <h2 style={sectionTitle}>2. Job Offer (Link)</h2>
-              <div style={jobCard}>
-                <div style={urlInputWrapper}>
-                  <LinkIcon size={18} color="#94A3B8" />
+            <section className="flex flex-col gap-4">
+              <h2 className="text-h6 text-text">2. Job Offer (Link)</h2>
+              <div className="bg-background border-border flex min-h-[110px] flex-col justify-center rounded-3xl border p-6">
+                <label htmlFor="job-url" className="sr-only">
+                  Job offer link
+                </label>
+                <div className="bg-surface border-border focus-within:border-accent flex items-center gap-3 rounded-xl border px-4 py-3">
+                  <LinkIcon size={18} className="text-text-weakest" />
                   <input
+                    id="job-url"
+                    name="jobUrl"
                     type="url"
-                    style={urlInputStyle}
+                    className="text-body-m text-text flex-1 border-none bg-transparent outline-none"
                     placeholder="Paste LinkedIn, WTTJ link..."
                     value={jobUrl}
                     onChange={(e) => setJobUrl(e.target.value)}
                   />
                 </div>
-                <p style={helperText}>
+                <p className="text-body-s text-text-weakest mt-2.5 italic">
                   TalkUp will automatically extract details from the listing.
                 </p>
               </div>
@@ -140,21 +162,12 @@ function CVAnalysisPage() {
           </div>
 
           {/* Action Footer */}
-          <footer style={footerStyle}>
+          <footer className="mt-12 text-center">
             <button
+              type="button"
               onClick={handleStartAnalysis}
-              disabled={!cvFile || !jobUrl.trim().startsWith('http')}
-              style={{
-                ...analyzeButton,
-                backgroundColor:
-                  cvFile && jobUrl.trim().startsWith('http')
-                    ? '#2B70C9'
-                    : '#CBD5E1',
-                cursor:
-                  cvFile && jobUrl.trim().startsWith('http')
-                    ? 'pointer'
-                    : 'not-allowed',
-              }}
+              disabled={!canStart}
+              className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent rounded-2xl px-14 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled"
             >
               Start TalkUp Analysis
             </button>
@@ -164,147 +177,3 @@ function CVAnalysisPage() {
     </div>
   );
 }
-
-/** @type {React.CSSProperties} Layout for the main page container */
-const pageContainer: React.CSSProperties = {
-  backgroundColor: '#F8FAFC',
-  minHeight: '100vh',
-  padding: '60px 20px',
-  fontFamily: 'Inter, system-ui, sans-serif',
-};
-
-/** @type {React.CSSProperties} Centered header layout */
-const headerStyle: React.CSSProperties = {
-  textAlign: 'center',
-  marginBottom: '48px',
-};
-
-/** @type {React.CSSProperties} Main title typography */
-const titleStyle: React.CSSProperties = {
-  fontSize: '32px',
-  fontWeight: 800,
-  color: '#0F172A',
-};
-
-/** @type {React.CSSProperties} Subtitle typography */
-const subtitleStyle: React.CSSProperties = {
-  color: '#64748B',
-  marginTop: '8px',
-};
-
-/** @type {React.CSSProperties} Grid layout for the two main sections */
-const mainGrid: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-  gap: '32px',
-  maxWidth: '1100px',
-  margin: '0 auto',
-};
-
-/** @type {React.CSSProperties} Vertical column alignment */
-const columnStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '16px',
-};
-
-/** @type {React.CSSProperties} Section heading typography */
-const sectionTitle: React.CSSProperties = {
-  fontSize: '18px',
-  fontWeight: 700,
-  color: '#1E293B',
-};
-
-/** @type {React.CSSProperties} Card style for a successfully uploaded file */
-const fileSuccessCard: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '16px',
-  padding: '24px',
-  backgroundColor: '#F0FDF4',
-  border: '2px solid #1D9E75',
-  borderRadius: '24px',
-  minHeight: '110px',
-};
-
-/** @type {React.CSSProperties} Icon container for the file preview */
-const fileIconCircle: React.CSSProperties = {
-  width: '48px',
-  height: '48px',
-  backgroundColor: '#DCFCE7',
-  borderRadius: '12px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-/** @type {React.CSSProperties} Styling for the file removal button */
-const removeBtn: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  background: 'none',
-  border: 'none',
-  color: '#EF4444',
-  fontWeight: 600,
-  cursor: 'pointer',
-  fontSize: '13px',
-};
-
-/** @type {React.CSSProperties} Card container for the job URL input */
-const jobCard: React.CSSProperties = {
-  backgroundColor: '#FFF',
-  padding: '24px',
-  borderRadius: '24px',
-  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
-  border: '1px solid #F1F5F9',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  minHeight: '110px',
-};
-
-/** @type {React.CSSProperties} Visual wrapper for the URL text field */
-const urlInputWrapper: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  backgroundColor: '#F8FAFC',
-  border: '1px solid #E2E8F0',
-  borderRadius: '12px',
-  padding: '12px 16px',
-};
-
-/** @type {React.CSSProperties} The text input for the URL */
-const urlInputStyle: React.CSSProperties = {
-  flex: 1,
-  border: 'none',
-  background: 'transparent',
-  fontSize: '14px',
-  outline: 'none',
-  color: '#1E293B',
-};
-
-/** @type {React.CSSProperties} Small help text below inputs */
-const helperText: React.CSSProperties = {
-  fontSize: '12px',
-  color: '#94A3B8',
-  marginTop: '10px',
-  fontStyle: 'italic',
-};
-
-/** @type {React.CSSProperties} Centered footer area */
-const footerStyle: React.CSSProperties = {
-  textAlign: 'center',
-  marginTop: '48px',
-};
-
-/** @type {React.CSSProperties} The primary button to start the analysis */
-const analyzeButton: React.CSSProperties = {
-  color: 'white',
-  padding: '16px 56px',
-  borderRadius: '16px',
-  border: 'none',
-  fontSize: '18px',
-  fontWeight: 700,
-  transition: '0.3s ease',
-};
