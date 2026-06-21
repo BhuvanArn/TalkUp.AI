@@ -9,6 +9,7 @@ import { useStreamControls } from '../../../hooks/streams/useStreamControls';
 import { useVideoStream } from '../../../hooks/streams/useVideoStream';
 
 interface SimulationVideoAreaProps {
+  isAiSpeaking?: boolean;
   onStreamToggle?: (streaming: boolean) => void;
   onStreamChange?: (stream: MediaStream | null) => void;
   onToggleRef?: (toggleFn: (() => void) | null) => void;
@@ -19,6 +20,7 @@ interface SimulationVideoAreaProps {
  * @returns The SimulationVideoArea component.
  */
 const SimulationVideoArea = ({
+  isAiSpeaking = false,
   onStreamToggle,
   onStreamChange,
   onToggleRef,
@@ -111,11 +113,28 @@ const SimulationVideoArea = ({
   return (
     <div className="relative w-full aspect-video bg-video-off rounded-lg overflow-hidden">
       {isStreaming && (
-        <img
-          src="/interviewer.jpg"
-          alt="Interviewer"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <div
+          className={cn(
+            'absolute inset-0 rounded-lg transition-all',
+            isAiSpeaking ? 'ring-4 ring-inset ring-accent' : '',
+          )}
+        >
+          <img
+            src="/interviewer.jpg"
+            alt="Interviewer"
+            className="w-full h-full object-cover"
+          />
+          {isAiSpeaking && (
+            <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded bg-surface/70 px-3 py-1 text-sm font-semibold text-text">
+              <span className="flex gap-0.5" aria-hidden="true">
+                <span className="h-3 w-1 animate-pulse rounded-full bg-accent" />
+                <span className="h-3 w-1 animate-pulse rounded-full bg-accent [animation-delay:150ms]" />
+                <span className="h-3 w-1 animate-pulse rounded-full bg-accent [animation-delay:300ms]" />
+              </span>
+              Speaking…
+            </div>
+          )}
+        </div>
       )}
 
       <div

@@ -1,3 +1,4 @@
+import AuthPageShell from '@/components/molecules/auth-page-shell';
 import RegisterForm from '@/components/molecules/auth/register-form';
 import ConvincingBanner from '@/components/molecules/convincing-banner';
 import { createPublicRouteGuard } from '@/utils/auth.guards';
@@ -11,9 +12,9 @@ export const Route = createFileRoute('/register')({
 function Register() {
   return (
     <div className="grid grid-cols-[1fr_512px] min-h-screen">
-      <div className="flex flex-col items-center w-full pt-30 px-4">
+      <AuthPageShell>
         <RegisterForm />
-      </div>
+      </AuthPageShell>
       <ConvincingBanner />
     </div>
   );

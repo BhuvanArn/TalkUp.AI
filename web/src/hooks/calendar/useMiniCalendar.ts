@@ -26,6 +26,9 @@ export const useMiniCalendar = () => {
   const handlePrevMonth = () => {
     setDisplayDate((prevDate) => {
       const newDate = new Date(prevDate);
+      // Pin to the 1st before shifting so month-end days (e.g. May 31) don't
+      // overflow into the wrong month.
+      newDate.setDate(1);
       newDate.setMonth(prevDate.getMonth() - 1);
       return newDate;
     });
@@ -34,6 +37,7 @@ export const useMiniCalendar = () => {
   const handleNextMonth = () => {
     setDisplayDate((prevDate) => {
       const newDate = new Date(prevDate);
+      newDate.setDate(1);
       newDate.setMonth(prevDate.getMonth() + 1);
       return newDate;
     });

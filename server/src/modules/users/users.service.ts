@@ -73,7 +73,17 @@ interface JobOfferExtraction {
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
-  private readonly groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+  // Lazily built so a missing GROQ_API_KEY does not crash app bootstrap — the
+  // groq-sdk constructor throws on an empty key. Only the upload routes need it;
+  // they surface the failure as a 500 instead of taking the whole server down.
+  private _groq?: Groq;
+  private get groq(): Groq {
+    if (!this._groq) {
+      this._groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    }
+    return this._groq;
+  }
 
   constructor(
     @InjectRepository(user)
