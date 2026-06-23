@@ -1,21 +1,14 @@
 import axios from "axios";
-import puppeteer from "puppeteer";
 
-import {
-  scrapeLinkedin,
-  scrapeAxios,
-  scrapePuppeteer,
-} from "./JobOfferExtraction";
+import { scrapeLinkedin, scrapeAxios } from "./JobOfferExtraction";
 
 jest.mock("axios");
-jest.mock("puppeteer");
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
-const mockedPuppeteer = puppeteer as jest.Mocked<typeof puppeteer>;
 
-// Fake timers so retry backoff (attempt * 2000ms) and puppeteer's sequential
-// waits resolve instantly. Run a scraper through to completion by draining all
-// queued timers while its async work settles.
+// Fake timers so the linkedin retry backoff (attempt * 2000ms) resolves
+// instantly. Run a scraper through to completion by draining all queued
+// timers while its async work settles.
 jest.useFakeTimers();
 const runScraper = async (start: () => Promise<string>): Promise<string> => {
   const promise = start();
@@ -108,87 +101,6 @@ describe("scrapeAxios", () => {
     mockedAxios.get.mockRejectedValueOnce({ code: "ECONNREFUSED" });
 
     const text = await scrapeAxios("https://example.com/job/1");
-
-    expect(text).toBe("");
-  });
-});
-
-describe("scrapePuppeteer", () => {
-  const makeBrowser = (html: string) => {
-    const page = {
-      setRequestInterception: jest.fn(),
-      on: jest.fn(),
-      evaluateOnNewDocument: jest.fn(),
-      setUserAgent: jest.fn(),
-      setViewport: jest.fn(),
-      goto: jest.fn(),
-      evaluate: jest.fn(),
-      content: jest.fn().mockResolvedValue(html),
-    };
-    return {
-      newPage: jest.fn().mockResolvedValue(page),
-      close: jest.fn(),
-    };
-  };
-
-  it("extracts body text via a headless browser", async () => {
-    mockedPuppeteer.launch.mockResolvedValueOnce(
-      makeBrowser(GENERIC_HTML) as never,
-    );
-
-    const text = await runScraper(() =>
-      scrapePuppeteer("https://example.com/job/1"),
-    );
-
-    expect(text).toContain("Job description");
-  });
-
-  it("blocks page requests to unsafe (private/metadata) targets", async () => {
-    const browser = makeBrowser(GENERIC_HTML);
-    mockedPuppeteer.launch.mockResolvedValueOnce(browser as never);
-
-    await runScraper(() => scrapePuppeteer("https://example.com/job/1"));
-
-    const page = await browser.newPage.mock.results[0].value;
-    const onRequest = page.on.mock.calls.find(
-      (c: unknown[]) => c[0] === "request",
-    )?.[1] as (req: unknown) => void;
-    expect(onRequest).toBeDefined();
-
-    const safeReq = {
-      url: () => "https://example.com/a",
-      continue: jest.fn(),
-      abort: jest.fn(),
-    };
-    const evilReq = {
-      url: () => "http://169.254.169.254/",
-      continue: jest.fn(),
-      abort: jest.fn(),
-    };
-    onRequest(safeReq);
-    onRequest(evilReq);
-    expect(safeReq.continue).toHaveBeenCalled();
-    expect(evilReq.abort).toHaveBeenCalled();
-  });
-
-  it("returns empty when launch fails", async () => {
-    mockedPuppeteer.launch.mockRejectedValueOnce(new Error("no chrome"));
-
-    const text = await runScraper(() =>
-      scrapePuppeteer("https://example.com/job/1"),
-    );
-
-    expect(text).toBe("");
-  });
-
-  it("returns empty when rendered content is too short", async () => {
-    mockedPuppeteer.launch.mockResolvedValueOnce(
-      makeBrowser("<body>tiny</body>") as never,
-    );
-
-    const text = await runScraper(() =>
-      scrapePuppeteer("https://example.com/job/1"),
-    );
 
     expect(text).toBe("");
   });

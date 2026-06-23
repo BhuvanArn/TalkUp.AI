@@ -38,19 +38,16 @@ jest.mock("groq-sdk", () => ({
 jest.mock("../../common/utils/JobOfferExtraction", () => ({
   scrapeLinkedin: jest.fn(),
   scrapeAxios: jest.fn(),
-  scrapePuppeteer: jest.fn(),
 }));
 
 import {
   scrapeLinkedin,
   scrapeAxios,
-  scrapePuppeteer,
 } from "../../common/utils/JobOfferExtraction";
 
 const mockGroqCreate = jest.fn();
 const mockScrapeLinkedin = scrapeLinkedin as jest.Mock;
 const mockScrapeAxios = scrapeAxios as jest.Mock;
-const mockScrapePuppeteer = scrapePuppeteer as jest.Mock;
 
 const USER_ID = "uid-1";
 const pdfFile = () => ({ buffer: Buffer.from("fake pdf content") });
@@ -188,7 +185,6 @@ describe("UsersService", () => {
     mockGroqCreate.mockReset();
     mockScrapeLinkedin.mockReset();
     mockScrapeAxios.mockReset();
-    mockScrapePuppeteer.mockReset();
   });
 
   it("should be defined", () => {
@@ -420,18 +416,16 @@ describe("UsersService", () => {
 
       expect(mockScrapeLinkedin).not.toHaveBeenCalled();
       expect(mockScrapeAxios).not.toHaveBeenCalled();
-      expect(mockScrapePuppeteer).not.toHaveBeenCalled();
     });
 
     it("throws BadRequest when no scraper returns content", async () => {
       mockScrapeLinkedin.mockResolvedValue("");
       mockScrapeAxios.mockResolvedValue("");
-      mockScrapePuppeteer.mockResolvedValue("");
 
       await expect(
         service.uploadJobOffer(USER_ID, "https://example.com/job/123"),
       ).rejects.toThrow(
-        "Could not extract content from this URL. The website may be too protected.",
+        "Could not extract content from this URL. The page may require JavaScript to render or be too protected.",
       );
     });
 

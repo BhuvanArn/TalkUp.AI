@@ -19,7 +19,6 @@ import {
 import {
   scrapeLinkedin,
   scrapeAxios,
-  scrapePuppeteer,
 } from "../../common/utils/JobOfferExtraction";
 import { isSafeFetchUrl } from "../../common/utils/urlGuard";
 
@@ -385,11 +384,10 @@ export class UsersService {
 
     if (isLinkedIn) pageText = await scrapeLinkedin(url);
     if (!pageText) pageText = await scrapeAxios(url);
-    if (!pageText) pageText = await scrapePuppeteer(url);
 
     if (!pageText) {
       throw new BadRequestException(
-        "Could not extract content from this URL. The website may be too protected.",
+        "Could not extract content from this URL. The page may require JavaScript to render or be too protected.",
       );
     }
 

@@ -1,8 +1,7 @@
 import * as cheerio from "cheerio";
-import puppeteer from "puppeteer";
 import { Logger } from "@nestjs/common";
 
-import { isSafeFetchUrl, safeAxiosGet } from "./urlGuard";
+import { safeAxiosGet } from "./urlGuard";
 
 const logger = new Logger("JobOfferExtraction");
 
@@ -146,77 +145,6 @@ export const scrapeAxios = async (url: string): Promise<string> => {
     }
   } catch (err) {
     logger.debug(`Strategy Axios failed: ${(err as any)?.code || err}`);
-  }
-
-  return pageText;
-};
-
-// ─── PUPPETEER GÉNÉRIQUE ─────────────────────────────────────────────────────
-export const scrapePuppeteer = async (url: string): Promise<string> => {
-  let pageText = "";
-
-  try {
-    // Use puppeteer's bundled Chromium. Override only via PUPPETEER_EXECUTABLE_PATH
-    // (respected by puppeteer natively) when a system Chrome is required.
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-blink-features=AutomationControlled",
-        "--disable-infobars",
-        "--window-size=1920,1080",
-      ],
-    });
-
-    const page = await browser.newPage();
-
-    // SSRF guard for the headless browser: re-validate every request the page
-    // makes (the initial nav AND any redirect/sub-resource) against the same
-    // allowlist used for axios. Without this, a 30x redirect or an embedded
-    // resource pointing at 169.254.169.254 / an internal host would be fetched.
-    await page.setRequestInterception(true);
-    page.on("request", (req) => {
-      if (isSafeFetchUrl(req.url())) {
-        void req.continue();
-      } else {
-        logger.debug(`Puppeteer blocked unsafe request: ${req.url()}`);
-        void req.abort();
-      }
-    });
-
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, "webdriver", { get: () => false });
-      (window as { chrome?: unknown }).chrome = { runtime: {} };
-    });
-
-    await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    );
-
-    await page.setViewport({ width: 1920, height: 1080 });
-    await page.goto(url, { waitUntil: "networkidle2", timeout: 20000 });
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    await page.evaluate(() =>
-      window.scrollTo(0, document.body.scrollHeight / 2),
-    );
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const html = await page.content();
-    await browser.close();
-
-    const temp = cheerio.load(html);
-    temp("script, style, nav, footer, header, iframe, noscript").remove();
-    const extracted = temp("body").text().replace(/\s+/g, " ").trim();
-
-    if (extracted.length >= 300) {
-      pageText = extracted;
-      logger.debug("Strategy Puppeteer generic succeeded");
-    }
-  } catch (err) {
-    logger.debug(
-      `Strategy Puppeteer generic failed: ${(err as any)?.message || err}`,
-    );
   }
 
   return pageText;
