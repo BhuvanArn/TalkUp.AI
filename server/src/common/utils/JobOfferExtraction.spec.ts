@@ -116,6 +116,8 @@ describe("scrapeAxios", () => {
 describe("scrapePuppeteer", () => {
   const makeBrowser = (html: string) => {
     const page = {
+      setRequestInterception: jest.fn(),
+      on: jest.fn(),
       evaluateOnNewDocument: jest.fn(),
       setUserAgent: jest.fn(),
       setViewport: jest.fn(),
@@ -139,6 +141,34 @@ describe("scrapePuppeteer", () => {
     );
 
     expect(text).toContain("Job description");
+  });
+
+  it("blocks page requests to unsafe (private/metadata) targets", async () => {
+    const browser = makeBrowser(GENERIC_HTML);
+    mockedPuppeteer.launch.mockResolvedValueOnce(browser as never);
+
+    await runScraper(() => scrapePuppeteer("https://example.com/job/1"));
+
+    const page = await browser.newPage.mock.results[0].value;
+    const onRequest = page.on.mock.calls.find(
+      (c: unknown[]) => c[0] === "request",
+    )?.[1] as (req: unknown) => void;
+    expect(onRequest).toBeDefined();
+
+    const safeReq = {
+      url: () => "https://example.com/a",
+      continue: jest.fn(),
+      abort: jest.fn(),
+    };
+    const evilReq = {
+      url: () => "http://169.254.169.254/",
+      continue: jest.fn(),
+      abort: jest.fn(),
+    };
+    onRequest(safeReq);
+    onRequest(evilReq);
+    expect(safeReq.continue).toHaveBeenCalled();
+    expect(evilReq.abort).toHaveBeenCalled();
   });
 
   it("returns empty when launch fails", async () => {

@@ -73,6 +73,7 @@ export class UsersController {
     description:
       "Invalid request data in body (e.g., missing file or incorrect format)",
   })
+  @ApiUnauthorizedResponse()
   @UsePipes(new PostValidationPipe())
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseInterceptors(

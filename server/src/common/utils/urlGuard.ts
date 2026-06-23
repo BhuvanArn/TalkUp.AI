@@ -1,3 +1,5 @@
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
+
 /**
  * SSRF guard for user-supplied URLs that the server will fetch (job-offer scraping).
  *
@@ -104,4 +106,49 @@ export const isSafeFetchUrl = (raw: string): boolean => {
   }
 
   return true;
+};
+
+/**
+ * GET a user-supplied URL while re-validating EVERY redirect hop against
+ * {@link isSafeFetchUrl}. axios' built-in `maxRedirects` only checks the first
+ * URL, so a public host that 30x-redirects to 169.254.169.254 (cloud metadata)
+ * or an internal service would otherwise bypass the SSRF guard. We disable
+ * automatic redirects and follow them manually so each Location is checked.
+ *
+ * Throws if a hop targets a blocked host or the redirect budget is exhausted.
+ */
+export const safeAxiosGet = async (
+  url: string,
+  config: AxiosRequestConfig = {},
+  maxRedirects = 5,
+): Promise<AxiosResponse> => {
+  let currentUrl = url;
+
+  for (let hop = 0; hop <= maxRedirects; hop++) {
+    if (!isSafeFetchUrl(currentUrl)) {
+      throw new Error(`Blocked redirect target: ${currentUrl}`);
+    }
+
+    const response = await axios.get(currentUrl, {
+      ...config,
+      maxRedirects: 0,
+      // Treat 3xx as a resolved response instead of an axios error so we can
+      // inspect the Location ourselves; everything >=400 still throws.
+      validateStatus: (status) => status < 400,
+    });
+
+    const status = response.status ?? 200;
+    if (status < 300 || status >= 400) {
+      return response;
+    }
+
+    const location = response.headers?.["location"] as string | undefined;
+    if (!location) {
+      return response;
+    }
+    // Location may be relative; resolve against the current URL.
+    currentUrl = new URL(location, currentUrl).toString();
+  }
+
+  throw new Error(`Too many redirects while fetching ${url}`);
 };

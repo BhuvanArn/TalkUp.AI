@@ -1,7 +1,8 @@
-import axios from "axios";
 import * as cheerio from "cheerio";
 import puppeteer from "puppeteer";
 import { Logger } from "@nestjs/common";
+
+import { isSafeFetchUrl, safeAxiosGet } from "./urlGuard";
 
 const logger = new Logger("JobOfferExtraction");
 
@@ -33,7 +34,7 @@ export const scrapeLinkedin = async (url: string): Promise<string> => {
 
       const jobId = jobIdMatch[1];
       const guestApiUrl = `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${jobId}`;
-      const response = await axios.get(guestApiUrl, {
+      const response = await safeAxiosGet(guestApiUrl, {
         headers: {
           "User-Agent": userAgents[attempt % userAgents.length],
           Accept:
@@ -66,7 +67,7 @@ export const scrapeLinkedin = async (url: string): Promise<string> => {
         .trim();
 
       const criteria: Record<string, string> = {};
-      temp("li.description__job-criteria-item").each((_: number, el: any) => {
+      temp("li.description__job-criteria-item").each((_, el) => {
         const label = temp(el).find("h3").text().trim();
         const value = temp(el).find("span").text().trim();
         if (label && value) criteria[label] = value;
@@ -111,24 +112,27 @@ export const scrapeAxios = async (url: string): Promise<string> => {
   let pageText = "";
 
   try {
-    const response = await axios.get(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Accept-Encoding": "gzip, deflate, br",
-        Connection: "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Cache-Control": "max-age=0",
+    const response = await safeAxiosGet(
+      url,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+          "Accept-Encoding": "gzip, deflate, br",
+          Connection: "keep-alive",
+          "Upgrade-Insecure-Requests": "1",
+          "Sec-Fetch-Dest": "document",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Site": "none",
+          "Cache-Control": "max-age=0",
+        },
+        timeout: 10000,
       },
-      timeout: 10000,
-      maxRedirects: 5,
-    });
+      5,
+    );
 
     const temp = cheerio.load(response.data);
     temp(
@@ -167,9 +171,23 @@ export const scrapePuppeteer = async (url: string): Promise<string> => {
 
     const page = await browser.newPage();
 
+    // SSRF guard for the headless browser: re-validate every request the page
+    // makes (the initial nav AND any redirect/sub-resource) against the same
+    // allowlist used for axios. Without this, a 30x redirect or an embedded
+    // resource pointing at 169.254.169.254 / an internal host would be fetched.
+    await page.setRequestInterception(true);
+    page.on("request", (req) => {
+      if (isSafeFetchUrl(req.url())) {
+        void req.continue();
+      } else {
+        logger.debug(`Puppeteer blocked unsafe request: ${req.url()}`);
+        void req.abort();
+      }
+    });
+
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, "webdriver", { get: () => false });
-      (window as any).chrome = { runtime: {} };
+      (window as { chrome?: unknown }).chrome = { runtime: {} };
     });
 
     await page.setUserAgent(

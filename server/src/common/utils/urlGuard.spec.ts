@@ -1,4 +1,9 @@
-import { isSafeFetchUrl } from "./urlGuard";
+import axios from "axios";
+
+import { isSafeFetchUrl, safeAxiosGet } from "./urlGuard";
+
+jest.mock("axios");
+const mockedGet = axios.get as jest.MockedFunction<typeof axios.get>;
 
 describe("isSafeFetchUrl", () => {
   describe("allows", () => {
@@ -66,5 +71,82 @@ describe("isSafeFetchUrl", () => {
   it("rejects a hostname new URL() cannot parse", () => {
     // new URL("http://999.1.1.1/") throws (invalid IPv4 literal) → not safe.
     expect(isSafeFetchUrl("http://999.1.1.1/")).toBe(false);
+  });
+});
+
+describe("safeAxiosGet", () => {
+  beforeEach(() => mockedGet.mockReset());
+
+  it("returns the response for a direct 200 with no redirect", async () => {
+    mockedGet.mockResolvedValueOnce({ status: 200, headers: {}, data: "ok" });
+
+    const res = await safeAxiosGet("https://example.com/job");
+
+    expect(res.data).toBe("ok");
+    expect(mockedGet).toHaveBeenCalledTimes(1);
+    // redirects must be disabled so we follow them ourselves
+    expect(mockedGet.mock.calls[0][1]).toMatchObject({ maxRedirects: 0 });
+  });
+
+  it("follows a redirect to another public host", async () => {
+    mockedGet
+      .mockResolvedValueOnce({
+        status: 302,
+        headers: { location: "https://careers.acme.io/real" },
+        data: "",
+      })
+      .mockResolvedValueOnce({ status: 200, headers: {}, data: "final" });
+
+    const res = await safeAxiosGet("https://example.com/job");
+
+    expect(res.data).toBe("final");
+    expect(mockedGet).toHaveBeenCalledTimes(2);
+  });
+
+  it("blocks a redirect to a private/metadata target (SSRF)", async () => {
+    mockedGet.mockResolvedValueOnce({
+      status: 302,
+      headers: { location: "http://169.254.169.254/latest/meta-data/" },
+      data: "",
+    });
+
+    await expect(safeAxiosGet("https://example.com/job")).rejects.toThrow(
+      /Blocked redirect target/,
+    );
+    // the second (unsafe) hop must never be fetched
+    expect(mockedGet).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks a redirect to localhost", async () => {
+    mockedGet.mockResolvedValueOnce({
+      status: 301,
+      headers: { location: "http://localhost:8080/internal" },
+      data: "",
+    });
+
+    await expect(safeAxiosGet("https://example.com/job")).rejects.toThrow(
+      /Blocked redirect target/,
+    );
+  });
+
+  it("rejects an unsafe initial URL without fetching", async () => {
+    await expect(safeAxiosGet("http://127.0.0.1/")).rejects.toThrow(
+      /Blocked redirect target/,
+    );
+    expect(mockedGet).not.toHaveBeenCalled();
+  });
+
+  it("throws when the redirect budget is exhausted", async () => {
+    mockedGet.mockResolvedValue({
+      status: 302,
+      headers: { location: "https://example.com/loop" },
+      data: "",
+    });
+
+    await expect(
+      safeAxiosGet("https://example.com/job", {}, 2),
+    ).rejects.toThrow(/Too many redirects/);
+    // initial + 2 redirect hops = 3 fetches
+    expect(mockedGet).toHaveBeenCalledTimes(3);
   });
 });
