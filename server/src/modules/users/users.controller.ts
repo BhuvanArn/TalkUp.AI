@@ -19,6 +19,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import {
   ApiBadRequestResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
@@ -65,6 +66,9 @@ export class UsersController {
     await this.usersService.deleteAccount(user);
   }
 
+  @ApiOperation({
+    summary: "Upload a CV PDF and extract structured profile info",
+  })
   @ApiOkResponse({
     description: "The CV has successfully uploaded",
     type: String,
@@ -97,6 +101,9 @@ export class UsersController {
     return this.usersService.uploadCV(user.user_id, file);
   }
 
+  @ApiOperation({
+    summary: "Scrape a job-offer URL and extract structured offer info",
+  })
   @ApiOkResponse({ description: "The job offer was successfully parsed" })
   @ApiBadRequestResponse({
     description: "Missing/invalid URL, blocked target, or unscrapable page",

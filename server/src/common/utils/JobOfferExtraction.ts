@@ -27,11 +27,17 @@ export const scrapeLinkedin = async (url: string): Promise<string> => {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      const jobIdMatch = url.match(/(\d{8,})/);
+      // Anchor to where LinkedIn actually puts the job id: /jobs/view/<id>,
+      // ?currentJobId=<id>, or the trailing -<id> of a view slug. A bare
+      // /(\d{8,})/ would grab the first long digit run anywhere — a tracking
+      // param or timestamp could win over the real id.
+      const jobIdMatch = url.match(
+        /(?:jobs\/view\/|currentJobId=)(\d+)|-(\d{8,})(?:[/?#]|$)/,
+      );
       if (!jobIdMatch)
         throw new Error("Could not extract LinkedIn job ID from URL");
 
-      const jobId = jobIdMatch[1];
+      const jobId = jobIdMatch[1] ?? jobIdMatch[2];
       const guestApiUrl = `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${jobId}`;
       const response = await safeAxiosGet(guestApiUrl, {
         headers: {
@@ -93,7 +99,7 @@ export const scrapeLinkedin = async (url: string): Promise<string> => {
       }
     } catch (err) {
       logger.debug(
-        `LinkedIn attempt ${attempt + 1} failed: ${(err as any)?.code || err}`,
+        `LinkedIn attempt ${attempt + 1} failed: ${(err as { code?: string })?.code || err}`,
       );
       attempt++;
     }
@@ -144,7 +150,9 @@ export const scrapeAxios = async (url: string): Promise<string> => {
       logger.debug("Strategy Axios succeeded");
     }
   } catch (err) {
-    logger.debug(`Strategy Axios failed: ${(err as any)?.code || err}`);
+    logger.debug(
+      `Strategy Axios failed: ${(err as { code?: string })?.code || err}`,
+    );
   }
 
   return pageText;

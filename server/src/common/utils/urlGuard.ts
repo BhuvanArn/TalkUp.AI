@@ -101,7 +101,7 @@ export const isSafeFetchUrl = (raw: string): boolean => {
   if (isPrivateIPv4(host)) {
     return false;
   }
-  if (host.includes(":") && isBlockedIPv6(parsed.host)) {
+  if (host.includes(":") && isBlockedIPv6(host)) {
     return false;
   }
 

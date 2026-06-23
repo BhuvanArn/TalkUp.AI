@@ -5,6 +5,8 @@ import {
   InternalServerErrorException,
 } from "@nestjs/common";
 
+import { QueryFailedError } from "typeorm";
+
 import { ProfileVisibility } from "@common/enums/ProfileVisibility";
 import { UserStatus } from "@common/enums/UserStatus";
 import {
@@ -340,6 +342,40 @@ describe("UsersService", () => {
         expect.objectContaining({ desired_job: "Software Engineer" }),
       );
       expect(result).toEqual({ message: "CV updated successfully" });
+    });
+
+    it("falls back to update when a concurrent insert wins the unique race", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      // No row at findOne time, but the concurrent upload's insert lands first,
+      // so our save hits the user_id unique violation (Postgres 23505).
+      cvRepo.findOne.mockResolvedValue(null);
+      const uniqueViolation = new QueryFailedError("insert", [], new Error());
+      (
+        uniqueViolation as unknown as { driverError: { code: string } }
+      ).driverError = { code: "23505" };
+      cvRepo.save.mockRejectedValueOnce(uniqueViolation);
+
+      const result = await service.uploadCV(USER_ID, pdfFile());
+
+      expect(cvRepo.update).toHaveBeenCalledWith(
+        { user_id: USER_ID },
+        expect.objectContaining({ desired_job: "Software Engineer" }),
+      );
+      expect(result).toEqual({ message: "CV updated successfully" });
+    });
+
+    it("rethrows non-unique-violation save errors", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+      cvRepo.save.mockRejectedValueOnce(new Error("db down"));
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow();
     });
 
     it("strips markdown fences before parsing JSON", async () => {

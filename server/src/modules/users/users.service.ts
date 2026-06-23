@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { ObjectLiteral, Repository } from "typeorm";
+import { ObjectLiteral, QueryFailedError, Repository } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 
 import { ProfileVisibility } from "@common/enums/ProfileVisibility";
@@ -267,6 +267,11 @@ export class UsersService {
    * Find-or-update a single row keyed by user_id: updates when one exists,
    * otherwise creates and saves. Used for the one-per-user CV / job-offer rows.
    * Returns true when an existing row was updated, false when one was created.
+   *
+   * The user_id column carries a unique constraint, so two concurrent uploads
+   * can both miss the findOne and race the insert. The loser hits a unique
+   * violation (Postgres 23505); we swallow it and fall back to an update so the
+   * row stays one-per-user instead of silently duplicating.
    */
   private async upsertByUser<E extends ObjectLiteral>(
     repo: Repository<E>,
@@ -282,9 +287,20 @@ export class UsersService {
       return true;
     }
 
-    const row = repo.create({ user_id: userId, ...data } as never);
-    await repo.save(row);
-    return false;
+    try {
+      const row = repo.create({ user_id: userId, ...data } as never);
+      await repo.save(row);
+      return false;
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === "23505"
+      ) {
+        await repo.update({ user_id: userId } as never, data);
+        return true;
+      }
+      throw error;
+    }
   }
 
   async uploadCV(
@@ -380,7 +396,7 @@ export class UsersService {
     }
 
     let pageText = "";
-    const isLinkedIn = url.includes("linkedin.com/jobs");
+    const isLinkedIn = url.toLowerCase().includes("linkedin.com/jobs");
 
     if (isLinkedIn) pageText = await scrapeLinkedin(url);
     if (!pageText) pageText = await scrapeAxios(url);
