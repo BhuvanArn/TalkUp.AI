@@ -47,6 +47,8 @@ interface ChatWindowProps {
   onSend: () => void;
   /** When true, shows a typing indicator at the bottom of the list */
   isTyping?: boolean;
+  /** Ref forwarded to the text input so the dialog can focus it on open */
+  inputRef?: React.Ref<HTMLInputElement>;
 }
 
 export const ChatWindow = ({
@@ -55,6 +57,7 @@ export const ChatWindow = ({
   onInputChange,
   onSend,
   isTyping = false,
+  inputRef,
 }: ChatWindowProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -70,7 +73,7 @@ export const ChatWindow = ({
       className="flex flex-col w-[340px] bg-background rounded-[20px] border border-border shadow-2xl overflow-hidden"
     >
       {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-success)]">
+      <div className="flex items-center gap-3 px-4 py-3 bg-brand-gradient">
         <ChatAvatar variant="ai" size="lg" />
         <div className="flex-1">
           <p className="text-white text-body-m font-bold leading-tight">
@@ -111,6 +114,7 @@ export const ChatWindow = ({
         onChange={onInputChange}
         onSend={onSend}
         isLoading={isTyping}
+        inputRef={inputRef}
       />
 
       {/* ── Footer ── */}

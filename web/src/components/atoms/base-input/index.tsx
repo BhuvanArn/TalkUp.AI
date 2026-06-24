@@ -23,44 +23,49 @@ export type { BaseInputProps };
  * @param {string} [props.className] - Additional CSS classes to apply.
  * @returns {JSX.Element} The rendered input component.
  */
-export const BaseInput: React.FC<BaseInputProps> = (props) => {
-  const {
-    id,
-    name = 'input',
-    value = '',
-    type = 'text',
-    placeholder = 'Enter text',
-    disabled = false,
-    readOnly = false,
-    required = false,
-    onChange = () => {},
-    className,
-    ...rest
-  } = props as BaseInputProps;
-  const generatedId = useId();
-  const inputId = id || generatedId;
+export const BaseInput = React.forwardRef<HTMLInputElement, BaseInputProps>(
+  (props, ref) => {
+    const {
+      id,
+      name = 'input',
+      value = '',
+      type = 'text',
+      placeholder = 'Enter text',
+      disabled = false,
+      readOnly = false,
+      required = false,
+      onChange = () => {},
+      className,
+      ...rest
+    } = props as BaseInputProps;
+    const generatedId = useId();
+    const inputId = id || generatedId;
 
-  return (
-    <input
-      {...rest}
-      id={inputId}
-      name={name}
-      type={type}
-      role="textbox"
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      disabled={disabled}
-      aria-disabled={disabled}
-      readOnly={readOnly}
-      aria-readonly={readOnly}
-      required={required}
-      aria-label={name}
-      aria-required={required}
-      className={cn(
-        'p-2 text-body-m font-normal transition-colors duration-200 ease-in-out border rounded-sm border-border-strong placeholder:text font-display focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:cursor-not-allowed disabled:bg-disabled disabled:opacity-50 ',
-        className,
-      )}
-    />
-  );
-};
+    return (
+      <input
+        {...rest}
+        ref={ref}
+        id={inputId}
+        name={name}
+        type={type}
+        role="textbox"
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        aria-disabled={disabled}
+        readOnly={readOnly}
+        aria-readonly={readOnly}
+        required={required}
+        aria-label={name}
+        aria-required={required}
+        className={cn(
+          'p-2 text-body-m font-normal transition-colors duration-200 ease-in-out border rounded-sm border-border-strong placeholder:text font-display focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:cursor-not-allowed disabled:bg-disabled disabled:opacity-50 ',
+          className,
+        )}
+      />
+    );
+  },
+);
+
+BaseInput.displayName = 'BaseInput';

@@ -4,17 +4,8 @@ import { ChatWindow, Message } from '@/components/organisms/chatbot/ChatWindow';
 import { useDragFAB } from '@/hooks/ui/useDragFAB';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: 'welcome',
-    text: "Hello! I'm TalkUp AI. Ask me anything to prepare for your interview 🎯",
-    variant: 'ai',
-    timestamp: new Date().toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    }),
-  },
-];
+const WELCOME_TEXT =
+  "Hello! I'm TalkUp AI. Ask me anything to prepare for your interview 🎯";
 
 const AI_REPLIES = [
   'For a Product Manager interview, focus on prioritization frameworks like RICE or MoSCoW.',
@@ -22,25 +13,35 @@ const AI_REPLIES = [
   'Research the company',
 ];
 
+const getTimestamp = () =>
+  new Date().toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
 export const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  // Computed on mount so the welcome timestamp reflects when the chat is first
+  // rendered, not when the module was loaded.
+  const [messages, setMessages] = useState<Message[]>(() => [
+    {
+      id: 'welcome',
+      text: WELCOME_TEXT,
+      variant: 'ai',
+      timestamp: getTimestamp(),
+    },
+  ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
   const fabRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const replyIndex = useRef(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
 
   const { position, onMouseDown, onTouchStart, isDragging } = useDragFAB();
-
-  const getTimestamp = () =>
-    new Date().toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
 
   const handleSend = useCallback(() => {
     const text = inputValue.trim();
@@ -92,6 +93,12 @@ export const ChatWidget = () => {
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, closeChat]);
 
+  // Move focus into the panel when it opens so keyboard and screen-reader users
+  // land inside the dialog rather than tabbing through the page behind it.
+  useEffect(() => {
+    if (isOpen) inputRef.current?.focus();
+  }, [isOpen]);
+
   return (
     <div
       className="fixed z-50"
@@ -108,6 +115,7 @@ export const ChatWidget = () => {
             onInputChange={setInputValue}
             onSend={handleSend}
             isTyping={isTyping}
+            inputRef={inputRef}
           />
         </div>
       )}
@@ -115,13 +123,14 @@ export const ChatWidget = () => {
       {/* ── FAB ── */}
       <Button
         circled
+        type="button"
         ref={fabRef}
         onClick={handleFabClick}
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
         aria-label={isOpen ? 'Close chat' : 'Open TalkUp chat'}
         aria-expanded={isOpen}
-        className="w-14 h-14 bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-success)] shadow-lg cursor-grab active:cursor-grabbing select-none hover:scale-105"
+        className="w-14 h-14 bg-brand-gradient shadow-lg cursor-grab active:cursor-grabbing select-none hover:scale-105"
       >
         <Icon
           icon={isOpen ? 'times' : 'chat'}

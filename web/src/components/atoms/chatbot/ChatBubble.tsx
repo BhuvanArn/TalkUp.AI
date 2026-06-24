@@ -28,7 +28,7 @@ export const ChatBubble = ({ message, variant }: ChatBubbleProps) => {
       className={`max-w-[220px] px-3 py-2 rounded-2xl text-body-s leading-relaxed ${
         isAi
           ? 'bg-surface border border-border text-text rounded-bl-sm'
-          : 'bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-success)] text-white rounded-br-sm'
+          : 'bg-brand-gradient text-white rounded-br-sm'
       }`}
     >
       {message}

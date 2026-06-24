@@ -30,6 +30,8 @@ interface ChatInputBarProps {
   onSend: () => void;
   /** When true, disables input and send button while AI is responding */
   isLoading?: boolean;
+  /** Ref forwarded to the underlying text input */
+  inputRef?: React.Ref<HTMLInputElement>;
 }
 
 export const ChatInputBar = ({
@@ -37,12 +39,14 @@ export const ChatInputBar = ({
   onChange,
   onSend,
   isLoading = false,
+  inputRef,
 }: ChatInputBarProps) => {
   const canSend = value.trim().length > 0 && !isLoading;
 
   return (
     <div className="flex items-center gap-2 p-3 bg-surface border-t border-border">
       <ChatInput
+        ref={inputRef}
         value={value}
         onChange={onChange}
         onSend={onSend}
@@ -52,11 +56,18 @@ export const ChatInputBar = ({
 
       <Button
         circled
+        type="button"
         size="sm"
         onClick={onSend}
         disabled={!canSend}
         aria-label="Send message"
-        className="w-9 h-9 flex-shrink-0 bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-success)] text-white hover:opacity-90 hover:scale-105"
+        // Only paint the brand gradient when enabled. The Button atom's disabled
+        // compound variant sets `bg-gray-400` (a background-color); a gradient is
+        // a background-image and would paint over it, making a disabled button
+        // look active. Dropping it when !canSend lets the disabled styling show.
+        className={`w-9 h-9 flex-shrink-0 text-white ${
+          canSend ? 'bg-brand-gradient hover:opacity-90 hover:scale-105' : ''
+        }`}
       >
         <Icon icon="send" size="sm" color="white" />
       </Button>

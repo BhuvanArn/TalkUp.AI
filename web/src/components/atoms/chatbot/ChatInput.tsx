@@ -1,7 +1,12 @@
+import { BaseInput } from '@/components/atoms/base-input';
+import React from 'react';
+
 /**
  * ChatInput
  *
  * A controlled single-line text input for the chatbot message bar.
+ * Thin wrapper around the shared BaseInput atom so focus-ring, disabled and
+ * accessibility behaviour stay consistent with the rest of the design system.
  * Triggers onSend when the user presses Enter (without Shift).
  *
  * @param props - ChatInputProps
@@ -29,30 +34,38 @@ interface ChatInputProps {
   disabled?: boolean;
 }
 
-export const ChatInput = ({
-  value,
-  onChange,
-  onSend,
-  placeholder = 'Ask a question...',
-  disabled = false,
-}: ChatInputProps) => {
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      onSend();
-    }
-  };
+export const ChatInput = React.forwardRef<HTMLInputElement, ChatInputProps>(
+  (
+    {
+      value,
+      onChange,
+      onSend,
+      placeholder = 'Ask a question...',
+      disabled = false,
+    },
+    ref,
+  ) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        onSend();
+      }
+    };
 
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onKeyDown={handleKeyDown}
-      placeholder={placeholder}
-      disabled={disabled}
-      aria-label="Chat message input"
-      className="flex-1 px-3 py-2 text-body-s bg-background border border-border rounded-xl outline-none text-text placeholder:text-text-weaker focus:border-accent focus:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-    />
-  );
-};
+    return (
+      <BaseInput
+        ref={ref}
+        // `name` drives BaseInput's accessible name (aria-label).
+        name="Chat message input"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="flex-1 rounded-xl bg-background focus:bg-surface"
+      />
+    );
+  },
+);
+
+ChatInput.displayName = 'ChatInput';
