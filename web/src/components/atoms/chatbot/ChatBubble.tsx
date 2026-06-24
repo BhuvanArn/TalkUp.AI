@@ -2,7 +2,7 @@
  * ChatBubble
  *
  * Renders a single message bubble inside the chatbot widget.
- * Supports two variants: 'ai' (left-aligned, white background) and
+ * Supports two variants: 'ai' (left-aligned, surface background) and
  * 'user' (right-aligned, TalkUp gradient background).
  *
  * @param props - ChatBubbleProps
@@ -25,10 +25,10 @@ export const ChatBubble = ({ message, variant }: ChatBubbleProps) => {
 
   return (
     <div
-      className={`max-w-[220px] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+      className={`max-w-[220px] px-3 py-2 rounded-2xl text-body-s leading-relaxed ${
         isAi
-          ? 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'
-          : 'bg-gradient-to-br from-[#2B70C9] to-[#1D9E75] text-white rounded-br-sm'
+          ? 'bg-surface border border-border text-text rounded-bl-sm'
+          : 'bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-success)] text-white rounded-br-sm'
       }`}
     >
       {message}

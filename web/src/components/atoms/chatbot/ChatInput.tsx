@@ -52,7 +52,7 @@ export const ChatInput = ({
       placeholder={placeholder}
       disabled={disabled}
       aria-label="Chat message input"
-      className="flex-1 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-800 placeholder:text-slate-400 focus:border-[#2B70C9] focus:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      className="flex-1 px-3 py-2 text-body-s bg-background border border-border rounded-xl outline-none text-text placeholder:text-text-weaker focus:border-accent focus:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     />
   );
 };

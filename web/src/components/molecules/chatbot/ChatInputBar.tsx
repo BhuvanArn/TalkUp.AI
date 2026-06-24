@@ -1,4 +1,6 @@
-import { ChatInput } from '@/components/atoms/Chatbot/ChatInput';
+import { Button } from '@/components/atoms/button';
+import { ChatInput } from '@/components/atoms/chatbot/ChatInput';
+import { Icon } from '@/components/atoms/icon';
 
 /**
  * ChatInputBar
@@ -39,7 +41,7 @@ export const ChatInputBar = ({
   const canSend = value.trim().length > 0 && !isLoading;
 
   return (
-    <div className="flex items-center gap-2 p-3 bg-white border-t border-slate-100">
+    <div className="flex items-center gap-2 p-3 bg-surface border-t border-border">
       <ChatInput
         value={value}
         onChange={onChange}
@@ -48,30 +50,16 @@ export const ChatInputBar = ({
         placeholder="Ask a question..."
       />
 
-      <button
+      <Button
+        circled
+        size="sm"
         onClick={onSend}
         disabled={!canSend}
         aria-label="Send message"
-        className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl transition-all ${
-          canSend
-            ? 'bg-gradient-to-br from-[#2B70C9] to-[#1D9E75] hover:opacity-90 hover:scale-105 cursor-pointer'
-            : 'bg-slate-200 cursor-not-allowed'
-        }`}
+        className="w-9 h-9 flex-shrink-0 bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-success)] text-white hover:opacity-90 hover:scale-105"
       >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="white"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <line x1="22" y1="2" x2="11" y2="13" />
-          <polygon points="22 2 15 22 11 13 2 9 22 2" />
-        </svg>
-      </button>
+        <Icon icon="send" size="sm" color="white" />
+      </Button>
     </div>
   );
 };

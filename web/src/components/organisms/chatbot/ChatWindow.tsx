@@ -1,3 +1,4 @@
+import { ChatAvatar } from '@/components/atoms/chatbot/ChatAvatar';
 import { ChatInputBar } from '@/components/molecules/chatbot/ChatInputBar';
 import { ChatMessage } from '@/components/molecules/chatbot/ChatMessage';
 import { useEffect, useRef } from 'react';
@@ -62,18 +63,21 @@ export const ChatWindow = ({
   }, [messages, isTyping]);
 
   return (
-    <div className="flex flex-col w-[340px] bg-background rounded-[20px] border border-border shadow-2xl overflow-hidden">
+    <div
+      role="dialog"
+      aria-modal="false"
+      aria-label="TalkUp AI chat"
+      className="flex flex-col w-[340px] bg-background rounded-[20px] border border-border shadow-2xl overflow-hidden"
+    >
       {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#2B70C9] to-[#1D9E75]">
-        <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0">
-          T
-        </div>
+      <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-success)]">
+        <ChatAvatar variant="ai" size="lg" />
         <div className="flex-1">
-          <p className="text-white text-sm font-bold leading-tight">
+          <p className="text-white text-body-m font-bold leading-tight">
             TalkUp AI
           </p>
-          <p className="text-white/80 text-[11px] flex items-center gap-1 mt-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+          <p className="text-white/80 text-body-s flex items-center gap-1 mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
             Online — ready to help
           </p>
         </div>
@@ -81,7 +85,7 @@ export const ChatWindow = ({
 
       {/* ── Messages ── */}
       <div
-        className="flex flex-col gap-3 p-4 overflow-y-auto bg-slate-50"
+        className="flex flex-col gap-3 p-4 overflow-y-auto bg-surface"
         style={{ minHeight: '280px', maxHeight: '280px' }}
         role="log"
         aria-live="polite"
@@ -110,7 +114,7 @@ export const ChatWindow = ({
       />
 
       {/* ── Footer ── */}
-      <div className="py-1.5 text-center text-[10px] text-slate-400 bg-white">
+      <div className="py-1.5 text-center text-body-s text-text-weaker bg-surface">
         Powered by TalkUp AI
       </div>
     </div>

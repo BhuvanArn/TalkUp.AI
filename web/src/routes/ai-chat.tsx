@@ -5,7 +5,7 @@ import { createFileRoute } from '@tanstack/react-router';
 /**
  * @route /ai-chat
  * @description Entry point for the TalkUp AI chatbot session.
- * Renders the floating ChatWidget that persists across the page.
+ * Renders the floating ChatWidget scoped to this route.
  */
 export const Route = createFileRoute('/ai-chat')({
   beforeLoad: createAuthGuard('/ai-chat'),

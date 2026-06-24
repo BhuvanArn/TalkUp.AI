@@ -1,6 +1,6 @@
-import { ChatAvatar } from '@/components/atoms/Chatbot/ChatAvatar';
-import { ChatBubble } from '@/components/atoms/Chatbot/ChatBubble';
-import { TypingIndicator } from '@/components/atoms/Chatbot/TypingIndicator';
+import { ChatAvatar } from '@/components/atoms/chatbot/ChatAvatar';
+import { ChatBubble } from '@/components/atoms/chatbot/ChatBubble';
+import { TypingIndicator } from '@/components/atoms/chatbot/TypingIndicator';
 
 /**
  * ChatMessage
@@ -47,7 +47,7 @@ export const ChatMessage = ({
         className={`flex flex-col gap-1 ${isAi ? 'items-start' : 'items-end'}`}
       >
         {isTyping ? (
-          <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-sm">
+          <div className="bg-surface border border-border rounded-2xl rounded-bl-sm">
             <TypingIndicator />
           </div>
         ) : (
@@ -55,7 +55,7 @@ export const ChatMessage = ({
         )}
 
         {timestamp && !isTyping && (
-          <span className="text-[10px] text-slate-400">{timestamp}</span>
+          <span className="text-body-s text-text-weaker">{timestamp}</span>
         )}
       </div>
     </div>
