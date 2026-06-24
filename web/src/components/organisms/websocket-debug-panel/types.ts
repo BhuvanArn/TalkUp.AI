@@ -13,6 +13,8 @@ export interface WebSocketDebugPanelProps {
   lastMessage: MessageEvent | null;
   lastJsonMessage: unknown;
 
+  isListening?: boolean;
+  isSpeaking?: boolean;
   isRecording: boolean;
   packetsSent: number;
   supportedMimeType: string | null;

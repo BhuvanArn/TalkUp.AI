@@ -12,6 +12,14 @@
 #include "ExceptionManager.hpp"
 #include "WebsocketManager.hpp"
 
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/ip/tcp.hpp>
+
+using tcp = boost::asio::ip::tcp;
+namespace http = boost::beast::http;
+
 talkup_network::WsManager::WsManager()
 {
     _type_handlers["ping"] = [this](const nlohmann::json& json,
@@ -98,49 +106,109 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
             .timestamp = timestamp,
             .data = "audio chunk received"
         }).dump());
-        microservices_manager->send_to_stt_microservice(json,
-            [this, &conn, key, stream_id, microservices_manager](const nlohmann::json& stt_resp) {
-                if (stt_resp.contains("error") ||
-                    (stt_resp.contains("type") && stt_resp["type"].is_string() && stt_resp["type"] == "error")) {
-                    conn.send_text(set_respond_json_format({
+        crow::websocket::connection *client_conn = &conn;
+        microservices_manager->send_to_sts_microservice(json,
+            [this, client_conn, key, stream_id](const nlohmann::json& sts_resp) {
+                const std::string sts_type = sts_resp.value("type", "");
+                if (sts_resp.contains("error") || sts_type == "error" || sts_type == "warning") {
+                    client_conn->send_text(set_respond_json_format({
                         .type = "error",
                         .key = key,
                         .stream_id = stream_id,
                         .format = "text",
                         .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
                             std::chrono::system_clock::now().time_since_epoch()).count(),
-                        .data = stt_resp.dump()
+                        .data = sts_resp.dump()
                     }).dump());
                     return;
                 }
 
-                microservices_manager->end_to_tts_microservice(stt_resp,
-                    [this, &conn, key, stream_id](const nlohmann::json& tts_resp) {
-                        if (tts_resp.contains("error") ||
-                            (tts_resp.contains("type") && tts_resp["type"].is_string() && tts_resp["type"] == "error")) {
-                            conn.send_text(set_respond_json_format({
-                                .type = "error",
-                                .key = key,
-                                .stream_id = stream_id,
-                                .format = "text",
-                                .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
-                                    std::chrono::system_clock::now().time_since_epoch()).count(),
-                                .data = tts_resp.dump()
-                            }).dump());
-                            return;
-                        }
+                client_conn->send_text(set_respond_json_format({
+                    .type = "sts_result",
+                    .key = key,
+                    .stream_id = stream_id,
+                    .format = "audio",
+                    .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count(),
+                    .data = sts_resp.dump()
+                }).dump());
 
-                        conn.send_text(set_respond_json_format({
-                            .type = "tts_result",
-                            .key = key,
-                            .stream_id = stream_id,
-                            .format = "audio",
-                            .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
-                                std::chrono::system_clock::now().time_since_epoch()).count(),
-                            .data = tts_resp.dump()
-                        }).dump());
+                try {
+                    std::string transcription;
+                    if (sts_resp.is_string()) {
+                        transcription = sts_resp.get<std::string>();
+                    } else if (sts_resp.contains("transcription") && sts_resp["transcription"].is_string()) {
+                        transcription = sts_resp["transcription"].get<std::string>();
+                    } else if (sts_resp.contains("text") && sts_resp["text"].is_string()) {
+                        transcription = sts_resp["text"].get<std::string>();
+                    } else if (sts_resp.contains("data") && sts_resp["data"].is_object() && sts_resp["data"].contains("text") && sts_resp["data"]["text"].is_string()) {
+                        transcription = sts_resp["data"]["text"].get<std::string>();
                     }
-                );
+
+                    if (!transcription.empty()) {
+                        const char *backend_env = std::getenv("BACKEND_URL");
+                        if (backend_env && backend_env[0] != '\0') {
+                            std::string backend_base = std::string(backend_env);
+                            std::string target = "/ai/interviews/" + stream_id + "/transcripts";
+                            if (!backend_base.empty() && backend_base.back() == '/') backend_base.pop_back();
+                            std::string full_url = backend_base + target;
+
+                            nlohmann::json body;
+                            body["transcripts"] = nlohmann::json::array();
+                            body["transcripts"].push_back({{"content", transcription}, {"who_stated", "user"}});
+
+                            try {
+                                std::string u = full_url;
+                                const std::string http_prefix = "http://";
+                                if (u.rfind(http_prefix, 0) != 0) {
+                                    std::cerr << "[WsManager] Unsupported BACKEND_URL (only http://): " << full_url << std::endl;
+                                } else {
+                                    u.erase(0, http_prefix.size());
+                                    auto pos = u.find('/');
+                                    std::string hostport = (pos == std::string::npos) ? u : u.substr(0, pos);
+                                    std::string target_path = (pos == std::string::npos) ? "/" : u.substr(pos);
+
+                                    std::string host = hostport;
+                                    std::string port = "80";
+                                    auto colon = hostport.find(':');
+                                    if (colon != std::string::npos) {
+                                        host = hostport.substr(0, colon);
+                                        port = hostport.substr(colon + 1);
+                                    }
+
+                                    boost::asio::io_context ioc;
+                                    tcp::resolver resolver{ioc};
+                                    boost::beast::tcp_stream stream{ioc};
+                                    auto const results = resolver.resolve(host, port);
+                                    stream.connect(results);
+
+                                    http::request<http::string_body> req{http::verb::post, target_path, 11};
+                                    req.set(http::field::host, host);
+                                    req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+                                    req.set(http::field::content_type, "application/json");
+                                    req.body() = body.dump();
+                                    req.prepare_payload();
+
+                                    http::write(stream, req);
+
+                                    boost::beast::flat_buffer buffer;
+                                    http::response<http::string_body> res;
+                                    http::read(stream, buffer, res);
+                                    std::cout << "[WsManager] Posted transcript to backend " << full_url << " status=" << res.result_int() << std::endl;
+
+                                    boost::system::error_code ec;
+                                    stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+                                }
+                            } catch (const std::exception &e) {
+                                std::cerr << "[WsManager] Failed to POST transcript: " << e.what() << std::endl;
+                            }
+                        } else {
+                            std::cout << "[WsManager] BACKEND_URL not set; skipping transcript forward." << std::endl;
+                        }
+                    }
+                } catch (const std::exception &e) {
+                    std::cerr << "[WsManager] Error extracting transcription: " << e.what() << std::endl;
+                }
             }
         );
     }

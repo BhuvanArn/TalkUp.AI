@@ -1,12 +1,10 @@
 import {
   Body,
   Controller,
-  Req,
-  Res,
   BadRequestException,
+  UploadedFile,
   UseInterceptors,
   UseGuards,
-  Put,
   Post,
   Delete,
   Get,
@@ -15,12 +13,13 @@ import {
   Patch,
 } from "@nestjs/common";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
-import type { Request, Response } from "express";
+import { Throttle } from "@nestjs/throttler";
 import { FileInterceptor } from "@nestjs/platform-express";
 
 import {
   ApiBadRequestResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
@@ -32,7 +31,8 @@ import { CurrentUser } from "@common/decorators/currentUser.decorator";
 import { user } from "@entities/user.entity";
 
 import { UpdateProfileDto } from "./dto/updateProfile.dto";
-import { UsersService } from "./users.service";
+import { UploadJobOfferDto } from "./dto/uploadJobOffer.dto";
+import { UploadedPdf, UsersService } from "./users.service";
 
 @ApiTags("Users")
 @Controller("users")
@@ -66,6 +66,9 @@ export class UsersController {
     await this.usersService.deleteAccount(user);
   }
 
+  @ApiOperation({
+    summary: "Upload a CV PDF and extract structured profile info",
+  })
   @ApiOkResponse({
     description: "The CV has successfully uploaded",
     type: String,
@@ -74,7 +77,9 @@ export class UsersController {
     description:
       "Invalid request data in body (e.g., missing file or incorrect format)",
   })
+  @ApiUnauthorizedResponse()
   @UsePipes(new PostValidationPipe())
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 10 * 1024 * 1024 },
@@ -89,13 +94,29 @@ export class UsersController {
   )
   @UseGuards(AccessTokenGuard)
   @Post("uploadCV")
-  async uploadCV(@Req() req: Request, @Res() res: Response) {
-    return this.usersService.uploadCV(req, res);
+  async uploadCV(
+    @CurrentUser() user: user,
+    @UploadedFile() file?: UploadedPdf,
+  ): Promise<{ message: string }> {
+    return this.usersService.uploadCV(user.user_id, file);
   }
 
+  @ApiOperation({
+    summary: "Scrape a job-offer URL and extract structured offer info",
+  })
+  @ApiOkResponse({ description: "The job offer was successfully parsed" })
+  @ApiBadRequestResponse({
+    description: "Missing/invalid URL, blocked target, or unscrapable page",
+  })
+  @ApiUnauthorizedResponse()
+  @UsePipes(new PostValidationPipe())
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseGuards(AccessTokenGuard)
   @Post("uploadJobOffer")
-  async uploadJobOffer(@Req() req: Request, @Res() res: Response) {
-    return this.usersService.uploadJobOffer(req, res);
+  async uploadJobOffer(
+    @CurrentUser() user: user,
+    @Body() dto: UploadJobOfferDto,
+  ): Promise<{ message: string }> {
+    return this.usersService.uploadJobOffer(user.user_id, dto.url);
   }
 }

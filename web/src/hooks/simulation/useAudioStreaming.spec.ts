@@ -30,6 +30,36 @@ describe('useAudioStreaming', () => {
       mimeType.includes('audio/webm'),
     );
 
+    class MockAnalyserNode {
+      fftSize = 2048;
+      smoothingTimeConstant = 0.4;
+      getFloatTimeDomainData(buffer: Float32Array) {
+        buffer.fill(0);
+      }
+    }
+
+    class MockAudioContext {
+      state = 'running';
+      resume = vi.fn().mockResolvedValue(undefined);
+      close = vi.fn().mockResolvedValue(undefined);
+      createAnalyser = vi.fn(() => new MockAnalyserNode());
+      createMediaStreamSource = vi.fn(() => ({
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+      }));
+    }
+
+    global.MediaStream = vi.fn(
+      (tracks?: MediaStreamTrack[]) =>
+        ({
+          getAudioTracks: () => tracks ?? [],
+        }) as MediaStream,
+    ) as unknown as typeof MediaStream;
+
+    global.AudioContext = vi.fn(
+      () => new MockAudioContext(),
+    ) as unknown as typeof AudioContext;
+
     // Mock Blob.arrayBuffer for packet processing
     global.Blob.prototype.arrayBuffer = vi
       .fn()
@@ -58,6 +88,8 @@ describe('useAudioStreaming', () => {
         }),
       );
 
+      expect(result.current).toHaveProperty('isListening');
+      expect(result.current).toHaveProperty('isSpeaking');
       expect(result.current).toHaveProperty('isRecording');
       expect(result.current).toHaveProperty('startStreaming');
       expect(result.current).toHaveProperty('stopStreaming');
@@ -80,6 +112,8 @@ describe('useAudioStreaming', () => {
         }),
       );
 
+      expect(result.current.isListening).toBe(false);
+      expect(result.current.isSpeaking).toBe(false);
       expect(result.current.isRecording).toBe(false);
       expect(result.current.packetsSent).toBe(0);
       expect(result.current.supportedMimeType).toBeNull();
@@ -224,23 +258,6 @@ describe('useAudioStreaming', () => {
   });
 
   describe('Configuration', () => {
-    it('should accept timeSlice parameter', () => {
-      const onAudioPacket = vi.fn();
-
-      // Should not throw when accepting timeSlice
-      expect(() =>
-        renderHook(() =>
-          useAudioStreaming({
-            stream: mockMediaStream,
-            interviewID: 'test-interview-id',
-            onAudioPacket,
-            isActive: false,
-            timeSlice: 500,
-          }),
-        ),
-      ).not.toThrow();
-    });
-
     it('should accept mimeType parameter', () => {
       const onAudioPacket = vi.fn();
 
@@ -260,9 +277,11 @@ describe('useAudioStreaming', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle MediaRecorder constructor errors', async () => {
-      (global.MediaRecorder as any).mockImplementation(() => {
-        throw new Error('MediaRecorder not available');
+    it('should handle AudioContext initialization errors', async () => {
+      (
+        global.AudioContext as unknown as ReturnType<typeof vi.fn>
+      ).mockImplementation(() => {
+        throw new Error('AudioContext not available');
       });
 
       const onAudioPacket = vi.fn();
@@ -276,9 +295,11 @@ describe('useAudioStreaming', () => {
       );
 
       await waitFor(() => {
-        expect(result.current.error).toContain('Failed to start recording');
+        expect(result.current.error).toContain(
+          'Failed to start voice detection',
+        );
       });
-      expect(result.current.isRecording).toBe(false);
+      expect(result.current.isListening).toBe(false);
     });
 
     it('should expose error state when issues occur', () => {
@@ -363,8 +384,13 @@ describe('useAudioStreaming', () => {
   });
 
   describe('Lifecycle Management', () => {
-    it('should not start recording when isActive is false', () => {
+    it('should not start VAD when isActive is false', () => {
       const onAudioPacket = vi.fn();
+      const audioContextSpy = global.AudioContext as unknown as ReturnType<
+        typeof vi.fn
+      >;
+      audioContextSpy.mockClear();
+
       renderHook(() =>
         useAudioStreaming({
           stream: mockMediaStream,
@@ -373,6 +399,7 @@ describe('useAudioStreaming', () => {
         }),
       );
 
+      expect(audioContextSpy).not.toHaveBeenCalled();
       expect(global.MediaRecorder).not.toHaveBeenCalled();
     });
 
@@ -419,22 +446,6 @@ describe('useAudioStreaming', () => {
             interviewID: 'test-interview-id',
             onAudioPacket,
             isActive: true,
-          }),
-        ),
-      ).not.toThrow();
-    });
-
-    it('should accept optional timeSlice prop', () => {
-      const onAudioPacket = vi.fn();
-
-      expect(() =>
-        renderHook(() =>
-          useAudioStreaming({
-            stream: mockMediaStream,
-            interviewID: 'test-interview-id',
-            onAudioPacket,
-            isActive: true,
-            timeSlice: 250,
           }),
         ),
       ).not.toThrow();

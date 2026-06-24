@@ -1,6 +1,11 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { InternalServerErrorException } from "@nestjs/common";
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from "@nestjs/common";
+
+import { QueryFailedError } from "typeorm";
 
 import { ProfileVisibility } from "@common/enums/ProfileVisibility";
 import { UserStatus } from "@common/enums/UserStatus";
@@ -15,46 +20,54 @@ import { user_job_offer } from "@entities/userJobOffer.entity";
 
 import { UsersService } from "./users.service";
 
-// ─── Mocks modules externes ───────────────────────────────────────────────────
+const mockPdfParse = jest.fn();
+// Lazy wrappers: the service now imports these at module-load time, so the mock
+// factory must not touch the `mock*` consts until call time (avoids TDZ).
+jest.mock("pdf-parse-debugging-disabled", () => ({
+  __esModule: true,
+  default: (...args: unknown[]) => mockPdfParse(...args),
+}));
 
-jest.mock("pdf-parse-debugging-disabled", () => jest.fn());
-
-jest.mock("groq-sdk", () => {
-  return jest.fn().mockImplementation(() => ({
-    chat: { completions: { create: mockGroqCreate } },
-  }));
-});
+jest.mock("groq-sdk", () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    chat: {
+      completions: { create: (...args: unknown[]) => mockGroqCreate(...args) },
+    },
+  })),
+}));
 
 jest.mock("../../common/utils/JobOfferExtraction", () => ({
   scrapeLinkedin: jest.fn(),
   scrapeAxios: jest.fn(),
-  scrapePuppeteer: jest.fn(),
 }));
 
 import {
   scrapeLinkedin,
   scrapeAxios,
-  scrapePuppeteer,
 } from "../../common/utils/JobOfferExtraction";
 
 const mockGroqCreate = jest.fn();
 const mockScrapeLinkedin = scrapeLinkedin as jest.Mock;
 const mockScrapeAxios = scrapeAxios as jest.Mock;
-const mockScrapePuppeteer = scrapePuppeteer as jest.Mock;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const USER_ID = "uid-1";
+const pdfFile = () => ({ buffer: Buffer.from("fake pdf content") });
 
-const mockRes = () => {
-  const res: any = {};
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  return res;
-};
-
-const mockReq = (overrides: Record<string, any> = {}): any => ({
-  userId: "uid-1",
-  body: {},
-  ...overrides,
+const validCvGroqResponse = JSON.stringify({
+  desired_job: "Software Engineer",
+  resume: "Experienced developer",
+  experiences: [
+    {
+      company: "Acme",
+      title: "Dev",
+      description: "stuff",
+      duration: "2020-2022",
+    },
+  ],
+  education: [{ degree: "BSc", school_name: "MIT", duration: "2016-2020" }],
+  technical_skills: ["TypeScript", "Node.js"],
+  languages: [{ language: "English", level: "C2" }],
 });
 
 const validJobOfferGroqResponse = JSON.stringify({
@@ -75,8 +88,6 @@ const validJobOfferGroqResponse = JSON.stringify({
   company_values: ["Innovation"],
   team_description: "Small agile team",
 });
-
-// ─── Suite principale ─────────────────────────────────────────────────────────
 
 describe("UsersService", () => {
   let service: UsersService;
@@ -172,17 +183,15 @@ describe("UsersService", () => {
 
     service = module.get<UsersService>(UsersService);
 
+    mockPdfParse.mockReset();
     mockGroqCreate.mockReset();
     mockScrapeLinkedin.mockReset();
     mockScrapeAxios.mockReset();
-    mockScrapePuppeteer.mockReset();
   });
 
   it("should be defined", () => {
     expect(service).toBeDefined();
   });
-
-  // ─── getProfile ─────────────────────────────────────────────────────────────
 
   describe("getProfile", () => {
     it("returns assembled camelCase view", async () => {
@@ -197,8 +206,6 @@ describe("UsersService", () => {
       expect(v.profilePicture).toBeNull();
     });
   });
-
-  // ─── updateProfile ──────────────────────────────────────────────────────────
 
   describe("updateProfile", () => {
     it("creates profile when missing and updates first name", async () => {
@@ -246,8 +253,6 @@ describe("UsersService", () => {
     });
   });
 
-  // ─── deleteAccount ──────────────────────────────────────────────────────────
-
   describe("deleteAccount", () => {
     it("deletes existing account", async () => {
       userRepo.delete.mockResolvedValue({ affected: 1 });
@@ -265,148 +270,297 @@ describe("UsersService", () => {
     });
   });
 
-  // ─── uploadJobOffer ─────────────────────────────────────────────────────────
+  // ─── uploadCV ───────────────────────────────────────────────────────────────
+
+  describe("uploadCV", () => {
+    it("throws BadRequest when no file is provided", async () => {
+      await expect(service.uploadCV(USER_ID, undefined)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it("throws BadRequest when the PDF text is empty", async () => {
+      mockPdfParse.mockResolvedValue({ text: "" });
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        "The PDF file is empty or could not be parsed.",
+      );
+    });
+
+    it("throws InternalServerError on an empty AI response", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: null } }],
+      });
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it("throws InternalServerError on invalid JSON", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: "not valid json }{" } }],
+      });
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it("creates a new CV and returns the created message", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.uploadCV(USER_ID, pdfFile());
+
+      expect(cvRepo.findOne).toHaveBeenCalledWith({
+        where: { user_id: USER_ID },
+      });
+      expect(cvRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ desired_job: "Software Engineer" }),
+      );
+      expect(cvRepo.save).toHaveBeenCalled();
+      expect(result).toEqual({ message: "CV uploaded successfully" });
+    });
+
+    it("updates an existing CV and returns the updated message", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue({ user_id: USER_ID });
+
+      const result = await service.uploadCV(USER_ID, pdfFile());
+
+      expect(cvRepo.update).toHaveBeenCalledWith(
+        { user_id: USER_ID },
+        expect.objectContaining({ desired_job: "Software Engineer" }),
+      );
+      expect(result).toEqual({ message: "CV updated successfully" });
+    });
+
+    it("falls back to update when a concurrent insert wins the unique race", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      // No row at findOne time, but the concurrent upload's insert lands first,
+      // so our save hits the user_id unique violation (Postgres 23505).
+      cvRepo.findOne.mockResolvedValue(null);
+      const uniqueViolation = new QueryFailedError("insert", [], new Error());
+      (
+        uniqueViolation as unknown as { driverError: { code: string } }
+      ).driverError = { code: "23505" };
+      cvRepo.save.mockRejectedValueOnce(uniqueViolation);
+
+      const result = await service.uploadCV(USER_ID, pdfFile());
+
+      expect(cvRepo.update).toHaveBeenCalledWith(
+        { user_id: USER_ID },
+        expect.objectContaining({ desired_job: "Software Engineer" }),
+      );
+      expect(result).toEqual({ message: "CV updated successfully" });
+    });
+
+    it("rethrows non-unique-violation save errors", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+      cvRepo.save.mockRejectedValueOnce(new Error("db down"));
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow();
+    });
+
+    it("strips markdown fences before parsing JSON", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          { message: { content: "```json\n" + validCvGroqResponse + "\n```" } },
+        ],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.uploadCV(USER_ID, pdfFile());
+
+      expect(result).toEqual({ message: "CV uploaded successfully" });
+    });
+
+    it("applies defaults when fields are absent", async () => {
+      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: "{}" } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      await service.uploadCV(USER_ID, pdfFile());
+
+      expect(cvRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: USER_ID,
+          desired_job: null,
+          resume: null,
+          experiences: [],
+          education: [],
+          technical_skills: [],
+          languages: [],
+        }),
+      );
+    });
+
+    it("truncates the CV text before sending it to the LLM", async () => {
+      mockPdfParse.mockResolvedValue({ text: "a".repeat(20000) });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      await service.uploadCV(USER_ID, pdfFile());
+
+      const promptSent = mockGroqCreate.mock.calls[0][0].messages[0].content;
+      expect(promptSent).toContain("a".repeat(8000));
+      expect(promptSent).not.toContain("a".repeat(8001));
+      expect(promptSent.length).toBeLessThan(12000);
+    });
+
+    it("lets unexpected errors bubble up", async () => {
+      mockPdfParse.mockRejectedValue(new Error("unexpected crash"));
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        "unexpected crash",
+      );
+    });
+  });
 
   describe("uploadJobOffer", () => {
-    it("retourne 400 si aucune URL n'est fournie", async () => {
-      const req = mockReq({ body: {} });
-      const res = mockRes();
-
-      await service.uploadJobOffer(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Please provide a job offer URL.",
-      });
+    it("throws BadRequest on an invalid URL", async () => {
+      await expect(
+        service.uploadJobOffer(USER_ID, "not-a-url"),
+      ).rejects.toThrow("Invalid URL format.");
     });
 
-    it("retourne 400 si l'URL est invalide", async () => {
-      const req = mockReq({ body: { url: "not-a-url" } });
-      const res = mockRes();
+    it("throws BadRequest and does not scrape an SSRF target", async () => {
+      await expect(
+        service.uploadJobOffer(USER_ID, "http://169.254.169.254/latest/"),
+      ).rejects.toThrow("This URL target is not allowed.");
 
-      await service.uploadJobOffer(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ message: "Invalid URL format." });
+      expect(mockScrapeLinkedin).not.toHaveBeenCalled();
+      expect(mockScrapeAxios).not.toHaveBeenCalled();
     });
 
-    it("retourne 400 si aucun scraper ne retourne du contenu", async () => {
+    it("throws BadRequest when no scraper returns content", async () => {
       mockScrapeLinkedin.mockResolvedValue("");
       mockScrapeAxios.mockResolvedValue("");
-      mockScrapePuppeteer.mockResolvedValue("");
 
-      const req = mockReq({ body: { url: "https://example.com/job/123" } });
-      const res = mockRes();
-
-      await service.uploadJobOffer(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        message:
-          "Could not extract content from this URL. The website may be too protected.",
-      });
+      await expect(
+        service.uploadJobOffer(USER_ID, "https://example.com/job/123"),
+      ).rejects.toThrow(
+        "Could not extract content from this URL. The page may require JavaScript to render or be too protected.",
+      );
     });
 
-    it("utilise scrapeLinkedin pour les URLs LinkedIn", async () => {
+    it("uses scrapeLinkedin for LinkedIn URLs", async () => {
       mockScrapeLinkedin.mockResolvedValue("linkedin job content");
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: validJobOfferGroqResponse } }],
       });
       jobOfferRepo.findOne.mockResolvedValue(null);
 
-      const req = mockReq({
-        body: { url: "https://linkedin.com/jobs/view/123" },
-      });
-      const res = mockRes();
-
-      await service.uploadJobOffer(req, res);
+      await service.uploadJobOffer(
+        USER_ID,
+        "https://linkedin.com/jobs/view/123",
+      );
 
       expect(mockScrapeLinkedin).toHaveBeenCalledWith(
         "https://linkedin.com/jobs/view/123",
       );
-      expect(res.status).toHaveBeenCalledWith(200);
     });
 
-    it("retourne 500 si Groq retourne une réponse vide", async () => {
+    it("throws InternalServerError on an empty AI response", async () => {
       mockScrapeAxios.mockResolvedValue("some job content");
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: null } }],
       });
 
-      const req = mockReq({ body: { url: "https://example.com/job/123" } });
-      const res = mockRes();
-
-      await service.uploadJobOffer(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Empty response from AI.",
-      });
+      await expect(
+        service.uploadJobOffer(USER_ID, "https://example.com/job/123"),
+      ).rejects.toThrow(InternalServerErrorException);
     });
 
-    it("retourne 500 si Groq retourne un JSON invalide", async () => {
+    it("throws InternalServerError on invalid JSON", async () => {
       mockScrapeAxios.mockResolvedValue("some job content");
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: "}{invalid json" } }],
       });
 
-      const req = mockReq({ body: { url: "https://example.com/job/123" } });
-      const res = mockRes();
-
-      await service.uploadJobOffer(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Failed to parse extracted job offer data.",
-      });
+      await expect(
+        service.uploadJobOffer(USER_ID, "https://example.com/job/123"),
+      ).rejects.toThrow(InternalServerErrorException);
     });
 
-    it("crée une nouvelle offre et retourne 200 si aucune n'existe", async () => {
+    it("creates a new job offer and returns the parsed message", async () => {
       mockScrapeAxios.mockResolvedValue("some job content");
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: validJobOfferGroqResponse } }],
       });
       jobOfferRepo.findOne.mockResolvedValue(null);
 
-      const req = mockReq({ body: { url: "https://example.com/job/123" } });
-      const res = mockRes();
-
-      await service.uploadJobOffer(req, res);
+      const result = await service.uploadJobOffer(
+        USER_ID,
+        "https://example.com/job/123",
+      );
 
       expect(jobOfferRepo.create).toHaveBeenCalled();
       expect(jobOfferRepo.save).toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Job offer parsed successfully",
-      });
+      expect(result).toEqual({ message: "Job offer parsed successfully" });
     });
 
-    it("met à jour l'offre existante et retourne 200", async () => {
+    it("applies defaults when fields are absent", async () => {
+      mockScrapeAxios.mockResolvedValue("some job content");
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: "{}" } }],
+      });
+      jobOfferRepo.findOne.mockResolvedValue(null);
+
+      await service.uploadJobOffer(USER_ID, "https://example.com/job/123");
+
+      expect(jobOfferRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: USER_ID,
+          job_title: null,
+          required_skills: [],
+          missions: [],
+          offer_url: "https://example.com/job/123",
+        }),
+      );
+    });
+
+    it("updates an existing job offer and returns the updated message", async () => {
       mockScrapeAxios.mockResolvedValue("some job content");
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: validJobOfferGroqResponse } }],
       });
-      jobOfferRepo.findOne.mockResolvedValue({
-        user_id: "uid-1",
-        job_title: "old job",
-      });
+      jobOfferRepo.findOne.mockResolvedValue({ user_id: USER_ID });
 
-      const req = mockReq({ body: { url: "https://example.com/job/123" } });
-      const res = mockRes();
-
-      await service.uploadJobOffer(req, res);
+      const result = await service.uploadJobOffer(
+        USER_ID,
+        "https://example.com/job/123",
+      );
 
       expect(jobOfferRepo.update).toHaveBeenCalledWith(
-        { user_id: "uid-1" },
+        { user_id: USER_ID },
         expect.objectContaining({ job_title: "Backend Developer" }),
       );
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Job offer updated successfully",
-      });
+      expect(result).toEqual({ message: "Job offer updated successfully" });
     });
 
-    it("nettoie les backticks markdown avant de parser le JSON", async () => {
+    it("strips markdown fences before parsing JSON", async () => {
       mockScrapeAxios.mockResolvedValue("some job content");
       mockGroqCreate.mockResolvedValue({
         choices: [
@@ -419,26 +573,20 @@ describe("UsersService", () => {
       });
       jobOfferRepo.findOne.mockResolvedValue(null);
 
-      const req = mockReq({ body: { url: "https://example.com/job/123" } });
-      const res = mockRes();
+      const result = await service.uploadJobOffer(
+        USER_ID,
+        "https://example.com/job/123",
+      );
 
-      await service.uploadJobOffer(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
+      expect(result).toEqual({ message: "Job offer parsed successfully" });
     });
 
-    it("retourne 500 en cas d'erreur inattendue", async () => {
+    it("lets unexpected errors bubble up", async () => {
       mockScrapeAxios.mockRejectedValue(new Error("network crash"));
 
-      const req = mockReq({ body: { url: "https://example.com/job/123" } });
-      const res = mockRes();
-
-      await service.uploadJobOffer(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Error processing the job offer.",
-      });
+      await expect(
+        service.uploadJobOffer(USER_ID, "https://example.com/job/123"),
+      ).rejects.toThrow("network crash");
     });
   });
 });

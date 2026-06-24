@@ -36,7 +36,7 @@ describe('getBackendUrl', () => {
 
     it('should fallback to default production URL', () => {
       expect(getBackendUrl({ VITE_VERCEL_ENV: 'production' })).toBe(
-        'https://talk-up-ai.up.railway.app',
+        'https://api.talkupai.online',
       );
     });
   });

@@ -15,7 +15,7 @@ export class user_job_offer {
   @PrimaryGeneratedColumn("uuid")
   job_offer_id: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, unique: true })
   user_id: string;
 
   // This part will establish a one-to-one relationship between the user_job_offer and user entities, allowing us to easily access the user associated with a given job offer.
@@ -54,7 +54,7 @@ export class user_job_offer {
   @Column({ nullable: true })
   required_education: string;
 
-  @Column({ type: "json", nullable: true })
+  @Column({ type: "simple-array", nullable: true })
   missions: string[];
 
   @Column({ type: "simple-array", nullable: true })
