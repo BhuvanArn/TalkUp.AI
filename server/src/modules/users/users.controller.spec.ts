@@ -42,6 +42,8 @@ describe("UsersController", () => {
       getProfile: jest.fn().mockResolvedValue(profile),
       updateProfile: jest.fn().mockResolvedValue(profile),
       deleteAccount: jest.fn().mockResolvedValue(undefined),
+      uploadCV: jest.fn().mockResolvedValue(undefined),
+      uploadJobOffer: jest.fn().mockResolvedValue(undefined),
     };
 
     const moduleBuilder = Test.createTestingModule({
@@ -81,6 +83,29 @@ describe("UsersController", () => {
     it("delegates to deleteAccount", async () => {
       await expect(controller.deleteMe(mockUser)).resolves.toBeUndefined();
       expect(mockUsersService.deleteAccount).toHaveBeenCalledWith(mockUser);
+    });
+  });
+
+  describe("uploadCV", () => {
+    it("delegates to uploadCV with the user id and file", async () => {
+      const file = { buffer: Buffer.from("pdf") } as never;
+      await controller.uploadCV(mockUser, file);
+      expect(mockUsersService.uploadCV).toHaveBeenCalledWith(
+        mockUser.user_id,
+        file,
+      );
+    });
+  });
+
+  describe("uploadJobOffer", () => {
+    it("delegates to uploadJobOffer with the user id and url", async () => {
+      await controller.uploadJobOffer(mockUser, {
+        url: "https://example.com/job/1",
+      });
+      expect(mockUsersService.uploadJobOffer).toHaveBeenCalledWith(
+        mockUser.user_id,
+        "https://example.com/job/1",
+      );
     });
   });
 });
