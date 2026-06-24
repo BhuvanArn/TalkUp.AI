@@ -117,6 +117,20 @@ export class AiController {
   }
 
   @ApiOkResponse({
+    description: "Refresh Redis slot heartbeat for an active simulation.",
+  })
+  @ApiConflictResponse({
+    description: "Interview is not in an active simulation state.",
+  })
+  @Post("interviews/:id/heartbeat")
+  async heartbeatSimulation(
+    @Param("id") id: string,
+    @UserId() userId: string,
+  ) {
+    return this.aiService.heartbeatSimulation(id, userId);
+  }
+
+  @ApiOkResponse({
     description: "The AI interview has been successfully edited.",
     type: PutAiInterviewDto,
   })

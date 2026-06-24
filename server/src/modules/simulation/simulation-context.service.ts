@@ -7,6 +7,7 @@ import { REDIS_CLIENT } from "@common/redis/redis.constants";
 import { CreateAiInterviewDto } from "../ai/dto/createAiInterview.dto";
 import { loadSimulationConfig } from "./simulation.config";
 import { SimRedisKeys } from "./simulation.redis-keys";
+import { SimulationCapacityService } from "./simulation-capacity.service";
 
 export type SimulationChatTurn = {
   role: "user" | "assistant";
@@ -26,7 +27,10 @@ const BASE_RECRUITER_PERSONA = `Tu es Sophie Martin, recruteuse senior IT chez u
 export class SimulationContextService {
   private readonly logger = new Logger(SimulationContextService.name);
 
-  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {}
+  constructor(
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    private readonly capacity: SimulationCapacityService,
+  ) {}
 
   buildSystemPrompt(dto: CreateAiInterviewDto): string {
     const language = dto.language?.trim() || "French";
@@ -99,6 +103,8 @@ export class SimulationContextService {
       "EX",
       contextTtlSec,
     );
+
+    await this.capacity.touchHeartbeat(interviewId, ctx.userId);
   }
 
   async deleteContext(interviewId: string): Promise<void> {

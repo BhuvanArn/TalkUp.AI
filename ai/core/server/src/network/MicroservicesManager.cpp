@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <future>
 
 namespace {
     std::atomic<uint64_t> g_sts_request_id{0};
@@ -139,7 +140,14 @@ void talkup_network::MicroservicesManager::create_service_worker(
                 conn_ptr->job_queue.pop();
             }
             try {
-                process_sts_job(job.data, std::move(job.callback));
+                if (job.kind == WebSocketConnection::StsJobKind::SimulationContext) {
+                    process_simulation_context_job(
+                        job.interview_id,
+                        job.context_data,
+                        job.context_promise);
+                } else {
+                    process_sts_job(job.data, std::move(job.callback));
+                }
             } catch (const std::exception &e) {
                 std::cerr << "[MicroservicesManager] Worker error for service "
                           << service_name << ": " << e.what() << std::endl;
@@ -336,7 +344,11 @@ void talkup_network::MicroservicesManager::send_to_sts_microservice(
         } else {
             {
                 std::lock_guard<std::mutex> qlock(it->second.queue_mutex);
-                it->second.job_queue.push({data, std::move(callback)});
+                WebSocketConnection::StsJob job;
+                job.kind = WebSocketConnection::StsJobKind::StreamChunk;
+                job.data = data;
+                job.callback = std::move(callback);
+                it->second.job_queue.push(std::move(job));
             }
             it->second.queue_cv.notify_one();
             enqueue_ok = true;
@@ -358,6 +370,58 @@ bool talkup_network::MicroservicesManager::send_simulation_context_to_sts(
         return false;
     }
 
+    auto result_promise = std::make_shared<std::promise<bool>>();
+    std::future<bool> result_future = result_promise->get_future();
+    bool enqueue_ok = false;
+
+    {
+        std::lock_guard<std::mutex> lock(__ws_mutex);
+        auto it = __ws_connections.find("sts");
+        if (it == __ws_connections.end() || !it->second.is_connected) {
+            std::cerr << "[MicroservicesManager] STS connection not available for simulation_context" << std::endl;
+        } else {
+            WebSocketConnection::StsJob job;
+            job.kind = WebSocketConnection::StsJobKind::SimulationContext;
+            job.interview_id = interview_id;
+            job.context_data = context_data;
+            job.context_promise = result_promise;
+
+            {
+                std::lock_guard<std::mutex> qlock(it->second.queue_mutex);
+                it->second.job_queue.push(std::move(job));
+            }
+            it->second.queue_cv.notify_one();
+            enqueue_ok = true;
+            std::cout << "[MicroservicesManager] Enqueued simulation_context for interview_id="
+                      << interview_id << std::endl;
+        }
+    }
+
+    if (!enqueue_ok) {
+        result_promise->set_value(false);
+        return false;
+    }
+
+    constexpr int timeout_ms = 15000;
+    if (result_future.wait_for(std::chrono::milliseconds(timeout_ms)) != std::future_status::ready) {
+        std::cerr << "[MicroservicesManager] simulation_context ack timeout for "
+                  << interview_id << std::endl;
+        return false;
+    }
+
+    return result_future.get();
+}
+
+void talkup_network::MicroservicesManager::process_simulation_context_job(
+    const std::string &interview_id,
+    const nlohmann::json &context_data,
+    const std::shared_ptr<std::promise<bool>> &result_promise)
+{
+    auto complete = [&](bool ok) {
+        if (result_promise)
+            result_promise->set_value(ok);
+    };
+
     try {
         std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
         std::mutex *io_mutex = nullptr;
@@ -369,28 +433,32 @@ bool talkup_network::MicroservicesManager::send_simulation_context_to_sts(
                 !it->second.ws || !it->second.ws->is_open()) {
                 if (!reconnect_service_connection("sts")) {
                     std::cerr << "[MicroservicesManager] STS connection not available for simulation_context" << std::endl;
-                    return false;
+                    complete(false);
+                    return;
                 }
                 it = __ws_connections.find("sts");
             }
             if (it == __ws_connections.end() || !it->second.ws) {
-                return false;
+                complete(false);
+                return;
             }
             ws = it->second.ws;
             io_mutex = &it->second.io_mutex;
         }
 
         std::unique_lock<std::mutex> io_lock(*io_mutex);
+        const uint64_t request_id = ++g_sts_request_id;
         nlohmann::json payload = {
             {"services", {"STS"}},
             {"type", "simulation_context"},
+            {"request_id", request_id},
             {"interview_id", interview_id},
             {"timestamp", std::time(nullptr)},
             {"data", context_data},
         };
         ws->write(boost::asio::buffer(payload.dump()));
-        std::cout << "[MicroservicesManager] Sent simulation_context for interview_id="
-                  << interview_id << std::endl;
+        std::cout << "[MicroservicesManager] Sent simulation_context request_id="
+                  << request_id << " interview_id=" << interview_id << std::endl;
 
         const int timeout_ms = 15000;
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
@@ -409,25 +477,39 @@ bool talkup_network::MicroservicesManager::send_simulation_context_to_sts(
             if (msg_type == "pong")
                 continue;
 
+            if (msg_json.contains("request_id")) {
+                const uint64_t response_id = msg_json.value("request_id", static_cast<uint64_t>(0));
+                if (response_id != request_id)
+                    continue;
+            } else if (msg_type != "simulation_context_ack") {
+                continue;
+            }
+
             if (msg_type == "simulation_context_ack") {
                 const std::string ack_id = msg_json.value("interview_id", "");
-                if (ack_id.empty() || ack_id == interview_id)
-                    return true;
+                if (!ack_id.empty() && ack_id != interview_id) {
+                    std::cerr << "[MicroservicesManager] simulation_context_ack interview mismatch: "
+                              << ack_id << " expected " << interview_id << std::endl;
+                    continue;
+                }
+                complete(true);
+                return;
             }
 
             if (msg_type == "error") {
                 std::cerr << "[MicroservicesManager] STS simulation_context error: "
                           << msg_json.dump() << std::endl;
-                return false;
+                complete(false);
+                return;
             }
         }
 
-        std::cerr << "[MicroservicesManager] simulation_context ack timeout for "
+        std::cerr << "[MicroservicesManager] simulation_context read timeout for "
                   << interview_id << std::endl;
-        return false;
+        complete(false);
     } catch (const std::exception &e) {
         std::cerr << "[MicroservicesManager] simulation_context exception: " << e.what() << std::endl;
-        return false;
+        complete(false);
     }
 }
 
@@ -495,17 +577,21 @@ void talkup_network::MicroservicesManager::process_sts_job(const nlohmann::json 
                 continue;
 
             const std::string msg_type = msg_json.value("type", "");
-            if (msg_type == "pong") {
+            if (msg_type == "pong" || msg_type == "simulation_context_ack") {
                 continue;
             }
 
-            if (msg_json.contains("request_id")) {
-                const uint64_t response_id = msg_json.value("request_id", static_cast<uint64_t>(0));
-                if (response_id != request_id) {
-                    std::cout << "[MicroservicesManager] Ignoring STS message for request_id="
-                              << response_id << " (expected " << request_id << ")" << std::endl;
-                    continue;
-                }
+            if (!msg_json.contains("request_id")) {
+                std::cout << "[MicroservicesManager] Ignoring STS message without request_id type="
+                          << msg_type << std::endl;
+                continue;
+            }
+
+            const uint64_t response_id = msg_json.value("request_id", static_cast<uint64_t>(0));
+            if (response_id != request_id) {
+                std::cout << "[MicroservicesManager] Ignoring STS message for request_id="
+                          << response_id << " (expected " << request_id << ")" << std::endl;
+                continue;
             }
 
             std::cout << "[MicroservicesManager] Received STS message type=" << msg_type
@@ -573,7 +659,14 @@ void talkup_network::MicroservicesManager::start_service_worker(const std::strin
                 conn_ptr->job_queue.pop();
             }
             try {
-                process_sts_job(job.data, std::move(job.callback));
+                if (job.kind == WebSocketConnection::StsJobKind::SimulationContext) {
+                    process_simulation_context_job(
+                        job.interview_id,
+                        job.context_data,
+                        job.context_promise);
+                } else {
+                    process_sts_job(job.data, std::move(job.callback));
+                }
             } catch (const std::exception &e) {
                 std::cerr << "[MicroservicesManager] Worker error for service " << service_name << ": " << e.what() << std::endl;
             }

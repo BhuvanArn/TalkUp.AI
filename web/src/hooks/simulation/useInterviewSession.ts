@@ -2,6 +2,7 @@ import {
   cancelInterview,
   createInterview,
   getInterviewSession,
+  heartbeatInterview,
   updateInterview,
 } from '@/services/ai/http';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -17,6 +18,7 @@ const WEBSOCKET_CLOSE_CODE_NORMAL = 1000;
 const STREAM_RESUME_DELAY_MS = 100;
 const QUEUE_POLL_INTERVAL_MS = 3000;
 const QUEUE_POLL_MAX_MS = 20 * 60 * 1000;
+const HEARTBEAT_INTERVAL_MS = 60 * 1000;
 
 /**
  * Props for the useInterviewSession hook.
@@ -123,6 +125,25 @@ export function useInterviewSession({
       queueAbortRef.current?.abort();
     };
   }, []);
+
+  useEffect(() => {
+    if (!isCallActive || !interviewID) {
+      return;
+    }
+
+    const sendHeartbeat = () => {
+      heartbeatInterview(interviewID).catch((error) => {
+        console.warn('Simulation heartbeat failed:', error);
+      });
+    };
+
+    sendHeartbeat();
+    const intervalId = window.setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isCallActive, interviewID]);
 
   const handleStreamToggle = useCallback(
     async (streaming: boolean) => {

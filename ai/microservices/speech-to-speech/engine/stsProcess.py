@@ -69,15 +69,16 @@ async def _handle_simulation_context(
 	brief = SimulationBrief.from_payload(context_data)
 	SimulationBriefStore.register(interview_id.strip(), brief)
 
-	await _ws_send_json(
-		websocket,
-		send_lock,
-		{
-			"type": "simulation_context_ack",
-			"interview_id": interview_id.strip(),
-			"status": "registered",
-		},
-	)
+	ack: dict = {
+		"type": "simulation_context_ack",
+		"interview_id": interview_id.strip(),
+		"status": "registered",
+	}
+	request_id = payload.get("request_id")
+	if request_id is not None:
+		ack["request_id"] = request_id
+
+	await _ws_send_json(websocket, send_lock, ack)
 
 
 async def _process_stream_and_reply(

@@ -27,7 +27,8 @@
 #include <condition_variable>
 #include <queue>
 #include <memory>
-#include <crow.h>
+#include <functional>
+#include <future>
 
 #include "ExceptionManager.hpp"
 
@@ -116,9 +117,18 @@ namespace talkup_network {
         protected:
         private:
             struct WebSocketConnection {
+                enum class StsJobKind {
+                    StreamChunk,
+                    SimulationContext,
+                };
+
                 struct StsJob {
+                    StsJobKind kind = StsJobKind::StreamChunk;
                     nlohmann::json data;
                     ResponseCallback callback;
+                    std::string interview_id;
+                    nlohmann::json context_data;
+                    std::shared_ptr<std::promise<bool>> context_promise;
                 };
 
                 std::shared_ptr<boost::asio::io_context> io_context;
@@ -176,5 +186,10 @@ namespace talkup_network {
              * @param data The JSON data containing the job information.
              */
             static void process_sts_job(const nlohmann::json &data, ResponseCallback callback);
+
+            static void process_simulation_context_job(
+                const std::string &interview_id,
+                const nlohmann::json &context_data,
+                const std::shared_ptr<std::promise<bool>> &result_promise);
     };
 }

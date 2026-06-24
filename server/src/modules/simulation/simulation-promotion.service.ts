@@ -20,6 +20,15 @@ import { SimulationWsTokenService } from "./simulation-ws-token.service";
 import { SimRedisKeys } from "./simulation.redis-keys";
 import { loadSimulationConfig } from "./simulation.config";
 
+function createDtoFromInterview(interview: ai_interview): CreateAiInterviewDto {
+  return {
+    type: interview.type,
+    language: interview.language,
+    jobContext: interview.job_context ?? undefined,
+    status: AiInterviewStatus.ASKED,
+  };
+}
+
 export type ReadySessionPayload = {
   entrypoint: string;
 };
@@ -107,11 +116,7 @@ export class SimulationPromotionService {
         return null;
       }
 
-      const dto: CreateAiInterviewDto = {
-        type: interview.type,
-        language: interview.language,
-        status: AiInterviewStatus.ASKED,
-      };
+      const dto = createDtoFromInterview(interview);
 
       try {
         await this.prepareReadySession(interview, dto);

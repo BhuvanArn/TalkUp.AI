@@ -7,6 +7,7 @@ export type SimulationConfig = {
   estimatedTurnSec: number;
   historyMaxTurns: number;
   contextTtlSec: number;
+  heartbeatIntervalSec: number;
 };
 
 export function loadSimulationConfig(): SimulationConfig {
@@ -19,6 +20,10 @@ export function loadSimulationConfig(): SimulationConfig {
     estimatedTurnSec: parseInt(process.env.SIM_ESTIMATED_TURN_SEC ?? "90", 10),
     historyMaxTurns: parseInt(process.env.SIM_HISTORY_MAX_TURNS ?? "30", 10),
     contextTtlSec: parseInt(process.env.SIM_CONTEXT_TTL_SEC ?? "7200", 10),
+    heartbeatIntervalSec: parseInt(
+      process.env.SIM_HEARTBEAT_INTERVAL_SEC ?? "60",
+      10,
+    ),
   };
 }
 

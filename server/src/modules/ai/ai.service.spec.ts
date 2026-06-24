@@ -152,6 +152,32 @@ describe("AiService", () => {
       expect(res.queuePosition).toBe(1);
     });
 
+    it("persists jobContext when interview is queued", async () => {
+      mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
+      mockCapacity.tryAcquireSlot.mockResolvedValueOnce({
+        acquired: false,
+        reason: "capacity",
+      });
+      mockAiInterviewRepo.save.mockResolvedValueOnce({
+        interview_id: "new-id",
+      });
+
+      await service.createInterview(
+        {
+          type: "Technical",
+          language: "French",
+          jobContext: "Backend role at Acme",
+        } as any,
+        "user-1",
+      );
+
+      expect(mockAiInterviewRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          job_context: "Backend role at Acme",
+        }),
+      );
+    });
+
     it("releases slot and marks interview expired when prepareReadySession fails", async () => {
       mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
       mockAiInterviewRepo.save.mockResolvedValueOnce({

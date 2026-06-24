@@ -83,6 +83,7 @@ export class AiService {
         user_id: userId,
         type: dto.type,
         language: dto.language,
+        job_context: dto.jobContext?.trim() || null,
         status: AiInterviewStatus.QUEUED,
       });
 
@@ -220,6 +221,25 @@ export class AiService {
       queuePosition: 0,
       entrypoint: ready?.entrypoint ?? null,
     };
+  }
+
+  async heartbeatSimulation(
+    interviewId: string,
+    userId: string,
+  ): Promise<{ ok: true }> {
+    const interview = await this.getInterviewById(interviewId, userId);
+
+    if (
+      interview.status !== AiInterviewStatus.ASKED &&
+      interview.status !== AiInterviewStatus.IN_PROGRESS
+    ) {
+      throw new ConflictException(
+        "Heartbeat is only allowed for active simulation sessions.",
+      );
+    }
+
+    await this.capacity.touchHeartbeat(interviewId, userId);
+    return { ok: true };
   }
 
   async cancelInterview(interviewId: string, userId: string): Promise<true> {
