@@ -85,6 +85,53 @@ Le format de type peut être `audio`, `video`, `image` ou `text` selon le conten
 
 ---
 
+## 4.5 Contexte de simulation — entreprise et offre d'emploi
+
+Avant d'envoyer des `stream_chunk` audio, le Frontend **doit** enregistrer le contexte métier via `simulation_context`. Ce contexte alimente le prompt système du LLM (STS).
+
+**Ordre recommandé :** connexion WS → `simulation_context` → `simulation_context_ack` → `stream_chunk`.
+
+### Exemple : Frontend → Serveur IA
+
+```json
+{
+  "key": "exemple_key",
+  "type": "simulation_context",
+  "stream_id": "019bf2a0-....",
+  "format": "json",
+  "timestamp": 1739592334,
+  "data": {
+    "language": "French",
+    "interviewType": "technical",
+    "company": {
+      "name": "Acme Digital",
+      "description": "ESN specialisee en transformation digitale."
+    },
+    "jobOffer": {
+      "title": "Developpeur Backend Java",
+      "description": "Mission SI bancaire microservices.",
+      "requirements": "Java 17, Spring Boot, Kafka."
+    },
+    "additionalInfo": "Notes complementaires (CV resume, objectifs)."
+  }
+}
+```
+
+### Exemple : Serveur IA → Frontend
+
+```json
+{
+  "key": "exemple_key",
+  "type": "simulation_context_ack",
+  "stream_id": "019bf2a0-....",
+  "format": "text",
+  "timestamp": 1739592335,
+  "data": "simulation context registered"
+}
+```
+
+---
+
 ## 5. Niveau avancé — Serveur IA ↔ Microservices
 Le protocole est conçu pour évoluer vers une architecture modulaire où le Serveur IA délègue certaines tâches à des microservices Python.
 

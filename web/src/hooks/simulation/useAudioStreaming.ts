@@ -56,6 +56,7 @@ export function useAudioStreaming({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const onAudioPacketRef = useRef(onAudioPacket);
   const interviewIDRef = useRef(interviewID);
+  interviewIDRef.current = interviewID;
   const vadIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -73,10 +74,6 @@ export function useAudioStreaming({
   useEffect(() => {
     onAudioPacketRef.current = onAudioPacket;
   }, [onAudioPacket]);
-
-  useEffect(() => {
-    interviewIDRef.current = interviewID;
-  }, [interviewID]);
 
   const getSupportedMimeType = useCallback((): string | null => {
     if (mimeType && MediaRecorder.isTypeSupported(mimeType)) {

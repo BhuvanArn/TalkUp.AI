@@ -42,24 +42,26 @@ services:
   sts-service:
     build: ./microservices/speech-to-speech
     container_name: talkup-sts
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    env_file:
+      - core/server/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - talkup-ai
     ports:
       - "8002:8002"
-    volumes:
-      - ./llm-core/models/sup-it-v3-merged:/app/llm/sup-it-v3-merged
     environment:
+      - BACKEND_URL=${BACKEND_URL:-http://server:3000/v1/api}
+      - SIM_INTERNAL_API_KEY=${SIM_INTERNAL_API_KEY:-talkup-dev-internal-key}
+      - LLM_BACKEND=${LLM_BACKEND:-openrouter}
+      - LLM_MAX_NEW_TOKENS=${LLM_MAX_NEW_TOKENS:-160}
+      # OpenRouter: no local LLM — keep GPU free (Whisper runs on CPU).
       - CUDA_VISIBLE_DEVICES=-1
       - NVIDIA_VISIBLE_DEVICES=none
-      - LLM_BACKEND=hf
-      - LLM_GPU_MAX_MEMORY=3GiB
-      - LLM_CPU_MAX_MEMORY=8GiB
-      - LLM_MAX_NEW_TOKENS=128
+      # Local LLM (LLM_BACKEND=local): add deploy GPU reservation + volume below.
+    # volumes:
+    #   - ./llm-core/models/sup-it-v3-merged:/app/llm/sup-it-v3-merged
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health')"]

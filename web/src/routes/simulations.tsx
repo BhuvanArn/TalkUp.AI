@@ -1,4 +1,5 @@
 import InfoBox from '@/components/molecules/info-box';
+import SimulationQueueBanner from '@/components/molecules/simulation-queue-banner';
 import NotesEditor from '@/components/molecules/notes-editor/notes-editor';
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
@@ -25,8 +26,31 @@ function Simulations() {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [wsError, setWsError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
-  const [interviewID, setInterviewID] = useState<string | null>(null);
   const videoStreamToggleRef = useRef<(() => void) | null>(null);
+  const connectRef = useRef<(url?: string) => void>(() => {});
+  const disconnectRef = useRef<(code?: number, reason?: string) => void>(
+    () => {},
+  );
+
+  const handleResumeStream = useCallback(() => {
+    if (videoStreamToggleRef.current) {
+      videoStreamToggleRef.current();
+    }
+  }, []);
+
+  const {
+    isCallActive,
+    isQueued,
+    queuePosition,
+    estimatedWaitSec,
+    inputUrl,
+    interviewID,
+    handleStreamToggle,
+  } = useInterviewSession({
+    onConnect: (url) => connectRef.current(url),
+    onDisconnect: (code, reason) => disconnectRef.current(code, reason),
+    onResumeStream: handleResumeStream,
+  });
 
   const {
     sendMessage,
@@ -60,26 +84,8 @@ function Simulations() {
     },
   });
 
-  const handleResumeStream = useCallback(() => {
-    if (videoStreamToggleRef.current) {
-      videoStreamToggleRef.current();
-    }
-  }, []);
-
-  const {
-    isCallActive,
-    inputUrl,
-    interviewID: sessionInterviewID,
-    handleStreamToggle,
-  } = useInterviewSession({
-    onConnect: connect,
-    onDisconnect: disconnect,
-    onResumeStream: handleResumeStream,
-  });
-
-  useEffect(() => {
-    setInterviewID(sessionInterviewID);
-  }, [sessionInterviewID]);
+  connectRef.current = connect;
+  disconnectRef.current = disconnect;
 
   const sendJsonMessageRef = useRef(sendJsonMessage);
   const readyStateRef = useRef(readyState);
@@ -146,6 +152,15 @@ function Simulations() {
           </p>
         </div>
       </div>
+
+      {isQueued && (
+        <div className="mb-4">
+          <SimulationQueueBanner
+            queuePosition={queuePosition}
+            estimatedWaitSec={estimatedWaitSec}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-[1fr_20rem] gap-6">
         <div>

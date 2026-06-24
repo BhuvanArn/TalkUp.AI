@@ -32,6 +32,8 @@ import { CreateAiInterviewDto } from "./dto/createAiInterview.dto";
 import { PutAiInterviewDto } from "./dto/putAiInterview.dto";
 import { GetInterviewsQueryDto } from "./dto/getInterviewsQuery.dto";
 import { CreateAiTranscriptsDto } from "./dto/createAiTranscripts.dto";
+import { CreateAiInterviewResponseDto } from "./dto/createAiInterviewResponse.dto";
+import { InterviewSessionDto } from "./dto/interviewSession.dto";
 
 @ApiTags("AI")
 @Controller("ai")
@@ -39,9 +41,15 @@ import { CreateAiTranscriptsDto } from "./dto/createAiTranscripts.dto";
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
+  @ApiOkResponse({ description: "Current simulation capacity snapshot." })
+  @Get("capacity")
+  async getCapacity() {
+    return this.aiService.getCapacity();
+  }
+
   @ApiCreatedResponse({
-    description: "The AI interview has been successfully created.",
-    type: CreateAiInterviewDto,
+    description: "The AI interview has been successfully created or queued.",
+    type: CreateAiInterviewResponseDto,
   })
   @ApiBadRequestResponse({
     description: "Badly formatted parameter.",
@@ -88,6 +96,38 @@ export class AiController {
   @Get("interviews/:id")
   async getOneInterview(@Param("id") id: string, @UserId() userId: string) {
     return await this.aiService.getInterviewById(id, userId, true);
+  }
+
+  @ApiOkResponse({
+    description: "Live simulation session state (queue position, entrypoint).",
+    type: InterviewSessionDto,
+  })
+  @Get("interviews/:id/session")
+  async getInterviewSession(
+    @Param("id") id: string,
+    @UserId() userId: string,
+  ) {
+    return this.aiService.getInterviewSession(id, userId);
+  }
+
+  @ApiOkResponse({ description: "Interview cancelled and slot released." })
+  @Post("interviews/:id/cancel")
+  async cancelInterview(@Param("id") id: string, @UserId() userId: string) {
+    return this.aiService.cancelInterview(id, userId);
+  }
+
+  @ApiOkResponse({
+    description: "Refresh Redis slot heartbeat for an active simulation.",
+  })
+  @ApiConflictResponse({
+    description: "Interview is not in an active simulation state.",
+  })
+  @Post("interviews/:id/heartbeat")
+  async heartbeatSimulation(
+    @Param("id") id: string,
+    @UserId() userId: string,
+  ) {
+    return this.aiService.heartbeatSimulation(id, userId);
   }
 
   @ApiOkResponse({

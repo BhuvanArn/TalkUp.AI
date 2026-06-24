@@ -3,6 +3,7 @@ import axiosInstance from '../axiosInstance';
 import {
   AiInterviewResponse,
   CreateAiInterviewDto,
+  InterviewSessionResponse,
   UpdateAiInterviewDto,
 } from './types';
 
@@ -50,6 +51,23 @@ export const createInterview = async (
  * const dto: UpdateAiInterviewDto = { status: 'completed', score: 85, feedback: 'Great performance' };
  * await updateInterview('abc123', dto);
  */
+export const getInterviewSession = async (
+  interviewId: string,
+): Promise<InterviewSessionResponse> => {
+  const response = await axiosInstance.get<InterviewSessionResponse>(
+    `${API_ROUTES.ai}/interviews/${interviewId}/session`,
+  );
+  return response.data;
+};
+
+export const cancelInterview = async (interviewId: string): Promise<void> => {
+  await axiosInstance.post(`${API_ROUTES.ai}/interviews/${interviewId}/cancel`);
+};
+
+export const heartbeatInterview = async (interviewId: string): Promise<void> => {
+  await axiosInstance.post(`${API_ROUTES.ai}/interviews/${interviewId}/heartbeat`);
+};
+
 export const updateInterview = async (
   interviewId: string,
   dto: UpdateAiInterviewDto,

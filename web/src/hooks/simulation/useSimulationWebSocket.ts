@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 export interface WebSocketPacket {
@@ -105,6 +105,8 @@ export function useSimulationWebSocket(
   } = props;
 
   const [socketUrl, setSocketUrl] = useState<string | null>(null);
+  const interviewIDRef = useRef(interviewID);
+  interviewIDRef.current = interviewID;
 
   const {
     sendMessage,
@@ -144,7 +146,7 @@ export function useSimulationWebSocket(
 
     const pingMessage: WebSocketPacket = {
       key: import.meta.env.VITE_WEBSOCKET_KEY,
-      stream_id: interviewID ?? 'unknown',
+      stream_id: interviewIDRef.current ?? 'unknown',
       format: '',
       data: '',
       type: 'ping',
@@ -152,7 +154,7 @@ export function useSimulationWebSocket(
     };
 
     sendJsonMessage(pingMessage);
-  }, [readyState, sendJsonMessage, interviewID]);
+  }, [readyState, sendJsonMessage]);
 
   return {
     isConnected: readyState === ReadyState.OPEN,
