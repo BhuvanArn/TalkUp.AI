@@ -43,14 +43,19 @@ export const ChatInputBar = ({
 }: ChatInputBarProps) => {
   const canSend = value.trim().length > 0 && !isLoading;
 
+  // Keep the input enabled while the AI responds so keyboard focus and tab
+  // order are not lost for the ~1.2s typing window; just suppress sending.
+  const handleSend = () => {
+    if (canSend) onSend();
+  };
+
   return (
     <div className="flex items-center gap-2 p-3 bg-surface border-t border-border">
       <ChatInput
         ref={inputRef}
         value={value}
         onChange={onChange}
-        onSend={onSend}
-        disabled={isLoading}
+        onSend={handleSend}
         placeholder="Ask a question..."
       />
 
@@ -58,7 +63,7 @@ export const ChatInputBar = ({
         circled
         type="button"
         size="sm"
-        onClick={onSend}
+        onClick={handleSend}
         disabled={!canSend}
         aria-label="Send message"
         // Only paint the brand gradient when enabled. The Button atom's disabled
