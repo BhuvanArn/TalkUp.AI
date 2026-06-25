@@ -261,6 +261,8 @@ describe('Simulations', () => {
         isCallActive: false,
         inputUrl: '',
         interviewID: null,
+        isQueued: false,
+        queuePosition: 0,
         handleStreamToggle: mockHandleStreamToggle,
       });
     });
@@ -272,6 +274,8 @@ describe('Simulations', () => {
         isCallActive: true,
         inputUrl: '',
         interviewID: null,
+        isQueued: false,
+        queuePosition: 0,
         handleStreamToggle: mockHandleStreamToggle,
       });
       vi.mocked(useAudioPlayback).mockReturnValue({

@@ -1,6 +1,6 @@
 import InfoBox from '@/components/molecules/info-box';
-import SimulationQueueBanner from '@/components/molecules/simulation-queue-banner';
 import NotesEditor from '@/components/molecules/notes-editor/notes-editor';
+import SimulationQueueBanner from '@/components/molecules/simulation-queue-banner';
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
 import SimulationVideoArea from '@/components/organisms/simulation-video-area';

@@ -1,7 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
-import { loadSimulationConfig, resolveAiWsPublicBase } from "./simulation.config";
+import {
+  loadSimulationConfig,
+  resolveAiWsPublicBase,
+} from "./simulation.config";
 
 export type SimulationWsTokenPayload = {
   purpose: "simulation_ws";

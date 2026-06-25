@@ -54,6 +54,7 @@ describe("AiService", () => {
     };
 
     mockCapacity = {
+      getUserActiveInterviewId: jest.fn().mockResolvedValue(null),
       tryAcquireSlot: jest.fn().mockResolvedValue({ acquired: true }),
       enqueue: jest.fn().mockResolvedValue({ ok: true }),
       getQueuePosition: jest.fn().mockResolvedValue(1),
@@ -216,6 +217,16 @@ describe("AiService", () => {
       ).rejects.toThrow(ConflictException);
     });
 
+    it("throws ConflictException from the Redis active-interview pre-check before hitting the DB", async () => {
+      mockCapacity.getUserActiveInterviewId.mockResolvedValueOnce("active-id");
+
+      await expect(
+        service.createInterview({ type: "x", language: "fr" } as any, "user-1"),
+      ).rejects.toThrow(ConflictException);
+
+      expect(mockAiInterviewRepo.findOne).not.toHaveBeenCalled();
+    });
+
     it("throws ServiceUnavailableException when queue is full", async () => {
       mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
       mockCapacity.tryAcquireSlot.mockResolvedValueOnce({
@@ -230,6 +241,171 @@ describe("AiService", () => {
       await expect(
         service.createInterview({ type: "x", language: "fr" } as any, "user-1"),
       ).rejects.toThrow(ServiceUnavailableException);
+    });
+  });
+
+  describe("getCapacity", () => {
+    it("delegates to the capacity service snapshot", async () => {
+      const res = await service.getCapacity();
+      expect(res).toEqual({
+        active: 0,
+        max: 2,
+        queueLength: 0,
+        accepting: true,
+      });
+      expect(mockCapacity.getSnapshot).toHaveBeenCalled();
+    });
+  });
+
+  describe("getInterviewSession", () => {
+    const mockSession = (status: AiInterviewStatus) =>
+      jest
+        .spyOn(service, "getInterviewById")
+        .mockResolvedValueOnce({ ...mockInterview, status } as any);
+
+    it("returns ended session for completed interviews", async () => {
+      mockSession(AiInterviewStatus.COMPLETED);
+
+      const res = await service.getInterviewSession("i1", "user-1");
+
+      expect(res.sessionStatus).toBe("ended");
+      expect(res.entrypoint).toBeNull();
+    });
+
+    it("returns ended session for cancelled interviews", async () => {
+      mockSession(AiInterviewStatus.CANCELLED);
+      const res = await service.getInterviewSession("i1", "user-1");
+      expect(res.sessionStatus).toBe("ended");
+    });
+
+    it("returns ended session for expired interviews", async () => {
+      mockSession(AiInterviewStatus.EXPIRED);
+      const res = await service.getInterviewSession("i1", "user-1");
+      expect(res.sessionStatus).toBe("ended");
+    });
+
+    it("returns active session with ready entrypoint when in progress", async () => {
+      mockSession(AiInterviewStatus.IN_PROGRESS);
+      mockPromotion.getReadyPayload.mockResolvedValueOnce({
+        entrypoint: "wss://x/ws",
+      });
+
+      const res = await service.getInterviewSession("i1", "user-1");
+
+      expect(res.sessionStatus).toBe("active");
+      expect(res.entrypoint).toBe("wss://x/ws");
+    });
+
+    it("returns active session with null entrypoint when no ready payload", async () => {
+      mockSession(AiInterviewStatus.IN_PROGRESS);
+      mockPromotion.getReadyPayload.mockResolvedValueOnce(null);
+
+      const res = await service.getInterviewSession("i1", "user-1");
+
+      expect(res.entrypoint).toBeNull();
+    });
+
+    it("returns queued session with position and wait estimate", async () => {
+      mockSession(AiInterviewStatus.QUEUED);
+      mockCapacity.getQueuePosition.mockResolvedValueOnce(3);
+
+      const res = await service.getInterviewSession("i1", "user-1");
+
+      expect(res.sessionStatus).toBe("queued");
+      expect(res.queuePosition).toBe(3);
+      expect(res.estimatedWaitSec).toBe(3 * 90);
+    });
+
+    it("returns ready session for ASKED interviews", async () => {
+      mockSession(AiInterviewStatus.ASKED);
+      mockPromotion.getReadyPayload.mockResolvedValueOnce({
+        entrypoint: "wss://ready/ws",
+      });
+
+      const res = await service.getInterviewSession("i1", "user-1");
+
+      expect(res.sessionStatus).toBe("ready");
+      expect(res.entrypoint).toBe("wss://ready/ws");
+    });
+  });
+
+  describe("heartbeatSimulation", () => {
+    it("touches the heartbeat for an ASKED interview", async () => {
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce({
+        ...mockInterview,
+        status: AiInterviewStatus.ASKED,
+      } as any);
+
+      const res = await service.heartbeatSimulation("i1", "user-1");
+
+      expect(res).toEqual({ ok: true });
+      expect(mockCapacity.touchHeartbeat).toHaveBeenCalledWith("i1", "user-1");
+    });
+
+    it("touches the heartbeat for an IN_PROGRESS interview", async () => {
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce({
+        ...mockInterview,
+        status: AiInterviewStatus.IN_PROGRESS,
+      } as any);
+
+      await service.heartbeatSimulation("i1", "user-1");
+      expect(mockCapacity.touchHeartbeat).toHaveBeenCalled();
+    });
+
+    it("throws ConflictException for non-active statuses", async () => {
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce({
+        ...mockInterview,
+        status: AiInterviewStatus.QUEUED,
+      } as any);
+
+      await expect(service.heartbeatSimulation("i1", "user-1")).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockCapacity.touchHeartbeat).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("cancelInterview", () => {
+    it("is a no-op (returns true) when already completed", async () => {
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce({
+        ...mockInterview,
+        status: AiInterviewStatus.COMPLETED,
+      } as any);
+
+      expect(await service.cancelInterview("i1", "user-1")).toBe(true);
+      expect(mockAiInterviewRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("removes from queue when interview is queued", async () => {
+      const existing = {
+        ...mockInterview,
+        status: AiInterviewStatus.QUEUED,
+      } as any;
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce(existing);
+      mockAiInterviewRepo.save.mockResolvedValueOnce(existing);
+
+      await service.cancelInterview("i1", "user-1");
+
+      expect(mockCapacity.removeFromQueue).toHaveBeenCalledWith("i1");
+      expect(mockCapacity.releaseSlot).not.toHaveBeenCalled();
+      expect(existing.status).toBe(AiInterviewStatus.CANCELLED);
+      expect(existing.ended_at).toBeInstanceOf(Date);
+    });
+
+    it("releases slot and promotes next when interview is active", async () => {
+      const existing = {
+        ...mockInterview,
+        status: AiInterviewStatus.IN_PROGRESS,
+      } as any;
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce(existing);
+      mockAiInterviewRepo.save.mockResolvedValueOnce(existing);
+
+      await service.cancelInterview("i1", "user-1");
+
+      expect(mockCapacity.releaseSlot).toHaveBeenCalledWith("i1", "user-1");
+      expect(mockPromotion.promoteNextFromQueue).toHaveBeenCalled();
+      expect(mockContext.deleteContext).toHaveBeenCalledWith("i1");
+      expect(mockPromotion.clearReady).toHaveBeenCalledWith("i1");
     });
   });
 
@@ -260,6 +436,74 @@ describe("AiService", () => {
 
       expect(mockCapacity.releaseSlot).toHaveBeenCalledWith("i1", "user-1");
       expect(mockPromotion.promoteNextFromQueue).toHaveBeenCalled();
+      expect(existing.ended_at).toBeInstanceOf(Date);
+    });
+
+    it("does not set ended_at when transitioning to COMPLETED from an already completed state", async () => {
+      const existing = {
+        ...mockInterview,
+        status: AiInterviewStatus.COMPLETED,
+        ended_at: undefined,
+      } as any;
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce(existing);
+      mockAiInterviewRepo.save.mockResolvedValueOnce(true);
+
+      await service.editAiInterview(
+        "i1",
+        { status: AiInterviewStatus.COMPLETED } as any,
+        "user-1",
+      );
+
+      expect(existing.ended_at).toBeUndefined();
+    });
+
+    it("finalizes on CANCELLED status", async () => {
+      const existing = {
+        ...mockInterview,
+        status: AiInterviewStatus.IN_PROGRESS,
+      } as any;
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce(existing);
+      mockAiInterviewRepo.save.mockResolvedValueOnce(true);
+
+      await service.editAiInterview(
+        "i1",
+        { status: AiInterviewStatus.CANCELLED } as any,
+        "user-1",
+      );
+
+      expect(mockCapacity.releaseSlot).toHaveBeenCalledWith("i1", "user-1");
+      expect(mockContext.deleteContext).toHaveBeenCalledWith("i1");
+    });
+
+    it("touches heartbeat when transitioning to IN_PROGRESS", async () => {
+      const existing = {
+        ...mockInterview,
+        status: AiInterviewStatus.ASKED,
+      } as any;
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce(existing);
+      mockAiInterviewRepo.save.mockResolvedValueOnce(true);
+
+      await service.editAiInterview(
+        "i1",
+        { status: AiInterviewStatus.IN_PROGRESS } as any,
+        "user-1",
+      );
+
+      expect(mockCapacity.touchHeartbeat).toHaveBeenCalledWith("i1", "user-1");
+      expect(mockPromotion.promoteNextFromQueue).not.toHaveBeenCalled();
+    });
+
+    it("wraps save failures in InternalServerErrorException", async () => {
+      const existing = {
+        ...mockInterview,
+        status: AiInterviewStatus.ASKED,
+      } as any;
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce(existing);
+      mockAiInterviewRepo.save.mockRejectedValueOnce(new Error("db down"));
+
+      await expect(
+        service.editAiInterview("i1", {} as any, "user-1"),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -270,6 +514,54 @@ describe("AiService", () => {
       const res = await service.getUserInterviews({} as any, "user-1");
 
       expect(res).toEqual({ data: [mockInterview], meta: { total: 1 } });
+    });
+
+    it("wraps unpaginated find failures in InternalServerErrorException", async () => {
+      mockAiInterviewRepo.find.mockRejectedValueOnce(new Error("db down"));
+
+      await expect(
+        service.getUserInterviews({} as any, "user-1"),
+      ).rejects.toThrow(InternalServerErrorException);
+    });
+
+    it("returns paginated results with meta", async () => {
+      mockAiInterviewRepo.findAndCount.mockResolvedValueOnce([
+        [mockInterview],
+        7,
+      ]);
+
+      const res = await service.getUserInterviews(
+        { page: 2, limit: 3, sort: "created_at", order: "ASC" } as any,
+        "user-1",
+      );
+
+      expect(mockAiInterviewRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 3, skip: 3 }),
+      );
+      expect(res).toEqual({
+        data: [mockInterview],
+        meta: { total: 7, page: 2, limit: 3 },
+      });
+    });
+
+    it("defaults page/limit when only one pagination field is provided", async () => {
+      mockAiInterviewRepo.findAndCount.mockResolvedValueOnce([[], 0]);
+
+      await service.getUserInterviews({ page: 1 } as any, "user-1");
+
+      expect(mockAiInterviewRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 20, skip: 0 }),
+      );
+    });
+
+    it("wraps paginated find failures in InternalServerErrorException", async () => {
+      mockAiInterviewRepo.findAndCount.mockRejectedValueOnce(
+        new Error("db down"),
+      );
+
+      await expect(
+        service.getUserInterviews({ page: 1, limit: 5 } as any, "user-1"),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -288,6 +580,21 @@ describe("AiService", () => {
 
       expect(res).toEqual({ inserted: 1, data: [{ id: 1 }] });
     });
+
+    it("wraps save failures in InternalServerErrorException", async () => {
+      jest
+        .spyOn(service, "getInterviewById")
+        .mockResolvedValueOnce({ interview_id: "i1" } as any);
+      mockAiTranscriptRepo.save.mockRejectedValueOnce(new Error("db down"));
+
+      await expect(
+        service.addTranscripts(
+          "i1",
+          { transcripts: [{ content: "hi", who_stated: "user" }] } as any,
+          "user-1",
+        ),
+      ).rejects.toThrow(InternalServerErrorException);
+    });
   });
 
   describe("getInterviewById", () => {
@@ -295,6 +602,35 @@ describe("AiService", () => {
       mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
       await expect(service.getInterviewById("i100", "user-1")).rejects.toThrow(
         NotFoundException,
+      );
+    });
+
+    it("returns the interview with an empty transcripts array by default", async () => {
+      mockAiInterviewRepo.findOne.mockResolvedValueOnce(mockInterview);
+
+      const res = await service.getInterviewById("i1", "user-1");
+
+      expect(res.transcripts).toEqual([]);
+      expect(mockAiTranscriptRepo.find).not.toHaveBeenCalled();
+    });
+
+    it("loads transcripts when requested", async () => {
+      mockAiInterviewRepo.findOne.mockResolvedValueOnce(mockInterview);
+      mockAiTranscriptRepo.find.mockResolvedValueOnce([{ content: "hi" }]);
+
+      const res = await service.getInterviewById("i1", "user-1", true);
+
+      expect(res.transcripts).toEqual([{ content: "hi" }]);
+      expect(mockAiTranscriptRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { interview_id: "i1" } }),
+      );
+    });
+
+    it("wraps unexpected repository errors in InternalServerErrorException", async () => {
+      mockAiInterviewRepo.findOne.mockRejectedValueOnce(new Error("db down"));
+
+      await expect(service.getInterviewById("i1", "user-1")).rejects.toThrow(
+        InternalServerErrorException,
       );
     });
   });

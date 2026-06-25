@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
+import { Repository } from "typeorm";
 
 import { ai_interview } from "@entities/aiInterview.entity";
 import { AiInterviewStatus } from "@common/enums/AiInterviewStatus";

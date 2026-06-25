@@ -52,9 +52,16 @@ export interface UseInterviewSessionReturn {
   handleStreamToggle: (streaming: boolean) => Promise<void>;
 }
 
+/** Live queue progress reported on every poll while waiting. */
+interface QueueProgress {
+  queuePosition: number;
+  estimatedWaitSec?: number;
+}
+
 async function waitForReadyEntrypoint(
   interviewId: string,
   signal: AbortSignal,
+  onProgress?: (progress: QueueProgress) => void,
 ): Promise<string> {
   const started = Date.now();
 
@@ -70,6 +77,13 @@ async function waitForReadyEntrypoint(
     if (session.sessionStatus === 'ended') {
       throw new Error('Simulation session ended before start');
     }
+
+    // Surface the fresh position/wait so the queue banner counts down instead
+    // of showing the stale value captured at enqueue time.
+    onProgress?.({
+      queuePosition: session.queuePosition,
+      estimatedWaitSec: session.estimatedWaitSec,
+    });
 
     await new Promise((resolve) => setTimeout(resolve, QUEUE_POLL_INTERVAL_MS));
   }
@@ -90,7 +104,9 @@ export function useInterviewSession({
   const [isCallActive, setIsCallActive] = useState(false);
   const [isQueued, setIsQueued] = useState(false);
   const [queuePosition, setQueuePosition] = useState(0);
-  const [estimatedWaitSec, setEstimatedWaitSec] = useState<number | undefined>();
+  const [estimatedWaitSec, setEstimatedWaitSec] = useState<
+    number | undefined
+  >();
   const processingRef = useRef(false);
   const hasResumedRef = useRef(false);
   const queueAbortRef = useRef<AbortController | null>(null);
@@ -166,7 +182,7 @@ export function useInterviewSession({
             setIsQueued(true);
             setQueuePosition(created.queuePosition);
             setEstimatedWaitSec(created.estimatedWaitSec);
-            toast.loading('En file d\'attente…', { id: 'sim-queue' });
+            toast.loading("En file d'attente…", { id: 'sim-queue' });
 
             queueAbortRef.current?.abort();
             queueAbortRef.current = new AbortController();
@@ -174,12 +190,16 @@ export function useInterviewSession({
             entrypoint = await waitForReadyEntrypoint(
               created.interviewID,
               queueAbortRef.current.signal,
+              ({ queuePosition, estimatedWaitSec }) => {
+                setQueuePosition(queuePosition);
+                setEstimatedWaitSec(estimatedWaitSec);
+              },
             );
 
             toast.dismiss('sim-queue');
             setIsQueued(false);
             setQueuePosition(0);
-            toast.success('C\'est votre tour — démarrage de la simulation');
+            toast.success("C'est votre tour — démarrage de la simulation");
           }
 
           if (!entrypoint) {

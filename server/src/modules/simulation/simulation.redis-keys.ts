@@ -7,5 +7,6 @@ export const SimRedisKeys = {
   queue: `${SIM_REDIS_PREFIX}queue`,
   userActive: (userId: string) => `${SIM_REDIS_PREFIX}user:active:${userId}`,
   context: (interviewId: string) => `${SIM_REDIS_PREFIX}ctx:${interviewId}`,
-  queuedAt: (interviewId: string) => `${SIM_REDIS_PREFIX}queued_at:${interviewId}`,
+  queuedAt: (interviewId: string) =>
+    `${SIM_REDIS_PREFIX}queued_at:${interviewId}`,
 } as const;

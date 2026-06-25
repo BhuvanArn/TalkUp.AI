@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional, ApiSchema } from "@nestjs/swagger";
-import { IsEnum, IsOptional, IsString, Length, MaxLength } from "class-validator";
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  Length,
+  MaxLength,
+} from "class-validator";
 
 import { AiInterviewStatus } from "@common/enums/AiInterviewStatus";
 

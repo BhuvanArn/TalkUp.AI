@@ -15,7 +15,10 @@ export function loadSimulationConfig(): SimulationConfig {
     maxConcurrent: parseInt(process.env.SIM_MAX_CONCURRENT ?? "2", 10),
     queueMaxSize: parseInt(process.env.SIM_QUEUE_MAX_SIZE ?? "20", 10),
     slotTtlSec: parseInt(process.env.SIM_SLOT_TTL_SEC ?? "900", 10),
-    queueEntryTtlSec: parseInt(process.env.SIM_QUEUE_ENTRY_TTL_SEC ?? "3600", 10),
+    queueEntryTtlSec: parseInt(
+      process.env.SIM_QUEUE_ENTRY_TTL_SEC ?? "3600",
+      10,
+    ),
     wsTokenTtlSec: parseInt(process.env.SIM_WS_TOKEN_TTL_SEC ?? "900", 10),
     estimatedTurnSec: parseInt(process.env.SIM_ESTIMATED_TURN_SEC ?? "90", 10),
     historyMaxTurns: parseInt(process.env.SIM_HISTORY_MAX_TURNS ?? "30", 10),

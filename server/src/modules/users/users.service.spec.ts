@@ -375,7 +375,9 @@ describe("UsersService", () => {
       cvRepo.findOne.mockResolvedValue(null);
       cvRepo.save.mockRejectedValueOnce(new Error("db down"));
 
-      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow();
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        "db down",
+      );
     });
 
     it("strips markdown fences before parsing JSON", async () => {
