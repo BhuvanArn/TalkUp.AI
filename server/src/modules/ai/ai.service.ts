@@ -71,9 +71,7 @@ export class AiService {
       });
 
       if (alreadyExists) {
-        this.logger.warn(
-          `Active simulation already exists for user ${userId}`,
-        );
+        this.logger.warn(`Active simulation already exists for user ${userId}`);
         throw new ConflictException(
           "A simulation is already active or queued for this user.",
         );

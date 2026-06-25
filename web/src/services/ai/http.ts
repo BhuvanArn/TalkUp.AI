@@ -64,8 +64,12 @@ export const cancelInterview = async (interviewId: string): Promise<void> => {
   await axiosInstance.post(`${API_ROUTES.ai}/interviews/${interviewId}/cancel`);
 };
 
-export const heartbeatInterview = async (interviewId: string): Promise<void> => {
-  await axiosInstance.post(`${API_ROUTES.ai}/interviews/${interviewId}/heartbeat`);
+export const heartbeatInterview = async (
+  interviewId: string,
+): Promise<void> => {
+  await axiosInstance.post(
+    `${API_ROUTES.ai}/interviews/${interviewId}/heartbeat`,
+  );
 };
 
 export const updateInterview = async (

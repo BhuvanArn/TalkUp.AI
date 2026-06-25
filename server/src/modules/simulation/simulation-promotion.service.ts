@@ -112,7 +112,9 @@ export class SimulationPromotionService {
       );
 
       if (!acquired.acquired) {
-        await this.capacity.enqueue(nextId);
+        // No free slot right now: put this interview back at the FRONT so the
+        // earliest waiter keeps its place instead of being demoted to the tail.
+        await this.capacity.requeueFront(nextId);
         return null;
       }
 
@@ -126,10 +128,7 @@ export class SimulationPromotionService {
         this.logger.error(
           `Failed to promote interview ${nextId}: ${(err as Error).message}`,
         );
-        await this.rollbackPreparedSession(
-          nextId,
-          interview.user_id as string,
-        );
+        await this.rollbackPreparedSession(nextId, interview.user_id as string);
         await this.interviewRepo.update(
           { interview_id: nextId },
           { status: AiInterviewStatus.EXPIRED },

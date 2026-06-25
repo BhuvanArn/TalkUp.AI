@@ -12,7 +12,9 @@ export default function SimulationQueueBanner({
   maxConcurrent,
 }: SimulationQueueBannerProps) {
   const waitMin =
-    estimatedWaitSec != null ? Math.max(1, Math.ceil(estimatedWaitSec / 60)) : null;
+    estimatedWaitSec != null
+      ? Math.max(1, Math.ceil(estimatedWaitSec / 60))
+      : null;
 
   return (
     <div
@@ -32,8 +34,8 @@ export default function SimulationQueueBanner({
       </p>
       {activeCount != null && maxConcurrent != null && (
         <p className="text-xs mt-2 text-amber-800">
-          {activeCount}/{maxConcurrent} créneaux GPU utilisés. Votre session démarrera
-          automatiquement.
+          {activeCount}/{maxConcurrent} créneaux GPU utilisés. Votre session
+          démarrera automatiquement.
         </p>
       )}
     </div>

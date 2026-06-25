@@ -112,6 +112,16 @@ export class SimulationCapacityService {
     return { ok: true };
   }
 
+  /**
+   * Put an interview back at the FRONT of the queue. Used when a dequeued
+   * head-of-queue interview cannot be promoted right now (no free slot): it
+   * must keep its position rather than be demoted to the tail by `enqueue`.
+   * Preserves the existing `queuedAt` marker so wait-time ordering is intact.
+   */
+  async requeueFront(interviewId: string): Promise<void> {
+    await this.redis.lpush(SimRedisKeys.queue, interviewId);
+  }
+
   async getQueuePosition(interviewId: string): Promise<number> {
     const pos = await this.redis.lpos(SimRedisKeys.queue, interviewId);
     if (pos === null) return 0;

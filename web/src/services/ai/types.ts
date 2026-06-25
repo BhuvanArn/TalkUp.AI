@@ -51,7 +51,13 @@ export interface SimulationCapacityResponse {
  */
 export interface UpdateAiInterviewDto {
   /** Updated status of the interview */
-  status?: 'asked' | 'queued' | 'in_progress' | 'completed' | 'cancelled' | 'expired';
+  status?:
+    | 'asked'
+    | 'queued'
+    | 'in_progress'
+    | 'completed'
+    | 'cancelled'
+    | 'expired';
   /** Score assigned to the interview (if applicable) */
   score?: number;
   /** Feedback text for the interview */

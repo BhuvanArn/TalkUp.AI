@@ -54,6 +54,7 @@ describe("AiService", () => {
     };
 
     mockCapacity = {
+      getUserActiveInterviewId: jest.fn().mockResolvedValue(null),
       tryAcquireSlot: jest.fn().mockResolvedValue({ acquired: true }),
       enqueue: jest.fn().mockResolvedValue({ ok: true }),
       getQueuePosition: jest.fn().mockResolvedValue(1),
@@ -214,6 +215,16 @@ describe("AiService", () => {
       await expect(
         service.createInterview({ type: "x", language: "fr" } as any, "user-1"),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it("throws ConflictException from the Redis active-interview pre-check before hitting the DB", async () => {
+      mockCapacity.getUserActiveInterviewId.mockResolvedValueOnce("active-id");
+
+      await expect(
+        service.createInterview({ type: "x", language: "fr" } as any, "user-1"),
+      ).rejects.toThrow(ConflictException);
+
+      expect(mockAiInterviewRepo.findOne).not.toHaveBeenCalled();
     });
 
     it("throws ServiceUnavailableException when queue is full", async () => {

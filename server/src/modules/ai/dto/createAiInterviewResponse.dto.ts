@@ -10,7 +10,8 @@ export class CreateAiInterviewResponseDto {
   status: SimulationSessionPhase;
 
   @ApiPropertyOptional({
-    description: "WebSocket URL when status is ready (includes short-lived token).",
+    description:
+      "WebSocket URL when status is ready (includes short-lived token).",
   })
   entrypoint?: string | null;
 

@@ -103,10 +103,7 @@ export class AiController {
     type: InterviewSessionDto,
   })
   @Get("interviews/:id/session")
-  async getInterviewSession(
-    @Param("id") id: string,
-    @UserId() userId: string,
-  ) {
+  async getInterviewSession(@Param("id") id: string, @UserId() userId: string) {
     return this.aiService.getInterviewSession(id, userId);
   }
 
@@ -123,10 +120,7 @@ export class AiController {
     description: "Interview is not in an active simulation state.",
   })
   @Post("interviews/:id/heartbeat")
-  async heartbeatSimulation(
-    @Param("id") id: string,
-    @UserId() userId: string,
-  ) {
+  async heartbeatSimulation(@Param("id") id: string, @UserId() userId: string) {
     return this.aiService.heartbeatSimulation(id, userId);
   }
 
