@@ -22,7 +22,7 @@ describe('ChatWidget', () => {
     expect(
       screen.getByRole('button', { name: 'Open TalkUp chat' }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
   });
 
   it('the FAB is type="button" so it never submits a surrounding form', () => {
@@ -36,11 +36,11 @@ describe('ChatWidget', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('opens the dialog and moves focus to the input', () => {
+  it('opens the chat panel and moves focus to the input', () => {
     render(<ChatWidget />);
     openChat();
 
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('complementary')).toBeInTheDocument();
     expect(screen.getByLabelText('Chat message input')).toHaveFocus();
   });
 
@@ -52,7 +52,7 @@ describe('ChatWidget', () => {
       fireEvent.keyDown(document, { key: 'Escape' });
     });
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Open TalkUp chat' }),
     ).toHaveFocus();

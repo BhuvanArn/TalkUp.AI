@@ -37,6 +37,9 @@ export const ChatWidget = () => {
   const fabRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const replyIndex = useRef(0);
+  // Monotonic counter for message ids — avoids duplicate React keys when a user
+  // message and its AI reply land in the same millisecond.
+  const msgId = useRef(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
@@ -48,7 +51,7 @@ export const ChatWidget = () => {
     if (!text || isTyping) return;
 
     const userMsg: Message = {
-      id: `user-${Date.now()}`,
+      id: `user-${(msgId.current += 1)}`,
       text,
       variant: 'user',
       timestamp: getTimestamp(),
@@ -60,7 +63,7 @@ export const ChatWidget = () => {
 
     timeoutRef.current = setTimeout(() => {
       const aiMsg: Message = {
-        id: `ai-${Date.now()}`,
+        id: `ai-${(msgId.current += 1)}`,
         text: AI_REPLIES[replyIndex.current % AI_REPLIES.length],
         variant: 'ai',
         timestamp: getTimestamp(),

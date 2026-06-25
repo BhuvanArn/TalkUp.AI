@@ -47,7 +47,7 @@ interface ChatWindowProps {
   onSend: () => void;
   /** When true, shows a typing indicator at the bottom of the list */
   isTyping?: boolean;
-  /** Ref forwarded to the text input so the dialog can focus it on open */
+  /** Ref forwarded to the text input so the widget can focus it on open */
   inputRef?: React.Ref<HTMLInputElement>;
 }
 
@@ -67,8 +67,7 @@ export const ChatWindow = ({
 
   return (
     <div
-      role="dialog"
-      aria-modal="false"
+      role="complementary"
       aria-label="TalkUp AI chat"
       className="flex flex-col w-[340px] bg-background rounded-[20px] border border-border shadow-2xl overflow-hidden"
     >
