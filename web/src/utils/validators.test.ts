@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   emailSchema,
+  isAllowedJobUrl,
   loginPasswordSchema,
   otpCodeSchema,
   passwordSchema,
@@ -275,6 +276,38 @@ describe('validators', () => {
       expect(otpCodeSchema.safeParse('12345').success).toBe(false);
       expect(otpCodeSchema.safeParse('1234567').success).toBe(false);
       expect(otpCodeSchema.safeParse('12a456').success).toBe(false);
+    });
+  });
+
+  describe('isAllowedJobUrl', () => {
+    it('accepts a well-formed https URL', () => {
+      expect(isAllowedJobUrl('https://www.linkedin.com/jobs/view/123')).toBe(
+        true,
+      );
+    });
+
+    it('trims surrounding whitespace before validating', () => {
+      expect(isAllowedJobUrl('  https://example.com/job  ')).toBe(true);
+    });
+
+    it('rejects an empty or whitespace-only string', () => {
+      expect(isAllowedJobUrl('')).toBe(false);
+      expect(isAllowedJobUrl('   ')).toBe(false);
+    });
+
+    it('rejects plain http (only https is allowed)', () => {
+      expect(isAllowedJobUrl('http://example.com/job')).toBe(false);
+    });
+
+    it('rejects non-http(s) protocols that widen the SSRF surface', () => {
+      expect(isAllowedJobUrl('file:///etc/passwd')).toBe(false);
+      expect(isAllowedJobUrl('ftp://example.com')).toBe(false);
+      expect(isAllowedJobUrl('javascript:alert(1)')).toBe(false);
+    });
+
+    it('rejects a value that is not a parseable URL', () => {
+      expect(isAllowedJobUrl('not a url')).toBe(false);
+      expect(isAllowedJobUrl('httpsexample.com')).toBe(false);
     });
   });
 });

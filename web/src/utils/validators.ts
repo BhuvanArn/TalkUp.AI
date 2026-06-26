@@ -44,6 +44,39 @@ export const otpCodeSchema = z
   .regex(/^\d{6}$/, 'Code must be 6 digits');
 
 /**
+ * Protocols allowed for a user-provided job-offer URL.
+ *
+ * Restricted to `https:` because this URL is intended to be handed to a
+ * server-side scraper. Rejecting other protocols (`file:`, `gopher:`, `http:`,
+ * etc.) removes the most obvious SSRF vectors at the protocol level.
+ */
+const ALLOWED_JOB_URL_PROTOCOLS = ['https:'];
+
+/**
+ * Validates a user-provided job-offer URL.
+ *
+ * Uses the `URL` parser (not a naive `startsWith('http')`) and enforces an
+ * `https:`-only protocol allowlist. This is a PROTOCOL filter only — it does
+ * NOT block internal hosts (e.g. `https://169.254.169.254`, `https://localhost`).
+ * Host-level SSRF defense (internal-range blocklist, DNS-rebind protection) is
+ * the server-side fetcher's responsibility; any server-side fetch must
+ * re-validate and host-allowlist before scraping.
+ *
+ * @param value Raw URL string from the input field.
+ * @returns `true` when the value parses to an `https:` URL.
+ */
+export const isAllowedJobUrl = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  try {
+    const url = new URL(trimmed);
+    return ALLOWED_JOB_URL_PROTOCOLS.includes(url.protocol);
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Helper function to validate a field with a Zod schema
  * Returns the first error message or undefined if valid
  */
