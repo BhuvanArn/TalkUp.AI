@@ -5,6 +5,7 @@ import {
   CreateAiInterviewDto,
   InterviewSessionResponse,
   UpdateAiInterviewDto,
+  VerbalAnalysisResponse,
 } from './types';
 
 /**
@@ -82,4 +83,13 @@ export const updateInterview = async (
     console.error('Error updating AI interview:', error);
     throw error;
   }
+};
+
+export const getVerbalAnalysis = async (
+  interviewId: string,
+): Promise<VerbalAnalysisResponse> => {
+  const response = await axiosInstance.get<VerbalAnalysisResponse>(
+    `${API_ROUTES.ai}/interviews/${interviewId}/verbal-analysis`,
+  );
+  return response.data;
 };

@@ -150,6 +150,17 @@ export class AiController {
     return this.aiService.editAiInterview(id, editAiInterviewDto, userId);
   }
 
+  @ApiOkResponse({
+    description: "Verbal analysis report for the interview.",
+  })
+  @ApiNotFoundResponse({
+    description: "Verbal analysis not found.",
+  })
+  @Get("interviews/:id/verbal-analysis")
+  async getVerbalAnalysis(@Param("id") id: string, @UserId() userId: string) {
+    return this.aiService.getVerbalAnalysis(id, userId);
+  }
+
   @ApiCreatedResponse({
     description: "Transcripts have been added to the interview.",
   })

@@ -28,6 +28,7 @@ import { InterviewSessionDto } from "./dto/interviewSession.dto";
 import { SimulationCapacityService } from "../simulation/simulation-capacity.service";
 import { SimulationContextService } from "../simulation/simulation-context.service";
 import { SimulationPromotionService } from "../simulation/simulation-promotion.service";
+import { SimulationVerbalAnalysisService } from "../simulation/simulation-verbal-analysis.service";
 import { loadSimulationConfig } from "../simulation/simulation.config";
 
 @Injectable()
@@ -42,6 +43,7 @@ export class AiService {
     private readonly capacity: SimulationCapacityService,
     private readonly context: SimulationContextService,
     private readonly promotion: SimulationPromotionService,
+    private readonly verbalAnalysis: SimulationVerbalAnalysisService,
   ) {
     this.logger = new Logger(AiService.name);
   }
@@ -371,6 +373,18 @@ export class AiService {
         "Internal server error while retrieving AI interviews.",
       );
     }
+  }
+
+  async getVerbalAnalysis(interviewId: string, userId: string) {
+    await this.getInterviewById(interviewId, userId);
+    const record = await this.verbalAnalysis.getForInterview(
+      interviewId,
+      userId,
+    );
+    if (!record) {
+      throw new NotFoundException("Verbal analysis not found for this interview.");
+    }
+    return record;
   }
 
   async addTranscripts(

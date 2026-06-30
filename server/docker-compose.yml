@@ -63,6 +63,7 @@ services:
 networks:
   server-tier:
   talkup-ai:
+    external: true
     name: talkup-ai
 
 volumes:
