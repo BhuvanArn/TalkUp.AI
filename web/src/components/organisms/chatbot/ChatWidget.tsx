@@ -2,16 +2,19 @@ import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import { ChatWindow, Message } from '@/components/organisms/chatbot/ChatWindow';
 import { useDragFAB } from '@/hooks/ui/useDragFAB';
+import { sendChatMessage } from '@/services/ai/http';
+import { ChatHistoryItem } from '@/services/ai/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const WELCOME_TEXT =
   "Hello! I'm TalkUp AI. Ask me anything to prepare for your interview 🎯";
 
-const AI_REPLIES = [
-  'For a Product Manager interview, focus on prioritization frameworks like RICE or MoSCoW.',
-  'Practice the STAR method: Situation, Task, Action, Result. It structures your answers clearly.',
-  'Research the company',
-];
+const ERROR_TEXT =
+  'Sorry, I could not reach the assistant right now. Please try again.';
+
+// How many prior turns to send as context. Keeps the request small and bounded
+// (the server also caps history), while giving the model enough to stay coherent.
+const HISTORY_LIMIT = 10;
 
 const getTimestamp = () =>
   new Date().toLocaleTimeString('fr-FR', {
@@ -36,17 +39,15 @@ export const ChatWidget = () => {
 
   const fabRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const replyIndex = useRef(0);
   // Monotonic counter for message ids — avoids duplicate React keys when a user
   // message and its AI reply land in the same millisecond.
   const msgId = useRef(0);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
+  // Guards against setting state after unmount when a reply resolves late.
+  const mounted = useRef(true);
 
   const { position, onMouseDown, onTouchStart, isDragging } = useDragFAB();
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     const text = inputValue.trim();
     if (!text || isTyping) return;
 
@@ -57,25 +58,45 @@ export const ChatWidget = () => {
       timestamp: getTimestamp(),
     };
 
+    // Snapshot the prior turns before appending the new user message so we send
+    // history that excludes the current question, matching the API contract.
+    const history: ChatHistoryItem[] = messages
+      .filter((m) => m.id !== 'welcome')
+      .slice(-HISTORY_LIMIT)
+      .map((m) => ({
+        role: m.variant === 'ai' ? 'assistant' : 'user',
+        content: m.text,
+      }));
+
     setMessages((prev) => [...prev, userMsg]);
     setInputValue('');
     setIsTyping(true);
 
-    timeoutRef.current = setTimeout(() => {
-      const aiMsg: Message = {
-        id: `ai-${(msgId.current += 1)}`,
-        text: AI_REPLIES[replyIndex.current % AI_REPLIES.length],
-        variant: 'ai',
-        timestamp: getTimestamp(),
-      };
-      replyIndex.current += 1;
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 1200);
-  }, [inputValue, isTyping]);
+    let replyText = ERROR_TEXT;
+    try {
+      const { reply } = await sendChatMessage({ message: text, history });
+      replyText = reply;
+    } catch {
+      // Fall back to the error message; the details are logged in the service.
+    }
+
+    if (!mounted.current) return;
+
+    const aiMsg: Message = {
+      id: `ai-${(msgId.current += 1)}`,
+      text: replyText,
+      variant: 'ai',
+      timestamp: getTimestamp(),
+    };
+    setMessages((prev) => [...prev, aiMsg]);
+    setIsTyping(false);
+  }, [inputValue, isTyping, messages]);
 
   useEffect(() => {
-    return () => clearTimeout(timeoutRef.current);
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   const handleFabClick = () => {
