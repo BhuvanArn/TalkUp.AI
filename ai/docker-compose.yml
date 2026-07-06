@@ -101,8 +101,7 @@ services:
       - VA_QUEUE_MAXSIZE=${SIM_MAX_CONCURRENT:-2}
       - BACKEND_URL=${BACKEND_URL:-http://server:3000/v1/api}
       - SIM_INTERNAL_API_KEY=${SIM_INTERNAL_API_KEY:-talkup-dev-internal-key}
-    ports:
-      - "8006:8006"
+    # Internal-only: reachable as verbal_analyzer:8006 on the Docker network.
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8006/health')"]

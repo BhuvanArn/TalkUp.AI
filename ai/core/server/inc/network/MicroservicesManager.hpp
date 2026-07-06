@@ -84,6 +84,11 @@ namespace talkup_network {
                 const nlohmann::json &context_data);
 
             /**
+             * @brief Notify STS that an interview session ended (triggers VA finalize).
+             */
+            static void send_session_end_to_sts(const std::string &interview_id);
+
+            /**
              * @brief Initialize WebSocket connections to all registered microservices.
              * It's establishes persistent WebSocket connections to each microservice
              * defined in the services list. It handles connection setup, error reporting,

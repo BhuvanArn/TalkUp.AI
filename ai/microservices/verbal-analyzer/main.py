@@ -14,9 +14,10 @@ import urllib.request
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
+from engine.auth import build_internal_api_key_checker, websocket_has_valid_internal_api_key
 from engine.schemas import AnalyzeTurnRequest, SessionSummary, VerbalAnalysisResult
 from engine.session_store import SessionStore
 from engine.settings import load_settings
@@ -95,6 +96,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="TalkUp Verbal Analyzer", lifespan=lifespan)
+require_internal_api_key = build_internal_api_key_checker(settings)
 
 
 @app.get("/health")
@@ -106,7 +108,7 @@ async def health() -> dict[str, Any]:
 	}
 
 
-@app.post("/analyze-turn", response_model=VerbalAnalysisResult)
+@app.post("/analyze-turn", response_model=VerbalAnalysisResult, dependencies=[Depends(require_internal_api_key)])
 async def analyze_turn_endpoint(request: AnalyzeTurnRequest) -> VerbalAnalysisResult:
 	if len(request.transcription) > settings.max_transcription_chars:
 		raise HTTPException(
@@ -128,7 +130,11 @@ async def analyze_turn_endpoint(request: AnalyzeTurnRequest) -> VerbalAnalysisRe
 			print(f"[VA] Slow /analyze-turn {elapsed_ms}ms interview={request.interview_id}")
 
 
-@app.post("/sessions/{interview_id}/finalize", response_model=SessionSummary)
+@app.post(
+	"/sessions/{interview_id}/finalize",
+	response_model=SessionSummary,
+	dependencies=[Depends(require_internal_api_key)],
+)
 async def finalize_session(interview_id: str) -> SessionSummary:
 	summary = await asyncio.to_thread(session_store.finalize, interview_id)
 	if summary is None:
@@ -137,7 +143,7 @@ async def finalize_session(interview_id: str) -> SessionSummary:
 	return summary
 
 
-@app.delete("/sessions/{interview_id}")
+@app.delete("/sessions/{interview_id}", dependencies=[Depends(require_internal_api_key)])
 async def clear_session(interview_id: str) -> dict[str, bool]:
 	cleared = await asyncio.to_thread(session_store.clear, interview_id)
 	return {"cleared": cleared}
@@ -145,6 +151,10 @@ async def clear_session(interview_id: str) -> dict[str, bool]:
 
 @app.websocket("/ws/va")
 async def websocket_va(websocket: WebSocket) -> None:
+	if not websocket_has_valid_internal_api_key(websocket, settings):
+		await websocket.close(code=4401, reason="Invalid internal API key")
+		return
+
 	await websocket.accept()
 	try:
 		while True:

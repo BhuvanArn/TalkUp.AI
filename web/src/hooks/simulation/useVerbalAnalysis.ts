@@ -144,12 +144,14 @@ export function useVerbalAnalysis({
     const payload = parseVaResult(message);
     if (!payload) return;
 
+    if (interviewID && payload.interview_id !== interviewID) return;
+
     setAnalysis((prev) => ({
       latest: payload,
       aggregate: payload.aggregate,
       history: [...prev.history, payload],
     }));
-  }, [message]);
+  }, [message, interviewID]);
 
   return { analysis };
 }

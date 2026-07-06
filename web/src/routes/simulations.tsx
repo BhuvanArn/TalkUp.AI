@@ -51,8 +51,11 @@ function Simulations() {
     ) {
       sendJsonMessageRef.current({
         type: 'session_end',
+        key: import.meta.env.VITE_WEBSOCKET_KEY,
         interview_id: interviewIDRef.current,
         stream_id: interviewIDRef.current,
+        format: 'text',
+        data: '{}',
         timestamp: Date.now(),
       });
     }

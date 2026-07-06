@@ -11,9 +11,45 @@
 #include <atomic>
 #include <chrono>
 #include <future>
+#include <unordered_map>
 
 namespace {
     std::atomic<uint64_t> g_sts_request_id{0};
+    constexpr int kStsVaFollowupMs = 5000;
+    std::mutex g_sts_va_followup_mutex;
+    std::unordered_map<uint64_t, ResponseCallback> g_sts_va_followup_callbacks;
+
+    void register_sts_va_followup(uint64_t request_id, const ResponseCallback &callback)
+    {
+        if (!callback)
+            return;
+        std::lock_guard<std::mutex> lock(g_sts_va_followup_mutex);
+        g_sts_va_followup_callbacks[request_id] = callback;
+    }
+
+    bool try_dispatch_sts_va_followup(const nlohmann::json &msg_json)
+    {
+        if (msg_json.value("type", "") != "va_result")
+            return false;
+        if (!msg_json.contains("request_id"))
+            return false;
+
+        const uint64_t response_id = msg_json.value("request_id", static_cast<uint64_t>(0));
+        ResponseCallback followup;
+        {
+            std::lock_guard<std::mutex> lock(g_sts_va_followup_mutex);
+            auto it = g_sts_va_followup_callbacks.find(response_id);
+            if (it == g_sts_va_followup_callbacks.end())
+                return false;
+            followup = it->second;
+            g_sts_va_followup_callbacks.erase(it);
+        }
+
+        std::cout << "[MicroservicesManager] Forwarding async VA follow-up request_id="
+                  << response_id << std::endl;
+        followup(msg_json);
+        return true;
+    }
 
     nlohmann::json extract_text_from_sts_response(const nlohmann::json &data)
     {
@@ -361,6 +397,51 @@ void talkup_network::MicroservicesManager::send_to_sts_microservice(
     }
 }
 
+void talkup_network::MicroservicesManager::send_session_end_to_sts(
+    const std::string &interview_id)
+{
+    if (interview_id.empty())
+        return;
+
+    try {
+        std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
+        std::mutex *io_mutex = nullptr;
+
+        {
+            std::lock_guard<std::mutex> lock(__ws_mutex);
+            auto it = __ws_connections.find("sts");
+            if (it == __ws_connections.end() || !it->second.is_connected ||
+                !it->second.ws || !it->second.ws->is_open()) {
+                if (!reconnect_service_connection("sts")) {
+                    std::cerr << "[MicroservicesManager] STS connection not available for session_end"
+                              << std::endl;
+                    return;
+                }
+                it = __ws_connections.find("sts");
+            }
+            if (it == __ws_connections.end() || !it->second.ws)
+                return;
+            ws = it->second.ws;
+            io_mutex = &it->second.io_mutex;
+        }
+
+        std::unique_lock<std::mutex> io_lock(*io_mutex);
+        nlohmann::json payload = {
+            {"services", {"STS"}},
+            {"type", "session_end"},
+            {"interview_id", interview_id},
+            {"stream_id", interview_id},
+            {"timestamp", std::time(nullptr)},
+            {"data", nlohmann::json::object()},
+        };
+        ws->write(boost::asio::buffer(payload.dump()));
+        std::cout << "[MicroservicesManager] Sent session_end interview_id="
+                  << interview_id << std::endl;
+    } catch (const std::exception &e) {
+        std::cerr << "[MicroservicesManager] session_end exception: " << e.what() << std::endl;
+    }
+}
+
 bool talkup_network::MicroservicesManager::send_simulation_context_to_sts(
     const std::string &interview_id,
     const nlohmann::json &context_data)
@@ -581,6 +662,10 @@ void talkup_network::MicroservicesManager::process_sts_job(const nlohmann::json 
                 continue;
             }
 
+            if (try_dispatch_sts_va_followup(msg_json)) {
+                continue;
+            }
+
             if (!msg_json.contains("request_id")) {
                 std::cout << "[MicroservicesManager] Ignoring STS message without request_id type="
                           << msg_type << std::endl;
@@ -596,6 +681,53 @@ void talkup_network::MicroservicesManager::process_sts_job(const nlohmann::json 
 
             std::cout << "[MicroservicesManager] Received STS message type=" << msg_type
                       << " request_id=" << request_id << std::endl;
+
+            if (msg_type == "sts_result") {
+                if (callback)
+                    callback(msg_json);
+
+                const auto va_deadline = std::chrono::steady_clock::now()
+                    + std::chrono::milliseconds(kStsVaFollowupMs);
+
+                while (std::chrono::steady_clock::now() < va_deadline) {
+                    const int va_remaining_ms = static_cast<int>(
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            va_deadline - std::chrono::steady_clock::now()).count());
+                    if (va_remaining_ms <= 0)
+                        break;
+
+                    nlohmann::json followup_json;
+                    if (!read_sts_json_message(
+                            *ws, followup_json, std::min(va_remaining_ms, 1000)))
+                        continue;
+
+                    const std::string followup_type = followup_json.value("type", "");
+                    if (followup_type == "pong" || followup_type == "simulation_context_ack")
+                        continue;
+
+                    if (followup_type == "va_result" &&
+                        followup_json.value("request_id", static_cast<uint64_t>(0)) == request_id) {
+                        std::cout << "[MicroservicesManager] Received VA follow-up request_id="
+                                  << request_id << std::endl;
+                        if (callback)
+                            callback(followup_json);
+                        io_lock.unlock();
+                        return;
+                    }
+
+                    if (try_dispatch_sts_va_followup(followup_json))
+                        continue;
+
+                    std::cout << "[MicroservicesManager] Ignoring unexpected STS follow-up type="
+                              << followup_type << std::endl;
+                }
+
+                if (callback)
+                    register_sts_va_followup(request_id, callback);
+                io_lock.unlock();
+                return;
+            }
+
             io_lock.unlock();
             if (callback)
                 callback(msg_json);

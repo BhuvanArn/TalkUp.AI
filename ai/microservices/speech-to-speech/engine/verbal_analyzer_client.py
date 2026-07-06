@@ -35,6 +35,18 @@ def _va_timeout_sec() -> float:
 		return 3.0
 
 
+def _internal_api_key() -> str:
+	return os.environ.get("SIM_INTERNAL_API_KEY", "").strip()
+
+
+def _va_auth_headers() -> dict[str, str]:
+	headers: dict[str, str] = {}
+	key = _internal_api_key()
+	if key:
+		headers["X-Internal-Api-Key"] = key
+	return headers
+
+
 def _build_job_context(interview_id: str | None) -> dict[str, str] | None:
 	if not interview_id:
 		return None
@@ -78,10 +90,11 @@ def analyze_transcription(
 
 	url = f"{_va_base_url()}/analyze-turn"
 	data = json.dumps(payload).encode("utf-8")
+	headers = {"Content-Type": "application/json", **_va_auth_headers()}
 	req = urllib.request.Request(
 		url,
 		data=data,
-		headers={"Content-Type": "application/json"},
+		headers=headers,
 		method="POST",
 	)
 
@@ -109,7 +122,11 @@ def finalize_session(interview_id: str | None) -> None:
 		return
 
 	url = f"{_va_base_url()}/sessions/{interview_id}/finalize"
-	req = urllib.request.Request(url, method="POST")
+	req = urllib.request.Request(
+		url,
+		headers=_va_auth_headers(),
+		method="POST",
+	)
 	try:
 		with urllib.request.urlopen(req, timeout=_va_timeout_sec()) as resp:
 			resp.read()

@@ -83,6 +83,46 @@ async def _handle_simulation_context(
 	await _ws_send_json(websocket, send_lock, ack)
 
 
+async def _send_va_result_followup(
+	websocket: WebSocket,
+	send_lock: asyncio.Lock,
+	interview_id: str,
+	transcription: str,
+	request_id: int | None,
+) -> None:
+	"""Run VA off the STS reply path; failures are logged and never propagated."""
+	try:
+		va_payload = await asyncio.to_thread(
+			analyze_transcription,
+			interview_id,
+			transcription,
+			request_id,
+		)
+		if va_payload is None:
+			return
+
+		va_message: dict = {
+			"type": "va_result",
+			"interview_id": interview_id,
+			"data": va_payload,
+		}
+		if request_id is not None:
+			va_message["request_id"] = request_id
+		await _ws_send_json(websocket, send_lock, va_message)
+	except (WebSocketDisconnect, ConnectionClosed):
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			1,
+			"Client disconnected before VA follow-up could be sent",
+		)
+	except Exception as err:
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			1,
+			f"VA follow-up failed for interview {interview_id}: {err}",
+		)
+
+
 async def _process_stream_and_reply(
 	websocket: WebSocket,
 	send_lock: asyncio.Lock,
@@ -134,21 +174,21 @@ async def _process_stream_and_reply(
 		if request_id is not None:
 			payload["request_id"] = request_id
 
-		# The verbal analysis is embedded INSIDE sts_result on purpose: the C++
-		# AI server proxies exactly one response per request_id, so a separate
-		# va_result frame would be read after the callback returned and dropped.
-		# A VA failure degrades gracefully to None and never blocks the reply.
-		if interview_id and result.transcription:
-			va_payload = await asyncio.to_thread(
-				analyze_transcription,
-				interview_id,
-				result.transcription,
-				request_id,
-			)
-			if va_payload is not None:
-				payload["verbal_analysis"] = va_payload
-
+		# Send audio/transcription immediately. VA runs in the background and
+		# arrives as a separate va_result frame; the C++ proxy forwards it when
+		# the next STS read picks it up. VA failures never block the reply.
 		await _ws_send_json(websocket, send_lock, payload)
+
+		if interview_id and result.transcription:
+			asyncio.create_task(
+				_send_va_result_followup(
+					websocket,
+					send_lock,
+					interview_id,
+					result.transcription,
+					request_id,
+				),
+			)
 	except (WebSocketDisconnect, ConnectionClosed):
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending STS result")
 	except Exception as tts_err:
