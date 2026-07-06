@@ -331,4 +331,14 @@
     font-weight: 400;
     line-height: 1.5;
   }
+
+  /* TalkUp brand gradient — accent → success. Single source of truth for the
+     chatbot widget surfaces (FAB, header, send button, user bubble). */
+  .bg-brand-gradient {
+    background-image: linear-gradient(
+      to bottom right,
+      var(--color-accent),
+      var(--color-success)
+    );
+  }
 }

@@ -65,3 +65,26 @@ export interface UpdateAiInterviewDto {
   /** URL link to the recorded video of the interview */
   videoLink?: string;
 }
+
+/** Role of a chatbot conversation turn. */
+export type ChatRole = 'user' | 'assistant';
+
+/** A single prior turn in the chatbot conversation. */
+export interface ChatHistoryItem {
+  role: ChatRole;
+  content: string;
+}
+
+/** Payload sent to the chatbot endpoint. */
+export interface ChatRequest {
+  /** The user's message. */
+  message: string;
+  /** Prior conversation turns, oldest first, excluding the current message. */
+  history?: ChatHistoryItem[];
+}
+
+/** Response returned by the chatbot endpoint. */
+export interface ChatResponse {
+  /** The assistant's generated reply. */
+  reply: string;
+}

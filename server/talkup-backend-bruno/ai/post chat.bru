@@ -1,0 +1,36 @@
+meta {
+  name: post chat
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{host}}/ai/chat
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "message": "How should I structure a behavioral interview answer?",
+    "history": [
+      {
+        "role": "user",
+        "content": "Hi, I have an interview tomorrow."
+      },
+      {
+        "role": "assistant",
+        "content": "Great! What role are you preparing for?"
+      }
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

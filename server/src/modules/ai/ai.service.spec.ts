@@ -16,6 +16,16 @@ import { AiService } from "./ai.service";
 import { SimulationCapacityService } from "../simulation/simulation-capacity.service";
 import { SimulationContextService } from "../simulation/simulation-context.service";
 import { SimulationPromotionService } from "../simulation/simulation-promotion.service";
+import { ChatRole } from "./dto/chat.dto";
+
+const mockGroqCreate = jest.fn();
+
+jest.mock("groq-sdk", () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    chat: { completions: { create: mockGroqCreate } },
+  })),
+}));
 
 describe("AiService", () => {
   let service: AiService;
@@ -37,6 +47,8 @@ describe("AiService", () => {
   let mockContext: any;
 
   beforeEach(async () => {
+    mockGroqCreate.mockReset();
+
     mockAiInterviewRepo = {
       findOne: jest.fn(),
       create: jest.fn((dto) => ({ interview_id: "new-id", ...dto })),
@@ -594,6 +606,62 @@ describe("AiService", () => {
           "user-1",
         ),
       ).rejects.toThrow(InternalServerErrorException);
+    });
+  });
+
+  describe("chat", () => {
+    it("returns the assistant reply and passes system + history + user turns", async () => {
+      mockGroqCreate.mockResolvedValueOnce({
+        choices: [{ message: { content: "  Use the STAR method.  " } }],
+      });
+
+      const res = await service.chat({
+        message: "How do I answer behavioral questions?",
+        history: [
+          { role: ChatRole.USER, content: "hi" },
+          { role: ChatRole.ASSISTANT, content: "hello" },
+        ],
+      });
+
+      expect(res).toEqual({ reply: "Use the STAR method." });
+
+      const callArg = mockGroqCreate.mock.calls[0][0];
+      expect(callArg.model).toBe("llama-3.3-70b-versatile");
+      expect(callArg.messages[0].role).toBe("system");
+      expect(callArg.messages).toHaveLength(4);
+      expect(callArg.messages[callArg.messages.length - 1]).toEqual({
+        role: "user",
+        content: "How do I answer behavioral questions?",
+      });
+    });
+
+    it("works with no history provided", async () => {
+      mockGroqCreate.mockResolvedValueOnce({
+        choices: [{ message: { content: "Sure!" } }],
+      });
+
+      const res = await service.chat({ message: "help" });
+
+      expect(res).toEqual({ reply: "Sure!" });
+      expect(mockGroqCreate.mock.calls[0][0].messages).toHaveLength(2);
+    });
+
+    it("throws InternalServerErrorException when the LLM call fails", async () => {
+      mockGroqCreate.mockRejectedValueOnce(new Error("provider down"));
+
+      await expect(service.chat({ message: "help" })).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it("throws InternalServerErrorException when the completion is empty", async () => {
+      mockGroqCreate.mockResolvedValueOnce({
+        choices: [{ message: { content: "   " } }],
+      });
+
+      await expect(service.chat({ message: "help" })).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 

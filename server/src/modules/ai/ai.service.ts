@@ -10,6 +10,8 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { FindOptionsOrder, In, Repository } from "typeorm";
 
+import Groq from "groq-sdk";
+
 import { ai_interview } from "@entities/aiInterview.entity";
 import { ai_transcript } from "@entities/aiTranscript.entity";
 
@@ -24,15 +26,38 @@ import { GetInterviewsQueryDto } from "./dto/getInterviewsQuery.dto";
 import { CreateAiTranscriptsDto } from "./dto/createAiTranscripts.dto";
 import { CreateAiInterviewResponseDto } from "./dto/createAiInterviewResponse.dto";
 import { InterviewSessionDto } from "./dto/interviewSession.dto";
+import { ChatDto } from "./dto/chat.dto";
+import { ChatResponseDto } from "./dto/chatResponse.dto";
 
 import { SimulationCapacityService } from "../simulation/simulation-capacity.service";
 import { SimulationContextService } from "../simulation/simulation-context.service";
 import { SimulationPromotionService } from "../simulation/simulation-promotion.service";
 import { loadSimulationConfig } from "../simulation/simulation.config";
 
+const CHATBOT_SYSTEM_PROMPT =
+  "You are TalkUp AI, a friendly interview-preparation coach embedded in the " +
+  "TalkUp app. Help users prepare for job interviews: explain frameworks (STAR, " +
+  "RICE, MoSCoW), suggest answers, review their reasoning, and give concise, " +
+  "actionable advice. Keep replies short (a few sentences), encouraging, and " +
+  "focused on interview preparation. If asked something unrelated, gently steer " +
+  "back to interview prep.";
+
+const CHATBOT_MODEL = "llama-3.3-70b-versatile";
+
 @Injectable()
 export class AiService {
   private readonly logger: Logger;
+
+  // Lazily built so a missing GROQ_API_KEY does not crash app bootstrap — the
+  // groq-sdk constructor throws on an empty key. Only the chat route needs it and
+  // surfaces the failure as a 500 instead of taking the whole server down.
+  private _groq?: Groq;
+  private get groq(): Groq {
+    if (!this._groq) {
+      this._groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    }
+    return this._groq;
+  }
 
   constructor(
     @InjectRepository(ai_interview)
@@ -48,6 +73,42 @@ export class AiService {
 
   async getCapacity() {
     return this.capacity.getSnapshot();
+  }
+
+  async chat(dto: ChatDto): Promise<ChatResponseDto> {
+    const messages: Groq.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "system", content: CHATBOT_SYSTEM_PROMPT },
+      ...(dto.history ?? []).map((turn) => ({
+        role: turn.role,
+        content: turn.content,
+      })),
+      { role: "user" as const, content: dto.message },
+    ];
+
+    try {
+      const completion = await this.groq.chat.completions.create({
+        model: CHATBOT_MODEL,
+        messages,
+        temperature: 0.6,
+        max_tokens: 512,
+      });
+
+      const reply = completion.choices[0]?.message?.content?.trim();
+
+      if (!reply) {
+        throw new Error("Empty completion returned by the LLM provider.");
+      }
+
+      return { reply };
+    } catch (error) {
+      this.logger.error(
+        `Chatbot completion failed: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+      throw new InternalServerErrorException(
+        "The assistant is unavailable right now. Please try again.",
+      );
+    }
   }
 
   async createInterview(
