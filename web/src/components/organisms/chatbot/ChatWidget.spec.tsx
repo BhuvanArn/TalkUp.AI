@@ -1,16 +1,24 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sendChatMessage } from '@/services/ai/http';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ChatWidget } from './ChatWidget';
 
-describe('ChatWidget', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
+vi.mock('@/services/ai/http', () => ({
+  sendChatMessage: vi.fn(),
+}));
 
+const mockedSendChatMessage = vi.mocked(sendChatMessage);
+
+describe('ChatWidget', () => {
   afterEach(() => {
-    vi.runOnlyPendingTimers();
-    vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
   const openChat = () => {
@@ -66,7 +74,11 @@ describe('ChatWidget', () => {
     expect(screen.getByText(/^\d{2}:\d{2}$/)).toBeInTheDocument();
   });
 
-  it('sends a user message and shows an AI reply after the delay', () => {
+  it('sends a user message and shows the assistant reply from the API', async () => {
+    mockedSendChatMessage.mockResolvedValueOnce({
+      reply: 'Use the STAR method.',
+    });
+
     render(<ChatWidget />);
     openChat();
 
@@ -76,11 +88,65 @@ describe('ChatWidget', () => {
 
     expect(screen.getByText('Hello there')).toBeInTheDocument();
 
-    act(() => {
-      vi.advanceTimersByTime(1200);
-    });
+    await waitFor(() =>
+      expect(screen.getByText('Use the STAR method.')).toBeInTheDocument(),
+    );
 
-    expect(screen.getByText(/prioritization frameworks/)).toBeInTheDocument();
+    // Welcome bubble is excluded; only the prior user turn would be sent, and
+    // here there is no prior turn so history is empty.
+    expect(mockedSendChatMessage).toHaveBeenCalledWith({
+      message: 'Hello there',
+      history: [],
+    });
+  });
+
+  it('sends prior turns as history on the second message', async () => {
+    mockedSendChatMessage
+      .mockResolvedValueOnce({ reply: 'First reply.' })
+      .mockResolvedValueOnce({ reply: 'Second reply.' });
+
+    render(<ChatWidget />);
+    openChat();
+
+    const input = screen.getByLabelText('Chat message input');
+    const send = screen.getByRole('button', { name: 'Send message' });
+
+    fireEvent.change(input, { target: { value: 'first' } });
+    fireEvent.click(send);
+    await waitFor(() =>
+      expect(screen.getByText('First reply.')).toBeInTheDocument(),
+    );
+
+    fireEvent.change(input, { target: { value: 'second' } });
+    fireEvent.click(send);
+    await waitFor(() =>
+      expect(screen.getByText('Second reply.')).toBeInTheDocument(),
+    );
+
+    expect(mockedSendChatMessage).toHaveBeenLastCalledWith({
+      message: 'second',
+      history: [
+        { role: 'user', content: 'first' },
+        { role: 'assistant', content: 'First reply.' },
+      ],
+    });
+  });
+
+  it('shows a fallback message when the API call fails', async () => {
+    mockedSendChatMessage.mockRejectedValueOnce(new Error('network'));
+
+    render(<ChatWidget />);
+    openChat();
+
+    const input = screen.getByLabelText('Chat message input');
+    fireEvent.change(input, { target: { value: 'hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/could not reach the assistant/),
+      ).toBeInTheDocument(),
+    );
   });
 
   it('does not send when the input is empty', () => {
