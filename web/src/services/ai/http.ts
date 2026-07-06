@@ -2,6 +2,8 @@ import { API_ROUTES } from '../api';
 import axiosInstance from '../axiosInstance';
 import {
   AiInterviewResponse,
+  ChatRequest,
+  ChatResponse,
   CreateAiInterviewDto,
   InterviewSessionResponse,
   UpdateAiInterviewDto,
@@ -71,6 +73,28 @@ export const heartbeatInterview = async (
   await axiosInstance.post(
     `${API_ROUTES.ai}/interviews/${interviewId}/heartbeat`,
   );
+};
+
+/**
+ * Send a message to the TalkUp AI chatbot and return its reply.
+ *
+ * @param request - The message and optional prior conversation history.
+ * @returns A Promise resolving to the assistant's reply.
+ * @throws Rethrows any network or server error after logging it.
+ */
+export const sendChatMessage = async (
+  request: ChatRequest,
+): Promise<ChatResponse> => {
+  try {
+    const response = await axiosInstance.post<ChatResponse>(
+      `${API_ROUTES.ai}/chat`,
+      request,
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error sending chat message:', error);
+    throw error;
+  }
 };
 
 export const updateInterview = async (

@@ -18,6 +18,8 @@ import {
   ApiOkResponse,
   ApiExtraModels,
   ApiNotFoundResponse,
+  ApiOperation,
+  ApiInternalServerErrorResponse,
 } from "@nestjs/swagger";
 
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
@@ -34,6 +36,8 @@ import { GetInterviewsQueryDto } from "./dto/getInterviewsQuery.dto";
 import { CreateAiTranscriptsDto } from "./dto/createAiTranscripts.dto";
 import { CreateAiInterviewResponseDto } from "./dto/createAiInterviewResponse.dto";
 import { InterviewSessionDto } from "./dto/interviewSession.dto";
+import { ChatDto } from "./dto/chat.dto";
+import { ChatResponseDto } from "./dto/chatResponse.dto";
 
 @ApiTags("AI")
 @Controller("ai")
@@ -45,6 +49,28 @@ export class AiController {
   @Get("capacity")
   async getCapacity() {
     return this.aiService.getCapacity();
+  }
+
+  @ApiOperation({
+    summary: "Send a message to the TalkUp AI chatbot and get a reply.",
+  })
+  @ApiOkResponse({
+    description: "The assistant's reply to the message.",
+    type: ChatResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Badly formatted parameter.",
+  })
+  @ApiUnprocessableEntityResponse({
+    description: "Missing parameter in request.",
+  })
+  @ApiInternalServerErrorResponse({
+    description: "The assistant is unavailable.",
+  })
+  @UsePipes(new PostValidationPipe())
+  @Post("chat")
+  async chat(@Body() chatDto: ChatDto): Promise<ChatResponseDto> {
+    return this.aiService.chat(chatDto);
   }
 
   @ApiCreatedResponse({

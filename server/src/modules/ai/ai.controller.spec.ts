@@ -32,6 +32,7 @@ describe("AiController", () => {
       getInterviewById: jest.fn(),
       editAiInterview: jest.fn(),
       addTranscripts: jest.fn(),
+      chat: jest.fn(),
     };
 
     const moduleBuilder = Test.createTestingModule({
@@ -137,6 +138,17 @@ describe("AiController", () => {
         userId,
       );
       expect(res).toEqual(true);
+    });
+
+    it("chat should call service and return the reply", async () => {
+      const dto = { message: "How do I answer behavioral questions?" } as any;
+      const serviceResult = { reply: "Use the STAR method." };
+      (mockAiService.chat as jest.Mock).mockResolvedValueOnce(serviceResult);
+
+      const res = await controller.chat(dto);
+
+      expect(mockAiService.chat).toHaveBeenCalledWith(dto);
+      expect(res).toEqual(serviceResult);
     });
 
     it("addTranscripts should call service and return result", async () => {
