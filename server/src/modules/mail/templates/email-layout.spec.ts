@@ -117,6 +117,20 @@ describe("renderOtpEmail", () => {
     expect(html).toContain("&lt;script&gt;");
   });
 
+  it("renders neither anchor nor note when the cta is dropped and no note is given", () => {
+    const { html, text } = renderOtpEmail({
+      ...base,
+      cta: {
+        href: "javascript:alert(1)",
+        label: "Verify your account",
+      },
+    });
+    expect(html).not.toContain("<a ");
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("Verify your account");
+    expect(text).not.toContain("Verify your account");
+  });
+
   it("omits the helper paragraph when helperText is absent", () => {
     const { html } = renderOtpEmail({
       ...base,

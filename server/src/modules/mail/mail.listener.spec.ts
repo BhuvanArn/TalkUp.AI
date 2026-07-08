@@ -175,10 +175,9 @@ describe("MailListener", () => {
   });
 
   it("escapes an http verifyUrl that carries markup inside the anchor href", async () => {
-    // Passes the http(s) scheme guard but smuggles an attribute break; the URL
-    // is raw-injected into ctaBlock.html, so escaping at the call site is what
-    // stops it breaking out of the href. Guards against a regression that drops
-    // escapeHtml() around safeVerifyUrl.
+    // Passes the http(s) scheme guard but smuggles an attribute break; the
+    // renderer escapes the href before it lands in the anchor, so it cannot
+    // break out. Guards against a regression that drops that escaping.
     await listener.onOtpGenerated({
       email: "u@example.com",
       plainOtp: "123456",
