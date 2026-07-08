@@ -30,7 +30,9 @@ describe("GetNotesQueryDto", () => {
   });
 
   it("rejects a non-uuid interviewId", async () => {
-    const dto = plainToInstance(GetNotesQueryDto, { interviewId: "not-a-uuid" });
+    const dto = plainToInstance(GetNotesQueryDto, {
+      interviewId: "not-a-uuid",
+    });
     const errors = await validate(dto);
     expect(errors).toHaveLength(1);
     expect(errors[0].property).toBe("interviewId");
