@@ -58,7 +58,7 @@ describe("renderOtpEmail", () => {
       securityNote: "Do NOT share this code. It could be a scam.",
     });
     expect(html).toContain(
-      "<strong style=\"color:#24242d;\">Do NOT share this code.</strong>",
+      '<strong style="color:#24242d;">Do NOT share this code.</strong>',
     );
     expect(html).toContain("It could be a scam.");
     expect(text).toContain("Do NOT share this code. It could be a scam.");
