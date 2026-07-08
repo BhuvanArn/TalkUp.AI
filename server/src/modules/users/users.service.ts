@@ -21,16 +21,18 @@ import {
   scrapeAxios,
 } from "../../common/utils/JobOfferExtraction";
 import { isSafeFetchUrl } from "../../common/utils/urlGuard";
+import {
+  CvExtraction,
+  JobOfferExtraction,
+  MAX_LLM_INPUT_CHARS,
+  extractWithGroq,
+} from "../../common/utils/groqExtraction";
 
 import { UpdateProfileDto } from "./dto/updateProfile.dto";
 import { GetProfileDto } from "./dto/getProfile.dto";
 import { user_cv } from "@entities/userCV.entity";
 import { user_job_offer } from "@entities/userJobOffer.entity";
-import Groq from "groq-sdk";
 import pdfParse from "pdf-parse-debugging-disabled";
-
-// Cap raw text sent to the LLM to bound token cost on large documents.
-const MAX_LLM_INPUT_CHARS = 8000;
 
 /** Minimal shape of the multer file we consume (avoids depending on the global
  * Express.Multer namespace, which is not in this project's tsconfig `types`). */
@@ -38,51 +40,9 @@ export interface UploadedPdf {
   buffer: Buffer;
 }
 
-/** Shape returned by the CV extraction prompt. All fields optional — the model
- * may omit any of them; defaults are applied at persistence time. */
-interface CvExtraction {
-  desired_job?: string | null;
-  resume?: string | null;
-  experiences?: unknown[];
-  education?: unknown[];
-  technical_skills?: string[];
-  languages?: unknown[];
-}
-
-/** Shape returned by the job-offer extraction prompt. */
-interface JobOfferExtraction {
-  job_title?: string | null;
-  company_name?: string | null;
-  company_description?: string | null;
-  sector?: string | null;
-  contract_type?: string | null;
-  location?: string | null;
-  required_skills?: string[];
-  preferred_skills?: string[];
-  required_experience?: string | null;
-  required_education?: string | null;
-  missions?: string[];
-  soft_skills?: string[];
-  languages_required?: string[];
-  salary_range?: string | null;
-  company_values?: string[];
-  team_description?: string | null;
-}
-
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
-
-  // Lazily built so a missing GROQ_API_KEY does not crash app bootstrap — the
-  // groq-sdk constructor throws on an empty key. Only the upload routes need it;
-  // they surface the failure as a 500 instead of taking the whole server down.
-  private _groq?: Groq;
-  private get groq(): Groq {
-    if (!this._groq) {
-      this._groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    }
-    return this._groq;
-  }
 
   constructor(
     @InjectRepository(user)
@@ -237,33 +197,6 @@ export class UsersService {
   }
 
   /**
-   * Sends a prompt to Groq, strips any markdown fences from the reply, and parses
-   * it as JSON. Throws InternalServerErrorException on empty or unparsable output.
-   */
-  private async extractWithGroq<T>(prompt: string): Promise<T> {
-    const completion = await this.groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0,
-    });
-
-    const responseText = completion.choices[0]?.message?.content;
-
-    if (!responseText) {
-      this.logger.error("Empty response from Groq");
-      throw new InternalServerErrorException("Empty response from AI.");
-    }
-
-    try {
-      const cleaned = responseText.replace(/```json|```/g, "").trim();
-      return JSON.parse(cleaned) as T;
-    } catch (parseError) {
-      this.logger.error(`JSON parse error: ${parseError}`);
-      throw new InternalServerErrorException("Failed to parse extracted data.");
-    }
-  }
-
-  /**
    * Find-or-update a single row keyed by user_id: updates when one exists,
    * otherwise creates and saves. Used for the one-per-user CV / job-offer rows.
    * Returns true when an existing row was updated, false when one was created.
@@ -360,7 +293,7 @@ export class UsersService {
       CV text:
       ${cvText}`;
 
-    const data = await this.extractWithGroq<CvExtraction>(prompt);
+    const data = await extractWithGroq<CvExtraction>(prompt);
 
     const existed = await this.upsertByUser(this.user_cvRepo, userId, {
       desired_job: data.desired_job ?? null,
@@ -439,7 +372,7 @@ export class UsersService {
       Job offer text:
       ${pageText}`;
 
-    const data = await this.extractWithGroq<JobOfferExtraction>(prompt);
+    const data = await extractWithGroq<JobOfferExtraction>(prompt);
 
     const existed = await this.upsertByUser(this.user_job_offerRepo, userId, {
       job_title: data.job_title ?? null,
