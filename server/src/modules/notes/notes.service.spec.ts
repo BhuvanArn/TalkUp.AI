@@ -147,6 +147,13 @@ describe("NotesService", () => {
         service.findAll("user-1", { interviewId: "int-1", standalone: false }),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it("wraps unexpected find errors in InternalServerError", async () => {
+      noteRepo.find.mockRejectedValueOnce(new Error("DB down"));
+      await expect(service.findAll("user-1", {})).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
   });
 
   describe("findOne", () => {
@@ -190,6 +197,14 @@ describe("NotesService", () => {
       const result = await service.update("user-1", "note-1", {});
       expect(result.content).toBe("");
     });
+
+    it("wraps unexpected save errors in InternalServerError", async () => {
+      noteRepo.findOne.mockResolvedValue({ ...baseNote });
+      noteRepo.save.mockRejectedValueOnce(new Error("DB down"));
+      await expect(
+        service.update("user-1", "note-1", { title: "x" }),
+      ).rejects.toThrow(InternalServerErrorException);
+    });
   });
 
   describe("remove", () => {
@@ -204,6 +219,14 @@ describe("NotesService", () => {
       noteRepo.findOne.mockResolvedValue(null);
       await expect(service.remove("user-1", "note-x")).rejects.toThrow(
         NotFoundException,
+      );
+    });
+
+    it("wraps unexpected remove errors in InternalServerError", async () => {
+      noteRepo.findOne.mockResolvedValue(baseNote);
+      noteRepo.remove.mockRejectedValueOnce(new Error("DB down"));
+      await expect(service.remove("user-1", "note-1")).rejects.toThrow(
+        InternalServerErrorException,
       );
     });
   });
