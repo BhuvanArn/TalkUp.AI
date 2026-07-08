@@ -1,6 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useInterviewNotes } from './useInterviewNotes';
+
 const getUserNotesMock = vi.hoisted(() => vi.fn());
 const createNoteMock = vi.hoisted(() => vi.fn());
 const updateNoteMock = vi.hoisted(() => vi.fn());
@@ -10,8 +12,6 @@ vi.mock('@/services/notes/http', () => ({
   createNote: createNoteMock,
   updateNote: updateNoteMock,
 }));
-
-import { useInterviewNotes } from './useInterviewNotes';
 
 const noteFor = (content: string) => ({
   note_id: 'n1',

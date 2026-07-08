@@ -1,5 +1,5 @@
-import axiosInstance from '../axiosInstance';
 import { API_ROUTES } from '../api';
+import axiosInstance from '../axiosInstance';
 import { CreateNoteDto, Note, UpdateNoteDto } from './types';
 
 /**

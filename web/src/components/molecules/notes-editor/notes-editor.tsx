@@ -86,7 +86,11 @@ const NotesEditor = ({ interviewID }: NotesEditorProps) => {
                     <Icon icon="delete" />
                   </Button>
 
-                  <Button variant="outlined" size="sm" onClick={() => void saveNow()}>
+                  <Button
+                    variant="outlined"
+                    size="sm"
+                    onClick={() => void saveNow()}
+                  >
                     <Icon icon="check" className="mr-2" />
                     Save
                   </Button>

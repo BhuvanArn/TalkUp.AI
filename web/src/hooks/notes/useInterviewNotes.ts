@@ -1,6 +1,6 @@
 import type { SaveStatusType } from '@/components/molecules/save-status';
-import { createNote, getUserNotes, updateNote } from '@/services/notes/http';
 import { htmlToText, textToHtml } from '@/services/notes/htmlText';
+import { createNote, getUserNotes, updateNote } from '@/services/notes/http';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const MAX_CONSECUTIVE_FAILURES = 3;

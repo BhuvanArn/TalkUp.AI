@@ -1,13 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import NotesEditor from './notes-editor';
+
 const useInterviewNotesMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/hooks/notes/useInterviewNotes', () => ({
   useInterviewNotes: useInterviewNotesMock,
 }));
-
-import NotesEditor from './notes-editor';
 
 describe('NotesEditor', () => {
   const setContent = vi.fn();

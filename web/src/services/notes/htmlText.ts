@@ -20,10 +20,7 @@ export const textToHtml = (text: string): string => {
 export const htmlToText = (html: string): string => {
   if (html === '') return '';
   const unescape = (s: string): string =>
-    s
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&');
+    s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
   // Split paragraphs into lines, then strip any remaining tags.
   const lines = html
     .replace(/<\/p>\s*<p>/g, '\n')

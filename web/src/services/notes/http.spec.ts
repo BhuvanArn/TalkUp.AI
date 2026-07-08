@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  createNote,
+  deleteNote,
+  getNoteById,
+  getUserNotes,
+  updateNote,
+} from './http';
+
 const getMock = vi.hoisted(() => vi.fn());
 const postMock = vi.hoisted(() => vi.fn());
 const putMock = vi.hoisted(() => vi.fn());
@@ -13,14 +21,6 @@ vi.mock('@/services/axiosInstance', () => ({
     delete: deleteMock,
   },
 }));
-
-import {
-  createNote,
-  deleteNote,
-  getNoteById,
-  getUserNotes,
-  updateNote,
-} from './http';
 
 const sampleNote = {
   note_id: '1',
@@ -85,7 +85,9 @@ describe('notesService', () => {
   it('updateNote PUTs the dto to the id url', async () => {
     putMock.mockResolvedValue({ data: sampleNote });
     await updateNote('1', { title: 'renamed' });
-    expect(putMock).toHaveBeenCalledWith('/v1/api/notes/1', { title: 'renamed' });
+    expect(putMock).toHaveBeenCalledWith('/v1/api/notes/1', {
+      title: 'renamed',
+    });
   });
 
   it('deleteNote DELETEs the id url', async () => {
