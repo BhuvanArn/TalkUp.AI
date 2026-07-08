@@ -123,7 +123,7 @@ describe("MailListener", () => {
       }),
     );
     const call = mailService.sendMail.mock.calls[0][0];
-    expect(call.html).toContain("max-width:600px"); // branded shell → forces red
+    expect(call.html).toContain("max-width:600px"); // branded shell → forces render
     expect(call.html).toContain("Confirm your email");
     expect(call.html).toContain("expires in 15 minutes");
   });
@@ -138,7 +138,7 @@ describe("MailListener", () => {
       verifyUrl: "https://talkup.example/verify-email?email=u%40example.com",
     });
     const call = mailService.sendMail.mock.calls[0][0];
-    expect(call.html).toContain("max-width:600px"); // branded shell → forces red
+    expect(call.html).toContain("max-width:600px"); // branded shell → forces render
     expect(call.html).toContain("Acme Inc");
     expect(call.html).toContain(
       "https://talkup.example/verify-email?email=u%40example.com",
@@ -172,5 +172,24 @@ describe("MailListener", () => {
     const call = mailService.sendMail.mock.calls[0][0];
     expect(call.html).not.toContain("<script>x</script>");
     expect(call.html).toContain("&lt;script&gt;");
+  });
+
+  it("escapes an http verifyUrl that carries markup inside the anchor href", async () => {
+    // Passes the http(s) scheme guard but smuggles an attribute break; the URL
+    // is raw-injected into ctaBlock.html, so escaping at the call site is what
+    // stops it breaking out of the href. Guards against a regression that drops
+    // escapeHtml() around safeVerifyUrl.
+    await listener.onOtpGenerated({
+      email: "u@example.com",
+      plainOtp: "123456",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "Acme Inc",
+      verifyUrl: 'https://evil.test/"><script>alert(1)</script>',
+    });
+    const call = mailService.sendMail.mock.calls[0][0];
+    expect(call.html).not.toContain("<script>alert(1)</script>");
+    expect(call.html).toContain("&lt;script&gt;");
+    expect(call.html).toContain("&quot;&gt;");
   });
 });

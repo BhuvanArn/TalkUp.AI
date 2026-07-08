@@ -129,14 +129,18 @@ describe("MailService", () => {
     );
   });
 
-  it("attaches the cid logo when file exists and html is sent", async () => {
+  it("attaches the cid logo when file exists and html references it", async () => {
     (fs.existsSync as jest.Mock).mockReturnValue(true);
     const config = {
       get: jest.fn((key: string) => (key === "SMTP_SERVICE" ? "gmail" : "x")),
     } as unknown as ConfigService;
 
     const service = new MailService(config);
-    await service.sendMail({ to: "a@b.com", subject: "s", html: "<p/>" });
+    await service.sendMail({
+      to: "a@b.com",
+      subject: "s",
+      html: '<img src="cid:talkup-logo">',
+    });
 
     expect(lastSendMail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -147,6 +151,19 @@ describe("MailService", () => {
     );
   });
 
+  it("omits the logo when the html does not reference the cid", async () => {
+    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    const config = {
+      get: jest.fn((key: string) => (key === "SMTP_SERVICE" ? "gmail" : "x")),
+    } as unknown as ConfigService;
+
+    const service = new MailService(config);
+    await service.sendMail({ to: "a@b.com", subject: "s", html: "<p/>" });
+
+    const call = lastSendMail.mock.calls[0][0];
+    expect(call.attachments).toBeUndefined();
+  });
+
   it("omits attachments when the logo file is missing", async () => {
     (fs.existsSync as jest.Mock).mockReturnValue(false);
     const config = {
@@ -154,7 +171,11 @@ describe("MailService", () => {
     } as unknown as ConfigService;
 
     const service = new MailService(config);
-    await service.sendMail({ to: "a@b.com", subject: "s", html: "<p/>" });
+    await service.sendMail({
+      to: "a@b.com",
+      subject: "s",
+      html: '<img src="cid:talkup-logo">',
+    });
 
     const call = lastSendMail.mock.calls[0][0];
     expect(call.attachments).toBeUndefined();

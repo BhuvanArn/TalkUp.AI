@@ -68,7 +68,10 @@ export class MailService {
       this.configService.get<string>("SMTP_USER");
 
     let attachments = options.attachments;
-    if (!attachments) {
+    // Only auto-attach the inline logo when the HTML actually references it,
+    // so a caller sending non-branded HTML doesn't get an orphan attachment
+    // (some clients surface an "attachment" badge for unreferenced parts).
+    if (!attachments && options.html.includes(`cid:${LOGO_CID}`)) {
       const logo = this.getLogoAttachment();
       if (logo) {
         attachments = [logo];
