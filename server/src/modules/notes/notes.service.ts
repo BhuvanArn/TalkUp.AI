@@ -91,7 +91,7 @@ export class NotesService {
     const where: Record<string, unknown> = { user_id: userId };
     if (query.interviewId !== undefined) {
       where.interview_id = query.interviewId;
-    } else if (query.standalone !== undefined) {
+    } else if (query.standalone === true) {
       where.interview_id = IsNull();
     }
 

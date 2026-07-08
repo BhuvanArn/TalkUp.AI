@@ -1,5 +1,11 @@
 import { ApiPropertyOptional, ApiSchema } from "@nestjs/swagger";
-import { IsOptional, IsString, IsBoolean, MaxLength } from "class-validator";
+import {
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsNotEmpty,
+  MaxLength,
+} from "class-validator";
 
 @ApiSchema({
   name: "UpdateNoteDto",
@@ -12,6 +18,7 @@ export class UpdateNoteDto {
   })
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(255)
   title?: string;
 

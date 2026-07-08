@@ -22,6 +22,18 @@ describe("GetNotesQueryDto", () => {
     expect(await validate(dto)).toHaveLength(0);
   });
 
+  it("passes a non-string standalone through unchanged", async () => {
+    const dto = plainToInstance(GetNotesQueryDto, { standalone: true });
+    expect(dto.standalone).toBe(true);
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it("coerces any non-'true' standalone value to false", async () => {
+    const dto = plainToInstance(GetNotesQueryDto, { standalone: "garbage" });
+    expect(dto.standalone).toBe(false);
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
   it("accepts a valid interviewId uuid", async () => {
     const dto = plainToInstance(GetNotesQueryDto, {
       interviewId: "019ac5a6-ada7-7a96-9a38-23819f37ab90",

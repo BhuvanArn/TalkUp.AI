@@ -1,0 +1,26 @@
+meta {
+  name: create in-simulation note
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{host}}/notes
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "In-sim note",
+    "content": "<p>Candidate hesitated on scaling question</p>",
+    "color": "green",
+    "is_favorite": false,
+    "interviewId": "019ac5a6-ada7-7a96-9a38-23819f37ab90"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

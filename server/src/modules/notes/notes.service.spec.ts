@@ -143,6 +143,14 @@ describe("NotesService", () => {
       });
     });
 
+    it("does not filter to standalone when standalone is false", async () => {
+      await service.findAll("user-1", { standalone: false });
+      expect(noteRepo.find).toHaveBeenCalledWith({
+        where: { user_id: "user-1" },
+        order: { updated_at: "DESC" },
+      });
+    });
+
     it("throws BadRequest when both interviewId and standalone are present", async () => {
       await expect(
         service.findAll("user-1", { interviewId: "int-1", standalone: false }),

@@ -20,7 +20,9 @@ export class GetNotesQueryDto {
       "When true, return only standalone notes (no interview linkage). Mutually exclusive with interviewId.",
     example: true,
   })
-  @Transform(({ value }) => value === "true")
+  @Transform(({ value }) =>
+    typeof value === "string" ? value === "true" : value,
+  )
   @IsOptional()
   @IsBoolean()
   standalone?: boolean;

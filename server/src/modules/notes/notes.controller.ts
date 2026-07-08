@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
   UsePipes,
+  ValidationPipe,
 } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
@@ -64,6 +65,7 @@ export class NotesController {
     description:
       "Badly formatted query, or interviewId and standalone both set.",
   })
+  @UsePipes(new ValidationPipe({ transform: true }))
   @Get()
   list(@UserId() userId: string, @Query() query: GetNotesQueryDto) {
     return this.service.findAll(userId, query);
