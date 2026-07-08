@@ -5,11 +5,7 @@ import { OtpPurpose } from "@common/enums/OtpPurpose";
 
 import { OtpGeneratedEvent } from "@src/modules/auth/events/otp-generated.event";
 import { MailService } from "./mail.service";
-import {
-  BRAND_ACCENT,
-  escapeHtml,
-  renderOtpEmail,
-} from "./templates/email-layout";
+import { renderOtpEmail } from "./templates/email-layout";
 
 const OTP_EXPIRY_MINUTES = 15;
 
@@ -65,33 +61,11 @@ export class MailListener {
 
   private async sendOrganizationInviteRegisterMail(payload: OtpGeneratedEvent) {
     const orgName = payload.organizationName ?? "";
-
-    // Scheme guard: only http(s) links are rendered. A misconfigured FRONTEND_URL
-    // (e.g. "javascript:"/"data:") must not become a clickable link. When the URL
-    // is absent or non-http, fall back to the website copy.
-    const safeVerifyUrl =
-      payload.verifyUrl && /^https?:\/\//i.test(payload.verifyUrl)
-        ? payload.verifyUrl
-        : undefined;
-
-    const ctaBlock = safeVerifyUrl
-      ? {
-          html: `<a href="${escapeHtml(
-            safeVerifyUrl,
-          )}" style="display:inline-block;padding:12px 24px;background:${BRAND_ACCENT};color:#ffffff;border-radius:8px;font-family:'Saira','Segoe UI',Arial,sans-serif;font-size:14px;font-weight:700;line-height:1;text-decoration:none;">Verify your account</a><p style="margin:12px 0 0;font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:400;line-height:1.5;color:#57585e;">Or copy this link: ${escapeHtml(
-            safeVerifyUrl,
-          )}</p>`,
-          text: `Verify your account: ${safeVerifyUrl}`,
-        }
-      : {
-          html: `<p style="margin:0;font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:15px;font-weight:400;line-height:1.6;color:#5f5f77;">Verify your email using the TalkUp sign-in flow on the website.</p>`,
-          text: "Use the TalkUp website to verify your email.",
-        };
-
     const subject = `Your TalkUp account — invited by ${orgName}`;
 
-    // preHeading is escaped by renderOtpEmail, so pass the RAW org name here.
-    // ctaBlock.html is injected raw, so verifyUrl is escaped at the call site above.
+    // The renderer owns all HTML/escaping and scheme-guards the CTA href to
+    // http(s); we pass only data. A missing/non-http verifyUrl falls back to
+    // the `note` copy automatically. All strings here are raw — never markup.
     const { html, text } = renderOtpEmail({
       heading: "Confirm your email",
       preHeading: `The organization ${orgName} has created an account for you on TalkUp. If this is unexpected, you can ignore this email.`,
@@ -99,7 +73,14 @@ export class MailListener {
         "Otherwise, verify your account and use the code below to get started:",
       code: payload.plainOtp,
       expiryMinutes: OTP_EXPIRY_MINUTES,
-      ctaBlock,
+      cta: payload.verifyUrl
+        ? {
+            href: payload.verifyUrl,
+            label: "Verify your account",
+            helperText: `Or copy this link: ${payload.verifyUrl}`,
+          }
+        : undefined,
+      note: "Verify your email using the TalkUp sign-in flow on the website.",
     });
 
     try {

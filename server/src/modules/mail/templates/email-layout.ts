@@ -33,20 +33,76 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+/**
+ * A verify-account call to action. The renderer owns all HTML construction and
+ * escaping — callers pass only data, never markup, so there is no way to forget
+ * an escape. The `href` is scheme-guarded to http(s) inside the renderer; a
+ * non-http href is dropped and the `note` fallback is used instead.
+ */
+export interface OtpEmailCta {
+  href: string;
+  label: string;
+  helperText?: string;
+}
+
 export interface OtpEmailInput {
   heading: string;
   intro: string;
   code: string;
   expiryMinutes: number;
   preHeading?: string;
-  ctaBlock?: { html: string; text: string };
+  /** Structured verify CTA. Rendered only when `href` is a valid http(s) URL. */
+  cta?: OtpEmailCta;
+  /** Fallback copy shown when there is no valid CTA (e.g. no verify link). */
+  note?: string;
+}
+
+const HTTP_SCHEME = /^https?:\/\//i;
+
+function renderCta(
+  cta: OtpEmailCta | undefined,
+  note: string | undefined,
+): {
+  html: string;
+  text: string;
+} {
+  if (cta && HTTP_SCHEME.test(cta.href)) {
+    const helperHtml = cta.helperText
+      ? `<p style="margin:12px 0 0;${font(BODY_STACK, "12px", 400, "1.5")}color:${COLORS.textIdle};">${escapeHtml(
+          cta.helperText,
+        )}</p>`
+      : "";
+    const html = `<div style="margin:0 0 20px;"><a href="${escapeHtml(
+      cta.href,
+    )}" style="display:inline-block;padding:12px 24px;background:${COLORS.accent};color:${COLORS.white};border-radius:8px;${font(
+      HEADING_STACK,
+      "14px",
+      700,
+      "1",
+    )}text-decoration:none;">${escapeHtml(cta.label)}</a>${helperHtml}</div>`;
+    const text = [`${cta.label}: ${cta.href}`, cta.helperText]
+      .filter(Boolean)
+      .join("\n");
+    return { html, text };
+  }
+
+  if (note) {
+    return {
+      html: `<div style="margin:0 0 20px;"><p style="margin:0;${font(BODY_STACK, "15px", 400, "1.6")}color:${COLORS.textWeaker};">${escapeHtml(
+        note,
+      )}</p></div>`,
+      text: note,
+    };
+  }
+
+  return { html: "", text: "" };
 }
 
 export function renderOtpEmail(input: OtpEmailInput): {
   html: string;
   text: string;
 } {
-  const { heading, intro, code, expiryMinutes, preHeading, ctaBlock } = input;
+  const { heading, intro, code, expiryMinutes, preHeading, cta, note } = input;
   const expiryLine = `This code expires in ${expiryMinutes} minutes.`;
 
   const preHeadingHtml = preHeading
@@ -55,9 +111,8 @@ export function renderOtpEmail(input: OtpEmailInput): {
       )}</p>`
     : "";
 
-  const ctaHtml = ctaBlock
-    ? `<div style="margin:0 0 20px;">${ctaBlock.html}</div>`
-    : "";
+  const ctaContent = renderCta(cta, note);
+  const ctaHtml = ctaContent.html;
 
   // Code chip: light text on the dark primary band so it stays legible under
   // client dark-mode inversion (Gmail inverts regardless of color-scheme meta,
@@ -127,7 +182,7 @@ Sent by TalkUp. If you didn't request this, you can safely ignore this email.
     heading,
     preHeading,
     intro,
-    ctaBlock?.text,
+    ctaContent.text,
     `Code: ${code}`,
     expiryLine,
     "Sent by TalkUp. If you didn't request this, you can safely ignore this email.",

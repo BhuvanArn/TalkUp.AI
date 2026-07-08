@@ -39,24 +39,94 @@ describe("renderOtpEmail", () => {
     expect(html).toContain('alt="TalkUp"');
   });
 
-  it("omits cta and preHeading when not provided", () => {
+  it("omits cta, note and preHeading when not provided", () => {
     const { html } = renderOtpEmail(base);
     expect(html).not.toContain("verify-email");
     expect(html).not.toContain("created an account");
+    expect(html).not.toContain("<a ");
   });
 
-  it("renders preHeading and ctaBlock when provided", () => {
+  it("renders a structured cta (button + helper) and preHeading", () => {
     const { html, text } = renderOtpEmail({
       ...base,
       preHeading: "Acme Inc created an account for you.",
-      ctaBlock: {
-        html: '<a href="https://talkup.example/verify-email">Verify</a>',
-        text: "Verify: https://talkup.example/verify-email",
+      cta: {
+        href: "https://talkup.example/verify-email",
+        label: "Verify your account",
+        helperText: "Or copy this link: https://talkup.example/verify-email",
       },
     });
     expect(html).toContain("Acme Inc created an account for you.");
-    expect(html).toContain("https://talkup.example/verify-email");
-    expect(text).toContain("Verify: https://talkup.example/verify-email");
+    expect(html).toContain('href="https://talkup.example/verify-email"');
+    expect(html).toContain("Verify your account");
+    expect(html).toContain("Or copy this link:");
+    expect(html).toContain("#2b70c9"); // BRAND_ACCENT on the button
+    expect(text).toContain(
+      "Verify your account: https://talkup.example/verify-email",
+    );
+    expect(text).toContain(
+      "Or copy this link: https://talkup.example/verify-email",
+    );
+  });
+
+  it("escapes cta label, href and helperText — no raw injection", () => {
+    const { html } = renderOtpEmail({
+      ...base,
+      cta: {
+        href: 'https://talkup.example/verify?x="><script>alert(1)</script>',
+        label: "<script>alert(2)</script>",
+        helperText: "<img src=x onerror=alert(3)>",
+      },
+    });
+    expect(html).not.toContain("<script>alert(1)</script>");
+    expect(html).not.toContain("<script>alert(2)</script>");
+    expect(html).not.toContain("<img src=x onerror=alert(3)>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("drops a non-http cta href and renders the note fallback instead", () => {
+    const { html, text } = renderOtpEmail({
+      ...base,
+      cta: {
+        href: "javascript:alert(1)",
+        label: "Verify your account",
+      },
+      note: "Verify your email using the TalkUp sign-in flow on the website.",
+    });
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("<a "); // no anchor rendered at all
+    expect(html).toContain("TalkUp sign-in flow");
+    expect(text).toContain("TalkUp sign-in flow");
+  });
+
+  it("renders the note when no cta is provided", () => {
+    const { html } = renderOtpEmail({
+      ...base,
+      note: "Use the TalkUp website to verify your email.",
+    });
+    expect(html).toContain("Use the TalkUp website to verify your email.");
+    expect(html).not.toContain("<a ");
+  });
+
+  it("escapes the note", () => {
+    const { html } = renderOtpEmail({
+      ...base,
+      note: "<script>alert(4)</script>",
+    });
+    expect(html).not.toContain("<script>alert(4)</script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("omits the helper paragraph when helperText is absent", () => {
+    const { html } = renderOtpEmail({
+      ...base,
+      cta: {
+        href: "https://talkup.example/verify-email",
+        label: "Verify your account",
+      },
+    });
+    expect(html).toContain("Verify your account");
+    expect(html).not.toContain("Or copy this link:");
   });
 
   it("wraps at 600px and uses brand primary band", () => {
