@@ -1,6 +1,7 @@
 import { ConfigService } from "@nestjs/config";
 import * as fs from "fs";
 import * as nodemailer from "nodemailer";
+import { join } from "path";
 
 import { MailService } from "./mail.service";
 
@@ -177,5 +178,26 @@ describe("MailService", () => {
     expect(lastSendMail).toHaveBeenCalledWith(
       expect.objectContaining({ attachments: custom }),
     );
+  });
+
+  it("keeps nest-cli.json's mail asset outDir aligned with the compiled __dirname", () => {
+    // MailService resolves its logo path via join(__dirname, "assets", ...) at
+    // runtime, which compiles to dist/src/modules/mail/assets/talkup-logo.png.
+    // The nest-cli.json asset-copy rule must target that same "dist/src" root —
+    // if it drifts back to "dist", the logo is copied to the wrong place and
+    // existsSync() silently fails in production (see regression this guards).
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const nestCliConfig = require(
+      join(__dirname, "..", "..", "..", "nest-cli.json"),
+    ) as {
+      compilerOptions: { assets: { include: string; outDir: string }[] };
+    };
+
+    const mailAssetRule = nestCliConfig.compilerOptions.assets.find(
+      (asset) => asset.include === "modules/mail/assets/**/*",
+    );
+
+    expect(mailAssetRule).toBeDefined();
+    expect(mailAssetRule?.outDir).toBe("dist/src");
   });
 });
