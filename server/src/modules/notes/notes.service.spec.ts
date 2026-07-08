@@ -81,8 +81,12 @@ describe("NotesService", () => {
         title: "My note",
         interviewId: "int-1",
       });
+      // user_id is a relation-only property on ai_interview; the lookup MUST
+      // request loadRelationIds or interview.user_id comes back undefined at
+      // runtime and every owned in-sim note create wrongly 403s.
       expect(interviewRepo.findOne).toHaveBeenCalledWith({
         where: { interview_id: "int-1" },
+        loadRelationIds: { relations: ["user_id"] },
       });
       expect(result.interview_id).toBe("int-1");
     });

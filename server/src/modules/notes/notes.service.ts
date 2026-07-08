@@ -43,8 +43,13 @@ export class NotesService {
   }
 
   private async assertOwnedInterview(userId: string, interviewId: string) {
+    // user_id is a relation-only property on ai_interview (no plain @Column),
+    // so a bare findOne leaves interview.user_id undefined. loadRelationIds
+    // hydrates the FK onto that property so the ownership check is meaningful
+    // while still distinguishing 404 (missing) from 403 (foreign).
     const interview = await this.interviewRepo.findOne({
       where: { interview_id: interviewId },
+      loadRelationIds: { relations: ["user_id"] },
     });
     if (!interview) throw new NotFoundException("Interview not found.");
     if (interview.user_id !== userId)
