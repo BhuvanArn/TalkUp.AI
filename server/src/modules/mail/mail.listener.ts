@@ -9,6 +9,12 @@ import { renderOtpEmail } from "./templates/email-layout";
 
 const OTP_EXPIRY_MINUTES = 15;
 
+// Anti-phishing warning. Lead clause (up to first period) is emphasised by the
+// renderer. TalkUp never asks for this code by phone, email, or chat.
+const SECURITY_NOTE =
+  "Do NOT share this code with anyone. Only enter it on the official TalkUp website. If someone asks you for it, it could be a scam.";
+const SIGNOFF = "— The TalkUp Team";
+
 @Injectable()
 export class MailListener {
   private readonly logger = new Logger(MailListener.name);
@@ -35,13 +41,18 @@ export class MailListener {
       return;
     }
 
-    const { subject, heading } = this.resolveTemplate(payload.purpose);
+    const { subject, heading } = this.resolveTemplate(
+      payload.purpose,
+      payload.plainOtp,
+    );
 
     const { html, text } = renderOtpEmail({
       heading,
       intro: "Your one-time verification code is:",
       code: payload.plainOtp,
       expiryMinutes: OTP_EXPIRY_MINUTES,
+      securityNote: SECURITY_NOTE,
+      signoff: SIGNOFF,
     });
 
     try {
@@ -81,6 +92,8 @@ export class MailListener {
           }
         : undefined,
       note: "Verify your email using the TalkUp sign-in flow on the website.",
+      securityNote: SECURITY_NOTE,
+      signoff: SIGNOFF,
     });
 
     try {
@@ -98,29 +111,35 @@ export class MailListener {
     }
   }
 
-  private resolveTemplate(purpose: OtpPurpose): {
+  private resolveTemplate(
+    purpose: OtpPurpose,
+    code: string,
+  ): {
     subject: string;
     heading: string;
   } {
+    // Lead the subject with the code so it is visible in the inbox list and
+    // notification preview (Railway-style), which lets the recipient read it
+    // without opening the mail. The code is single-use and short-lived.
     switch (purpose) {
       case OtpPurpose.REGISTER:
         return {
-          subject: "Verify your TalkUp account",
+          subject: `${code} is your TalkUp verification code`,
           heading: "Confirm your email",
         };
       case OtpPurpose.RESET_PASSWORD:
         return {
-          subject: "Reset your TalkUp password",
+          subject: `${code} is your TalkUp password reset code`,
           heading: "Password reset request",
         };
       case OtpPurpose.NEW_DEVICE:
         return {
-          subject: "Verify your new device",
+          subject: `${code} is your TalkUp device verification code`,
           heading: "New device verification",
         };
       default:
         return {
-          subject: "TalkUp verification code",
+          subject: `${code} is your TalkUp verification code`,
           heading: "Verification required",
         };
     }

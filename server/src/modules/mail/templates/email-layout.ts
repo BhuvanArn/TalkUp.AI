@@ -55,6 +55,13 @@ export interface OtpEmailInput {
   cta?: OtpEmailCta;
   /** Fallback copy shown when there is no valid CTA (e.g. no verify link). */
   note?: string;
+  /**
+   * Anti-phishing warning shown under the expiry line. The leading clause up to
+   * the first period is emphasised (bold). Rendered only when provided.
+   */
+  securityNote?: string;
+  /** Sign-off line shown above the footer (e.g. "— The TalkUp Team"). */
+  signoff?: string;
 }
 
 const HTTP_SCHEME = /^https?:\/\//i;
@@ -98,12 +105,51 @@ function renderCta(
   return { html: "", text: "" };
 }
 
+/**
+ * Split a security note into its emphasised lead ("Do NOT share this code.")
+ * and the remaining plain sentence(s), on the first period. The caller passes
+ * plain text; escaping happens here.
+ */
+function renderSecurityNote(securityNote: string | undefined): {
+  html: string;
+  text: string;
+} {
+  if (!securityNote) {
+    return { html: "", text: "" };
+  }
+  const firstStop = securityNote.indexOf(".");
+  const lead =
+    firstStop === -1 ? securityNote : securityNote.slice(0, firstStop + 1);
+  const rest = firstStop === -1 ? "" : securityNote.slice(firstStop + 1).trim();
+  const restHtml = rest ? ` ${escapeHtml(rest)}` : "";
+  const html = `<p style="margin:16px 0 0;${font(BODY_STACK, "13px", 400, "1.6")}color:${COLORS.textWeaker};"><strong style="color:${COLORS.text};">${escapeHtml(
+    lead,
+  )}</strong>${restHtml}</p>`;
+  return { html, text: securityNote };
+}
+
 export function renderOtpEmail(input: OtpEmailInput): {
   html: string;
   text: string;
 } {
-  const { heading, intro, code, expiryMinutes, preHeading, cta, note } = input;
+  const {
+    heading,
+    intro,
+    code,
+    expiryMinutes,
+    preHeading,
+    cta,
+    note,
+    securityNote,
+    signoff,
+  } = input;
   const expiryLine = `This code expires in ${expiryMinutes} minutes.`;
+  const securityContent = renderSecurityNote(securityNote);
+  const signoffHtml = signoff
+    ? `<p style="margin:20px 0 0;${font(BODY_STACK, "13px", 400, "1.6")}color:${COLORS.textIdle};">${escapeHtml(
+        signoff,
+      )}</p>`
+    : "";
 
   const preHeadingHtml = preHeading
     ? `<p style="margin:0 0 16px;${font(BODY_STACK, "15px", 400, "1.6")}color:${COLORS.textWeaker};">${escapeHtml(
@@ -162,6 +208,8 @@ ${codeChip}
 <p style="margin:0;${font(BODY_STACK, "13px", 400, "1.6")}color:${COLORS.textIdle};">${escapeHtml(
     expiryLine,
   )}</p>
+${securityContent.html}
+${signoffHtml}
 </td>
 </tr>
 <tr>
@@ -185,6 +233,8 @@ Sent by TalkUp. If you didn't request this, you can safely ignore this email.
     ctaContent.text,
     `Code: ${code}`,
     expiryLine,
+    securityContent.text,
+    signoff,
     "Sent by TalkUp. If you didn't request this, you can safely ignore this email.",
   ]
     .filter(Boolean)

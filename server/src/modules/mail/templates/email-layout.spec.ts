@@ -46,6 +46,52 @@ describe("renderOtpEmail", () => {
     expect(html).not.toContain("<a ");
   });
 
+  it("omits the security note and sign-off when not provided", () => {
+    const { html, text } = renderOtpEmail(base);
+    expect(html).not.toContain("<strong");
+    expect(text).not.toContain("The TalkUp Team");
+  });
+
+  it("emphasises the security note lead clause and keeps the rest plain", () => {
+    const { html, text } = renderOtpEmail({
+      ...base,
+      securityNote: "Do NOT share this code. It could be a scam.",
+    });
+    expect(html).toContain(
+      "<strong style=\"color:#24242d;\">Do NOT share this code.</strong>",
+    );
+    expect(html).toContain("It could be a scam.");
+    expect(text).toContain("Do NOT share this code. It could be a scam.");
+  });
+
+  it("handles a security note with no period (whole string emphasised)", () => {
+    const { html } = renderOtpEmail({
+      ...base,
+      securityNote: "Keep this code private",
+    });
+    expect(html).toContain("<strong");
+    expect(html).toContain("Keep this code private");
+  });
+
+  it("escapes the security note", () => {
+    const { html } = renderOtpEmail({
+      ...base,
+      securityNote: "<b>Do NOT</b> share. <i>Ever</i>.",
+    });
+    expect(html).not.toContain("<b>Do NOT</b>");
+    expect(html).toContain("&lt;b&gt;");
+  });
+
+  it("renders and escapes the sign-off", () => {
+    const { html, text } = renderOtpEmail({
+      ...base,
+      signoff: "— The <TalkUp> Team",
+    });
+    expect(html).toContain("&lt;TalkUp&gt;");
+    expect(html).not.toContain("<TalkUp>");
+    expect(text).toContain("— The <TalkUp> Team");
+  });
+
   it("renders a structured cta (button + helper) and preHeading", () => {
     const { html, text } = renderOtpEmail({
       ...base,

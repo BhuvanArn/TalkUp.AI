@@ -32,7 +32,7 @@ describe("MailListener", () => {
     expect(mailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: "u@example.com",
-        subject: "Verify your TalkUp account",
+        subject: "123456 is your TalkUp verification code",
       }),
     );
   });
@@ -59,7 +59,7 @@ describe("MailListener", () => {
     await listener.onPasswordResetRequested(payload(OtpPurpose.RESET_PASSWORD));
     expect(mailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
-        subject: "Reset your TalkUp password",
+        subject: "123456 is your TalkUp password reset code",
       }),
     );
   });
@@ -68,7 +68,7 @@ describe("MailListener", () => {
     await listener.onOtpGenerated(payload(OtpPurpose.NEW_DEVICE));
     expect(mailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
-        subject: "Verify your new device",
+        subject: "123456 is your TalkUp device verification code",
       }),
     );
   });
@@ -81,7 +81,7 @@ describe("MailListener", () => {
     });
     expect(mailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
-        subject: "TalkUp verification code",
+        subject: "123456 is your TalkUp verification code",
       }),
     );
   });
@@ -126,6 +126,18 @@ describe("MailListener", () => {
     expect(call.html).toContain("max-width:600px"); // branded shell → forces render
     expect(call.html).toContain("Confirm your email");
     expect(call.html).toContain("expires in 15 minutes");
+  });
+
+  it("REGISTER email carries the anti-phishing note and sign-off in html and text", async () => {
+    await listener.onOtpGenerated(payload(OtpPurpose.REGISTER));
+    const call = mailService.sendMail.mock.calls[0][0];
+    // Lead clause emphasised; full sentence present in the plaintext part.
+    expect(call.html).toContain("<strong");
+    expect(call.html).toContain("Do NOT share this code");
+    expect(call.html).toContain("could be a scam");
+    expect(call.html).toContain("The TalkUp Team");
+    expect(call.text).toContain("Do NOT share this code");
+    expect(call.text).toContain("The TalkUp Team");
   });
 
   it("organization invite uses branded shell with verify link and org name", async () => {
