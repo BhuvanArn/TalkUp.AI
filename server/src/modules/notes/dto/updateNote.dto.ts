@@ -30,6 +30,7 @@ export class UpdateNoteDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(30)
   color?: string;
 
   @ApiPropertyOptional({

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
+import { IsNull } from "typeorm";
 import {
   BadRequestException,
   ForbiddenException,
@@ -137,7 +138,7 @@ describe("NotesService", () => {
     it("filters standalone notes (interview_id null)", async () => {
       await service.findAll("user-1", { standalone: true });
       expect(noteRepo.find).toHaveBeenCalledWith({
-        where: { user_id: "user-1", interview_id: expect.anything() },
+        where: { user_id: "user-1", interview_id: IsNull() },
         order: { updated_at: "DESC" },
       });
     });
