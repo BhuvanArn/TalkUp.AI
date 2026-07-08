@@ -113,4 +113,64 @@ describe("MailListener", () => {
       expect.any(String),
     );
   });
+
+  it("REGISTER email html uses the branded shell with code and heading", async () => {
+    await listener.onOtpGenerated(payload(OtpPurpose.REGISTER));
+    expect(mailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining("123456"),
+        text: expect.stringContaining("123456"),
+      }),
+    );
+    const call = mailService.sendMail.mock.calls[0][0];
+    expect(call.html).toContain("max-width:600px"); // branded shell → forces red
+    expect(call.html).toContain("Confirm your email");
+    expect(call.html).toContain("expires in 15 minutes");
+  });
+
+  it("organization invite uses branded shell with verify link and org name", async () => {
+    await listener.onOtpGenerated({
+      email: "u@example.com",
+      plainOtp: "123456",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "Acme Inc",
+      verifyUrl: "https://talkup.example/verify-email?email=u%40example.com",
+    });
+    const call = mailService.sendMail.mock.calls[0][0];
+    expect(call.html).toContain("max-width:600px"); // branded shell → forces red
+    expect(call.html).toContain("Acme Inc");
+    expect(call.html).toContain(
+      "https://talkup.example/verify-email?email=u%40example.com",
+    );
+    expect(call.html).toContain("123456");
+  });
+
+  it("drops a non-http verifyUrl and falls back to the website copy", async () => {
+    await listener.onOtpGenerated({
+      email: "u@example.com",
+      plainOtp: "123456",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "Acme Inc",
+      verifyUrl: "javascript:alert(1)",
+    });
+    const call = mailService.sendMail.mock.calls[0][0];
+    expect(call.html).not.toContain("javascript:");
+    expect(call.html).toContain("TalkUp sign-in flow");
+  });
+
+  it("escapes a malicious organization name", async () => {
+    await listener.onOtpGenerated({
+      email: "u@example.com",
+      plainOtp: "123456",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "<script>x</script>",
+      verifyUrl: "https://talkup.example/verify-email",
+    });
+    const call = mailService.sendMail.mock.calls[0][0];
+    expect(call.html).not.toContain("<script>x</script>");
+    expect(call.html).toContain("&lt;script&gt;");
+  });
 });

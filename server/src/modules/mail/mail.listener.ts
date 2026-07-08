@@ -5,6 +5,9 @@ import { OtpPurpose } from "@common/enums/OtpPurpose";
 
 import { OtpGeneratedEvent } from "@src/modules/auth/events/otp-generated.event";
 import { MailService } from "./mail.service";
+import { escapeHtml, renderOtpEmail } from "./templates/email-layout";
+
+const OTP_EXPIRY_MINUTES = 15;
 
 @Injectable()
 export class MailListener {
@@ -34,21 +37,19 @@ export class MailListener {
 
     const { subject, heading } = this.resolveTemplate(payload.purpose);
 
-    const html = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1a1a1a;">
-        <h2>${heading}</h2>
-        <p>Your one-time verification code is:</p>
-        <p style="font-size: 28px; letter-spacing: 4px; font-weight: 700;">${payload.plainOtp}</p>
-        <p>This code expires in 15 minutes.</p>
-      </div>
-    `;
+    const { html, text } = renderOtpEmail({
+      heading,
+      intro: "Your one-time verification code is:",
+      code: payload.plainOtp,
+      expiryMinutes: OTP_EXPIRY_MINUTES,
+    });
 
     try {
       await this.mailService.sendMail({
         to: payload.email,
         subject,
-        text: `Your OTP code is ${payload.plainOtp}. It expires in 15 minutes.`,
         html,
+        text,
       });
     } catch (error) {
       this.logger.error(
@@ -60,41 +61,49 @@ export class MailListener {
 
   private async sendOrganizationInviteRegisterMail(payload: OtpGeneratedEvent) {
     const orgName = payload.organizationName ?? "";
-    const linkBlock = payload.verifyUrl
-      ? `<p><a href="${payload.verifyUrl}">Verify your account</a></p><p>Or copy this link: ${payload.verifyUrl}</p>`
-      : "<p>Verify your email using the TalkUp sign-in flow on the website.</p>";
 
-    const textLink = payload.verifyUrl
-      ? `Verify your account: ${payload.verifyUrl}`
-      : "Use the TalkUp website to verify your email.";
+    // Scheme guard: only http(s) links are rendered. A misconfigured FRONTEND_URL
+    // (e.g. "javascript:"/"data:") must not become a clickable link. When the URL
+    // is absent or non-http, fall back to the website copy.
+    const safeVerifyUrl =
+      payload.verifyUrl && /^https?:\/\//i.test(payload.verifyUrl)
+        ? payload.verifyUrl
+        : undefined;
+
+    const ctaBlock = safeVerifyUrl
+      ? {
+          html: `<a href="${escapeHtml(
+            safeVerifyUrl,
+          )}" style="display:inline-block;padding:12px 24px;background:#2b70c9;color:#ffffff;border-radius:8px;font-family:'Saira','Segoe UI',Arial,sans-serif;font-size:14px;font-weight:700;line-height:1;text-decoration:none;">Verify your account</a><p style="margin:12px 0 0;font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:400;line-height:1.5;color:#57585e;">Or copy this link: ${escapeHtml(
+            safeVerifyUrl,
+          )}</p>`,
+          text: `Verify your account: ${safeVerifyUrl}`,
+        }
+      : {
+          html: `<p style="margin:0;font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:15px;font-weight:400;line-height:1.6;color:#5f5f77;">Verify your email using the TalkUp sign-in flow on the website.</p>`,
+          text: "Use the TalkUp website to verify your email.",
+        };
 
     const subject = `Your TalkUp account — invited by ${orgName}`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1a1a1a;">
-        <h2>Confirm your email</h2>
-        <p>The organization <strong>${orgName}</strong> has created an account for you on TalkUp.</p>
-        <p>Is this expected? If not, you can ignore this email.</p>
-        <p>If yes, use the link below to verify your account and start using TalkUp.</p>
-        ${linkBlock}
-        <p>Your one-time verification code is:</p>
-        <p style="font-size: 28px; letter-spacing: 4px; font-weight: 700;">${payload.plainOtp}</p>
-        <p>This code expires in 15 minutes.</p>
-      </div>
-    `;
 
-    const text = [
-      `The organization "${orgName}" has created an account for you on TalkUp.`,
-      `Is this expected? If not, ignore this email.`,
-      `If yes, ${textLink}`,
-      `Your verification code is ${payload.plainOtp}. It expires in 15 minutes.`,
-    ].join("\n\n");
+    // preHeading is escaped by renderOtpEmail, so pass the RAW org name here.
+    // ctaBlock.html is injected raw, so verifyUrl is escaped at the call site above.
+    const { html, text } = renderOtpEmail({
+      heading: "Confirm your email",
+      preHeading: `The organization ${orgName} has created an account for you on TalkUp. If this is unexpected, you can ignore this email.`,
+      intro:
+        "Otherwise, verify your account and use the code below to get started:",
+      code: payload.plainOtp,
+      expiryMinutes: OTP_EXPIRY_MINUTES,
+      ctaBlock,
+    });
 
     try {
       await this.mailService.sendMail({
         to: payload.email,
         subject,
-        text,
         html,
+        text,
       });
     } catch (error) {
       this.logger.error(
