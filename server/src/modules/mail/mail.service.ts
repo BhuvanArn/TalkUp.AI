@@ -1,10 +1,17 @@
+import { existsSync } from "fs";
+import { join } from "path";
+
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as nodemailer from "nodemailer";
+import type Mail from "nodemailer/lib/mailer";
+
+import { LOGO_CID } from "./templates/email-layout";
 
 @Injectable()
 export class MailService {
   private transporter: nodemailer.Transporter;
+  private readonly logoPath = join(__dirname, "assets", "talkup-logo.png");
 
   constructor(private readonly configService: ConfigService) {
     let options = {};
@@ -38,19 +45,43 @@ export class MailService {
     this.transporter = nodemailer.createTransport(options);
   }
 
+  private getLogoAttachment(): Mail.Attachment | undefined {
+    if (!existsSync(this.logoPath)) {
+      return undefined;
+    }
+    return {
+      filename: "talkup-logo.png",
+      path: this.logoPath,
+      cid: LOGO_CID,
+    };
+  }
+
   async sendMail(options: {
     to: string;
     subject: string;
     html: string;
     text?: string;
+    attachments?: Mail.Attachment[];
   }): Promise<void> {
     const from =
       this.configService.get<string>("SMTP_FROM") ??
       this.configService.get<string>("SMTP_USER");
 
+    let attachments = options.attachments;
+    if (!attachments) {
+      const logo = this.getLogoAttachment();
+      if (logo) {
+        attachments = [logo];
+      }
+    }
+
     await this.transporter.sendMail({
       from,
-      ...options,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+      ...(attachments ? { attachments } : {}),
     });
   }
 }

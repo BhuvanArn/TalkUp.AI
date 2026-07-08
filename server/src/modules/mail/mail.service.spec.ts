@@ -1,4 +1,5 @@
 import { ConfigService } from "@nestjs/config";
+import * as fs from "fs";
 import * as nodemailer from "nodemailer";
 
 import { MailService } from "./mail.service";
@@ -7,6 +8,11 @@ jest.mock("nodemailer", () => ({
   createTransport: jest.fn().mockReturnValue({
     sendMail: jest.fn().mockResolvedValue(undefined),
   }),
+}));
+
+jest.mock("fs", () => ({
+  ...jest.requireActual("fs"),
+  existsSync: jest.fn().mockReturnValue(true),
 }));
 
 describe("MailService", () => {
@@ -119,6 +125,57 @@ describe("MailService", () => {
       expect.objectContaining({
         from: "u@example.com",
       }),
+    );
+  });
+
+  it("attaches the cid logo when file exists and html is sent", async () => {
+    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    const config = {
+      get: jest.fn((key: string) => (key === "SMTP_SERVICE" ? "gmail" : "x")),
+    } as unknown as ConfigService;
+
+    const service = new MailService(config);
+    await service.sendMail({ to: "a@b.com", subject: "s", html: "<p/>" });
+
+    expect(lastSendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachments: expect.arrayContaining([
+          expect.objectContaining({ cid: "talkup-logo" }),
+        ]),
+      }),
+    );
+  });
+
+  it("omits attachments when the logo file is missing", async () => {
+    (fs.existsSync as jest.Mock).mockReturnValue(false);
+    const config = {
+      get: jest.fn((key: string) => (key === "SMTP_SERVICE" ? "gmail" : "x")),
+    } as unknown as ConfigService;
+
+    const service = new MailService(config);
+    await service.sendMail({ to: "a@b.com", subject: "s", html: "<p/>" });
+
+    const call = lastSendMail.mock.calls[0][0];
+    expect(call.attachments).toBeUndefined();
+  });
+
+  it("passes through explicit attachments unchanged", async () => {
+    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    const config = {
+      get: jest.fn((key: string) => (key === "SMTP_SERVICE" ? "gmail" : "x")),
+    } as unknown as ConfigService;
+
+    const service = new MailService(config);
+    const custom = [{ filename: "x.txt", content: "hi" }];
+    await service.sendMail({
+      to: "a@b.com",
+      subject: "s",
+      html: "<p/>",
+      attachments: custom,
+    });
+
+    expect(lastSendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ attachments: custom }),
     );
   });
 });
