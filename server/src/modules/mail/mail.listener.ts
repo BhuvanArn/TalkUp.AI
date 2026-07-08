@@ -5,7 +5,11 @@ import { OtpPurpose } from "@common/enums/OtpPurpose";
 
 import { OtpGeneratedEvent } from "@src/modules/auth/events/otp-generated.event";
 import { MailService } from "./mail.service";
-import { escapeHtml, renderOtpEmail } from "./templates/email-layout";
+import {
+  BRAND_ACCENT,
+  escapeHtml,
+  renderOtpEmail,
+} from "./templates/email-layout";
 
 const OTP_EXPIRY_MINUTES = 15;
 
@@ -74,7 +78,7 @@ export class MailListener {
       ? {
           html: `<a href="${escapeHtml(
             safeVerifyUrl,
-          )}" style="display:inline-block;padding:12px 24px;background:#2b70c9;color:#ffffff;border-radius:8px;font-family:'Saira','Segoe UI',Arial,sans-serif;font-size:14px;font-weight:700;line-height:1;text-decoration:none;">Verify your account</a><p style="margin:12px 0 0;font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:400;line-height:1.5;color:#57585e;">Or copy this link: ${escapeHtml(
+          )}" style="display:inline-block;padding:12px 24px;background:${BRAND_ACCENT};color:#ffffff;border-radius:8px;font-family:'Saira','Segoe UI',Arial,sans-serif;font-size:14px;font-weight:700;line-height:1;text-decoration:none;">Verify your account</a><p style="margin:12px 0 0;font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:400;line-height:1.5;color:#57585e;">Or copy this link: ${escapeHtml(
             safeVerifyUrl,
           )}</p>`,
           text: `Verify your account: ${safeVerifyUrl}`,

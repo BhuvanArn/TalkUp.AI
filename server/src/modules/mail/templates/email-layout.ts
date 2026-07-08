@@ -1,11 +1,15 @@
 export const LOGO_CID = "talkup-logo";
 
+// Single source for the brand accent used on CTA buttons across mail
+// templates (e.g. the "Verify your account" button in mail.listener.ts).
+export const BRAND_ACCENT = "#2b70c9";
+
 const HEADING_STACK = "'Saira', 'Segoe UI', Arial, sans-serif";
 const BODY_STACK = "'Inter', 'Segoe UI', Arial, sans-serif";
 
 const COLORS = {
   primary: "#29457a",
-  accent: "#2b70c9",
+  accent: BRAND_ACCENT,
   surface: "#f8f9ff",
   card: "#ffffff",
   text: "#24242d",
