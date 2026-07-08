@@ -1,0 +1,150 @@
+import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { Test, TestingModule } from "@nestjs/testing";
+import { getRepositoryToken } from "@nestjs/typeorm";
+
+jest.mock("groq-sdk", () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    chat: {
+      completions: { create: (...args: unknown[]) => mockGroqCreate(...args) },
+    },
+  })),
+}));
+
+jest.mock("../../common/utils/JobOfferExtraction", () => ({
+  scrapeLinkedin: jest.fn(),
+  scrapeAxios: jest.fn(),
+}));
+
+import {
+  scrapeLinkedin,
+  scrapeAxios,
+} from "../../common/utils/JobOfferExtraction";
+import { ApplicationStatus } from "@common/enums/ApplicationStatus";
+import { application } from "@entities/application.entity";
+import { user_cv } from "@entities/userCV.entity";
+import { ApplicationsService } from "./applications.service";
+
+const mockGroqCreate = jest.fn();
+const mockScrapeLinkedin = scrapeLinkedin as jest.Mock;
+const mockScrapeAxios = scrapeAxios as jest.Mock;
+
+const validOfferResponse = JSON.stringify({
+  job_title: "DevOps Engineer",
+  company_name: "Datadog",
+  sector: "Tech",
+});
+
+describe("ApplicationsService", () => {
+  let service: ApplicationsService;
+  // TypeORM's overloaded create()/save() signatures make jest.Mocked<Partial<Repository<T>>>
+  // mistype narrow callback mocks against the wrong overload; `any` sidesteps that (same
+  // pattern used in ai.service.spec.ts for the same repos).
+  let applicationRepo: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  let cvRepo: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  beforeEach(async () => {
+    mockGroqCreate.mockReset();
+    mockScrapeLinkedin.mockReset();
+    mockScrapeAxios.mockReset();
+
+    applicationRepo = {
+      create: jest.fn((v) => v as application),
+      save: jest.fn(async (v) => v as application),
+      find: jest.fn(),
+      findOne: jest.fn(),
+      remove: jest.fn(),
+    };
+    cvRepo = { findOne: jest.fn().mockResolvedValue(null) };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ApplicationsService,
+        { provide: getRepositoryToken(application), useValue: applicationRepo },
+        { provide: getRepositoryToken(user_cv), useValue: cvRepo },
+      ],
+    }).compile();
+
+    service = module.get(ApplicationsService);
+  });
+
+  describe("createFromUrl", () => {
+    it("rejects a malformed URL", async () => {
+      await expect(
+        service.createFromUrl("u1", "not-a-url"),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it("rejects an unsafe URL target", async () => {
+      await expect(
+        service.createFromUrl("u1", "http://127.0.0.1/admin"),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it("rejects when the page yields no content", async () => {
+      mockScrapeAxios.mockResolvedValue("");
+      await expect(
+        service.createFromUrl("u1", "https://example.com/job"),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it("creates an application with extracted offer and no CV snapshot", async () => {
+      mockScrapeAxios.mockResolvedValue("some job offer text");
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validOfferResponse } }],
+      });
+
+      const row = await service.createFromUrl("u1", "https://example.com/job");
+
+      expect(row.user_id).toBe("u1");
+      expect(row.company_name).toBe("Datadog");
+      expect(row.job_title).toBe("DevOps Engineer");
+      expect(row.status).toBe(ApplicationStatus.SENT);
+      expect(row.offer_url).toBe("https://example.com/job");
+      expect(row.offer_details?.sector).toBe("Tech");
+      expect(row.cv_details).toBeNull();
+      expect(applicationRepo.save).toHaveBeenCalled();
+    });
+
+    it("snapshots the profile CV into cv_details when one exists", async () => {
+      cvRepo.findOne = jest.fn().mockResolvedValue({
+        desired_job: "SRE",
+        resume: "profile",
+        experiences: [],
+        education: [],
+        technical_skills: ["docker"],
+        languages: [],
+      });
+      mockScrapeAxios.mockResolvedValue("text");
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validOfferResponse } }],
+      });
+
+      const row = await service.createFromUrl("u1", "https://example.com/job");
+
+      expect(row.cv_details).toEqual({
+        desired_job: "SRE",
+        resume: "profile",
+        experiences: [],
+        education: [],
+        technical_skills: ["docker"],
+        languages: [],
+      });
+    });
+
+    it("prefers the LinkedIn scraper for linkedin job URLs", async () => {
+      mockScrapeLinkedin.mockResolvedValue("linkedin text");
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validOfferResponse } }],
+      });
+
+      await service.createFromUrl(
+        "u1",
+        "https://www.linkedin.com/jobs/view/123",
+      );
+
+      expect(mockScrapeLinkedin).toHaveBeenCalled();
+      expect(mockScrapeAxios).not.toHaveBeenCalled();
+    });
+  });
+});
