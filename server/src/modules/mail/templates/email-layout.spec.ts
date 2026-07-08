@@ -1,8 +1,4 @@
-import {
-  LOGO_CID,
-  escapeHtml,
-  renderOtpEmail,
-} from "./email-layout";
+import { LOGO_CID, escapeHtml, renderOtpEmail } from "./email-layout";
 
 describe("escapeHtml", () => {
   it("escapes html-significant characters", () => {
@@ -86,7 +82,10 @@ describe("renderOtpEmail", () => {
   it("renders the code chip as light text on the dark primary band", () => {
     const { html } = renderOtpEmail(base);
     // Chip must survive dark-mode inversion: white text on primary, not dark-on-light.
-    const chip = html.slice(html.indexOf("482917") - 400, html.indexOf("482917"));
+    const chip = html.slice(
+      html.indexOf("482917") - 400,
+      html.indexOf("482917"),
+    );
     expect(chip).toContain("#29457a");
     expect(chip).toContain("#ffffff");
   });
