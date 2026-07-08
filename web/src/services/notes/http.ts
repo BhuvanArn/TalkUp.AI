@@ -15,7 +15,7 @@ export const getUserNotes = async (params?: {
   try {
     let url = API_ROUTES.notes;
     if (params?.interviewId !== undefined) {
-      url = `${API_ROUTES.notes}?interviewId=${params.interviewId}`;
+      url = `${API_ROUTES.notes}?interviewId=${encodeURIComponent(params.interviewId)}`;
     } else if (params?.standalone === true) {
       url = `${API_ROUTES.notes}?standalone=true`;
     }

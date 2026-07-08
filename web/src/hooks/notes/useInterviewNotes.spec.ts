@@ -129,8 +129,39 @@ describe('useInterviewNotes', () => {
         await vi.advanceTimersByTimeAsync(1000);
       });
     }
-    expect(createNoteMock.mock.calls.length).toBeLessThanOrEqual(3);
+    expect(createNoteMock).toHaveBeenCalledTimes(3);
     expect(result.current.saveStatus).toBe('error');
+
+    // saveNow resets the failure counter and forces a retry past the cap,
+    // even though the timer would otherwise stay halted.
+    await act(async () => {
+      await result.current.saveNow();
+    });
+    expect(createNoteMock).toHaveBeenCalledTimes(4);
+
     consoleSpy.mockRestore();
+  });
+
+  it('flushes unsaved edits for the outgoing interview when interviewID changes (no data loss)', async () => {
+    const { result, rerender } = renderHook(
+      ({ interviewID }) => useInterviewNotes(interviewID),
+      { initialProps: { interviewID: 'int-1' as string | null } },
+    );
+    await vi.waitFor(() => expect(getUserNotesMock).toHaveBeenCalled());
+
+    act(() => result.current.setContent('unsaved edit'));
+    expect(createNoteMock).not.toHaveBeenCalled();
+
+    // Simulation stops: interviewID goes to null without unmounting the
+    // panel. The pending edit for 'int-1' must be flushed, not dropped.
+    await act(async () => {
+      rerender({ interviewID: null });
+    });
+
+    expect(createNoteMock).toHaveBeenCalledWith({
+      title: 'Simulation notes',
+      content: '<p>unsaved edit</p>',
+      interviewId: 'int-1',
+    });
   });
 });

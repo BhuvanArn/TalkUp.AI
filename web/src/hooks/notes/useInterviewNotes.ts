@@ -58,6 +58,38 @@ export const useInterviewNotes = (interviewID: string | null) => {
     })();
     return () => {
       cancelled = true;
+      // Flush unsaved edits for the interview this effect instance was
+      // loaded for, before the next run resets noteIdRef/contentRef for
+      // the new interviewID. Without this, a live simulation ending
+      // (interviewID -> null) mid-edit would silently drop the last
+      // ~1s of unsaved content.
+      if (dirtyRef.current && !savingRef.current) {
+        const prevInterviewID = interviewID;
+        const prevNoteId = noteIdRef.current;
+        const snapshot = contentRef.current;
+        // Mark clean immediately so no other cleanup/effect scheduled in
+        // this same commit (e.g. the unmount-save effect below, whose
+        // deps also change with interviewID) re-fires a redundant save.
+        dirtyRef.current = false;
+        savingRef.current = true;
+        void (async () => {
+          try {
+            if (prevNoteId) {
+              await updateNote(prevNoteId, { content: textToHtml(snapshot) });
+            } else {
+              await createNote({
+                title: IN_SIM_TITLE,
+                content: textToHtml(snapshot),
+                interviewId: prevInterviewID,
+              });
+            }
+          } catch (err) {
+            console.error('Error flushing interview notes on change:', err);
+          } finally {
+            savingRef.current = false;
+          }
+        })();
+      }
     };
   }, [interviewID]);
 
