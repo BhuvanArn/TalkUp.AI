@@ -19,6 +19,7 @@ import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { HealthController } from "./health.controller";
 import { AgendaModule } from "./modules/agenda/agenda.module";
 import { OrganizationModule } from "./modules/organization/organization.module";
+import { NotesModule } from "./modules/notes/notes.module";
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { OrganizationModule } from "./modules/organization/organization.module";
     UsersModule,
     LinkedInModule,
     AgendaModule,
+    NotesModule,
     TypeOrmModule.forRootAsync({
       useFactory: () => {
         const config = pgConfig();
