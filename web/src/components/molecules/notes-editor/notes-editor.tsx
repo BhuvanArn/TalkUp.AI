@@ -1,14 +1,24 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { SaveStatus } from '@/components/molecules/save-status';
+import { useInterviewNotes } from '@/hooks/notes/useInterviewNotes';
 import { useEffect, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
 
+interface NotesEditorProps {
+  /** The active interview id, or null/undefined when no simulation is running. */
+  interviewID?: string | null;
+}
+
 /**
  * A draggable floating editor for taking notes during simulations.
+ * Persists one note per interview via useInterviewNotes.
  */
-const NotesEditor = () => {
+const NotesEditor = ({ interviewID }: NotesEditorProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [content, setContent] = useState('');
+  const { content, setContent, saveStatus, saveNow } = useInterviewNotes(
+    interviewID ?? null,
+  );
 
   /** Required to avoid findDOMNode warnings in React 18 Strict Mode */
   const nodeRef = useRef(null);
@@ -20,12 +30,6 @@ const NotesEditor = () => {
     }
   }, [isOpen]);
 
-  /** Saves current notes (currently logs to console) */
-  const handleSaveNotes = () => {
-    console.log('Saving notes:', content);
-  };
-
-  /** Resets the editor content */
   const handleClearNotes = () => {
     setContent('');
   };
@@ -70,20 +74,23 @@ const NotesEditor = () => {
               />
 
               {/* Bottom Actions */}
-              <div className="p-4 border-t border-gray-100 flex justify-end gap-2 bg-white">
-                <Button
-                  variant="text"
-                  color="error"
-                  size="sm"
-                  onClick={handleClearNotes}
-                >
-                  <Icon icon="delete" />
-                </Button>
+              <div className="p-4 border-t border-gray-100 flex justify-between items-center gap-2 bg-white">
+                <SaveStatus status={saveStatus} />
+                <div className="flex gap-2">
+                  <Button
+                    variant="text"
+                    color="error"
+                    size="sm"
+                    onClick={handleClearNotes}
+                  >
+                    <Icon icon="delete" />
+                  </Button>
 
-                <Button variant="outlined" size="sm" onClick={handleSaveNotes}>
-                  <Icon icon="check" className="mr-2" />
-                  Save
-                </Button>
+                  <Button variant="outlined" size="sm" onClick={() => void saveNow()}>
+                    <Icon icon="check" className="mr-2" />
+                    Save
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
