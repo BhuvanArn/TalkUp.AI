@@ -1,5 +1,7 @@
 import { ConfigService } from "@nestjs/config";
+import * as fs from "fs";
 import * as nodemailer from "nodemailer";
+import { join } from "path";
 
 import { MailService } from "./mail.service";
 
@@ -7,6 +9,11 @@ jest.mock("nodemailer", () => ({
   createTransport: jest.fn().mockReturnValue({
     sendMail: jest.fn().mockResolvedValue(undefined),
   }),
+}));
+
+jest.mock("fs", () => ({
+  ...jest.requireActual("fs"),
+  existsSync: jest.fn().mockReturnValue(true),
 }));
 
 describe("MailService", () => {
@@ -120,5 +127,98 @@ describe("MailService", () => {
         from: "u@example.com",
       }),
     );
+  });
+
+  it("attaches the cid logo when file exists and html references it", async () => {
+    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    const config = {
+      get: jest.fn((key: string) => (key === "SMTP_SERVICE" ? "gmail" : "x")),
+    } as unknown as ConfigService;
+
+    const service = new MailService(config);
+    await service.sendMail({
+      to: "a@b.com",
+      subject: "s",
+      html: '<img src="cid:talkup-logo">',
+    });
+
+    expect(lastSendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachments: expect.arrayContaining([
+          expect.objectContaining({ cid: "talkup-logo" }),
+        ]),
+      }),
+    );
+  });
+
+  it("omits the logo when the html does not reference the cid", async () => {
+    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    const config = {
+      get: jest.fn((key: string) => (key === "SMTP_SERVICE" ? "gmail" : "x")),
+    } as unknown as ConfigService;
+
+    const service = new MailService(config);
+    await service.sendMail({ to: "a@b.com", subject: "s", html: "<p/>" });
+
+    const call = lastSendMail.mock.calls[0][0];
+    expect(call.attachments).toBeUndefined();
+  });
+
+  it("omits attachments when the logo file is missing", async () => {
+    (fs.existsSync as jest.Mock).mockReturnValue(false);
+    const config = {
+      get: jest.fn((key: string) => (key === "SMTP_SERVICE" ? "gmail" : "x")),
+    } as unknown as ConfigService;
+
+    const service = new MailService(config);
+    await service.sendMail({
+      to: "a@b.com",
+      subject: "s",
+      html: '<img src="cid:talkup-logo">',
+    });
+
+    const call = lastSendMail.mock.calls[0][0];
+    expect(call.attachments).toBeUndefined();
+  });
+
+  it("passes through explicit attachments unchanged", async () => {
+    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    const config = {
+      get: jest.fn((key: string) => (key === "SMTP_SERVICE" ? "gmail" : "x")),
+    } as unknown as ConfigService;
+
+    const service = new MailService(config);
+    const custom = [{ filename: "x.txt", content: "hi" }];
+    await service.sendMail({
+      to: "a@b.com",
+      subject: "s",
+      html: "<p/>",
+      attachments: custom,
+    });
+
+    expect(lastSendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ attachments: custom }),
+    );
+  });
+
+  it("keeps nest-cli.json's mail asset outDir aligned with the compiled __dirname", () => {
+    // MailService resolves its logo path via join(__dirname, "assets", ...) at
+    // runtime, which compiles to dist/src/modules/mail/assets/talkup-logo.png.
+    // The nest-cli.json asset-copy rule must target that same "dist/src" root —
+    // if it drifts back to "dist", the logo is copied to the wrong place and
+    // existsSync() silently fails in production (see regression this guards).
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const nestCliConfig = require(
+      join(__dirname, "..", "..", "..", "nest-cli.json"),
+    ) as {
+      compilerOptions: { assets: { include: string; outDir: string }[] };
+    };
+
+    const mailAssetRule = nestCliConfig.compilerOptions.assets.find(
+      (asset) => asset.include === "modules/mail/assets/**/*",
+    );
+
+    expect(mailAssetRule).toBeDefined();
+    expect(mailAssetRule?.outDir).toBe("dist/src");
   });
 });

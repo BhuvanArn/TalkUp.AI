@@ -32,7 +32,7 @@ describe("MailListener", () => {
     expect(mailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: "u@example.com",
-        subject: "Verify your TalkUp account",
+        subject: "123456 is your TalkUp verification code",
       }),
     );
   });
@@ -59,7 +59,7 @@ describe("MailListener", () => {
     await listener.onPasswordResetRequested(payload(OtpPurpose.RESET_PASSWORD));
     expect(mailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
-        subject: "Reset your TalkUp password",
+        subject: "123456 is your TalkUp password reset code",
       }),
     );
   });
@@ -68,7 +68,7 @@ describe("MailListener", () => {
     await listener.onOtpGenerated(payload(OtpPurpose.NEW_DEVICE));
     expect(mailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
-        subject: "Verify your new device",
+        subject: "123456 is your TalkUp device verification code",
       }),
     );
   });
@@ -81,7 +81,7 @@ describe("MailListener", () => {
     });
     expect(mailService.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
-        subject: "TalkUp verification code",
+        subject: "123456 is your TalkUp verification code",
       }),
     );
   });
@@ -112,5 +112,95 @@ describe("MailListener", () => {
       expect.stringContaining("Failed to dispatch OTP email"),
       expect.any(String),
     );
+  });
+
+  it("REGISTER email html uses the branded shell with code and heading", async () => {
+    await listener.onOtpGenerated(payload(OtpPurpose.REGISTER));
+    expect(mailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining("123456"),
+        text: expect.stringContaining("123456"),
+      }),
+    );
+    const call = mailService.sendMail.mock.calls[0][0];
+    expect(call.html).toContain("max-width:600px"); // branded shell → forces render
+    expect(call.html).toContain("Confirm your email");
+    expect(call.html).toContain("expires in 15 minutes");
+  });
+
+  it("REGISTER email carries the anti-phishing note and sign-off in html and text", async () => {
+    await listener.onOtpGenerated(payload(OtpPurpose.REGISTER));
+    const call = mailService.sendMail.mock.calls[0][0];
+    // Lead clause emphasised; full sentence present in the plaintext part.
+    expect(call.html).toContain("<strong");
+    expect(call.html).toContain("Do NOT share this code");
+    expect(call.html).toContain("could be a scam");
+    expect(call.html).toContain("The TalkUp Team");
+    expect(call.text).toContain("Do NOT share this code");
+    expect(call.text).toContain("The TalkUp Team");
+  });
+
+  it("organization invite uses branded shell with verify link and org name", async () => {
+    await listener.onOtpGenerated({
+      email: "u@example.com",
+      plainOtp: "123456",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "Acme Inc",
+      verifyUrl: "https://talkup.example/verify-email?email=u%40example.com",
+    });
+    const call = mailService.sendMail.mock.calls[0][0];
+    expect(call.html).toContain("max-width:600px"); // branded shell → forces render
+    expect(call.html).toContain("Acme Inc");
+    expect(call.html).toContain(
+      "https://talkup.example/verify-email?email=u%40example.com",
+    );
+    expect(call.html).toContain("123456");
+  });
+
+  it("drops a non-http verifyUrl and falls back to the website copy", async () => {
+    await listener.onOtpGenerated({
+      email: "u@example.com",
+      plainOtp: "123456",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "Acme Inc",
+      verifyUrl: "javascript:alert(1)",
+    });
+    const call = mailService.sendMail.mock.calls[0][0];
+    expect(call.html).not.toContain("javascript:");
+    expect(call.html).toContain("TalkUp sign-in flow");
+  });
+
+  it("escapes a malicious organization name", async () => {
+    await listener.onOtpGenerated({
+      email: "u@example.com",
+      plainOtp: "123456",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "<script>x</script>",
+      verifyUrl: "https://talkup.example/verify-email",
+    });
+    const call = mailService.sendMail.mock.calls[0][0];
+    expect(call.html).not.toContain("<script>x</script>");
+    expect(call.html).toContain("&lt;script&gt;");
+  });
+
+  it("escapes an http verifyUrl that carries markup inside the anchor href", async () => {
+    // Passes the http(s) scheme guard but smuggles an attribute break; the
+    // renderer escapes the href before it lands in the anchor, so it cannot
+    // break out. Guards against a regression that drops that escaping.
+    await listener.onOtpGenerated({
+      email: "u@example.com",
+      plainOtp: "123456",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "Acme Inc",
+      verifyUrl: 'https://evil.test/"><script>alert(1)</script>',
+    });
+    const call = mailService.sendMail.mock.calls[0][0];
+    expect(call.html).not.toContain("<script>alert(1)</script>");
+    expect(call.html).toContain("&lt;script&gt;");
+    expect(call.html).toContain("&quot;&gt;");
   });
 });
