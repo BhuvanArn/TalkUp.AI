@@ -61,6 +61,12 @@ describe('notesService', () => {
     expect(getMock).toHaveBeenCalledWith('/v1/api/notes?standalone=true');
   });
 
+  it('getUserNotes with standalone=false does NOT append the standalone param', async () => {
+    getMock.mockResolvedValue({ data: [] });
+    await getUserNotes({ standalone: false });
+    expect(getMock).toHaveBeenCalledWith('/v1/api/notes');
+  });
+
   it('getNoteById GETs by id', async () => {
     getMock.mockResolvedValue({ data: sampleNote });
     const note = await getNoteById('1');

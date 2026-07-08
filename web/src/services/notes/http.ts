@@ -16,7 +16,7 @@ export const getUserNotes = async (params?: {
     let url = API_ROUTES.notes;
     if (params?.interviewId !== undefined) {
       url = `${API_ROUTES.notes}?interviewId=${params.interviewId}`;
-    } else if (params?.standalone !== undefined) {
+    } else if (params?.standalone === true) {
       url = `${API_ROUTES.notes}?standalone=true`;
     }
     const { data } = await axiosInstance.get<Note[]>(url);
