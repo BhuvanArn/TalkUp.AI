@@ -89,7 +89,7 @@ describe('MembersTable', () => {
     expect(screen.getByText('bob')).toBeInTheDocument();
   });
 
-  it('notifies selection on row click', () => {
+  it('notifies selection via the View button', () => {
     const onSelect = vi.fn();
     render(
       <MembersTable
@@ -101,24 +101,23 @@ describe('MembersTable', () => {
         onRemove={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByText('alice'));
+    fireEvent.click(screen.getAllByRole('button', { name: /view/i })[0]);
     expect(onSelect).toHaveBeenCalledWith('u1');
   });
 
-  it('selects a member via keyboard (Enter)', () => {
-    const onSelect = vi.fn();
+  it('marks the selected member via aria-pressed', () => {
     render(
       <MembersTable
         members={members}
         isAdmin={false}
-        selectedUserId={null}
-        onSelect={onSelect}
+        selectedUserId="u1"
+        onSelect={vi.fn()}
         onChangeRole={vi.fn()}
         onRemove={vi.fn()}
       />,
     );
-    const row = screen.getByText('alice').closest('tr') as HTMLElement;
-    fireEvent.keyDown(row, { key: 'Enter' });
-    expect(onSelect).toHaveBeenCalledWith('u1');
+    const viewButtons = screen.getAllByRole('button', { name: /view/i });
+    expect(viewButtons[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(viewButtons[1]).toHaveAttribute('aria-pressed', 'false');
   });
 });

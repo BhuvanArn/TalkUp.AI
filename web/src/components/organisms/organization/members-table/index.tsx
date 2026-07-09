@@ -66,23 +66,14 @@ export const MembersTable = ({
               <th className="px-4 py-2">Completed</th>
               <th className="px-4 py-2">Avg score</th>
               <th className="px-4 py-2">Last activity</th>
-              {isAdmin && <th className="px-4 py-2">Actions</th>}
+              <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {visible.map((m) => (
               <tr
                 key={m.user_id}
-                onClick={() => onSelect(m.user_id)}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onSelect(m.user_id);
-                  }
-                }}
-                aria-selected={selectedUserId === m.user_id}
-                className={`cursor-pointer border-t border-border hover:bg-surface ${
+                className={`border-t border-border ${
                   selectedUserId === m.user_id ? 'bg-accent-weaker' : ''
                 }`}
               >
@@ -92,22 +83,29 @@ export const MembersTable = ({
                 <td className="px-4 py-2">{m.completedCount}</td>
                 <td className="px-4 py-2">{m.avgScore ?? '—'}</td>
                 <td className="px-4 py-2">{formatDate(m.lastActivityAt)}</td>
-                {isAdmin && (
-                  <td className="px-4 py-2">
-                    {m.user_role !== 'admin' && (
-                      <div className="flex items-center gap-2">
+                <td className="px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      color="accent"
+                      variant="outlined"
+                      size="sm"
+                      aria-pressed={selectedUserId === m.user_id}
+                      onClick={() => onSelect(m.user_id)}
+                    >
+                      View
+                    </Button>
+                    {isAdmin && m.user_role !== 'admin' && (
+                      <>
                         <select
                           aria-label={`Role for ${m.username}`}
                           className="rounded border border-border bg-surface px-2 py-1"
                           value={m.user_role as Exclude<OrgMemberRole, 'admin'>}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            e.stopPropagation();
+                          onChange={(e) =>
                             onChangeRole(
                               m.user_id,
                               e.target.value as 'user' | 'employee',
-                            );
-                          }}
+                            )
+                          }
                         >
                           <option value="user">user</option>
                           <option value="employee">employee</option>
@@ -116,23 +114,20 @@ export const MembersTable = ({
                           color="accent"
                           variant="outlined"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRemove(m.user_id);
-                          }}
+                          onClick={() => onRemove(m.user_id)}
                         >
                           Remove
                         </Button>
-                      </div>
+                      </>
                     )}
-                  </td>
-                )}
+                  </div>
+                </td>
               </tr>
             ))}
             {visible.length === 0 && (
               <tr>
                 <td
-                  colSpan={isAdmin ? 7 : 6}
+                  colSpan={7}
                   className="px-4 py-6 text-center text-text-weaker"
                 >
                   No members match this filter yet.
