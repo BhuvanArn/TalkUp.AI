@@ -41,7 +41,7 @@ describe("AuthService", () => {
   let mockUserPasswordRepo: Partial<Repository<user_password>>;
   let mockOtpRepo: Partial<Repository<Otp>>;
   let mockJwtService: Partial<JwtService>;
-  let mockDataSource: { transaction: jest.Mock };
+  let mockDataSource: { transaction: jest.Mock; getRepository: jest.Mock };
   let mockEventEmitter: { emit: jest.Mock };
   let mockTokenStorage: {
     blacklistToken: jest.Mock;
@@ -130,6 +130,7 @@ describe("AuthService", () => {
 
     mockDataSource = {
       transaction: jest.fn(),
+      getRepository: jest.fn(),
     };
 
     mockTokenStorage = {
@@ -1310,6 +1311,76 @@ describe("AuthService", () => {
         "test-user-id",
       );
       expect(mockTokenStorage.blacklistToken).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("signUpOrganization (F12)", () => {
+    const dto = {
+      organizationName: "Acme School",
+      email: "admin@acme.example",
+      password: "Abcdefg1*",
+    };
+
+    let orgRepo: {
+      findOne: jest.Mock;
+      create: jest.Mock;
+      save: jest.Mock;
+      remove: jest.Mock;
+    };
+
+    beforeEach(() => {
+      orgRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn((v) => v),
+        save: jest.fn().mockResolvedValue({
+          organization_id: "new-org-id",
+          organization_name: dto.organizationName,
+        }),
+        remove: jest.fn().mockResolvedValue(undefined),
+      };
+      mockDataSource.getRepository.mockReturnValue(orgRepo);
+    });
+
+    it("creates the org then registers a trusted admin without invite mail context", async () => {
+      const registerSpy = jest
+        .spyOn(service, "register")
+        .mockResolvedValue(undefined);
+
+      await service.signUpOrganization(dto);
+
+      expect(orgRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ organization_name: "Acme School" }),
+      );
+      expect(registerSpy).toHaveBeenCalledWith(
+        {
+          username: "Acme School_admin",
+          email: dto.email,
+          password: dto.password,
+          organization_id: "new-org-id",
+          user_role: OrganizationUserRole.ADMIN,
+        },
+        true,
+      );
+    });
+
+    it("409s on duplicate organization name", async () => {
+      orgRepo.findOne.mockResolvedValue({ organization_id: "existing" });
+
+      await expect(service.signUpOrganization(dto)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(orgRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("removes the created org when register fails", async () => {
+      jest
+        .spyOn(service, "register")
+        .mockRejectedValue(new ConflictException("email exists"));
+
+      await expect(service.signUpOrganization(dto)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(orgRepo.remove).toHaveBeenCalled();
     });
   });
 });

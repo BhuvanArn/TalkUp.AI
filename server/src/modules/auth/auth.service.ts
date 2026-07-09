@@ -19,6 +19,7 @@ import { CreateUserDto } from "./dto/createUser.dto";
 import { VerifyEmailDto } from "./dto/verifyEmail.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
+import { RegisterOrganizationDto } from "./dto/registerOrganization.dto";
 
 import { OtpPurpose } from "@common/enums/OtpPurpose";
 import { UserStatus } from "@common/enums/UserStatus";
@@ -266,6 +267,48 @@ export class AuthService {
           inviteEmailContext,
         }),
       );
+    }
+  }
+
+  /**
+   * F12: public self-serve org signup — creates the organization and its first
+   * admin in one step, then rides the standard OTP email-verification.
+   * Returns void (202); tokens only come from verifyEmail().
+   *
+   * NOT named registerOrganization: that name is the secret-gated ops
+   * provisioning method on OrganizationService.
+   */
+  async signUpOrganization(dto: RegisterOrganizationDto): Promise<void> {
+    const orgRepo = this.dataSource.getRepository(Organization);
+
+    const nameExists = await orgRepo.findOne({
+      where: { organization_name: dto.organizationName },
+    });
+    if (nameExists) {
+      throw new ConflictException(
+        "An organization with this name already exists",
+      );
+    }
+
+    const savedOrganization = await orgRepo.save(
+      orgRepo.create({ organization_name: dto.organizationName }),
+    );
+
+    try {
+      await this.register(
+        {
+          username: `${dto.organizationName}_admin`,
+          email: dto.email,
+          password: dto.password,
+          organization_id: savedOrganization.organization_id,
+          user_role: OrganizationUserRole.ADMIN,
+        },
+        true,
+      );
+    } catch (error) {
+      // No orphan org when the admin account can't be created (e.g. email taken).
+      await orgRepo.remove(savedOrganization).catch(() => undefined);
+      throw error;
     }
   }
 

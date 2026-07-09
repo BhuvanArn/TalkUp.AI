@@ -36,6 +36,7 @@ import { ResendOtpDto } from "./dto/resendOtp.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
 import { PasswordUpdateDto } from "./dto/passwordUpdate.dto";
+import { RegisterOrganizationDto } from "./dto/registerOrganization.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { UserId } from "@common/decorators/userId.decorator";
@@ -72,6 +73,22 @@ export class AuthController {
   @HttpCode(HttpStatus.ACCEPTED)
   async register(@Body() createUserDto: CreateUserDto) {
     await this.authService.register(createUserDto);
+
+    return { message: "Verification email sent" };
+  }
+
+  @ApiAcceptedResponse({ description: "Verification email sent." })
+  @ApiBadRequestResponse({ description: "Badly formatted parameter." })
+  @ApiConflictResponse({
+    description: "Organization name or email already exists.",
+  })
+  @UsePipes(new PostValidationPipe())
+  @Post("register-organization")
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.ACCEPTED)
+  async signUpOrganization(@Body() dto: RegisterOrganizationDto) {
+    await this.authService.signUpOrganization(dto);
 
     return { message: "Verification email sent" };
   }
