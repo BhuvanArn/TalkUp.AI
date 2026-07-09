@@ -2,11 +2,24 @@ import NavMenu from '@/components/molecules/nav-menu';
 import { NavSelector } from '@/components/molecules/nav-selector';
 import { navigationContexts } from '@/config/navigation-contexts';
 import { useNavigation } from '@/contexts/NavigationContext';
-import { mockApplications } from '@/types/application';
+import { useApplications } from '@/services/applications/hooks';
+import type { ApplicationStatus } from '@/services/applications/types';
 import { NavItem } from '@/types/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { NavigationProps } from './types';
+
+/**
+ * Stable accent color per application status, derived because the real
+ * Application entity carries no color field (hex tolerated here: NavSelector's
+ * `color` prop expects a runtime CSS color value, not a design token).
+ */
+const STATUS_COLORS: Record<ApplicationStatus, string> = {
+  sent: '#2b70c9',
+  interview: '#e0a82e',
+  accepted: '#1d9e75',
+  rejected: '#c0392b',
+};
 
 /**
  * Context-aware navigation section
@@ -18,6 +31,7 @@ import { NavigationProps } from './types';
  */
 export const ContextNavigation = ({ isCollapsed = false }: NavigationProps) => {
   const { contextType, contextData } = useNavigation();
+  const { data: applications = [] } = useApplications();
   const [expandedAppId, setExpandedAppId] = useState<string | null>(
     (contextData?.applicationId as string | undefined) || null,
   );
@@ -59,24 +73,29 @@ export const ContextNavigation = ({ isCollapsed = false }: NavigationProps) => {
       <div className="gap-4 flex flex-col">
         <hr className="border-border mb-2" />
 
-        {mockApplications.map((application) => {
-          const isExpanded = application.id === expandedAppId;
+        {applications.map((application) => {
+          const isExpanded = application.applicationId === expandedAppId;
 
           const appNavItems: NavItem[] = appNavTemplate.map((item) => ({
             ...item,
-            to: `/applications/${application.id}${item.to}`,
+            to: `/applications/${application.applicationId}${item.to}`,
             group: 'application',
           }));
 
           return (
-            <div key={application.id} className="flex flex-col gap-2">
+            <div
+              key={application.applicationId}
+              className="flex flex-col gap-2"
+            >
               <NavSelector
-                label={application.companyName}
-                color={application.color || '#4285F4'}
+                label={application.companyName ?? 'Candidature'}
+                color={STATUS_COLORS[application.status] ?? '#2b70c9'}
                 isExpanded={isExpanded}
                 onToggle={() => {
                   userToggledRef.current = true;
-                  setExpandedAppId(isExpanded ? null : application.id);
+                  setExpandedAppId(
+                    isExpanded ? null : application.applicationId,
+                  );
                 }}
                 isCollapsed={isCollapsed}
               />
