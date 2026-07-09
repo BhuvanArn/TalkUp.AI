@@ -22,3 +22,14 @@ export async function updateMyProfile(
 export async function deleteMyAccount(): Promise<void> {
   await axiosInstance.delete(`${API_ROUTES.users}/me`);
 }
+
+export async function uploadMyCV(file: File): Promise<{ message: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await axiosInstance.post<{ message: string }>(
+    `${API_ROUTES.users}/uploadCV`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  );
+  return data;
+}
