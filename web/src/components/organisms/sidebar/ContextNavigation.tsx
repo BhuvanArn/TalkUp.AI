@@ -31,7 +31,12 @@ const STATUS_COLORS: Record<ApplicationStatus, string> = {
  */
 export const ContextNavigation = ({ isCollapsed = false }: NavigationProps) => {
   const { contextType, contextData } = useNavigation();
-  const { data: applications = [] } = useApplications();
+  // Only the application context renders the applications list, so gate the
+  // query on it — otherwise the sidebar fires GET /applications on every
+  // authenticated route (and can 401→refresh before auth settles).
+  const { data: applications = [] } = useApplications({
+    enabled: contextType === 'application',
+  });
   const [expandedAppId, setExpandedAppId] = useState<string | null>(
     (contextData?.applicationId as string | undefined) || null,
   );

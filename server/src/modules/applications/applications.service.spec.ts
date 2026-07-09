@@ -134,6 +134,25 @@ describe("ApplicationsService", () => {
       });
     });
 
+    it("returns the existing application for a duplicate URL without re-scraping", async () => {
+      const existing = {
+        application_id: "a1",
+        user_id: "u1",
+        offer_url: "https://example.com/job",
+      } as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(existing);
+
+      const row = await service.createFromUrl("u1", "https://example.com/job");
+
+      expect(row).toBe(existing);
+      expect(applicationRepo.findOne).toHaveBeenCalledWith({
+        where: { user_id: "u1", offer_url: "https://example.com/job" },
+      });
+      expect(mockScrapeAxios).not.toHaveBeenCalled();
+      expect(mockScrapeLinkedin).not.toHaveBeenCalled();
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+    });
+
     it("prefers the LinkedIn scraper for linkedin job URLs", async () => {
       mockScrapeLinkedin.mockResolvedValue("linkedin text");
       mockGroqCreate.mockResolvedValue({

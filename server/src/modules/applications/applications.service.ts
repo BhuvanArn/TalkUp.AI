@@ -45,6 +45,15 @@ export class ApplicationsService {
       throw new BadRequestException("This URL target is not allowed.");
     }
 
+    // Per-user dedup: a repeated submission of the same job URL (double-submit,
+    // or a retry after a request that actually succeeded) returns the existing
+    // application instead of creating a duplicate card. Checked before scraping
+    // so a known URL also skips the scrape + LLM cost.
+    const existing = await this.applicationRepo.findOne({
+      where: { user_id: userId, offer_url: url },
+    });
+    if (existing) return existing;
+
     let pageText = "";
     const isLinkedIn = url.toLowerCase().includes("linkedin.com/jobs");
 
