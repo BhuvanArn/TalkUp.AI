@@ -9,6 +9,7 @@ import type {
 import {
   DndContext,
   DragEndEvent,
+  KeyboardSensor,
   PointerSensor,
   useDroppable,
   useSensor,
@@ -111,7 +112,9 @@ const KanbanColumn = ({
 
 /**
  * 4-column status kanban. Drag & drop moves a card between columns
- * (status PATCH); the card ▾ menu is the keyboard fallback.
+ * (status PATCH). Pointer drag works on mouse and touch; keyboard drag
+ * (Space to pick up, arrows to move, Space to drop, Esc to cancel) works
+ * via the KeyboardSensor. The card ▾ menu remains as an explicit fallback.
  * Columns stack vertically on mobile; the PointerSensor still allows
  * touch-drag between the stacked columns.
  */
@@ -123,9 +126,11 @@ export const ApplicationsKanban = ({
   onOpenTraining,
 }: ApplicationsKanbanProps) => {
   // 8px activation distance so simple clicks (menu, training link) don't
-  // start a drag.
+  // start a drag. KeyboardSensor makes the draggable handle (which dnd-kit
+  // already exposes as a focusable role="button") operable via the keyboard.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
