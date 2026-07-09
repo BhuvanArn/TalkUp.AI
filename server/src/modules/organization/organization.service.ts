@@ -69,6 +69,22 @@ export type OrganizationDetailsDto = {
   members?: OrganizationMemberRow[];
 };
 
+export type OrganizationMemberDetailDto = {
+  user_id: string;
+  username: string;
+  user_role: string;
+  email: string | null;
+  stats: MemberStats;
+  recentInterviews: {
+    interview_id: string;
+    type: string;
+    status: string;
+    score: number | null;
+    created_at: Date;
+    ended_at: Date | null;
+  }[];
+};
+
 @Injectable()
 export class OrganizationService {
   logger = new Logger(OrganizationService.name);
@@ -410,6 +426,80 @@ export class OrganizationService {
     await this.userRepository.save(member);
 
     return { message: "Member role updated" };
+  }
+
+  /**
+   * F14: member detail — profile basics + full stats + recent interviews.
+   * Admin sees any member; employee only `user`-role members.
+   */
+  async getOrganizationMemberDetail(
+    organizationId: string,
+    memberUserId: string,
+    caller: user,
+  ): Promise<OrganizationMemberDetailDto> {
+    await this.findOrganizationById(organizationId);
+
+    const callerFull = await this.loadUserWithOrg(caller.user_id);
+    if (getUserOrganizationId(callerFull) !== organizationId) {
+      throw new ForbiddenException("You are not a member of this organization");
+    }
+    const callerRole = callerFull.user_role;
+    if (
+      callerRole !== OrganizationUserRole.ADMIN &&
+      callerRole !== OrganizationUserRole.EMPLOYEE
+    ) {
+      throw new ForbiddenException("Insufficient permissions");
+    }
+
+    const member = await this.loadUserWithOrg(memberUserId);
+    if (getUserOrganizationId(member) !== organizationId) {
+      throw new NotFoundException(
+        "This user is not a member of the organization",
+      );
+    }
+    if (
+      callerRole === OrganizationUserRole.EMPLOYEE &&
+      member.user_role !== OrganizationUserRole.USER
+    ) {
+      throw new ForbiddenException(
+        "Employees may only view users with the basic user role",
+      );
+    }
+
+    const emailEntity = await this.userEmailRepository.findOne({
+      where: { user_id: member.user_id },
+    });
+
+    const stats =
+      (await this.getMemberStats([member.user_id])).get(member.user_id) ?? {
+        interviewCount: 0,
+        completedCount: 0,
+        avgScore: null,
+        lastActivityAt: null,
+      };
+
+    const interviews = await this.aiInterviewRepository
+      .createQueryBuilder("i")
+      .where("i.user_id = :userId", { userId: member.user_id })
+      .orderBy("i.created_at", "DESC")
+      .take(10)
+      .getMany();
+
+    return {
+      user_id: member.user_id,
+      username: member.username,
+      user_role: member.user_role,
+      email: emailEntity?.email ?? null,
+      stats,
+      recentInterviews: interviews.map((i) => ({
+        interview_id: i.interview_id,
+        type: i.type,
+        status: i.status,
+        score: i.score ?? null,
+        created_at: i.created_at,
+        ended_at: i.ended_at ?? null,
+      })),
+    };
   }
 
   /**

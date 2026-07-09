@@ -204,6 +204,23 @@ export class OrganizationController {
     return await this.organizationService.createInvite(id, body, currentUser);
   }
 
+  @ApiOkResponse({ description: "Member detail with stats and recent interviews." })
+  @ApiNotFoundResponse({ description: "Target member not in this organization." })
+  @ApiForbiddenResponse({ description: "Insufficient permissions." })
+  @UseGuards(AccessTokenGuard)
+  @Get(":id/members/:memberUserId")
+  async getMemberDetail(
+    @ParamId() id: string,
+    @ParamId("memberUserId") memberUserId: string,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.getOrganizationMemberDetail(
+      id,
+      memberUserId,
+      currentUser,
+    );
+  }
+
   @ApiOkResponse({ description: "Invites for the organization." })
   @ApiUnauthorizedResponse({ description: "Not authenticated." })
   @ApiForbiddenResponse({ description: "Insufficient permissions." })

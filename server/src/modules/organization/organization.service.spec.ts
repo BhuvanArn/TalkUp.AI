@@ -1011,4 +1011,116 @@ describe("OrganizationService", () => {
       expect(aiInterviewRepo.createQueryBuilder).not.toHaveBeenCalled();
     });
   });
+
+  describe("getOrganizationMemberDetail", () => {
+    const memberRow: user = {
+      user_id: "member-id",
+      username: "alice",
+      user_role: OrganizationUserRole.USER,
+      organization_id: { organization_id: "org-id" } as Organization,
+    } as user;
+
+    const interviewsQb = (rows: any[]) => ({
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(rows),
+    });
+
+    const statsQb = (raw: any[]) => ({
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      setParameter: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue(raw),
+    });
+
+    beforeEach(() => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+    });
+
+    it("returns profile, stats and recent interviews for an employee viewer", async () => {
+      (userRepo.findOne as jest.Mock)
+        .mockResolvedValueOnce(employeeUserRow)
+        .mockResolvedValueOnce(memberRow);
+      userEmailRepo.findOne.mockResolvedValue({ email: "alice@example.com" });
+      const interview = {
+        interview_id: "iv-1",
+        type: "technical",
+        status: "completed",
+        score: 80,
+        created_at: new Date(),
+        ended_at: new Date(),
+      };
+      aiInterviewRepo.createQueryBuilder
+        .mockReturnValueOnce(
+          statsQb([
+            {
+              user_id: "member-id",
+              interview_count: 1,
+              completed_count: 1,
+              avg_score: "80",
+              last_activity_at: interview.ended_at,
+            },
+          ]),
+        )
+        .mockReturnValueOnce(interviewsQb([interview]));
+
+      const detail = await service.getOrganizationMemberDetail(
+        "org-id",
+        "member-id",
+        employeeUserRow,
+      );
+
+      expect(detail).toEqual(
+        expect.objectContaining({
+          user_id: "member-id",
+          username: "alice",
+          email: "alice@example.com",
+          stats: expect.objectContaining({ interviewCount: 1, avgScore: 80 }),
+          recentInterviews: [
+            expect.objectContaining({ interview_id: "iv-1", score: 80 }),
+          ],
+        }),
+      );
+    });
+
+    it("blocks employees from viewing employee-role members", async () => {
+      (userRepo.findOne as jest.Mock)
+        .mockResolvedValueOnce(employeeUserRow)
+        .mockResolvedValueOnce({
+          ...memberRow,
+          user_role: OrganizationUserRole.EMPLOYEE,
+        });
+
+      await expect(
+        service.getOrganizationMemberDetail("org-id", "member-id", employeeUserRow),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("blocks user-role callers", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue({
+        ...employeeUserRow,
+        user_role: OrganizationUserRole.USER,
+      });
+
+      await expect(
+        service.getOrganizationMemberDetail("org-id", "member-id", employeeUserRow),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("404s when the target is in another organization", async () => {
+      (userRepo.findOne as jest.Mock)
+        .mockResolvedValueOnce(adminUserRow)
+        .mockResolvedValueOnce({
+          ...memberRow,
+          organization_id: { organization_id: "other-org" } as Organization,
+        });
+
+      await expect(
+        service.getOrganizationMemberDetail("org-id", "member-id", adminUserRow),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
 });
