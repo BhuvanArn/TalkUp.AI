@@ -6,4 +6,5 @@ export const API_ROUTES = {
   notes: `${BASE_ROUTE}/notes`,
   ai: `${BASE_ROUTE}/ai`,
   agenda: `${BASE_ROUTE}/agenda`,
+  organization: `${BASE_ROUTE}/organization`,
 };
