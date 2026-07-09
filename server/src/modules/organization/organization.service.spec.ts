@@ -802,6 +802,31 @@ describe("OrganizationService", () => {
         order: { created_at: "DESC" },
       });
       expect(rows[0].status).toBe(OrganizationInviteStatus.EXPIRED);
+      // Employees get the code masked (only last 4 chars visible).
+      expect(rows[0].code).not.toBe("AAAABBBBCCCC");
+      expect(rows[0].code.endsWith("CCCC")).toBe(true);
+      expect(rows[0].code).toContain("•");
+    });
+
+    it("returns the full plaintext code to admins", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      inviteRepo.find.mockResolvedValue([
+        {
+          invite_id: "i1",
+          code: "AAAABBBBCCCC",
+          email: null,
+          role: "user",
+          status: OrganizationInviteStatus.PENDING,
+          expires_at: new Date(Date.now() + 100000),
+          created_at: new Date(),
+          accepted_at: null,
+        },
+      ]);
+
+      const rows = await service.listInvites("org-id", adminUserRow);
+
+      expect(rows[0].code).toBe("AAAABBBBCCCC");
     });
 
     it("rejects plain user-role callers", async () => {

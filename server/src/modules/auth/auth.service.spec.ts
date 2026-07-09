@@ -331,6 +331,56 @@ describe("AuthService", () => {
       );
     });
 
+    it("should reject trusted provisioning when the email belongs to an existing pending account", async () => {
+      const existingUser = { ...mockUser, status: UserStatus.PENDING };
+      const txUserRepo = {
+        create: jest.fn(),
+        save: jest.fn(),
+        findOne: jest.fn(),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(existingUser),
+        }),
+      };
+      const txUserPasswordRepo = {
+        create: jest.fn(),
+        save: jest.fn(),
+        findOne: jest.fn(),
+      };
+      const txUserEmailRepo = {
+        findOne: jest.fn().mockResolvedValue({ user_id: existingUser.user_id }),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) return txUserRepo;
+            if (entity === user_password) return txUserPasswordRepo;
+            if (entity === user_email) return txUserEmailRepo;
+            return null;
+          },
+        }),
+      );
+
+      await expect(
+        service.register(
+          {
+            ...createUserDto,
+            organization_id: "org-uuid",
+            user_role: OrganizationUserRole.EMPLOYEE,
+          },
+          true,
+        ),
+      ).rejects.toThrow(ConflictException);
+
+      // The foreign account is never mutated.
+      expect(txUserRepo.save).not.toHaveBeenCalled();
+      expect(txUserPasswordRepo.save).not.toHaveBeenCalled();
+    });
+
     it("should enrich OTP event when trusted register includes organization invite context", async () => {
       const txUserRepo = {
         create: jest

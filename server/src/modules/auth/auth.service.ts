@@ -172,6 +172,17 @@ export class AuthService {
               );
             }
 
+            // Trusted provisioning (org member creation) must never mutate a
+            // pre-existing account: silently overwriting its password/username
+            // and dropping the intended org/role would corrupt a foreign
+            // account and produce a phantom member. Reject so the admin invites
+            // the existing account instead.
+            if (trusted) {
+              throw new ConflictException(
+                "An account with this email already exists",
+              );
+            }
+
             existingUser.username = createUserDto.username;
             existingUser.status = UserStatus.PENDING;
 

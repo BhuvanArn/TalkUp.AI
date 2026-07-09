@@ -610,7 +610,10 @@ export class OrganizationService {
       order: { created_at: "DESC" },
     });
 
-    return invites.map((i) => this.toInviteRow(i));
+    // Only admins get the full plaintext code; employees see it masked so they
+    // cannot read (and re-share) admin-created codes to escalate a signup.
+    const redactCode = callerFull.user_role !== OrganizationUserRole.ADMIN;
+    return invites.map((i) => this.toInviteRow(i, redactCode));
   }
 
   /** F13: revoke a pending invite. Admin only. */
@@ -797,13 +800,16 @@ export class OrganizationService {
   }
 
   /** Pending invites past expiry are reported as expired without mutating the row. */
-  private toInviteRow(invite: organization_invite): OrganizationInviteRow {
+  private toInviteRow(
+    invite: organization_invite,
+    redactCode = false,
+  ): OrganizationInviteRow {
     const isLapsed =
       invite.status === OrganizationInviteStatus.PENDING &&
       invite.expires_at.getTime() < Date.now();
     return {
       invite_id: invite.invite_id,
-      code: invite.code,
+      code: redactCode ? this.maskInviteCode(invite.code) : invite.code,
       email: invite.email,
       role: invite.role,
       status: isLapsed ? OrganizationInviteStatus.EXPIRED : invite.status,
@@ -811,6 +817,12 @@ export class OrganizationService {
       created_at: invite.created_at,
       accepted_at: invite.accepted_at,
     };
+  }
+
+  /** Mask an invite code to its last 4 chars so non-admins can't read or reuse it. */
+  private maskInviteCode(code: string): string {
+    const visible = code.slice(-4);
+    return `${"•".repeat(Math.max(0, code.length - 4))}${visible}`;
   }
 
   private buildRegisterUrl(code: string): string | undefined {
