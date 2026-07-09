@@ -22,6 +22,8 @@ import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 
 import { Otp } from "@entities/otp.entity";
 import { user, user_password, user_email } from "@entities/user.entity";
+import { organization_invite } from "@entities/organizationInvite.entity";
+import { OrganizationInviteStatus } from "@common/enums/OrganizationInviteStatus";
 
 import { ITokenStorage } from "@common/interfaces/token-storage";
 
@@ -448,6 +450,193 @@ describe("AuthService", () => {
       });
       expect(txUserRepo.createQueryBuilder).toHaveBeenCalledWith("user");
       expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("register with organizationCode (F2)", () => {
+    const dtoWithCode: CreateUserDto = {
+      username: "candidate",
+      email: "candidate@example.com",
+      password: "password123",
+      organizationCode: "ABCDEFGHJKLM",
+    };
+
+    const pendingInvite = () => ({
+      invite_id: "invite-id",
+      code: "ABCDEFGHJKLM",
+      organization_id: "org-id",
+      email: null,
+      role: OrganizationUserRole.USER,
+      status: OrganizationInviteStatus.PENDING,
+      expires_at: new Date(Date.now() + 86400000),
+      accepted_by: null,
+      accepted_at: null,
+    });
+
+    // Builds the same tx repos as the plain register tests + an invite repo.
+    const buildTxRepos = (invite: any) => {
+      const savedUser = { ...mockUser, status: UserStatus.PENDING };
+      const txUserRepo = {
+        create: jest.fn().mockReturnValue(savedUser),
+        save: jest.fn().mockResolvedValue(savedUser),
+        findOne: jest.fn(),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest
+            .fn()
+            .mockResolvedValue({ ...mockUser, status: UserStatus.PENDING }),
+        }),
+      };
+      const txUserPasswordRepo = {
+        create: jest.fn().mockReturnValue(mockPassword),
+        save: jest.fn().mockResolvedValue(mockPassword),
+        findOne: jest.fn(),
+      };
+      const txUserEmailRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockReturnValue(mockEmail),
+        save: jest.fn().mockResolvedValue(mockEmail),
+      };
+      const txOtpRepo = {
+        create: jest.fn().mockReturnValue(mockOtp),
+        save: jest.fn().mockResolvedValue(mockOtp),
+        delete: jest.fn().mockResolvedValue({ affected: 1 }),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(null),
+        }),
+      };
+      const txInviteRepo = {
+        save: jest.fn(async (v: any) => v),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(invite),
+        }),
+      };
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) return txUserRepo;
+            if (entity === user_password) return txUserPasswordRepo;
+            if (entity === user_email) return txUserEmailRepo;
+            if (entity === Otp) return txOtpRepo;
+            if (entity === organization_invite) return txInviteRepo;
+            return null;
+          },
+        }),
+      );
+      return { txUserRepo, txUserEmailRepo, txInviteRepo };
+    };
+
+    beforeEach(() => {
+      mockedBcrypt.hash.mockResolvedValue("otp-hash" as never);
+    });
+
+    it("links the new user to the invite org and marks the invite accepted", async () => {
+      const { txUserRepo, txInviteRepo } = buildTxRepos(pendingInvite());
+
+      await service.register(dtoWithCode);
+
+      expect(txUserRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organization_id: { organization_id: "org-id" },
+          user_role: OrganizationUserRole.USER,
+        }),
+      );
+      expect(txInviteRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: OrganizationInviteStatus.ACCEPTED,
+          accepted_by: mockUser.user_id,
+        }),
+      );
+    });
+
+    it("rejects an unknown code without creating a user", async () => {
+      const { txUserRepo } = buildTxRepos(null);
+
+      await expect(service.register(dtoWithCode)).rejects.toThrow(
+        "Unknown organization code",
+      );
+      expect(txUserRepo.create).not.toHaveBeenCalled();
+    });
+
+    it("rejects a revoked code", async () => {
+      buildTxRepos({ ...pendingInvite(), status: OrganizationInviteStatus.REVOKED });
+
+      await expect(service.register(dtoWithCode)).rejects.toThrow(
+        "This organization code has been revoked",
+      );
+    });
+
+    it("rejects and expires a pending code past its expiry", async () => {
+      const { txInviteRepo } = buildTxRepos({
+        ...pendingInvite(),
+        expires_at: new Date(Date.now() - 1000),
+      });
+
+      await expect(service.register(dtoWithCode)).rejects.toThrow(
+        "This organization code has expired",
+      );
+      expect(txInviteRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: OrganizationInviteStatus.EXPIRED }),
+      );
+    });
+
+    it("rejects an email-bound code used with another email", async () => {
+      buildTxRepos({ ...pendingInvite(), email: "someone.else@example.com" });
+
+      await expect(service.register(dtoWithCode)).rejects.toThrow(
+        "This organization code is bound to a different email address",
+      );
+    });
+
+    it("accepts an email-bound code case-insensitively", async () => {
+      const { txInviteRepo } = buildTxRepos({
+        ...pendingInvite(),
+        email: "CANDIDATE@example.com".toLowerCase(),
+      });
+
+      await service.register({ ...dtoWithCode, email: "Candidate@Example.COM" });
+
+      expect(txInviteRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: OrganizationInviteStatus.ACCEPTED }),
+      );
+    });
+
+    it("allows the same pending user to re-register with an already-accepted code", async () => {
+      const accepted = {
+        ...pendingInvite(),
+        status: OrganizationInviteStatus.ACCEPTED,
+        accepted_by: mockUser.user_id,
+      };
+      const { txUserEmailRepo, txInviteRepo } = buildTxRepos(accepted);
+      // register's email lookup: existing pending account for this email
+      txUserEmailRepo.findOne.mockResolvedValue({
+        ...mockEmail,
+        user_id: mockUser.user_id,
+      });
+
+      await service.register(dtoWithCode);
+
+      // invite already accepted by this user: no second save flipping status
+      expect(txInviteRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("rejects an accepted code for a different email", async () => {
+      buildTxRepos({
+        ...pendingInvite(),
+        status: OrganizationInviteStatus.ACCEPTED,
+        accepted_by: "someone-else-id",
+      });
+
+      await expect(service.register(dtoWithCode)).rejects.toThrow(
+        "This organization code has already been used",
+      );
     });
   });
 

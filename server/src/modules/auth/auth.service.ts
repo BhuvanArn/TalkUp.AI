@@ -1,5 +1,5 @@
 import { randomInt, randomUUID } from "crypto";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, EntityManager, Repository } from "typeorm";
 
 import {
   BadRequestException,
@@ -24,6 +24,8 @@ import { OtpPurpose } from "@common/enums/OtpPurpose";
 import { UserStatus } from "@common/enums/UserStatus";
 import { Otp } from "@entities/otp.entity";
 import { user, user_password, user_email } from "@entities/user.entity";
+import { organization_invite } from "@entities/organizationInvite.entity";
+import { OrganizationInviteStatus } from "@common/enums/OrganizationInviteStatus";
 
 import { OtpGeneratedEvent } from "./events/otp-generated.event";
 import { hashPassword } from "@common/utils/passwordHasher";
@@ -98,6 +100,22 @@ export class AuthService {
           const userEmailRepo = manager.getRepository(user_email);
           const otpRepo = manager.getRepository(Otp);
 
+          // F2: invite redemption is resolved INSIDE the transaction so that
+          // validation, user link, and invite acceptance commit atomically —
+          // a failed registration must not consume the code.
+          const redemption =
+            !trusted && createUserDto.organizationCode
+              ? await this.resolveInviteRedemption(
+                  manager,
+                  createUserDto.organizationCode,
+                  createUserDto.email,
+                )
+              : null;
+          const effectiveOrgId = redemption?.organizationId ?? organizationId;
+          const effectiveRole = redemption?.role ?? userRole;
+
+          let registeredUserId: string;
+
           const emailEntity = await userEmailRepo.findOne({
             where: { email: createUserDto.email },
           });
@@ -106,12 +124,13 @@ export class AuthService {
             const newUser = userRepo.create({
               username: createUserDto.username,
               status: UserStatus.PENDING,
-              organization_id: organizationId
-                ? ({ organization_id: organizationId } as Organization)
+              organization_id: effectiveOrgId
+                ? ({ organization_id: effectiveOrgId } as Organization)
                 : null,
-              user_role: userRole,
+              user_role: effectiveRole,
             });
             const savedUser = await userRepo.save(newUser);
+            registeredUserId = savedUser.user_id;
 
             await userPasswordRepo.save(
               userPasswordRepo.create({
@@ -148,7 +167,16 @@ export class AuthService {
 
             existingUser.username = createUserDto.username;
             existingUser.status = UserStatus.PENDING;
+
+            if (redemption) {
+              existingUser.organization_id = {
+                organization_id: redemption.organizationId,
+              } as Organization;
+              existingUser.user_role = redemption.role;
+            }
+
             await userRepo.save(existingUser);
+            registeredUserId = existingUser.user_id;
 
             const existingPassword = await userPasswordRepo.findOne({
               where: { user_id: existingUser.user_id },
@@ -166,6 +194,14 @@ export class AuthService {
               existingPassword.password = hashedPassword;
               await userPasswordRepo.save(existingPassword);
             }
+          }
+
+          if (redemption && !redemption.alreadyAccepted) {
+            const inviteRepo = manager.getRepository(organization_invite);
+            redemption.invite.status = OrganizationInviteStatus.ACCEPTED;
+            redemption.invite.accepted_by = registeredUserId;
+            redemption.invite.accepted_at = new Date();
+            await inviteRepo.save(redemption.invite);
           }
 
           const existingOtp = await otpRepo
@@ -775,6 +811,84 @@ export class AuthService {
       registrationChannel: "organization",
       organizationName: options.inviteEmailContext.organizationName,
       verifyUrl: this.buildVerifyEmailUrl(event.email),
+    };
+  }
+
+  /**
+   * F2: validates + locks an invite row for redemption. Runs inside the register
+   * transaction (see callsite) so acceptance is atomic with user creation.
+   * `alreadyAccepted` covers the pending-user re-register case: the same account
+   * retrying registration with its own consumed code is a no-op, not an error.
+   */
+  private async resolveInviteRedemption(
+    manager: EntityManager,
+    code: string,
+    email: string,
+  ): Promise<{
+    invite: organization_invite;
+    organizationId: string;
+    role: string;
+    alreadyAccepted: boolean;
+  }> {
+    const inviteRepo = manager.getRepository(organization_invite);
+
+    const invite = await inviteRepo
+      .createQueryBuilder("invite")
+      .setLock("pessimistic_write")
+      .where("invite.code = :code", { code })
+      .getOne();
+
+    if (!invite) {
+      throw new BadRequestException("Unknown organization code");
+    }
+
+    if (invite.status === OrganizationInviteStatus.REVOKED) {
+      throw new BadRequestException("This organization code has been revoked");
+    }
+
+    if (invite.status === OrganizationInviteStatus.ACCEPTED) {
+      // Idempotent path: same pending account re-registering with its own code.
+      const emailRepo = manager.getRepository(user_email);
+      const emailEntity = await emailRepo.findOne({
+        where: { email },
+      });
+      if (emailEntity && emailEntity.user_id === invite.accepted_by) {
+        return {
+          invite,
+          organizationId: invite.organization_id,
+          role: invite.role,
+          alreadyAccepted: true,
+        };
+      }
+      throw new BadRequestException(
+        "This organization code has already been used",
+      );
+    }
+
+    const isExpired =
+      invite.status === OrganizationInviteStatus.EXPIRED ||
+      invite.expires_at.getTime() < Date.now();
+    if (isExpired) {
+      if (invite.status === OrganizationInviteStatus.PENDING) {
+        invite.status = OrganizationInviteStatus.EXPIRED;
+        await inviteRepo.save(invite);
+      }
+      throw new BadRequestException("This organization code has expired");
+    }
+
+    if (invite.email && invite.email.toLowerCase() !== email.toLowerCase()) {
+      throw new BadRequestException(
+        "This organization code is bound to a different email address",
+      );
+    }
+
+    // No org-existence check needed: the FK is onDelete CASCADE, so a live
+    // invite row implies a live organization.
+    return {
+      invite,
+      organizationId: invite.organization_id,
+      role: invite.role,
+      alreadyAccepted: false,
     };
   }
 
