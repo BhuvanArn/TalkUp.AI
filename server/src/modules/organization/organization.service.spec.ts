@@ -19,6 +19,7 @@ import { user_email } from "@entities/user.entity";
 import { AuthService } from "../auth/auth.service";
 import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 import { OrganizationInviteStatus } from "@common/enums/OrganizationInviteStatus";
+import { AiInterviewStatus } from "@common/enums/AiInterviewStatus";
 
 describe("OrganizationService", () => {
   let service: OrganizationService;
@@ -495,18 +496,39 @@ describe("OrganizationService", () => {
         select: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
-        getMany: jest
-          .fn()
-          .mockResolvedValue([
-            { username: "a", user_role: OrganizationUserRole.ADMIN },
-          ]),
+        getMany: jest.fn().mockResolvedValue([
+          {
+            user_id: "member-a",
+            username: "a",
+            user_role: OrganizationUserRole.ADMIN,
+          },
+        ]),
       };
       (userRepo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
+      aiInterviewRepo.createQueryBuilder.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        setParameter: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn().mockResolvedValue([]),
+      });
 
       const res = await service.getMyOrganizationForUser(adminUserRow);
 
       expect(res.organization_id).toBe("org-id");
       expect(res.members).toHaveLength(1);
+      expect(res.members![0]).toEqual(
+        expect.objectContaining({
+          user_id: "member-a",
+          username: "a",
+          user_role: OrganizationUserRole.ADMIN,
+          interviewCount: 0,
+          completedCount: 0,
+          avgScore: null,
+          lastActivityAt: null,
+        }),
+      );
     });
 
     it("returns organization for USER without members list", async () => {
@@ -535,18 +557,36 @@ describe("OrganizationService", () => {
         select: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
-        getMany: jest
-          .fn()
-          .mockResolvedValue([
-            { username: "u", user_role: OrganizationUserRole.USER },
-          ]),
+        getMany: jest.fn().mockResolvedValue([
+          {
+            user_id: "member-u",
+            username: "u",
+            user_role: OrganizationUserRole.USER,
+          },
+        ]),
       };
       (userRepo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
+      aiInterviewRepo.createQueryBuilder.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        setParameter: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn().mockResolvedValue([]),
+      });
 
       const res = await service.getMyOrganizationForUser(userRow);
 
       expect(res.members).toEqual([
-        { username: "u", user_role: OrganizationUserRole.USER },
+        expect.objectContaining({
+          user_id: "member-u",
+          username: "u",
+          user_role: OrganizationUserRole.USER,
+          interviewCount: 0,
+          completedCount: 0,
+          avgScore: null,
+          lastActivityAt: null,
+        }),
       ]);
       expect(qb.andWhere).toHaveBeenCalled();
     });
@@ -895,6 +935,80 @@ describe("OrganizationService", () => {
           adminUserRow,
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("getMyOrganizationForUser with stats (F14)", () => {
+    const statsQb = (raw: any[]) => ({
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      setParameter: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue(raw),
+    });
+
+    const membersQb = (rows: any[]) => ({
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(rows),
+    });
+
+    it("attaches aggregated interview stats to member rows", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.createQueryBuilder as jest.Mock).mockReturnValue(
+        membersQb([
+          { user_id: "member-1", username: "alice", user_role: "user" },
+          { user_id: "member-2", username: "bob", user_role: "user" },
+        ]),
+      );
+      const lastActivity = new Date("2026-07-01T10:00:00Z");
+      aiInterviewRepo.createQueryBuilder.mockReturnValue(
+        statsQb([
+          {
+            user_id: "member-1",
+            interview_count: 4,
+            completed_count: 3,
+            avg_score: "72.5",
+            last_activity_at: lastActivity,
+          },
+        ]),
+      );
+
+      const details = await service.getMyOrganizationForUser(adminUserRow);
+
+      expect(details.members).toEqual([
+        expect.objectContaining({
+          user_id: "member-1",
+          username: "alice",
+          interviewCount: 4,
+          completedCount: 3,
+          avgScore: 72.5,
+          lastActivityAt: lastActivity,
+        }),
+        expect.objectContaining({
+          user_id: "member-2",
+          interviewCount: 0,
+          completedCount: 0,
+          avgScore: null,
+          lastActivityAt: null,
+        }),
+      ]);
+    });
+
+    it("skips the stats query when there are no members", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.createQueryBuilder as jest.Mock).mockReturnValue(
+        membersQb([]),
+      );
+
+      const details = await service.getMyOrganizationForUser(adminUserRow);
+
+      expect(details.members).toEqual([]);
+      expect(aiInterviewRepo.createQueryBuilder).not.toHaveBeenCalled();
     });
   });
 });

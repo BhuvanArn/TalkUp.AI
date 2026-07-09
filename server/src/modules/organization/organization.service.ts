@@ -32,8 +32,17 @@ import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 import { getUserOrganizationId } from "@common/utils/organizationUser.util";
 import { OrganizationInviteStatus } from "@common/enums/OrganizationInviteStatus";
 import { generateInviteCode } from "@common/utils/inviteCode";
+import { AiInterviewStatus } from "@common/enums/AiInterviewStatus";
 
-export type OrganizationMemberRow = {
+export type MemberStats = {
+  interviewCount: number;
+  completedCount: number;
+  avgScore: number | null;
+  lastActivityAt: Date | null;
+};
+
+export type OrganizationMemberRow = MemberStats & {
+  user_id: string;
   username: string;
   user_role: string;
 };
@@ -573,7 +582,7 @@ export class OrganizationService {
   ): Promise<OrganizationMemberRow[]> {
     const qb = this.userRepository
       .createQueryBuilder("u")
-      .select(["u.username", "u.user_role"])
+      .select(["u.user_id", "u.username", "u.user_role"])
       .where("u.organization_id = :orgId", { orgId });
 
     if (filter.scope === "roles") {
@@ -581,10 +590,69 @@ export class OrganizationService {
     }
 
     const rows = await qb.getMany();
+    const stats = await this.getMemberStats(rows.map((r) => r.user_id));
+
     return rows.map((r) => ({
+      user_id: r.user_id,
       username: r.username,
       user_role: r.user_role,
+      ...(stats.get(r.user_id) ?? {
+        interviewCount: 0,
+        completedCount: 0,
+        avgScore: null,
+        lastActivityAt: null,
+      }),
     }));
+  }
+
+  /**
+   * F14: one grouped aggregate over ai_interview for the given users.
+   * Lives in the org service by design (Approach A): single round-trip,
+   * no cross-module service coupling.
+   */
+  private async getMemberStats(
+    userIds: string[],
+  ): Promise<Map<string, MemberStats>> {
+    if (userIds.length === 0) return new Map();
+
+    const raw: {
+      user_id: string;
+      interview_count: string | number;
+      completed_count: string | number;
+      avg_score: string | null;
+      last_activity_at: Date | null;
+    }[] = await this.aiInterviewRepository
+      .createQueryBuilder("i")
+      .select("i.user_id", "user_id")
+      .addSelect("COUNT(*)::int", "interview_count")
+      .addSelect(
+        "COUNT(*) FILTER (WHERE i.status = :completed)::int",
+        "completed_count",
+      )
+      .addSelect("AVG(i.score)", "avg_score")
+      .addSelect(
+        "MAX(COALESCE(i.ended_at, i.created_at))",
+        "last_activity_at",
+      )
+      .where("i.user_id IN (:...userIds)", { userIds })
+      .setParameter("completed", AiInterviewStatus.COMPLETED)
+      .groupBy("i.user_id")
+      .getRawMany();
+
+    return new Map(
+      raw.map((row) => [
+        row.user_id,
+        {
+          interviewCount: Number(row.interview_count),
+          completedCount: Number(row.completed_count),
+          avgScore:
+            row.avg_score === null
+              ? null
+              : Math.round(Number(row.avg_score) * 10) / 10,
+          lastActivityAt: row.last_activity_at,
+        },
+      ]),
+    );
   }
 
   /**
