@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { ProgressBar } from '../../atoms/cv-import-progress-bar';
 import { AnalysisStatus } from '../../molecules/cv-import-analysis-status';
@@ -8,77 +8,32 @@ import { AnalysisStatus } from '../../molecules/cv-import-analysis-status';
  * @description Properties for the AIProcessingOverlay component.
  */
 interface AIProcessingOverlayProps {
-  /** Callback function triggered once the progress bar reaches 100% */
-  onFinished: () => void;
+  /** Current real request step — drives the displayed message and progress. */
+  step: 'cv' | 'offer';
 }
 
-/** Static rotation of simulated status messages shown during processing. */
-const PROCESSING_MESSAGES = [
-  'Reading CV structure...',
-  'Extracting key skills...',
-  'Analyzing job requirements...',
-  'Comparing experiences with job keywords...',
-  'Calculating matching score...',
-  'Generating final report...',
-];
+/** Message + progress shown for each real pipeline step. */
+const STEP_DISPLAY: Record<
+  AIProcessingOverlayProps['step'],
+  { message: string; progress: number }
+> = {
+  cv: { message: 'Analyzing your CV...', progress: 35 },
+  offer: { message: 'Extracting the job offer...', progress: 75 },
+};
 
 /**
  * AIProcessingOverlay Organism
  *
- * @description Renders the "Step 2: Analysis" UI.
- *
- * NOTE: This is currently a UI-first stub. There is no backend CV-analysis
- * pipeline yet, so the progress here is *simulated* — it cycles through status
- * messages and increments a progress bar on a timer rather than reflecting real
- * work. Once the analysis API exists, drive `progress`/`currentMessage` from the
- * request lifecycle instead of the interval below.
+ * @description Renders the "Step 2: Analysis" UI, driven by the real
+ * upload/creation request lifecycle (no simulated timer). The parent owns
+ * the current `step` and advances it as each request resolves.
  *
  * @param {AIProcessingOverlayProps} props - Component props.
  * @returns {JSX.Element} A full-screen fixed overlay with a progress indicator.
  */
-export const AIProcessingOverlay = ({
-  onFinished,
-}: AIProcessingOverlayProps) => {
-  const [progress, setProgress] = useState(0);
-  const [currentMessage, setCurrentMessage] = useState(
-    'Initializing AI Engine...',
-  );
+export const AIProcessingOverlay = ({ step }: AIProcessingOverlayProps) => {
   const dialogRef = useRef<HTMLDivElement>(null);
-
-  // Simulated progress timer — replace with real request lifecycle once the
-  // backend analysis endpoint exists.
-  useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
-
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          timeoutId = setTimeout(onFinished, 500);
-          return 100;
-        }
-
-        const nextProgress = Math.min(prev + 2, 100);
-
-        const msgIndex = Math.floor(
-          (nextProgress / 100) * PROCESSING_MESSAGES.length,
-        );
-        setCurrentMessage(
-          PROCESSING_MESSAGES[msgIndex] ||
-            PROCESSING_MESSAGES[PROCESSING_MESSAGES.length - 1],
-        );
-
-        return nextProgress;
-      });
-    }, 100);
-
-    return () => {
-      clearInterval(interval);
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [onFinished]);
+  const { message, progress } = STEP_DISPLAY[step];
 
   // Move focus into the dialog on mount so keyboard / screen-reader users are
   // anchored to the processing state rather than the now-inert page behind it.
@@ -101,7 +56,7 @@ export const AIProcessingOverlay = ({
         </h2>
 
         <div aria-live="polite">
-          <AnalysisStatus message={currentMessage} />
+          <AnalysisStatus message={message} />
         </div>
 
         <div className="mt-6">

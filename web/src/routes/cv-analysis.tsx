@@ -1,7 +1,12 @@
+import { useCreateApplication } from '@/services/applications/hooks';
+import type { Application } from '@/services/applications/types';
+import { uploadMyCV } from '@/services/users/http';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { isAllowedJobUrl } from '@/utils/validators';
 import { createFileRoute } from '@tanstack/react-router';
+import axios from 'axios';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 import { iconMap } from '../components/atoms/icon/icon-map';
 import { AIProcessingOverlay } from '../components/organisms/cv-import-ai-processing-overlay';
@@ -37,18 +42,41 @@ function CVAnalysisPage() {
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [jobUrl, setJobUrl] = useState('');
   const [deadline, setDeadline] = useState<Date | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState<'idle' | 'cv' | 'offer'>(
+    'idle',
+  );
+  const [createdApplication, setCreatedApplication] =
+    useState<Application | null>(null);
+  const createApplicationMutation = useCreateApplication();
 
   const canStart = Boolean(cvFile) && isAllowedJobUrl(jobUrl);
+  const isAnalyzing = analysisStep !== 'idle';
+  const isFinished = createdApplication !== null;
 
   /**
-   * Triggers the AI analysis process.
-   * Requires a CV file and an allowlisted (https) job URL before starting.
+   * Runs the real analysis pipeline: CV upload (profile extraction), then
+   * job-offer scrape + application creation. Several seconds per step (LLM) —
+   * the overlay reflects the current step; no artificial timeout.
    */
-  const handleStartAnalysis = () => {
-    if (canStart) {
-      setIsAnalyzing(true);
+  const handleStartAnalysis = async () => {
+    if (!canStart || !cvFile) return;
+    try {
+      setAnalysisStep('cv');
+      await uploadMyCV(cvFile);
+      setAnalysisStep('offer');
+      const app = await createApplicationMutation.mutateAsync(jobUrl);
+      setCreatedApplication(app);
+    } catch (error) {
+      // 5 créations/min max côté serveur (throttle) — message dédié sur 429.
+      const isThrottled =
+        axios.isAxiosError(error) && error.response?.status === 429;
+      toast.error(
+        isThrottled
+          ? 'Trop de tentatives — réessaie dans une minute.'
+          : "L'analyse a échoué. Vérifie le lien de l'offre et réessaie.",
+      );
+    } finally {
+      setAnalysisStep('idle');
     }
   };
 
@@ -57,7 +85,7 @@ function CVAnalysisPage() {
    * Used to allow the user to analyze another profile.
    */
   const handleReset = () => {
-    setIsFinished(false);
+    setCreatedApplication(null);
     setCvFile(null);
     setJobUrl('');
     setDeadline(null);
@@ -84,17 +112,13 @@ function CVAnalysisPage() {
 
       {/* 2. STEP 2: AI PROCESSING OVERLAY */}
       {isAnalyzing && (
-        <AIProcessingOverlay
-          onFinished={() => {
-            setIsAnalyzing(false);
-            setIsFinished(true);
-          }}
-        />
+        <AIProcessingOverlay step={analysisStep === 'cv' ? 'cv' : 'offer'} />
       )}
 
       {/* 3. MAIN CONTENT */}
-      {isFinished ? (
+      {isFinished && createdApplication ? (
         <AnalysisResultCard
+          application={createdApplication}
           onRetry={handleReset}
           onStartCourse={handleStartCourse}
         />
@@ -166,7 +190,7 @@ function CVAnalysisPage() {
             <button
               type="button"
               onClick={handleStartAnalysis}
-              disabled={!canStart}
+              disabled={!canStart || isAnalyzing}
               className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent rounded-2xl px-14 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled"
             >
               Start TalkUp Analysis
