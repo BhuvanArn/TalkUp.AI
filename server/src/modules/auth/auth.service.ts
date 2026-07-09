@@ -1,5 +1,10 @@
 import { randomInt, randomUUID } from "crypto";
-import { DataSource, EntityManager, Repository } from "typeorm";
+import {
+  DataSource,
+  EntityManager,
+  QueryFailedError,
+  Repository,
+} from "typeorm";
 
 import {
   BadRequestException,
@@ -291,9 +296,24 @@ export class AuthService {
       );
     }
 
-    const savedOrganization = await orgRepo.save(
-      orgRepo.create({ organization_name: dto.organizationName }),
-    );
+    let savedOrganization: Organization;
+    try {
+      savedOrganization = await orgRepo.save(
+        orgRepo.create({ organization_name: dto.organizationName }),
+      );
+    } catch (error) {
+      // Unique-constraint violation: a concurrent signup won the race between
+      // the pre-check above and this insert (Postgres error code 23505).
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === "23505"
+      ) {
+        throw new ConflictException(
+          "An organization with this name already exists",
+        );
+      }
+      throw error;
+    }
 
     try {
       await this.register(

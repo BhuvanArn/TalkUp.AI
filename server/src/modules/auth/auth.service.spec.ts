@@ -1,7 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { JwtService } from "@nestjs/jwt";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, QueryFailedError, Repository } from "typeorm";
 import {
   BadRequestException,
   ConflictException,
@@ -1388,6 +1388,20 @@ describe("AuthService", () => {
         ConflictException,
       );
       expect(orgRepo.remove).toHaveBeenCalled();
+    });
+
+    it("409s when a concurrent insert wins the unique-name race (23505)", async () => {
+      // Pre-check passes (findOne null) but the insert hits the unique index.
+      const uniqueViolation = new QueryFailedError("insert", [], {
+        code: "23505",
+      } as unknown as Error);
+      orgRepo.save.mockRejectedValue(uniqueViolation);
+      const registerSpy = jest.spyOn(service, "register");
+
+      await expect(service.signUpOrganization(dto)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(registerSpy).not.toHaveBeenCalled();
     });
   });
 

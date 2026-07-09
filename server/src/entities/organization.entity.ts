@@ -6,6 +6,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from "typeorm";
 import { uuidv7 } from "uuidv7";
 import { user } from "./user.entity";
@@ -15,6 +16,7 @@ export class Organization {
   @PrimaryGeneratedColumn("uuid")
   organization_id: string;
 
+  @Index({ unique: true })
   @Column({ nullable: false })
   organization_name: string;
 
