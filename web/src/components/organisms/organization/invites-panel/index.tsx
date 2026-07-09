@@ -57,6 +57,7 @@ export const InvitesPanel = ({
         >
           <input
             type="email"
+            aria-label="Invite email (optional)"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email (optional)"

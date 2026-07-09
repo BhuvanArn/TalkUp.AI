@@ -1,7 +1,7 @@
 import { Button } from '@/components/atoms/button';
 import type { OrganizationDetails } from '@/services/organization/types';
 import { resizeImageFileToJpegDataUrl } from '@/utils/resizeImageToJpegDataUrl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 /** F13 admin: edit org name + avatar (base64, matches backend profile_picture). */
@@ -19,6 +19,12 @@ export const OrgSettings = ({
 }) => {
   const [name, setName] = useState(org.organization_name);
   const [picture, setPicture] = useState<string | null>(null);
+
+  // Re-sync the controlled name when the org refetches (e.g. an out-of-band
+  // rename), so a stale value can't silently revert a concurrent change on save.
+  useEffect(() => {
+    setName(org.organization_name);
+  }, [org.organization_name]);
 
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-6">
