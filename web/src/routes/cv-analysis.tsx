@@ -60,9 +60,15 @@ function CVAnalysisPage() {
    */
   const handleStartAnalysis = async () => {
     if (!canStart || !cvFile) return;
+    // Once the CV upload succeeds it has already overwritten the profile CV on
+    // the server; a later failure (offer scrape / application create) can't undo
+    // that, so we tell the user their CV was updated instead of pretending
+    // nothing changed. (Follow-up: fold upload + create into one atomic call.)
+    let cvUploaded = false;
     try {
       setAnalysisStep('cv');
       await uploadMyCV(cvFile);
+      cvUploaded = true;
       setAnalysisStep('offer');
       const app = await createApplicationMutation.mutateAsync(jobUrl);
       setCreatedApplication(app);
@@ -70,10 +76,14 @@ function CVAnalysisPage() {
       // 5 créations/min max côté serveur (throttle) — message dédié sur 429.
       const isThrottled =
         axios.isAxiosError(error) && error.response?.status === 429;
+      const cvNotice = cvUploaded
+        ? ' Ton CV de profil a bien été mis à jour.'
+        : '';
       toast.error(
-        isThrottled
+        (isThrottled
           ? 'Trop de tentatives — réessaie dans une minute.'
-          : "L'analyse a échoué. Vérifie le lien de l'offre et réessaie.",
+          : "L'analyse a échoué. Vérifie le lien de l'offre et réessaie.") +
+          cvNotice,
       );
     } finally {
       setAnalysisStep('idle');
