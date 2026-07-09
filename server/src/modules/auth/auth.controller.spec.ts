@@ -51,6 +51,7 @@ describe("AuthController", () => {
       passwordUpdate: jest.fn(),
       refreshTokens: jest.fn(),
       logout: jest.fn(),
+      getAuthStatusPayload: jest.fn(),
     };
 
     const moduleBuilder = Test.createTestingModule({
@@ -366,15 +367,33 @@ describe("AuthController", () => {
   });
 
   describe("getAuthStatus", () => {
-    it("should return authenticated: true when guard passes", async () => {
-      const result = await controller.getAuthStatus();
+    it("should return authenticated payload with role and organizationId when guard passes", async () => {
+      mockAuthService.getAuthStatusPayload = jest.fn().mockResolvedValue({
+        authenticated: true,
+        role: "admin",
+        organizationId: "org-id",
+      });
 
-      expect(result).toEqual({ authenticated: true });
+      const result = await controller.getAuthStatus("test-user-id");
+
+      expect(result).toEqual({
+        authenticated: true,
+        role: "admin",
+        organizationId: "org-id",
+      });
+      expect(mockAuthService.getAuthStatusPayload).toHaveBeenCalledWith(
+        "test-user-id",
+      );
     });
 
-    it("should throw UnauthorizedException when guard fails (simulated)", async () => {
-      const result = await controller.getAuthStatus();
-      expect(result).toEqual({ authenticated: true });
+    it("propagates UnauthorizedException from the service", async () => {
+      mockAuthService.getAuthStatusPayload = jest
+        .fn()
+        .mockRejectedValue(new UnauthorizedException("User not found"));
+
+      await expect(controller.getAuthStatus("test-user-id")).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 

@@ -1383,4 +1383,42 @@ describe("AuthService", () => {
       expect(orgRepo.remove).toHaveBeenCalled();
     });
   });
+
+  describe("getAuthStatusPayload", () => {
+    it("returns role and organizationId for an org member", async () => {
+      (mockUserRepo.findOne as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        user_role: OrganizationUserRole.ADMIN,
+        organization_id: { organization_id: "org-id" },
+      });
+
+      await expect(service.getAuthStatusPayload("test-user-id")).resolves.toEqual({
+        authenticated: true,
+        role: OrganizationUserRole.ADMIN,
+        organizationId: "org-id",
+      });
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: { user_id: "test-user-id" },
+        relations: ["organization_id"],
+      });
+    });
+
+    it("returns null organizationId for unaffiliated users", async () => {
+      (mockUserRepo.findOne as jest.Mock).mockResolvedValue(mockUser);
+
+      await expect(service.getAuthStatusPayload("test-user-id")).resolves.toEqual({
+        authenticated: true,
+        role: OrganizationUserRole.NONE,
+        organizationId: null,
+      });
+    });
+
+    it("throws Unauthorized when the user row is gone", async () => {
+      (mockUserRepo.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.getAuthStatusPayload("test-user-id")).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
 });

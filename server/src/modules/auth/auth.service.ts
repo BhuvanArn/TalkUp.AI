@@ -33,6 +33,7 @@ import { hashPassword } from "@common/utils/passwordHasher";
 import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 import { Organization } from "@entities/organization.entity";
 import { ITokenStorage } from "@common/interfaces/token-storage";
+import { getUserOrganizationId } from "@common/utils/organizationUser.util";
 import {
   ACCESS_TOKEN_EXPIRY,
   REFRESH_TOKEN_EXPIRY,
@@ -719,6 +720,31 @@ export class AuthService {
     return this.userRepository.findOne({
       where: { user_id: userId },
     });
+  }
+
+  /**
+   * B4: payload for GET /auth/status. The guard only attaches the bare user row;
+   * the org relation must be loaded explicitly to expose organizationId.
+   */
+  async getAuthStatusPayload(userId: string): Promise<{
+    authenticated: true;
+    role: string;
+    organizationId: string | null;
+  }> {
+    const u = await this.userRepository.findOne({
+      where: { user_id: userId },
+      relations: ["organization_id"],
+    });
+
+    if (!u) {
+      throw new UnauthorizedException("User not found");
+    }
+
+    return {
+      authenticated: true,
+      role: u.user_role,
+      organizationId: getUserOrganizationId(u),
+    };
   }
 
   /**

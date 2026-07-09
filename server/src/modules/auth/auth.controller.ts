@@ -245,15 +245,15 @@ export class AuthController {
   }
 
   @ApiOkResponse({
-    description: "User is authenticated.",
+    description: "User is authenticated; includes org role and id.",
   })
   @ApiUnauthorizedResponse({
     description: "User is not authenticated or token is invalid.",
   })
   @UseGuards(AccessTokenGuard)
   @Get("status")
-  async getAuthStatus() {
-    return { authenticated: true };
+  async getAuthStatus(@UserId() userId: string) {
+    return await this.authService.getAuthStatusPayload(userId);
   }
 
   @ApiAcceptedResponse({
