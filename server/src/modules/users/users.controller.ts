@@ -31,7 +31,6 @@ import { CurrentUser } from "@common/decorators/currentUser.decorator";
 import { user } from "@entities/user.entity";
 
 import { UpdateProfileDto } from "./dto/updateProfile.dto";
-import { UploadJobOfferDto } from "./dto/uploadJobOffer.dto";
 import { UploadedPdf, UsersService } from "./users.service";
 
 @ApiTags("Users")
@@ -99,24 +98,5 @@ export class UsersController {
     @UploadedFile() file?: UploadedPdf,
   ): Promise<{ message: string }> {
     return this.usersService.uploadCV(user.user_id, file);
-  }
-
-  @ApiOperation({
-    summary: "Scrape a job-offer URL and extract structured offer info",
-  })
-  @ApiOkResponse({ description: "The job offer was successfully parsed" })
-  @ApiBadRequestResponse({
-    description: "Missing/invalid URL, blocked target, or unscrapable page",
-  })
-  @ApiUnauthorizedResponse()
-  @UsePipes(new PostValidationPipe())
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @UseGuards(AccessTokenGuard)
-  @Post("uploadJobOffer")
-  async uploadJobOffer(
-    @CurrentUser() user: user,
-    @Body() dto: UploadJobOfferDto,
-  ): Promise<{ message: string }> {
-    return this.usersService.uploadJobOffer(user.user_id, dto.url);
   }
 }

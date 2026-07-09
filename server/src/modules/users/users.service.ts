@@ -17,13 +17,7 @@ import {
   user_profile,
 } from "@entities/user.entity";
 import {
-  scrapeLinkedin,
-  scrapeAxios,
-} from "../../common/utils/JobOfferExtraction";
-import { isSafeFetchUrl } from "../../common/utils/urlGuard";
-import {
   CvExtraction,
-  JobOfferExtraction,
   MAX_LLM_INPUT_CHARS,
   extractWithGroq,
 } from "../../common/utils/groqExtraction";
@@ -31,7 +25,6 @@ import {
 import { UpdateProfileDto } from "./dto/updateProfile.dto";
 import { GetProfileDto } from "./dto/getProfile.dto";
 import { user_cv } from "@entities/userCV.entity";
-import { user_job_offer } from "@entities/userJobOffer.entity";
 import pdfParse from "pdf-parse-debugging-disabled";
 
 /** Minimal shape of the multer file we consume (avoids depending on the global
@@ -56,8 +49,6 @@ export class UsersService {
 
     @InjectRepository(user_cv)
     private user_cvRepo: Repository<user_cv>,
-    @InjectRepository(user_job_offer)
-    private user_job_offerRepo: Repository<user_job_offer>,
   ) {}
 
   async getProfile(user: user): Promise<GetProfileDto> {
@@ -198,7 +189,7 @@ export class UsersService {
 
   /**
    * Find-or-update a single row keyed by user_id: updates when one exists,
-   * otherwise creates and saves. Used for the one-per-user CV / job-offer rows.
+   * otherwise creates and saves. Used for the one-per-user CV row.
    * Returns true when an existing row was updated, false when one was created.
    *
    * The user_id column carries a unique constraint, so two concurrent uploads
@@ -309,98 +300,6 @@ export class UsersService {
     );
     return {
       message: existed ? "CV updated successfully" : "CV uploaded successfully",
-    };
-  }
-
-  async uploadJobOffer(
-    userId: string,
-    url: string,
-  ): Promise<{ message: string }> {
-    try {
-      new URL(url);
-    } catch {
-      throw new BadRequestException("Invalid URL format.");
-    }
-
-    // SSRF guard: reject non-http(s) schemes and private/loopback/link-local
-    // targets (cloud metadata, localhost, internal services).
-    if (!isSafeFetchUrl(url)) {
-      throw new BadRequestException("This URL target is not allowed.");
-    }
-
-    let pageText = "";
-    const isLinkedIn = url.toLowerCase().includes("linkedin.com/jobs");
-
-    if (isLinkedIn) pageText = await scrapeLinkedin(url);
-    if (!pageText) pageText = await scrapeAxios(url);
-
-    if (!pageText) {
-      throw new BadRequestException(
-        "Could not extract content from this URL. The page may require JavaScript to render or be too protected.",
-      );
-    }
-
-    pageText = pageText.substring(0, MAX_LLM_INPUT_CHARS);
-
-    const prompt = `You are a specialized job offer analysis assistant. Analyze the following text extracted from a job offer page and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
-      {
-        "job_title": "string or null",
-        "company_name": "string or null",
-        "company_description": "string or null",
-        "sector": "string or null",
-        "contract_type": "string or null",
-        "location": "string or null",
-        "required_skills": ["string"],
-        "preferred_skills": ["string"],
-        "required_experience": "string or null",
-        "required_education": "string or null",
-        "missions": ["string"],
-        "soft_skills": ["string"],
-        "languages_required": ["string"],
-        "salary_range": "string or null",
-        "company_values": ["string"],
-        "team_description": "string or null"
-      }
-
-      Rules:
-      - Always return valid JSON, even if the job offer is incomplete or poorly formatted
-      - Use null for missing string fields
-      - Use an empty array [] if no entries are found for a list field
-      - Extract all relevant information you can find
-      - For missions and skills, extract each item as a separate string in the array
-
-      Job offer text:
-      ${pageText}`;
-
-    const data = await extractWithGroq<JobOfferExtraction>(prompt);
-
-    const existed = await this.upsertByUser(this.user_job_offerRepo, userId, {
-      job_title: data.job_title ?? null,
-      company_name: data.company_name ?? null,
-      company_description: data.company_description ?? null,
-      sector: data.sector ?? null,
-      contract_type: data.contract_type ?? null,
-      location: data.location ?? null,
-      required_skills: data.required_skills ?? [],
-      preferred_skills: data.preferred_skills ?? [],
-      required_experience: data.required_experience ?? null,
-      required_education: data.required_education ?? null,
-      missions: data.missions ?? [],
-      soft_skills: data.soft_skills ?? [],
-      languages_required: data.languages_required ?? [],
-      salary_range: data.salary_range ?? null,
-      company_values: data.company_values ?? [],
-      team_description: data.team_description ?? null,
-      offer_url: url,
-    } as QueryDeepPartialEntity<user_job_offer>);
-
-    this.logger.log(
-      `Job offer ${existed ? "updated" : "created"} for user ID: ${userId}`,
-    );
-    return {
-      message: existed
-        ? "Job offer updated successfully"
-        : "Job offer parsed successfully",
     };
   }
 }

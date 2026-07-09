@@ -16,7 +16,6 @@ import {
   user_profile,
 } from "@entities/user.entity";
 import { user_cv } from "@entities/userCV.entity";
-import { user_job_offer } from "@entities/userJobOffer.entity";
 
 import { UsersService } from "./users.service";
 
@@ -37,19 +36,7 @@ jest.mock("groq-sdk", () => ({
   })),
 }));
 
-jest.mock("../../common/utils/JobOfferExtraction", () => ({
-  scrapeLinkedin: jest.fn(),
-  scrapeAxios: jest.fn(),
-}));
-
-import {
-  scrapeLinkedin,
-  scrapeAxios,
-} from "../../common/utils/JobOfferExtraction";
-
 const mockGroqCreate = jest.fn();
-const mockScrapeLinkedin = scrapeLinkedin as jest.Mock;
-const mockScrapeAxios = scrapeAxios as jest.Mock;
 
 const USER_ID = "uid-1";
 const pdfFile = () => ({ buffer: Buffer.from("fake pdf content") });
@@ -70,25 +57,6 @@ const validCvGroqResponse = JSON.stringify({
   languages: [{ language: "English", level: "C2" }],
 });
 
-const validJobOfferGroqResponse = JSON.stringify({
-  job_title: "Backend Developer",
-  company_name: "TechCorp",
-  company_description: "A tech company",
-  sector: "IT",
-  contract_type: "CDI",
-  location: "Paris",
-  required_skills: ["Node.js"],
-  preferred_skills: ["Docker"],
-  required_experience: "3 years",
-  required_education: "BSc",
-  missions: ["Build APIs"],
-  soft_skills: ["Teamwork"],
-  languages_required: ["English"],
-  salary_range: "50k-60k",
-  company_values: ["Innovation"],
-  team_description: "Small agile team",
-});
-
 describe("UsersService", () => {
   let service: UsersService;
 
@@ -97,12 +65,6 @@ describe("UsersService", () => {
   let emailRepo: { findOne: jest.Mock };
   let phoneRepo: { findOne: jest.Mock };
   let cvRepo: {
-    findOne: jest.Mock;
-    create: jest.Mock;
-    save: jest.Mock;
-    update: jest.Mock;
-  };
-  let jobOfferRepo: {
     findOne: jest.Mock;
     create: jest.Mock;
     save: jest.Mock;
@@ -162,12 +124,6 @@ describe("UsersService", () => {
       save: jest.fn().mockResolvedValue({}),
       update: jest.fn().mockResolvedValue({}),
     };
-    jobOfferRepo = {
-      findOne: jest.fn(),
-      create: jest.fn((jo) => jo),
-      save: jest.fn().mockResolvedValue({}),
-      update: jest.fn().mockResolvedValue({}),
-    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -177,7 +133,6 @@ describe("UsersService", () => {
         { provide: getRepositoryToken(user_email), useValue: emailRepo },
         { provide: getRepositoryToken(user_phone_number), useValue: phoneRepo },
         { provide: getRepositoryToken(user_cv), useValue: cvRepo },
-        { provide: getRepositoryToken(user_job_offer), useValue: jobOfferRepo },
       ],
     }).compile();
 
@@ -185,8 +140,6 @@ describe("UsersService", () => {
 
     mockPdfParse.mockReset();
     mockGroqCreate.mockReset();
-    mockScrapeLinkedin.mockReset();
-    mockScrapeAxios.mockReset();
   });
 
   it("should be defined", () => {
@@ -437,158 +390,6 @@ describe("UsersService", () => {
       await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
         "unexpected crash",
       );
-    });
-  });
-
-  describe("uploadJobOffer", () => {
-    it("throws BadRequest on an invalid URL", async () => {
-      await expect(
-        service.uploadJobOffer(USER_ID, "not-a-url"),
-      ).rejects.toThrow("Invalid URL format.");
-    });
-
-    it("throws BadRequest and does not scrape an SSRF target", async () => {
-      await expect(
-        service.uploadJobOffer(USER_ID, "http://169.254.169.254/latest/"),
-      ).rejects.toThrow("This URL target is not allowed.");
-
-      expect(mockScrapeLinkedin).not.toHaveBeenCalled();
-      expect(mockScrapeAxios).not.toHaveBeenCalled();
-    });
-
-    it("throws BadRequest when no scraper returns content", async () => {
-      mockScrapeLinkedin.mockResolvedValue("");
-      mockScrapeAxios.mockResolvedValue("");
-
-      await expect(
-        service.uploadJobOffer(USER_ID, "https://example.com/job/123"),
-      ).rejects.toThrow(
-        "Could not extract content from this URL. The page may require JavaScript to render or be too protected.",
-      );
-    });
-
-    it("uses scrapeLinkedin for LinkedIn URLs", async () => {
-      mockScrapeLinkedin.mockResolvedValue("linkedin job content");
-      mockGroqCreate.mockResolvedValue({
-        choices: [{ message: { content: validJobOfferGroqResponse } }],
-      });
-      jobOfferRepo.findOne.mockResolvedValue(null);
-
-      await service.uploadJobOffer(
-        USER_ID,
-        "https://linkedin.com/jobs/view/123",
-      );
-
-      expect(mockScrapeLinkedin).toHaveBeenCalledWith(
-        "https://linkedin.com/jobs/view/123",
-      );
-    });
-
-    it("throws InternalServerError on an empty AI response", async () => {
-      mockScrapeAxios.mockResolvedValue("some job content");
-      mockGroqCreate.mockResolvedValue({
-        choices: [{ message: { content: null } }],
-      });
-
-      await expect(
-        service.uploadJobOffer(USER_ID, "https://example.com/job/123"),
-      ).rejects.toThrow(InternalServerErrorException);
-    });
-
-    it("throws InternalServerError on invalid JSON", async () => {
-      mockScrapeAxios.mockResolvedValue("some job content");
-      mockGroqCreate.mockResolvedValue({
-        choices: [{ message: { content: "}{invalid json" } }],
-      });
-
-      await expect(
-        service.uploadJobOffer(USER_ID, "https://example.com/job/123"),
-      ).rejects.toThrow(InternalServerErrorException);
-    });
-
-    it("creates a new job offer and returns the parsed message", async () => {
-      mockScrapeAxios.mockResolvedValue("some job content");
-      mockGroqCreate.mockResolvedValue({
-        choices: [{ message: { content: validJobOfferGroqResponse } }],
-      });
-      jobOfferRepo.findOne.mockResolvedValue(null);
-
-      const result = await service.uploadJobOffer(
-        USER_ID,
-        "https://example.com/job/123",
-      );
-
-      expect(jobOfferRepo.create).toHaveBeenCalled();
-      expect(jobOfferRepo.save).toHaveBeenCalled();
-      expect(result).toEqual({ message: "Job offer parsed successfully" });
-    });
-
-    it("applies defaults when fields are absent", async () => {
-      mockScrapeAxios.mockResolvedValue("some job content");
-      mockGroqCreate.mockResolvedValue({
-        choices: [{ message: { content: "{}" } }],
-      });
-      jobOfferRepo.findOne.mockResolvedValue(null);
-
-      await service.uploadJobOffer(USER_ID, "https://example.com/job/123");
-
-      expect(jobOfferRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_id: USER_ID,
-          job_title: null,
-          required_skills: [],
-          missions: [],
-          offer_url: "https://example.com/job/123",
-        }),
-      );
-    });
-
-    it("updates an existing job offer and returns the updated message", async () => {
-      mockScrapeAxios.mockResolvedValue("some job content");
-      mockGroqCreate.mockResolvedValue({
-        choices: [{ message: { content: validJobOfferGroqResponse } }],
-      });
-      jobOfferRepo.findOne.mockResolvedValue({ user_id: USER_ID });
-
-      const result = await service.uploadJobOffer(
-        USER_ID,
-        "https://example.com/job/123",
-      );
-
-      expect(jobOfferRepo.update).toHaveBeenCalledWith(
-        { user_id: USER_ID },
-        expect.objectContaining({ job_title: "Backend Developer" }),
-      );
-      expect(result).toEqual({ message: "Job offer updated successfully" });
-    });
-
-    it("strips markdown fences before parsing JSON", async () => {
-      mockScrapeAxios.mockResolvedValue("some job content");
-      mockGroqCreate.mockResolvedValue({
-        choices: [
-          {
-            message: {
-              content: "```json\n" + validJobOfferGroqResponse + "\n```",
-            },
-          },
-        ],
-      });
-      jobOfferRepo.findOne.mockResolvedValue(null);
-
-      const result = await service.uploadJobOffer(
-        USER_ID,
-        "https://example.com/job/123",
-      );
-
-      expect(result).toEqual({ message: "Job offer parsed successfully" });
-    });
-
-    it("lets unexpected errors bubble up", async () => {
-      mockScrapeAxios.mockRejectedValue(new Error("network crash"));
-
-      await expect(
-        service.uploadJobOffer(USER_ID, "https://example.com/job/123"),
-      ).rejects.toThrow("network crash");
     });
   });
 });

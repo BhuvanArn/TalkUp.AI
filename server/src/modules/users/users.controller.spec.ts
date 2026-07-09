@@ -43,7 +43,6 @@ describe("UsersController", () => {
       updateProfile: jest.fn().mockResolvedValue(profile),
       deleteAccount: jest.fn().mockResolvedValue(undefined),
       uploadCV: jest.fn().mockResolvedValue(undefined),
-      uploadJobOffer: jest.fn().mockResolvedValue(undefined),
     };
 
     const moduleBuilder = Test.createTestingModule({
@@ -93,18 +92,6 @@ describe("UsersController", () => {
       expect(mockUsersService.uploadCV).toHaveBeenCalledWith(
         mockUser.user_id,
         file,
-      );
-    });
-  });
-
-  describe("uploadJobOffer", () => {
-    it("delegates to uploadJobOffer with the user id and url", async () => {
-      await controller.uploadJobOffer(mockUser, {
-        url: "https://example.com/job/1",
-      });
-      expect(mockUsersService.uploadJobOffer).toHaveBeenCalledWith(
-        mockUser.user_id,
-        "https://example.com/job/1",
       );
     });
   });
