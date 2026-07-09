@@ -9,26 +9,46 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 import { Logger } from "@nestjs/common";
 
 import { CreateOrganizationDto } from "./dto/createOrganization.dto";
 import { CreateOrganizationMemberDto } from "./dto/createOrganizationMember.dto";
+import { CreateOrganizationInviteDto } from "./dto/createOrganizationInvite.dto";
 import { UpdateOrganizationDto } from "./dto/updateOrganization.dto";
 import { CreateUserDto } from "../auth/dto/createUser.dto";
+import { OrganizationInviteCreatedEvent } from "./events/organization-invite-created.event";
 
 import { AuthService } from "../auth/auth.service";
 
 import { Organization } from "@entities/organization.entity";
-import { user } from "@entities/user.entity";
+import { user, user_email } from "@entities/user.entity";
+import { organization_invite } from "@entities/organizationInvite.entity";
+import { ai_interview } from "@entities/aiInterview.entity";
 
 import { generateSecurePassword } from "@common/utils/generateSecurePassword";
 import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 import { getUserOrganizationId } from "@common/utils/organizationUser.util";
+import { OrganizationInviteStatus } from "@common/enums/OrganizationInviteStatus";
+import { generateInviteCode } from "@common/utils/inviteCode";
 
 export type OrganizationMemberRow = {
   username: string;
   user_role: string;
+};
+
+export const INVITE_EXPIRY_DAYS = 14;
+
+export type OrganizationInviteRow = {
+  invite_id: string;
+  code: string;
+  email: string | null;
+  role: string;
+  status: string;
+  expires_at: Date;
+  created_at: Date;
+  accepted_at: Date | null;
 };
 
 export type OrganizationDetailsDto = {
@@ -51,7 +71,18 @@ export class OrganizationService {
     @InjectRepository(user)
     private userRepository: Repository<user>,
 
+    @InjectRepository(organization_invite)
+    private inviteRepository: Repository<organization_invite>,
+
+    @InjectRepository(ai_interview)
+    private aiInterviewRepository: Repository<ai_interview>,
+
+    @InjectRepository(user_email)
+    private userEmailRepository: Repository<user_email>,
+
     private readonly authService: AuthService,
+
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -341,6 +372,127 @@ export class OrganizationService {
     return { message: "Member removed from the organization" };
   }
 
+  /**
+   * F13: generate a per-invite unique code. Admin may invite user or employee;
+   * employee may invite only user. Emails the code when `email` is set.
+   */
+  async createInvite(
+    organizationId: string,
+    dto: CreateOrganizationInviteDto,
+    caller: user,
+  ): Promise<OrganizationInviteRow> {
+    const organization = await this.findOrganizationById(organizationId);
+    const callerFull = await this.loadUserWithOrg(caller.user_id);
+    const callerOrgId = getUserOrganizationId(callerFull);
+
+    if (callerOrgId !== organizationId) {
+      throw new ForbiddenException("You are not a member of this organization");
+    }
+
+    const callerRole = callerFull.user_role;
+    if (
+      callerRole !== OrganizationUserRole.ADMIN &&
+      callerRole !== OrganizationUserRole.EMPLOYEE
+    ) {
+      throw new ForbiddenException("Insufficient permissions");
+    }
+
+    const role = dto.role ?? OrganizationUserRole.USER;
+    if (
+      callerRole === OrganizationUserRole.EMPLOYEE &&
+      role !== OrganizationUserRole.USER
+    ) {
+      throw new ForbiddenException(
+        "Employees may only invite users with the basic user role",
+      );
+    }
+
+    const code = await this.generateUniqueInviteCode();
+    const email = dto.email ? dto.email.toLowerCase() : null;
+
+    const invite = await this.inviteRepository.save(
+      this.inviteRepository.create({
+        code,
+        organization_id: organizationId,
+        email,
+        role,
+        status: OrganizationInviteStatus.PENDING,
+        expires_at: new Date(
+          Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+        ),
+        created_by: callerFull.user_id,
+        accepted_by: null,
+        accepted_at: null,
+      }),
+    );
+
+    if (email) {
+      const event: OrganizationInviteCreatedEvent = {
+        email,
+        code,
+        organizationName: organization.organization_name,
+        role,
+        expiresAt: invite.expires_at,
+        registerUrl: this.buildRegisterUrl(code),
+      };
+      this.eventEmitter.emit("organization.invite_created", event);
+    }
+
+    return this.toInviteRow(invite);
+  }
+
+  /** F13: list invites. Visible to admin and employee (employees read-only via routes). */
+  async listInvites(
+    organizationId: string,
+    caller: user,
+  ): Promise<OrganizationInviteRow[]> {
+    await this.findOrganizationById(organizationId);
+    const callerFull = await this.loadUserWithOrg(caller.user_id);
+
+    if (getUserOrganizationId(callerFull) !== organizationId) {
+      throw new ForbiddenException("You are not a member of this organization");
+    }
+    if (
+      callerFull.user_role !== OrganizationUserRole.ADMIN &&
+      callerFull.user_role !== OrganizationUserRole.EMPLOYEE
+    ) {
+      throw new ForbiddenException("Insufficient permissions");
+    }
+
+    const invites = await this.inviteRepository.find({
+      where: { organization_id: organizationId },
+      order: { created_at: "DESC" },
+    });
+
+    return invites.map((i) => this.toInviteRow(i));
+  }
+
+  /** F13: revoke a pending invite. Admin only. */
+  async revokeInvite(
+    organizationId: string,
+    inviteId: string,
+    caller: user,
+  ): Promise<{ message: string }> {
+    await this.findOrganizationById(organizationId);
+    await this.assertAdminOfOrganization(organizationId, caller);
+
+    const invite = await this.inviteRepository.findOne({
+      where: { invite_id: inviteId },
+    });
+
+    if (!invite || invite.organization_id !== organizationId) {
+      throw new NotFoundException("Invite not found in this organization");
+    }
+    if (invite.status !== OrganizationInviteStatus.PENDING) {
+      throw new ConflictException("Only pending invites can be revoked");
+    }
+
+    invite.status = OrganizationInviteStatus.REVOKED;
+    await this.inviteRepository.save(invite);
+
+    return { message: "Invite revoked" };
+  }
+
   ///////////////////////
   /// PRIVATE METHODS ///
   ///////////////////////
@@ -428,5 +580,40 @@ export class OrganizationService {
         "Internal server error while retrieving organization.",
       );
     }
+  }
+
+  /** Retries on the (unlikely) unique-code collision. */
+  private async generateUniqueInviteCode(): Promise<string> {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const code = generateInviteCode();
+      const existing = await this.inviteRepository.findOne({ where: { code } });
+      if (!existing) return code;
+    }
+    throw new InternalServerErrorException(
+      "Could not generate a unique invite code",
+    );
+  }
+
+  /** Pending invites past expiry are reported as expired without mutating the row. */
+  private toInviteRow(invite: organization_invite): OrganizationInviteRow {
+    const isLapsed =
+      invite.status === OrganizationInviteStatus.PENDING &&
+      invite.expires_at.getTime() < Date.now();
+    return {
+      invite_id: invite.invite_id,
+      code: invite.code,
+      email: invite.email,
+      role: invite.role,
+      status: isLapsed ? OrganizationInviteStatus.EXPIRED : invite.status,
+      expires_at: invite.expires_at,
+      created_at: invite.created_at,
+      accepted_at: invite.accepted_at,
+    };
+  }
+
+  private buildRegisterUrl(code: string): string | undefined {
+    const base = (process.env.FRONTEND_URL ?? "").replace(/\/$/, "");
+    if (!base) return undefined;
+    return `${base}/register?code=${encodeURIComponent(code)}`;
   }
 }

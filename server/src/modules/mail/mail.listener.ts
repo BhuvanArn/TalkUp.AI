@@ -4,6 +4,7 @@ import { OnEvent } from "@nestjs/event-emitter";
 import { OtpPurpose } from "@common/enums/OtpPurpose";
 
 import { OtpGeneratedEvent } from "@src/modules/auth/events/otp-generated.event";
+import { OrganizationInviteCreatedEvent } from "@src/modules/organization/events/organization-invite-created.event";
 import { MailService } from "./mail.service";
 import { renderOtpEmail } from "./templates/email-layout";
 
@@ -29,6 +30,42 @@ export class MailListener {
   @OnEvent("auth.reset_password_requested", { async: true })
   async onPasswordResetRequested(payload: OtpGeneratedEvent) {
     await this.sendOtpMail(payload);
+  }
+
+  @OnEvent("organization.invite_created", { async: true })
+  async onOrganizationInviteCreated(payload: OrganizationInviteCreatedEvent) {
+    const subject = `You're invited to join ${payload.organizationName} on TalkUp`;
+
+    const { html, text } = renderOtpEmail({
+      heading: `Join ${payload.organizationName}`,
+      preHeading: `${payload.organizationName} invited you to TalkUp as ${payload.role}. If this is unexpected, you can ignore this email.`,
+      intro: "Use this organization code when creating your account:",
+      code: payload.code,
+      cta: payload.registerUrl
+        ? {
+            href: payload.registerUrl,
+            label: "Create your account",
+            helperText: `Or copy this link: ${payload.registerUrl}`,
+          }
+        : undefined,
+      note: "Enter the code in the Organization code field of the TalkUp register page.",
+      securityNote: SECURITY_NOTE,
+      signoff: SIGNOFF,
+    });
+
+    try {
+      await this.mailService.sendMail({
+        to: payload.email,
+        subject,
+        html,
+        text,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to dispatch invite email to ${payload.email}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   private async sendOtpMail(payload: OtpGeneratedEvent) {

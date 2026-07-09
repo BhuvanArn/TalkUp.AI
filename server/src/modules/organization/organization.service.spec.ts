@@ -8,18 +8,32 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 import { OrganizationService } from "./organization.service";
 import { Organization } from "@entities/organization.entity";
 import { user } from "@entities/user.entity";
+import { organization_invite } from "@entities/organizationInvite.entity";
+import { ai_interview } from "@entities/aiInterview.entity";
+import { user_email } from "@entities/user.entity";
 import { AuthService } from "../auth/auth.service";
 import { OrganizationUserRole } from "@common/enums/organizationUserRole";
+import { OrganizationInviteStatus } from "@common/enums/OrganizationInviteStatus";
 
 describe("OrganizationService", () => {
   let service: OrganizationService;
   let orgRepo: any;
   let userRepo: Partial<Repository<user>>;
   let authService: Partial<AuthService>;
+  let inviteRepo: {
+    findOne: jest.Mock;
+    find: jest.Mock;
+    create: jest.Mock;
+    save: jest.Mock;
+  };
+  let aiInterviewRepo: { createQueryBuilder: jest.Mock };
+  let userEmailRepo: { findOne: jest.Mock };
+  let eventEmitter: { emit: jest.Mock };
 
   const mockOrganization: Organization = {
     organization_id: "org-id",
@@ -33,6 +47,13 @@ describe("OrganizationService", () => {
     user_id: "admin-user-id",
     username: "admin",
     user_role: OrganizationUserRole.ADMIN,
+    organization_id: { organization_id: "org-id" } as Organization,
+  } as user;
+
+  const employeeUserRow: user = {
+    user_id: "employee-user-id",
+    username: "employee",
+    user_role: OrganizationUserRole.EMPLOYEE,
     organization_id: { organization_id: "org-id" } as Organization,
   } as user;
 
@@ -68,6 +89,16 @@ describe("OrganizationService", () => {
       register: jest.fn(),
     };
 
+    inviteRepo = {
+      findOne: jest.fn(),
+      find: jest.fn(),
+      create: jest.fn((v) => v),
+      save: jest.fn(async (v) => ({ invite_id: "invite-id", ...v })),
+    };
+    aiInterviewRepo = { createQueryBuilder: jest.fn() };
+    userEmailRepo = { findOne: jest.fn() };
+    eventEmitter = { emit: jest.fn() };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrganizationService,
@@ -83,6 +114,19 @@ describe("OrganizationService", () => {
           provide: AuthService,
           useValue: authService,
         },
+        {
+          provide: getRepositoryToken(organization_invite),
+          useValue: inviteRepo,
+        },
+        {
+          provide: getRepositoryToken(ai_interview),
+          useValue: aiInterviewRepo,
+        },
+        {
+          provide: getRepositoryToken(user_email),
+          useValue: userEmailRepo,
+        },
+        { provide: EventEmitter2, useValue: eventEmitter },
       ],
     }).compile();
 
@@ -594,6 +638,184 @@ describe("OrganizationService", () => {
       await expect(
         service.createOrganizationMember("org-id", dto as any, adminUserRow),
       ).rejects.toThrow(InternalServerErrorException);
+    });
+  });
+
+  describe("createInvite", () => {
+    beforeEach(() => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+    });
+
+    it("admin creates an employee invite with 14-day expiry", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      inviteRepo.findOne.mockResolvedValue(null); // no code collision
+
+      const before = Date.now();
+      const row = await service.createInvite(
+        "org-id",
+        { role: OrganizationUserRole.EMPLOYEE },
+        adminUserRow,
+      );
+
+      expect(row.code).toHaveLength(12);
+      expect(row.role).toBe(OrganizationUserRole.EMPLOYEE);
+      expect(row.status).toBe(OrganizationInviteStatus.PENDING);
+      const expectedExpiry = before + 14 * 24 * 60 * 60 * 1000;
+      expect(row.expires_at.getTime()).toBeGreaterThanOrEqual(
+        expectedExpiry - 5000,
+      );
+      expect(inviteRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organization_id: "org-id",
+          created_by: adminUserRow.user_id,
+          email: null,
+        }),
+      );
+      expect(eventEmitter.emit).not.toHaveBeenCalled(); // no email set
+    });
+
+    it("defaults role to user and emits invite email when email is set", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      inviteRepo.findOne.mockResolvedValue(null);
+
+      const row = await service.createInvite(
+        "org-id",
+        { email: "Candidate@Example.com" },
+        adminUserRow,
+      );
+
+      expect(row.role).toBe(OrganizationUserRole.USER);
+      expect(inviteRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ email: "candidate@example.com" }),
+      );
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        "organization.invite_created",
+        expect.objectContaining({
+          email: "candidate@example.com",
+          code: row.code,
+          organizationName: mockOrganization.organization_name,
+          role: OrganizationUserRole.USER,
+        }),
+      );
+    });
+
+    it("rejects employee inviting an employee", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(employeeUserRow);
+
+      await expect(
+        service.createInvite(
+          "org-id",
+          { role: OrganizationUserRole.EMPLOYEE },
+          employeeUserRow,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(inviteRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("rejects caller from another organization", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue({
+        ...adminUserRow,
+        organization_id: { organization_id: "other-org" } as Organization,
+      });
+
+      await expect(
+        service.createInvite("org-id", {}, adminUserRow),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe("listInvites", () => {
+    it("returns rows for employees, mapping expired pending invites", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue(employeeUserRow);
+      inviteRepo.find.mockResolvedValue([
+        {
+          invite_id: "i1",
+          code: "AAAABBBBCCCC",
+          email: null,
+          role: "user",
+          status: OrganizationInviteStatus.PENDING,
+          expires_at: new Date(Date.now() - 1000), // past
+          created_at: new Date(),
+          accepted_at: null,
+        },
+      ]);
+
+      const rows = await service.listInvites("org-id", employeeUserRow);
+
+      expect(inviteRepo.find).toHaveBeenCalledWith({
+        where: { organization_id: "org-id" },
+        order: { created_at: "DESC" },
+      });
+      expect(rows[0].status).toBe(OrganizationInviteStatus.EXPIRED);
+    });
+
+    it("rejects plain user-role callers", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue({
+        ...employeeUserRow,
+        user_role: OrganizationUserRole.USER,
+      });
+
+      await expect(
+        service.listInvites("org-id", employeeUserRow),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe("revokeInvite", () => {
+    beforeEach(() => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+    });
+
+    it("admin revokes a pending invite", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      inviteRepo.findOne.mockResolvedValue({
+        invite_id: "i1",
+        organization_id: "org-id",
+        status: OrganizationInviteStatus.PENDING,
+        expires_at: new Date(Date.now() + 1000),
+      });
+
+      await service.revokeInvite("org-id", "i1", adminUserRow);
+
+      expect(inviteRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: OrganizationInviteStatus.REVOKED }),
+      );
+    });
+
+    it("rejects employees", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(employeeUserRow);
+
+      await expect(
+        service.revokeInvite("org-id", "i1", employeeUserRow),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("404s on invite from another org", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      inviteRepo.findOne.mockResolvedValue({
+        invite_id: "i1",
+        organization_id: "other-org",
+        status: OrganizationInviteStatus.PENDING,
+      });
+
+      await expect(
+        service.revokeInvite("org-id", "i1", adminUserRow),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("409s on a non-pending invite", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      inviteRepo.findOne.mockResolvedValue({
+        invite_id: "i1",
+        organization_id: "org-id",
+        status: OrganizationInviteStatus.ACCEPTED,
+      });
+
+      await expect(
+        service.revokeInvite("org-id", "i1", adminUserRow),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });
