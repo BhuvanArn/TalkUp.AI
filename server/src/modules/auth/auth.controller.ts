@@ -70,6 +70,8 @@ export class AuthController {
   })
   @UsePipes(new PostValidationPipe())
   @Post("register")
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.ACCEPTED)
   async register(@Body() createUserDto: CreateUserDto) {
     await this.authService.register(createUserDto);

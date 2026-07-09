@@ -172,6 +172,7 @@ export class OrganizationController {
   @ApiNotFoundResponse({
     description: "Target member not in this organization.",
   })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
   @ApiForbiddenResponse({ description: "Not an organization administrator." })
   @UseGuards(AccessTokenGuard)
   @UsePipes(new PostValidationPipe())
@@ -210,6 +211,7 @@ export class OrganizationController {
   @ApiNotFoundResponse({
     description: "Target member not in this organization.",
   })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
   @ApiForbiddenResponse({ description: "Insufficient permissions." })
   @UseGuards(AccessTokenGuard)
   @Get(":id/members/:memberUserId")
@@ -238,6 +240,7 @@ export class OrganizationController {
   @ApiNotFoundResponse({
     description: "Invite not found in this organization.",
   })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
   @ApiForbiddenResponse({ description: "Not an organization administrator." })
   @UseGuards(AccessTokenGuard)
   @Delete(":id/invites/:inviteId")

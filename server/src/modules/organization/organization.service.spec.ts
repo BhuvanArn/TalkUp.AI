@@ -19,7 +19,6 @@ import { user_email } from "@entities/user.entity";
 import { AuthService } from "../auth/auth.service";
 import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 import { OrganizationInviteStatus } from "@common/enums/OrganizationInviteStatus";
-import { AiInterviewStatus } from "@common/enums/AiInterviewStatus";
 
 describe("OrganizationService", () => {
   let service: OrganizationService;
