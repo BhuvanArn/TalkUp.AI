@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import AuthService from '@/services/auth/http';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 
@@ -51,6 +51,7 @@ export const usePostRegister = () => {
 export const usePostVerifyEmail = () => {
   const { login } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
@@ -67,6 +68,8 @@ export const usePostVerifyEmail = () => {
     },
     onSuccess: (data) => {
       login();
+      // Fresh session on this tab — drop any leftover cache from a prior account.
+      queryClient.clear();
       toast.success('Email verified');
       router.navigate({ to: data.redirectTo });
     },
@@ -140,6 +143,7 @@ export const usePasswordResetComplete = () => {
 export const usePostLogin = () => {
   const { login } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
@@ -153,6 +157,9 @@ export const usePostLogin = () => {
     },
     onSuccess: () => {
       login();
+      // Discard any cache left over from a previous session on this tab so the
+      // newly signed-in account fetches its own data fresh.
+      queryClient.clear();
       toast.success('Login successful');
 
       const search = new URLSearchParams(window.location.search);
@@ -178,6 +185,7 @@ export const usePostLogin = () => {
 export const usePostLogout = () => {
   const { logout } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
@@ -185,11 +193,15 @@ export const usePostLogout = () => {
     },
     onSuccess: () => {
       logout();
+      // Drop every cached query so the next account to sign in on this tab
+      // never sees the previous user's data (profile, applications, etc.).
+      queryClient.clear();
       toast.success('Logout successful');
       router.navigate({ to: '/login' });
     },
     onError: (error) => {
       logout();
+      queryClient.clear();
       toast.error('Logout failed');
       console.error('Error during logout:', error);
       router.navigate({ to: '/login' });
