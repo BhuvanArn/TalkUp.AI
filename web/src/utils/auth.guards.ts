@@ -131,6 +131,7 @@ export const createPublicRouteGuard = (routePath: string) => {
     if (
       routePath !== '/login' &&
       routePath !== '/register' &&
+      routePath !== '/register-organization' &&
       routePath !== '/verify-email'
     ) {
       return;

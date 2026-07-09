@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import AuthService from '@/services/auth/http';
-import { checkAuthStatus, type AuthStatus } from '@/utils/auth.guards';
+import { type AuthStatus, checkAuthStatus } from '@/utils/auth.guards';
+import { extractErrorMessage } from '@/utils/error';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -58,6 +59,45 @@ export const usePostRegister = () => {
     onError: (error) => {
       toast.error('Registration failed');
       console.error('Error during registration:', error);
+    },
+  });
+};
+
+/** F12: org signup → OTP verification → lands on /organization. */
+export const usePostRegisterOrganization = () => {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: async ({
+      organizationName,
+      email,
+      password,
+    }: {
+      organizationName: string;
+      email: string;
+      password: string;
+    }) => {
+      return await authService.postRegisterOrganization(
+        organizationName,
+        email,
+        password,
+      );
+    },
+    onSuccess: (_data, variables) => {
+      toast.success('Check your email for a verification code');
+      router.navigate({
+        to: '/verify-email',
+        search: { email: variables.email, redirect: '/organization' },
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        extractErrorMessage(
+          error,
+          'Organization signup failed. Please try again.',
+        ),
+      );
+      console.error('Error during organization signup:', error);
     },
   });
 };

@@ -131,4 +131,20 @@ export default class AuthService {
     );
     return response.data;
   };
+
+  /**
+   * F12: public organization self-signup. 202 + verification mail; the admin
+   * logs in through the standard verify-email flow (no tokens here).
+   */
+  postRegisterOrganization = async (
+    organizationName: string,
+    email: string,
+    password: string,
+  ): Promise<{ message: string }> => {
+    const response = await axiosInstance.post(
+      `${API_ROUTES.auth}/register-organization`,
+      { organizationName, email, password },
+    );
+    return response.data;
+  };
 }

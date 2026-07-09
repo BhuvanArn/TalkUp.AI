@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as SimulationsRouteImport } from './routes/simulations'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RegisterOrganizationRouteImport } from './routes/register-organization'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProgressionRouteImport } from './routes/progression'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -49,6 +50,11 @@ const SimulationsRoute = SimulationsRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterOrganizationRoute = RegisterOrganizationRouteImport.update({
+  id: '/register-organization',
+  path: '/register-organization',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
+  '/register-organization': typeof RegisterOrganizationRoute
   '/reset-password': typeof ResetPasswordRoute
   '/simulations': typeof SimulationsRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
+  '/register-organization': typeof RegisterOrganizationRoute
   '/reset-password': typeof ResetPasswordRoute
   '/simulations': typeof SimulationsRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
+  '/register-organization': typeof RegisterOrganizationRoute
   '/reset-password': typeof ResetPasswordRoute
   '/simulations': typeof SimulationsRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/progression'
     | '/register'
+    | '/register-organization'
     | '/reset-password'
     | '/simulations'
     | '/verify-email'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/progression'
     | '/register'
+    | '/register-organization'
     | '/reset-password'
     | '/simulations'
     | '/verify-email'
@@ -326,6 +337,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/progression'
     | '/register'
+    | '/register-organization'
     | '/reset-password'
     | '/simulations'
     | '/verify-email'
@@ -355,6 +367,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ProgressionRoute: typeof ProgressionRoute
   RegisterRoute: typeof RegisterRoute
+  RegisterOrganizationRoute: typeof RegisterOrganizationRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SimulationsRoute: typeof SimulationsRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -393,6 +406,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register-organization': {
+      id: '/register-organization'
+      path: '/register-organization'
+      fullPath: '/register-organization'
+      preLoaderRoute: typeof RegisterOrganizationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -571,6 +591,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ProgressionRoute: ProgressionRoute,
   RegisterRoute: RegisterRoute,
+  RegisterOrganizationRoute: RegisterOrganizationRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SimulationsRoute: SimulationsRoute,
   VerifyEmailRoute: VerifyEmailRoute,
