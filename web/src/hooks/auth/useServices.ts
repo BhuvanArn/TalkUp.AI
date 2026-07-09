@@ -34,12 +34,19 @@ export const usePostRegister = () => {
       username,
       email,
       password,
+      organizationCode,
     }: {
       username: string;
       email: string;
       password: string;
+      organizationCode?: string;
     }) => {
-      return await authService.postRegister(username, email, password);
+      return await authService.postRegister(
+        username,
+        email,
+        password,
+        organizationCode,
+      );
     },
     onSuccess: (_data, variables) => {
       toast.success('Check your email for a verification code');

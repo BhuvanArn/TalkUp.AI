@@ -13,6 +13,7 @@ export default class AuthService {
    * @param username - The username for the new account
    * @param email - The email address associated with the new account
    * @param password - The password for the new account
+   * @param organizationCode - Optional organization invite code (F2)
    * @returns A promise that resolves to a success message
    * @throws Will throw an error if the registration fails
    */
@@ -20,11 +21,14 @@ export default class AuthService {
     username: string,
     email: string,
     password: string,
+    organizationCode?: string,
   ): Promise<{ message: string }> => {
     const response = await axiosInstance.post(`${API_ROUTES.auth}/register`, {
       username,
       email,
       password,
+      // Only send the key when set: the backend pipe rejects unknown/empty noise.
+      ...(organizationCode ? { organizationCode } : {}),
     });
     return response.data;
   };
