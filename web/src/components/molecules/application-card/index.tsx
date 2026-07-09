@@ -3,7 +3,7 @@ import type {
   ApplicationStatus,
 } from '@/services/applications/types';
 import { useDraggable } from '@dnd-kit/core';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
 import { fr } from 'date-fns/locale';
 import { useState } from 'react';
 
