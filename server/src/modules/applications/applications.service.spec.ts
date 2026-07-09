@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 
 jest.mock("groq-sdk", () => ({
   __esModule: true,
@@ -37,11 +38,8 @@ const validOfferResponse = JSON.stringify({
 
 describe("ApplicationsService", () => {
   let service: ApplicationsService;
-  // TypeORM's overloaded create()/save() signatures make jest.Mocked<Partial<Repository<T>>>
-  // mistype narrow callback mocks against the wrong overload; `any` sidesteps that (same
-  // pattern used in ai.service.spec.ts for the same repos).
-  let applicationRepo: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  let cvRepo: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  let applicationRepo: jest.Mocked<Partial<Repository<application>>>;
+  let cvRepo: jest.Mocked<Partial<Repository<user_cv>>>;
 
   beforeEach(async () => {
     mockGroqCreate.mockReset();
@@ -49,8 +47,12 @@ describe("ApplicationsService", () => {
     mockScrapeAxios.mockReset();
 
     applicationRepo = {
-      create: jest.fn((v) => v as application),
-      save: jest.fn(async (v) => v as application),
+      create: jest.fn(
+        (v) => v as application,
+      ) as unknown as Repository<application>["create"],
+      save: jest.fn(
+        async (v) => v as application,
+      ) as unknown as Repository<application>["save"],
       find: jest.fn(),
       findOne: jest.fn(),
       remove: jest.fn(),
