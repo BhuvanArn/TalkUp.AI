@@ -1,6 +1,7 @@
+import type { OrganizationMember } from '@/services/organization/types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { OrganizationMember } from '@/services/organization/types';
+
 import MembersTable from './index';
 
 const members: OrganizationMember[] = [
@@ -52,7 +53,9 @@ describe('MembersTable', () => {
       />,
     );
     expect(screen.queryByLabelText(/filter by role/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /remove/i }),
+    ).not.toBeInTheDocument();
 
     rerender(
       <MembersTable

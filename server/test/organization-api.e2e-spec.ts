@@ -112,7 +112,11 @@ describe("Organization API (e2e)", () => {
     // --- F12: public org signup (202, no tokens, no secret header) ---
     await request(app.getHttpServer())
       .post("/v1/api/auth/register-organization")
-      .send({ organizationName: orgName, email: adminEmail, password: adminPassword })
+      .send({
+        organizationName: orgName,
+        email: adminEmail,
+        password: adminPassword,
+      })
       .expect(202);
 
     // Activate the admin directly in DB (mirrors the existing test's shortcut).

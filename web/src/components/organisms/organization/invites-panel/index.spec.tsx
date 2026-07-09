@@ -1,6 +1,7 @@
+import type { OrganizationInvite } from '@/services/organization/types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { OrganizationInvite } from '@/services/organization/types';
+
 import InvitesPanel from './index';
 
 const invites: OrganizationInvite[] = [

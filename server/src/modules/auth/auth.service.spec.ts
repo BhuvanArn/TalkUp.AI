@@ -567,7 +567,10 @@ describe("AuthService", () => {
     });
 
     it("rejects a revoked code", async () => {
-      buildTxRepos({ ...pendingInvite(), status: OrganizationInviteStatus.REVOKED });
+      buildTxRepos({
+        ...pendingInvite(),
+        status: OrganizationInviteStatus.REVOKED,
+      });
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
         "This organization code has been revoked",
@@ -600,7 +603,10 @@ describe("AuthService", () => {
         email: "CANDIDATE@example.com".toLowerCase(),
       });
 
-      await service.register({ ...dtoWithCode, email: "Candidate@Example.COM" });
+      await service.register({
+        ...dtoWithCode,
+        email: "Candidate@Example.COM",
+      });
 
       expect(txInviteRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ status: OrganizationInviteStatus.ACCEPTED }),
@@ -613,7 +619,8 @@ describe("AuthService", () => {
         status: OrganizationInviteStatus.ACCEPTED,
         accepted_by: mockUser.user_id,
       };
-      const { txUserRepo, txUserEmailRepo, txInviteRepo } = buildTxRepos(accepted);
+      const { txUserRepo, txUserEmailRepo, txInviteRepo } =
+        buildTxRepos(accepted);
       // register's email lookup: existing pending account for this email
       txUserEmailRepo.findOne.mockResolvedValue({
         ...mockEmail,
@@ -1392,7 +1399,9 @@ describe("AuthService", () => {
         organization_id: { organization_id: "org-id" },
       });
 
-      await expect(service.getAuthStatusPayload("test-user-id")).resolves.toEqual({
+      await expect(
+        service.getAuthStatusPayload("test-user-id"),
+      ).resolves.toEqual({
         authenticated: true,
         role: OrganizationUserRole.ADMIN,
         organizationId: "org-id",
@@ -1406,7 +1415,9 @@ describe("AuthService", () => {
     it("returns null organizationId for unaffiliated users", async () => {
       (mockUserRepo.findOne as jest.Mock).mockResolvedValue(mockUser);
 
-      await expect(service.getAuthStatusPayload("test-user-id")).resolves.toEqual({
+      await expect(
+        service.getAuthStatusPayload("test-user-id"),
+      ).resolves.toEqual({
         authenticated: true,
         role: OrganizationUserRole.NONE,
         organizationId: null,
@@ -1416,9 +1427,9 @@ describe("AuthService", () => {
     it("throws Unauthorized when the user row is gone", async () => {
       (mockUserRepo.findOne as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.getAuthStatusPayload("test-user-id")).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.getAuthStatusPayload("test-user-id"),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

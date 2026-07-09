@@ -1,7 +1,7 @@
 import { Button } from '@/components/atoms/button';
 import type {
-  OrganizationMember,
   OrgMemberRole,
+  OrganizationMember,
 } from '@/services/organization/types';
 import { useState } from 'react';
 

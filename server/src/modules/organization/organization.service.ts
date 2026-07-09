@@ -470,13 +470,14 @@ export class OrganizationService {
       where: { user_id: member.user_id },
     });
 
-    const stats =
-      (await this.getMemberStats([member.user_id])).get(member.user_id) ?? {
-        interviewCount: 0,
-        completedCount: 0,
-        avgScore: null,
-        lastActivityAt: null,
-      };
+    const stats = (await this.getMemberStats([member.user_id])).get(
+      member.user_id,
+    ) ?? {
+      interviewCount: 0,
+      completedCount: 0,
+      avgScore: null,
+      lastActivityAt: null,
+    };
 
     const interviews = await this.aiInterviewRepository
       .createQueryBuilder("i")
@@ -720,10 +721,7 @@ export class OrganizationService {
         "completed_count",
       )
       .addSelect("AVG(i.score)", "avg_score")
-      .addSelect(
-        "MAX(COALESCE(i.ended_at, i.created_at))",
-        "last_activity_at",
-      )
+      .addSelect("MAX(COALESCE(i.ended_at, i.created_at))", "last_activity_at")
       .where("i.user_id IN (:...userIds)", { userIds })
       .setParameter("completed", AiInterviewStatus.COMPLETED)
       .groupBy("i.user_id")

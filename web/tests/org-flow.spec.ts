@@ -18,9 +18,7 @@ test.describe('organization flows', () => {
     ).toHaveAttribute('href', /\/register-organization/);
     await page.getByRole('link', { name: 'I have a code' }).click();
     await expect(page).toHaveURL(/\/register\?code=/);
-    await expect(
-      page.getByPlaceholder(/organization code/i),
-    ).toBeVisible();
+    await expect(page.getByPlaceholder(/organization code/i)).toBeVisible();
   });
 
   test('org signup form submits and hands off to verify-email', async ({
@@ -28,9 +26,7 @@ test.describe('organization flows', () => {
   }) => {
     const suffix = Date.now();
     await page.goto('/register-organization');
-    await page
-      .getByPlaceholder(/organization name/i)
-      .fill(`PW Org ${suffix}`);
+    await page.getByPlaceholder(/organization name/i).fill(`PW Org ${suffix}`);
     await page.getByPlaceholder(/email/i).fill(`pw_${suffix}@example.com`);
     await page.getByPlaceholder(/password/i).fill('Abcdefg1*');
     await page.getByRole('button', { name: /create organization/i }).click();
@@ -49,9 +45,7 @@ test.describe('organization flows', () => {
     await page
       .getByPlaceholder('Your email address')
       .fill(`pwm_${suffix}@example.com`);
-    await page
-      .getByPlaceholder('Create a secure password')
-      .fill('Abcdefg1*');
+    await page.getByPlaceholder('Create a secure password').fill('Abcdefg1*');
     await page.getByRole('button', { name: /register/i }).click();
     await expect(page.getByRole('alert')).toContainText(/organization code/i);
   });

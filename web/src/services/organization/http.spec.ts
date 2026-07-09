@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import axiosInstance from '../axiosInstance';
 import OrganizationApiService from './http';
 

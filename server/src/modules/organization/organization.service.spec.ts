@@ -1001,9 +1001,7 @@ describe("OrganizationService", () => {
     it("skips the stats query when there are no members", async () => {
       (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
       (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
-      (userRepo.createQueryBuilder as jest.Mock).mockReturnValue(
-        membersQb([]),
-      );
+      (userRepo.createQueryBuilder as jest.Mock).mockReturnValue(membersQb([]));
 
       const details = await service.getMyOrganizationForUser(adminUserRow);
 
@@ -1095,7 +1093,11 @@ describe("OrganizationService", () => {
         });
 
       await expect(
-        service.getOrganizationMemberDetail("org-id", "member-id", employeeUserRow),
+        service.getOrganizationMemberDetail(
+          "org-id",
+          "member-id",
+          employeeUserRow,
+        ),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -1106,7 +1108,11 @@ describe("OrganizationService", () => {
       });
 
       await expect(
-        service.getOrganizationMemberDetail("org-id", "member-id", employeeUserRow),
+        service.getOrganizationMemberDetail(
+          "org-id",
+          "member-id",
+          employeeUserRow,
+        ),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -1119,7 +1125,11 @@ describe("OrganizationService", () => {
         });
 
       await expect(
-        service.getOrganizationMemberDetail("org-id", "member-id", adminUserRow),
+        service.getOrganizationMemberDetail(
+          "org-id",
+          "member-id",
+          adminUserRow,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });

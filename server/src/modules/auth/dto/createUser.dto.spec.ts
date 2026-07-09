@@ -422,9 +422,7 @@ describe("CreateUserDto", () => {
         organizationCode: 12345,
       });
       const errors = await validate(dto);
-      expect(errors.some((e) => e.property === "organizationCode")).toBe(
-        true,
-      );
+      expect(errors.some((e) => e.property === "organizationCode")).toBe(true);
     });
   });
 });

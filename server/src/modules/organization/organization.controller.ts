@@ -204,8 +204,12 @@ export class OrganizationController {
     return await this.organizationService.createInvite(id, body, currentUser);
   }
 
-  @ApiOkResponse({ description: "Member detail with stats and recent interviews." })
-  @ApiNotFoundResponse({ description: "Target member not in this organization." })
+  @ApiOkResponse({
+    description: "Member detail with stats and recent interviews.",
+  })
+  @ApiNotFoundResponse({
+    description: "Target member not in this organization.",
+  })
   @ApiForbiddenResponse({ description: "Insufficient permissions." })
   @UseGuards(AccessTokenGuard)
   @Get(":id/members/:memberUserId")
@@ -231,7 +235,9 @@ export class OrganizationController {
   }
 
   @ApiOkResponse({ description: "Invite revoked." })
-  @ApiNotFoundResponse({ description: "Invite not found in this organization." })
+  @ApiNotFoundResponse({
+    description: "Invite not found in this organization.",
+  })
   @ApiForbiddenResponse({ description: "Not an organization administrator." })
   @UseGuards(AccessTokenGuard)
   @Delete(":id/invites/:inviteId")

@@ -22,5 +22,7 @@ export class CreateOrganizationInviteDto {
     description:
       "Role granted on redemption. Admins may pick employee or user; employees may only pick user.",
   })
-  role?: typeof OrganizationUserRole.EMPLOYEE | typeof OrganizationUserRole.USER;
+  role?:
+    | typeof OrganizationUserRole.EMPLOYEE
+    | typeof OrganizationUserRole.USER;
 }

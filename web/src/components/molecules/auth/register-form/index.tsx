@@ -33,7 +33,9 @@ import { useState } from 'react';
  * @param initialCode - Optional organization code to prefill (F2), e.g. from `?code=`.
  * @returns A register form component with validation and styling
  */
-export const RegisterForm = ({ initialCode }: { initialCode?: string } = {}) => {
+export const RegisterForm = ({
+  initialCode,
+}: { initialCode?: string } = {}) => {
   const postRegister = usePostRegister();
   const [serverError, setServerError] = useState<string | null>(null);
 
