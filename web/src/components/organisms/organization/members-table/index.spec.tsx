@@ -101,4 +101,21 @@ describe('MembersTable', () => {
     fireEvent.click(screen.getByText('alice'));
     expect(onSelect).toHaveBeenCalledWith('u1');
   });
+
+  it('selects a member via keyboard (Enter)', () => {
+    const onSelect = vi.fn();
+    render(
+      <MembersTable
+        members={members}
+        isAdmin={false}
+        selectedUserId={null}
+        onSelect={onSelect}
+        onChangeRole={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+    const row = screen.getByText('alice').closest('tr') as HTMLElement;
+    fireEvent.keyDown(row, { key: 'Enter' });
+    expect(onSelect).toHaveBeenCalledWith('u1');
+  });
 });

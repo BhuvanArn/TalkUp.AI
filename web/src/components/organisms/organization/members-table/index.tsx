@@ -74,6 +74,14 @@ export const MembersTable = ({
               <tr
                 key={m.user_id}
                 onClick={() => onSelect(m.user_id)}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect(m.user_id);
+                  }
+                }}
+                aria-selected={selectedUserId === m.user_id}
                 className={`cursor-pointer border-t border-border hover:bg-surface ${
                   selectedUserId === m.user_id ? 'bg-accent-weaker' : ''
                 }`}
