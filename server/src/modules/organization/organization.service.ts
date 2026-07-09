@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { QueryFailedError, Repository } from "typeorm";
 
 import {
   ConflictException,
@@ -144,8 +144,23 @@ export class OrganizationService {
       organization_name: CreateOrganizationDto.OrganizationName,
     });
 
-    const savedOrganization =
-      await this.organizationRepository.save(newOrganization);
+    let savedOrganization: Organization;
+    try {
+      savedOrganization =
+        await this.organizationRepository.save(newOrganization);
+    } catch (error) {
+      // Unique-constraint violation: a concurrent request won the race between
+      // the pre-check above and this insert (Postgres error code 23505).
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === "23505"
+      ) {
+        throw new ConflictException(
+          "An organization with this name already exists",
+        );
+      }
+      throw error;
+    }
 
     const initialAdminPassword = generateSecurePassword();
 

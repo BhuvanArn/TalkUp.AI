@@ -26,6 +26,7 @@ import {
   ApiUnprocessableEntityResponse,
   ApiTags,
   ApiOkResponse,
+  ApiOperation,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 
@@ -79,6 +80,7 @@ export class AuthController {
     return { message: "Verification email sent" };
   }
 
+  @ApiOperation({ summary: "Register a new organization and its admin" })
   @ApiAcceptedResponse({ description: "Verification email sent." })
   @ApiBadRequestResponse({ description: "Badly formatted parameter." })
   @ApiConflictResponse({

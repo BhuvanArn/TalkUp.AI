@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { QueryFailedError, Repository } from "typeorm";
 import {
   ConflictException,
   ForbiddenException,
@@ -192,6 +192,21 @@ describe("OrganizationService", () => {
       );
 
       expect(orgRepo.create).not.toHaveBeenCalled();
+      expect(authService.register).not.toHaveBeenCalled();
+    });
+
+    it("should 409 when a concurrent insert wins the unique-name race (23505)", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(null);
+      (orgRepo.create as jest.Mock).mockReturnValue(mockOrganization);
+      (orgRepo.save as jest.Mock).mockRejectedValue(
+        new QueryFailedError("insert", [], {
+          code: "23505",
+        } as unknown as Error),
+      );
+
+      await expect(service.registerOrganization(dto as any)).rejects.toThrow(
+        ConflictException,
+      );
       expect(authService.register).not.toHaveBeenCalled();
     });
   });
