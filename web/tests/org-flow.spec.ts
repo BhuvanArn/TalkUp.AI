@@ -18,15 +18,21 @@ test.describe('organization flows', () => {
 
     // Probe for the org frontend: the signup form must expose an
     // "organization name" field. Absent it, the F12 surfaces are not merged.
+    // The route's `beforeLoad` guard awaits an auth-status check (and, when
+    // anonymous, a refresh round trip) before the code-split form renders, so
+    // an immediate visibility snapshot always loses that race. Wait for the
+    // field to appear; if it never does (feature not merged), skip cleanly.
     await page.goto('/register-organization').catch(() => null);
     const orgFeaturePresent = await page
       .getByPlaceholder(/organization name/i)
-      .isVisible()
+      .waitFor({ state: 'visible', timeout: 10000 })
+      .then(() => true)
       .catch(() => false);
     test.skip(!orgFeaturePresent, 'organization frontend not present');
   });
 
   test('landing routes org CTAs correctly', async ({ page }) => {
+    await page.goto('/');
     await page.getByRole('tab', { name: 'For organizations' }).click();
     await expect(
       page.getByRole('link', { name: 'Start a 30-day trial' }),
