@@ -4,6 +4,6 @@
     "types": ["jest", "node"],
     "noEmit": true
   },
-  "include": ["./**/*.e2e-spec.ts"],
+  "include": ["./**/*.e2e-spec.ts", "../src/**/*.ts"],
   "exclude": ["node_modules"]
 }
