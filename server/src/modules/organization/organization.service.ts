@@ -373,6 +373,37 @@ export class OrganizationService {
   }
 
   /**
+   * F13: admin switches a member between `user` and `employee`.
+   * Admin targets are protected; DTO validation restricts the new role.
+   */
+  async changeMemberRole(
+    organizationId: string,
+    memberUserId: string,
+    role: string,
+    caller: user,
+  ): Promise<{ message: string }> {
+    await this.findOrganizationById(organizationId);
+    await this.assertAdminOfOrganization(organizationId, caller);
+
+    const member = await this.loadUserWithOrg(memberUserId);
+    if (getUserOrganizationId(member) !== organizationId) {
+      throw new NotFoundException(
+        "This user is not a member of the organization",
+      );
+    }
+    if (member.user_role === OrganizationUserRole.ADMIN) {
+      throw new ForbiddenException(
+        "Organization administrators cannot have their role changed here",
+      );
+    }
+
+    member.user_role = role;
+    await this.userRepository.save(member);
+
+    return { message: "Member role updated" };
+  }
+
+  /**
    * F13: generate a per-invite unique code. Admin may invite user or employee;
    * employee may invite only user. Emails the code when `email` is set.
    */

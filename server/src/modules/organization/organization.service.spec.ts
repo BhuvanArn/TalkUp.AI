@@ -818,4 +818,83 @@ describe("OrganizationService", () => {
       ).rejects.toThrow(ConflictException);
     });
   });
+
+  describe("changeMemberRole", () => {
+    const memberRow: user = {
+      user_id: "member-id",
+      username: "member",
+      user_role: OrganizationUserRole.USER,
+      organization_id: { organization_id: "org-id" } as Organization,
+    } as user;
+
+    beforeEach(() => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+    });
+
+    it("admin promotes user to employee", async () => {
+      (userRepo.findOne as jest.Mock)
+        .mockResolvedValueOnce(adminUserRow) // caller lookup
+        .mockResolvedValueOnce(memberRow); // target lookup
+
+      await service.changeMemberRole(
+        "org-id",
+        "member-id",
+        OrganizationUserRole.EMPLOYEE,
+        adminUserRow,
+      );
+
+      expect(userRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ user_role: OrganizationUserRole.EMPLOYEE }),
+      );
+    });
+
+    it("rejects employee callers", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(employeeUserRow);
+
+      await expect(
+        service.changeMemberRole(
+          "org-id",
+          "member-id",
+          OrganizationUserRole.EMPLOYEE,
+          employeeUserRow,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("rejects changing an admin's role", async () => {
+      (userRepo.findOne as jest.Mock)
+        .mockResolvedValueOnce(adminUserRow)
+        .mockResolvedValueOnce({
+          ...memberRow,
+          user_role: OrganizationUserRole.ADMIN,
+        });
+
+      await expect(
+        service.changeMemberRole(
+          "org-id",
+          "member-id",
+          OrganizationUserRole.USER,
+          adminUserRow,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("404s when target is not in the organization", async () => {
+      (userRepo.findOne as jest.Mock)
+        .mockResolvedValueOnce(adminUserRow)
+        .mockResolvedValueOnce({
+          ...memberRow,
+          organization_id: { organization_id: "other-org" } as Organization,
+        });
+
+      await expect(
+        service.changeMemberRole(
+          "org-id",
+          "member-id",
+          OrganizationUserRole.EMPLOYEE,
+          adminUserRow,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
 });

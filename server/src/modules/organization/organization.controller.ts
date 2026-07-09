@@ -25,6 +25,7 @@ import {
 import { CreateOrganizationDto } from "./dto/createOrganization.dto";
 import { CreateOrganizationMemberDto } from "./dto/createOrganizationMember.dto";
 import { CreateOrganizationInviteDto } from "./dto/createOrganizationInvite.dto";
+import { UpdateMemberRoleDto } from "./dto/updateMemberRole.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { ParamId } from "@common/decorators/paramId.decorator";
@@ -163,6 +164,28 @@ export class OrganizationController {
     return await this.organizationService.removeOrganizationMember(
       id,
       memberUserId,
+      currentUser,
+    );
+  }
+
+  @ApiOkResponse({ description: "Member role updated." })
+  @ApiNotFoundResponse({
+    description: "Target member not in this organization.",
+  })
+  @ApiForbiddenResponse({ description: "Not an organization administrator." })
+  @UseGuards(AccessTokenGuard)
+  @UsePipes(new PostValidationPipe())
+  @Patch(":id/members/:memberUserId/role")
+  async changeMemberRole(
+    @ParamId() id: string,
+    @ParamId("memberUserId") memberUserId: string,
+    @Body() body: UpdateMemberRoleDto,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.changeMemberRole(
+      id,
+      memberUserId,
+      body.role,
       currentUser,
     );
   }
