@@ -1,11 +1,17 @@
+import InvitesPanel from '@/components/organisms/organization/invites-panel';
 import MemberDetail from '@/components/organisms/organization/member-detail';
 import MembersTable from '@/components/organisms/organization/members-table';
+import OrgSettings from '@/components/organisms/organization/org-settings';
 import { useAuthStatus } from '@/hooks/auth/useServices';
 import {
+  useCreateInvite,
+  useGetInvites,
   useGetMemberDetail,
   useGetMyOrganization,
   useRemoveMember,
+  useRevokeInvite,
   useUpdateMemberRole,
+  useUpdateOrganization,
 } from '@/hooks/organization/useServices';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
@@ -27,6 +33,13 @@ function OrganizationPage() {
   const memberDetail = useGetMemberDetail(orgId, selectedUserId);
   const updateRole = useUpdateMemberRole(orgId);
   const removeMember = useRemoveMember(orgId);
+  const invites = useGetInvites(
+    orgId,
+    auth?.role === 'admin' || auth?.role === 'employee',
+  );
+  const createInvite = useCreateInvite(orgId);
+  const revokeInvite = useRevokeInvite(orgId);
+  const updateOrganization = useUpdateOrganization(orgId);
 
   if (isLoading) {
     return (
@@ -65,6 +78,23 @@ function OrganizationPage() {
           isLoading={memberDetail.isLoading && !!selectedUserId}
         />
       </div>
+      {(auth?.role === 'admin' || auth?.role === 'employee') && (
+        <InvitesPanel
+          invites={invites.data ?? []}
+          isAdmin={isAdmin}
+          callerRole={auth?.role ?? null}
+          onCreate={(body) => createInvite.mutate(body)}
+          onRevoke={(inviteId) => revokeInvite.mutate(inviteId)}
+          isCreating={createInvite.isPending}
+        />
+      )}
+      {isAdmin && (
+        <OrgSettings
+          org={org}
+          onSave={(body) => updateOrganization.mutate(body)}
+          isSaving={updateOrganization.isPending}
+        />
+      )}
     </main>
   );
 }
