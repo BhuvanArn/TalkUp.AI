@@ -1,11 +1,11 @@
 meta {
-  name: uploadJobOffer
+  name: createApplication
   type: http
-  seq: 2
+  seq: 1
 }
 
 post {
-  url: {{host}}/users/uploadJobOffer
+  url: {{host}}/applications
   body: json
   auth: inherit
 }
