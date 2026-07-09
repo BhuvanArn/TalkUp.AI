@@ -149,4 +149,64 @@ describe("ApplicationsService", () => {
       expect(mockScrapeAxios).not.toHaveBeenCalled();
     });
   });
+
+  describe("listForUser", () => {
+    it("lists the user's applications sorted by updated_at desc", async () => {
+      const rows = [{ application_id: "a1" }] as application[];
+      applicationRepo.find = jest.fn().mockResolvedValue(rows);
+
+      await expect(service.listForUser("u1")).resolves.toBe(rows);
+      expect(applicationRepo.find).toHaveBeenCalledWith({
+        where: { user_id: "u1" },
+        order: { updated_at: "DESC" },
+      });
+    });
+  });
+
+  describe("updateStatus", () => {
+    it("updates the status of an owned application", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        status: ApplicationStatus.SENT,
+      } as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+
+      const updated = await service.updateStatus(
+        "u1",
+        "a1",
+        ApplicationStatus.INTERVIEW,
+      );
+
+      expect(applicationRepo.findOne).toHaveBeenCalledWith({
+        where: { application_id: "a1", user_id: "u1" },
+      });
+      expect(updated.status).toBe(ApplicationStatus.INTERVIEW);
+      expect(applicationRepo.save).toHaveBeenCalledWith(row);
+    });
+
+    it("throws NotFound for an application owned by someone else", async () => {
+      applicationRepo.findOne = jest.fn().mockResolvedValue(null);
+      await expect(
+        service.updateStatus("u1", "a1", ApplicationStatus.ACCEPTED),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe("remove", () => {
+    it("removes an owned application", async () => {
+      const row = { application_id: "a1", user_id: "u1" } as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+
+      await service.remove("u1", "a1");
+      expect(applicationRepo.remove).toHaveBeenCalledWith(row);
+    });
+
+    it("throws NotFound for an unknown application", async () => {
+      applicationRepo.findOne = jest.fn().mockResolvedValue(null);
+      await expect(service.remove("u1", "nope")).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+  });
 });

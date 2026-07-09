@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
@@ -99,6 +104,41 @@ export class ApplicationsService {
     const saved = await this.applicationRepo.save(row);
     this.logger.log(`Application created for user ID: ${userId}`);
     return saved;
+  }
+
+  async listForUser(userId: string): Promise<application[]> {
+    return this.applicationRepo.find({
+      where: { user_id: userId },
+      order: { updated_at: "DESC" },
+    });
+  }
+
+  async updateStatus(
+    userId: string,
+    applicationId: string,
+    status: ApplicationStatus,
+  ): Promise<application> {
+    const row = await this.findOwned(userId, applicationId);
+    row.status = status;
+    return this.applicationRepo.save(row);
+  }
+
+  async remove(userId: string, applicationId: string): Promise<void> {
+    const row = await this.findOwned(userId, applicationId);
+    await this.applicationRepo.remove(row);
+  }
+
+  // 404 (not 403) when the row exists but belongs to someone else: do not leak
+  // other users' application ids.
+  private async findOwned(
+    userId: string,
+    applicationId: string,
+  ): Promise<application> {
+    const row = await this.applicationRepo.findOne({
+      where: { application_id: applicationId, user_id: userId },
+    });
+    if (!row) throw new NotFoundException("Application not found.");
+    return row;
   }
 
   /** Same prompt as the former users.service uploadJobOffer flow. */
