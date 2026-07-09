@@ -28,7 +28,11 @@ export interface CvDetails {
   languages: unknown[];
 }
 
-/** Mirror of the server GetApplicationDto (camelCase, ISO date strings). */
+/**
+ * Mirror of the server GetApplicationDto: top-level fields are camelCase with
+ * ISO date strings. The nested `offerDetails`/`cvDetails` payloads keep the
+ * snake_case keys produced by the LLM extraction (see OfferDetails/CvDetails).
+ */
 export interface Application {
   applicationId: string;
   companyName: string | null;

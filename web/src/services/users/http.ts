@@ -26,10 +26,11 @@ export async function deleteMyAccount(): Promise<void> {
 export async function uploadMyCV(file: File): Promise<{ message: string }> {
   const formData = new FormData();
   formData.append('file', file);
+  // Let axios derive the multipart Content-Type (with its boundary) from the
+  // FormData; setting it by hand drops the boundary and breaks the upload.
   const { data } = await axiosInstance.post<{ message: string }>(
     `${API_ROUTES.users}/uploadCV`,
     formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
   );
   return data;
 }

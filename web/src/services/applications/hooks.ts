@@ -42,12 +42,10 @@ export const useUpdateApplicationStatus = () => {
       const previous = queryClient.getQueryData<Application[]>(
         APPLICATIONS_QUERY_KEY,
       );
-      queryClient.setQueryData<Application[]>(
-        APPLICATIONS_QUERY_KEY,
-        (old) =>
-          old?.map((app) =>
-            app.applicationId === applicationId ? { ...app, status } : app,
-          ) ?? [],
+      queryClient.setQueryData<Application[]>(APPLICATIONS_QUERY_KEY, (old) =>
+        old?.map((app) =>
+          app.applicationId === applicationId ? { ...app, status } : app,
+        ),
       );
       return { previous };
     },
