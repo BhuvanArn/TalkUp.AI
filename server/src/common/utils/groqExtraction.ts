@@ -4,6 +4,10 @@ import Groq from "groq-sdk";
 // Cap raw text sent to the LLM to bound token cost on large documents.
 export const MAX_LLM_INPUT_CHARS = 8000;
 
+// Fail fast if Groq hangs — every other outbound call in this flow pins a
+// timeout, and unbounded LLM calls would tie up request handlers indefinitely.
+const GROQ_TIMEOUT_MS = 30000;
+
 /** Shape returned by the CV extraction prompt. All fields optional — the model
  * may omit any of them; defaults are applied at persistence time. */
 export interface CvExtraction {
@@ -43,7 +47,10 @@ const logger = new Logger("GroqExtraction");
 let groqClient: Groq | undefined;
 function getGroq(): Groq {
   if (!groqClient) {
-    groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    groqClient = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+      timeout: GROQ_TIMEOUT_MS,
+    });
   }
   return groqClient;
 }

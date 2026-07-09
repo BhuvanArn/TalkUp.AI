@@ -15,6 +15,7 @@ import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
 import { Throttle } from "@nestjs/throttler";
 import {
   ApiBadRequestResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -96,7 +97,7 @@ export class ApplicationsController {
   }
 
   @ApiOperation({ summary: "Delete an application" })
-  @ApiOkResponse({ description: "Application deleted" })
+  @ApiNoContentResponse({ description: "Application deleted" })
   @ApiNotFoundResponse({ description: "Application not found" })
   @ApiUnauthorizedResponse()
   @Delete(":id")

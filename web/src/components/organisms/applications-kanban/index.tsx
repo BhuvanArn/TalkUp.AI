@@ -111,8 +111,9 @@ const KanbanColumn = ({
 
 /**
  * 4-column status kanban. Drag & drop moves a card between columns
- * (status PATCH); the card ▾ menu is the keyboard/mobile fallback.
- * Columns stack on mobile (no drag there — menu only).
+ * (status PATCH); the card ▾ menu is the keyboard fallback.
+ * Columns stack vertically on mobile; the PointerSensor still allows
+ * touch-drag between the stacked columns.
  */
 export const ApplicationsKanban = ({
   applications,
