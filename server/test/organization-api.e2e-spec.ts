@@ -10,18 +10,21 @@ import { AppModule } from "../src/app.module";
 dotenv.config({ path: `${__dirname}/../.env` });
 
 /**
- * Hits a real Postgres (from .env) and the full Nest stack like production.
- * Requires ORG_PROVISIONING_SECRET and a running DB. Skips if secret is unset.
+ * Hits a real Postgres (from .env or CI job env) and the full Nest stack like
+ * production. Requires ORG_PROVISIONING_SECRET and a running DB.
+ *
+ * When those are absent (e.g. a laptop with no DB) the whole suite is SKIPPED
+ * via `describe.skip` so it shows up as skipped — never a vacuous green pass.
  */
-describe("Organization API (e2e)", () => {
+const RUN_E2E =
+  !!process.env.ORG_PROVISIONING_SECRET && !!process.env.POSTGRES_HOST;
+const d = RUN_E2E ? describe : describe.skip;
+
+d("Organization API (e2e)", () => {
   let app: INestApplication;
   let dataSource: DataSource;
 
   beforeAll(async () => {
-    if (!process.env.ORG_PROVISIONING_SECRET) {
-      return;
-    }
-
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -41,12 +44,8 @@ describe("Organization API (e2e)", () => {
   });
 
   it("POST /organization (provisioning) then GET /organization after admin is active", async () => {
-    if (!process.env.ORG_PROVISIONING_SECRET || !app) {
-      expect(true).toBe(true);
-      return;
-    }
-
-    const secret = process.env.ORG_PROVISIONING_SECRET;
+    // RUN_E2E guarantees this is set; the suite is skipped otherwise.
+    const secret = process.env.ORG_PROVISIONING_SECRET as string;
     const suffix = Date.now();
     const orgName = `E2EOrg_${suffix}`;
     const email = `e2e_org_${suffix}@example.com`;
@@ -99,11 +98,6 @@ describe("Organization API (e2e)", () => {
   }, 60000);
 
   it("F12→F13→F2→F14: signup, invite, redeem, monitor", async () => {
-    if (!process.env.ORG_PROVISIONING_SECRET || !app) {
-      expect(true).toBe(true);
-      return;
-    }
-
     const suffix = Date.now();
     const orgName = `E2ESelfServe_${suffix}`;
     const adminEmail = `e2e_admin_${suffix}@example.com`;

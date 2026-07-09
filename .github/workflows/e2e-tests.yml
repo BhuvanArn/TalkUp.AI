@@ -68,6 +68,13 @@ jobs:
       - name: Build server
         run: npm run build:server
 
+      # Boots its own Nest app against the Postgres service (POSTGRES_SYNC
+      # creates the schema). Runs before the background server so the two
+      # don't race to sync the same DB. ORG_PROVISIONING_SECRET + POSTGRES_*
+      # come from the job-level env, so the suite actually runs (not skipped).
+      - name: Run server org integration e2e
+        run: npm --workspace=server run test:e2e
+
       - name: Start backend (NestJS) in background
         run: |
           node server/dist/src/main > /tmp/server.log 2>&1 &
