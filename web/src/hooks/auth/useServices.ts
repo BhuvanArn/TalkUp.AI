@@ -1,10 +1,20 @@
 import { useAuth } from '@/contexts/AuthContext';
 import AuthService from '@/services/auth/http';
-import { useMutation } from '@tanstack/react-query';
+import { checkAuthStatus, type AuthStatus } from '@/utils/auth.guards';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 
 const authService = new AuthService();
+
+/** Role/org for UI gating (B4). Guards fetch their own copy; this one is for rendering. */
+export const useAuthStatus = () => {
+  return useQuery<AuthStatus>({
+    queryKey: ['auth', 'status'],
+    queryFn: checkAuthStatus,
+    staleTime: 60 * 1000,
+  });
+};
 
 /**
  * Custom hook for user registration functionality.
