@@ -24,6 +24,7 @@ import {
 
 import { CreateOrganizationDto } from "./dto/createOrganization.dto";
 import { CreateOrganizationMemberDto } from "./dto/createOrganizationMember.dto";
+import { CreateOrganizationInviteDto } from "./dto/createOrganizationInvite.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { ParamId } from "@common/decorators/paramId.decorator";
@@ -162,6 +163,46 @@ export class OrganizationController {
     return await this.organizationService.removeOrganizationMember(
       id,
       memberUserId,
+      currentUser,
+    );
+  }
+
+  @ApiCreatedResponse({ description: "Invite code generated." })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Insufficient permissions." })
+  @UseGuards(AccessTokenGuard)
+  @UsePipes(new PostValidationPipe())
+  @Post(":id/invites")
+  async createInvite(
+    @ParamId() id: string,
+    @Body() body: CreateOrganizationInviteDto,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.createInvite(id, body, currentUser);
+  }
+
+  @ApiOkResponse({ description: "Invites for the organization." })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Insufficient permissions." })
+  @UseGuards(AccessTokenGuard)
+  @Get(":id/invites")
+  async listInvites(@ParamId() id: string, @CurrentUser() currentUser: user) {
+    return await this.organizationService.listInvites(id, currentUser);
+  }
+
+  @ApiOkResponse({ description: "Invite revoked." })
+  @ApiNotFoundResponse({ description: "Invite not found in this organization." })
+  @ApiForbiddenResponse({ description: "Not an organization administrator." })
+  @UseGuards(AccessTokenGuard)
+  @Delete(":id/invites/:inviteId")
+  async revokeInvite(
+    @ParamId() id: string,
+    @ParamId("inviteId") inviteId: string,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.revokeInvite(
+      id,
+      inviteId,
       currentUser,
     );
   }
