@@ -869,10 +869,9 @@ export class AuthService {
       invite.status === OrganizationInviteStatus.EXPIRED ||
       invite.expires_at.getTime() < Date.now();
     if (isExpired) {
-      if (invite.status === OrganizationInviteStatus.PENDING) {
-        invite.status = OrganizationInviteStatus.EXPIRED;
-        await inviteRepo.save(invite);
-      }
+      // Expired-ness is derived on read (see toInviteRow in
+      // organization.service.ts) — persisting the flip here would be
+      // rolled back anyway by the throw below aborting this transaction.
       throw new BadRequestException("This organization code has expired");
     }
 

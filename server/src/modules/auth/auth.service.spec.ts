@@ -573,7 +573,7 @@ describe("AuthService", () => {
       );
     });
 
-    it("rejects and expires a pending code past its expiry", async () => {
+    it("rejects a pending code past its expiry", async () => {
       const { txInviteRepo } = buildTxRepos({
         ...pendingInvite(),
         expires_at: new Date(Date.now() - 1000),
@@ -582,9 +582,7 @@ describe("AuthService", () => {
       await expect(service.register(dtoWithCode)).rejects.toThrow(
         "This organization code has expired",
       );
-      expect(txInviteRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ status: OrganizationInviteStatus.EXPIRED }),
-      );
+      expect(txInviteRepo.save).not.toHaveBeenCalled();
     });
 
     it("rejects an email-bound code used with another email", async () => {
@@ -614,7 +612,7 @@ describe("AuthService", () => {
         status: OrganizationInviteStatus.ACCEPTED,
         accepted_by: mockUser.user_id,
       };
-      const { txUserEmailRepo, txInviteRepo } = buildTxRepos(accepted);
+      const { txUserRepo, txUserEmailRepo, txInviteRepo } = buildTxRepos(accepted);
       // register's email lookup: existing pending account for this email
       txUserEmailRepo.findOne.mockResolvedValue({
         ...mockEmail,
@@ -625,6 +623,13 @@ describe("AuthService", () => {
 
       // invite already accepted by this user: no second save flipping status
       expect(txInviteRepo.save).not.toHaveBeenCalled();
+      // existing-user linkage still applied in the else-branch
+      expect(txUserRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organization_id: { organization_id: "org-id" },
+          user_role: OrganizationUserRole.USER,
+        }),
+      );
     });
 
     it("rejects an accepted code for a different email", async () => {
