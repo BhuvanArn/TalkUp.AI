@@ -74,7 +74,14 @@ export async function extractWithGroq<T>(prompt: string): Promise<T> {
   }
 
   try {
-    const cleaned = responseText.replace(/```json|```/g, "").trim();
+    // Strip only a leading/trailing markdown code fence — a global strip would
+    // also delete backticks that appear inside JSON string values (e.g. a code
+    // snippet echoed into a description field), corrupting otherwise-valid JSON.
+    const cleaned = responseText
+      .trim()
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim();
     return JSON.parse(cleaned) as T;
   } catch (parseError) {
     logger.error(`JSON parse error: ${parseError}`);

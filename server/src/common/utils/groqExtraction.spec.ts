@@ -34,6 +34,21 @@ describe("extractWithGroq", () => {
     });
   });
 
+  it("preserves backticks inside string values (only outer fence stripped)", async () => {
+    mockGroqCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: '```json\n{"desc": "run ```npm test``` first"}\n```',
+          },
+        },
+      ],
+    });
+    await expect(extractWithGroq<{ desc: string }>("prompt")).resolves.toEqual({
+      desc: "run ```npm test``` first",
+    });
+  });
+
   it("throws InternalServerErrorException on empty response", async () => {
     mockGroqCreate.mockResolvedValue({ choices: [] });
     await expect(extractWithGroq("prompt")).rejects.toBeInstanceOf(

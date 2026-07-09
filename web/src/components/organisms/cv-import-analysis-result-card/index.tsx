@@ -66,9 +66,9 @@ export const AnalysisResultCard = ({
       {/* Highlights Grid */}
       {highlights.length > 0 && (
         <div className="mb-10 flex flex-wrap justify-center gap-3">
-          {highlights.map(({ Icon, label }) => (
+          {highlights.map(({ Icon, label }, index) => (
             <div
-              key={label}
+              key={`${label}-${index}`}
               className="border-border bg-surface flex items-center gap-2 rounded-full border px-4 py-2"
             >
               <span className="text-accent flex">
