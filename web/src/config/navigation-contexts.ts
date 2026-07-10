@@ -16,7 +16,7 @@ export const rootNavigationContext: NavigationContext = {
     },
     {
       to: '/cv-analysis',
-      label: 'Curriculum Vitae',
+      label: 'CV Analysis',
       icon: 'cv',
       showInNav: true,
       order: 2,

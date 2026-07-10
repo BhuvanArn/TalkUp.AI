@@ -1,7 +1,12 @@
+import { useCreateApplication } from '@/services/applications/hooks';
+import type { Application } from '@/services/applications/types';
+import { uploadMyCV } from '@/services/users/http';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { isAllowedJobUrl } from '@/utils/validators';
 import { createFileRoute } from '@tanstack/react-router';
+import axios from 'axios';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 import { iconMap } from '../components/atoms/icon/icon-map';
 import { AIProcessingOverlay } from '../components/organisms/cv-import-ai-processing-overlay';
@@ -37,18 +42,51 @@ function CVAnalysisPage() {
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [jobUrl, setJobUrl] = useState('');
   const [deadline, setDeadline] = useState<Date | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState<'idle' | 'cv' | 'offer'>(
+    'idle',
+  );
+  const [createdApplication, setCreatedApplication] =
+    useState<Application | null>(null);
+  const createApplicationMutation = useCreateApplication();
 
   const canStart = Boolean(cvFile) && isAllowedJobUrl(jobUrl);
+  const isAnalyzing = analysisStep !== 'idle';
+  const isFinished = createdApplication !== null;
 
   /**
-   * Triggers the AI analysis process.
-   * Requires a CV file and an allowlisted (https) job URL before starting.
+   * Runs the real analysis pipeline: CV upload (profile extraction), then
+   * job-offer scrape + application creation. Several seconds per step (LLM) —
+   * the overlay reflects the current step; no artificial timeout.
    */
-  const handleStartAnalysis = () => {
-    if (canStart) {
-      setIsAnalyzing(true);
+  const handleStartAnalysis = async () => {
+    if (!canStart || !cvFile) return;
+    // Once the CV upload succeeds it has already overwritten the profile CV on
+    // the server; a later failure (offer scrape / application create) can't undo
+    // that, so we tell the user their CV was updated instead of pretending
+    // nothing changed. (Follow-up: fold upload + create into one atomic call.)
+    let cvUploaded = false;
+    try {
+      setAnalysisStep('cv');
+      await uploadMyCV(cvFile);
+      cvUploaded = true;
+      setAnalysisStep('offer');
+      const app = await createApplicationMutation.mutateAsync({
+        url: jobUrl,
+        interviewAt: deadline ? deadline.toISOString() : null,
+      });
+      setCreatedApplication(app);
+    } catch (error) {
+      // Server throttles application creation to 5/min, surfaced as 429.
+      const isThrottled =
+        axios.isAxiosError(error) && error.response?.status === 429;
+      const cvNotice = cvUploaded ? ' Your profile CV has been updated.' : '';
+      toast.error(
+        (isThrottled
+          ? 'Too many attempts. Please try again in a minute.'
+          : 'Analysis failed. Check the offer link and try again.') + cvNotice,
+      );
+    } finally {
+      setAnalysisStep('idle');
     }
   };
 
@@ -57,7 +95,7 @@ function CVAnalysisPage() {
    * Used to allow the user to analyze another profile.
    */
   const handleReset = () => {
-    setIsFinished(false);
+    setCreatedApplication(null);
     setCvFile(null);
     setJobUrl('');
     setDeadline(null);
@@ -71,10 +109,14 @@ function CVAnalysisPage() {
   };
 
   return (
-    <div className="bg-surface min-h-screen px-5 py-15">
+    <div
+      className={`bg-surface flex min-h-full flex-col px-5 ${
+        isFinished ? 'py-0' : 'py-6'
+      }`}
+    >
       {/* 1. HEADER - Hidden when results are shown */}
       {!isFinished && (
-        <header className="mb-12 text-center">
+        <header className="mb-6 text-center">
           <h1 className="text-h2 text-text">Compatibility Analysis</h1>
           <p className="text-body-l text-text-weaker mt-2">
             Upload your CV and paste the job offer link to begin.
@@ -84,20 +126,18 @@ function CVAnalysisPage() {
 
       {/* 2. STEP 2: AI PROCESSING OVERLAY */}
       {isAnalyzing && (
-        <AIProcessingOverlay
-          onFinished={() => {
-            setIsAnalyzing(false);
-            setIsFinished(true);
-          }}
-        />
+        <AIProcessingOverlay step={analysisStep === 'cv' ? 'cv' : 'offer'} />
       )}
 
       {/* 3. MAIN CONTENT */}
-      {isFinished ? (
-        <AnalysisResultCard
-          onRetry={handleReset}
-          onStartCourse={handleStartCourse}
-        />
+      {isFinished && createdApplication ? (
+        <div className="flex flex-1 items-center justify-center">
+          <AnalysisResultCard
+            application={createdApplication}
+            onRetry={handleReset}
+            onStartCourse={handleStartCourse}
+          />
+        </div>
       ) : (
         <>
           <div className="mx-auto grid max-w-[1100px] grid-cols-[repeat(auto-fit,minmax(350px,1fr))] gap-8">
@@ -126,7 +166,7 @@ function CVAnalysisPage() {
                   <button
                     type="button"
                     onClick={() => setCvFile(null)}
-                    className="text-body-s text-error flex items-center font-semibold"
+                    className="text-body-s text-error flex cursor-pointer items-center font-semibold"
                   >
                     <TrashIcon size={16} className="mr-1" />
                     Remove
@@ -162,12 +202,12 @@ function CVAnalysisPage() {
           </div>
 
           {/* Action Footer */}
-          <footer className="mt-12 text-center">
+          <footer className="mt-8 text-center">
             <button
               type="button"
               onClick={handleStartAnalysis}
-              disabled={!canStart}
-              className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent rounded-2xl px-14 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled"
+              disabled={!canStart || isAnalyzing}
+              className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent cursor-pointer rounded-2xl px-14 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled"
             >
               Start TalkUp Analysis
             </button>

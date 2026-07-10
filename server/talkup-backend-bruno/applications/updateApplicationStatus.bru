@@ -1,0 +1,24 @@
+meta {
+  name: updateApplicationStatus
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{host}}/applications/{{applicationId}}
+  body: json
+  auth: inherit
+}
+
+# Partial update: send "status" and/or "interviewAt" (ISO date, or null to clear).
+body:json {
+  {
+    "status": "interview",
+    "interviewAt": "2026-07-15T14:00:00.000Z"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

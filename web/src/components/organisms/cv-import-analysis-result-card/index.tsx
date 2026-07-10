@@ -1,9 +1,13 @@
+import type { Application } from '@/services/applications/types';
+
 import { iconMap } from '../../atoms/icon/icon-map';
 
 /**
  * Props for the AnalysisResultCard component.
  */
 interface AnalysisResultProps {
+  /** The created application, with real offer/CV extraction data. */
+  application: Application;
   /** Callback function triggered when the user wants to perform a new analysis. */
   onRetry: () => void;
   /** Callback function to navigate the user to their generated course. */
@@ -18,15 +22,11 @@ interface AnalysisResultProps {
  * It features a success state badge, a summary of validated highlights (Skills, Path, AI),
  * and clear Call-to-Action (CTA) buttons to either start the training or restart the process.
  *
- * NOTE: This is currently a UI-first stub. The highlights and copy are static
- * placeholders — there is no backend producing real analysis results yet. Once
- * the CV-analysis API exists, render its returned data here instead of the
- * hardcoded highlights.
- *
  * @param {AnalysisResultProps} props - The component props.
  * @returns {JSX.Element} A centered card containing the analysis results and actions.
  */
 export const AnalysisResultCard = ({
+  application,
   onRetry,
   onStartCourse,
 }: AnalysisResultProps) => {
@@ -36,11 +36,12 @@ export const AnalysisResultCard = ({
   const AiIcon = iconMap['cog'];
   const RetryIcon = iconMap['undo'];
 
+  const details = application.offerDetails;
   const highlights = [
-    { Icon: SkillsIcon, label: 'Skills Validated' },
-    { Icon: PathIcon, label: 'Optimized Path' },
-    { Icon: AiIcon, label: 'Personalized AI' },
-  ];
+    details?.sector && { Icon: SkillsIcon, label: details.sector },
+    details?.location && { Icon: PathIcon, label: details.location },
+    details?.contract_type && { Icon: AiIcon, label: details.contract_type },
+  ].filter(Boolean) as { Icon: typeof SkillsIcon; label: string }[];
 
   return (
     <div className="border-border bg-background mx-auto max-w-[520px] rounded-3xl border px-12 py-14 text-center">
@@ -52,6 +53,10 @@ export const AnalysisResultCard = ({
       </div>
 
       <h2 className="text-h4 text-text mb-3">Analysis Complete!</h2>
+      <p className="text-body-l-strong text-text mb-1">
+        {application.jobTitle ?? 'Your target role'}
+        {application.companyName ? ` · ${application.companyName}` : ''}
+      </p>
       <p className="text-body-l text-text-weaker mb-8 leading-relaxed">
         Your profile has been fully processed. TalkUp has generated a
         personalized action plan based on your strengths and recruiter
@@ -59,19 +64,21 @@ export const AnalysisResultCard = ({
       </p>
 
       {/* Highlights Grid */}
-      <div className="mb-10 flex flex-wrap justify-center gap-3">
-        {highlights.map(({ Icon, label }) => (
-          <div
-            key={label}
-            className="border-border bg-surface flex items-center gap-2 rounded-full border px-4 py-2"
-          >
-            <span className="text-accent flex">
-              <Icon />
-            </span>
-            <span className="text-body-s-strong text-text-weak">{label}</span>
-          </div>
-        ))}
-      </div>
+      {highlights.length > 0 && (
+        <div className="mb-10 flex flex-wrap justify-center gap-3">
+          {highlights.map(({ Icon, label }, index) => (
+            <div
+              key={`${label}-${index}`}
+              className="border-border bg-surface flex items-center gap-2 rounded-full border px-4 py-2"
+            >
+              <span className="text-accent flex">
+                <Icon />
+              </span>
+              <span className="text-body-s-strong text-text-weak">{label}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Primary Action Zone */}
       <div className="bg-accent-weaker mb-6 rounded-3xl p-8">
@@ -81,7 +88,7 @@ export const AnalysisResultCard = ({
         <button
           type="button"
           onClick={onStartCourse}
-          className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent w-full rounded-xl px-8 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent w-full cursor-pointer rounded-xl px-8 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           Start My Training
         </button>
@@ -91,7 +98,7 @@ export const AnalysisResultCard = ({
       <button
         type="button"
         onClick={onRetry}
-        className="text-body-s text-text-weakest hover:text-text-weak underline"
+        className="text-body-s text-text-weakest hover:text-text-weak cursor-pointer underline"
       >
         <span className="flex items-center justify-center gap-1.5">
           <RetryIcon size={14} />

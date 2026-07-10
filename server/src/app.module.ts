@@ -13,6 +13,7 @@ import { UsersModule } from "./modules/users/users.module";
 import { LinkedInModule } from "./modules/linkedin/linkedin.module";
 import { AiModule } from "./modules/ai/ai.module";
 import { MailModule } from "./modules/mail/mail.module";
+import { ApplicationsModule } from "./modules/applications/applications.module";
 
 import { LoggerMiddleware } from "@common/middleware/logger";
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
@@ -60,6 +61,7 @@ import { NotesModule } from "./modules/notes/notes.module";
     }),
     AiModule,
     OrganizationModule,
+    ApplicationsModule,
     // Global JwtService: default expiry matches access tokens; AuthService still passes
     // explicit expiresIn + jwtid per token and REFRESH_SECRET for refresh JWTs.
     JwtModule.register({
