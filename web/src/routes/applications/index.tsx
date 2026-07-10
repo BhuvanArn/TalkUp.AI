@@ -100,10 +100,21 @@ function ApplicationsPage() {
             />
           </div>
 
-          {/* Forcefield: a light wash framed by a dotted border lets the board
-              glow through, while the CTA sits on its own frosted card so it
-              stays crisp and inviting over the columns behind it. */}
-          <div className="absolute inset-0 flex items-center justify-center rounded-xl border-2 border-dotted border-border-strong bg-background/25">
+          {/* Forcefield: a light wash lets the board glow through. The dotted
+              frame is inset into the page padding so it wraps the whole board
+              without doubling up on the column edges. */}
+          <div
+            className="absolute inset-0 bg-background/25"
+            aria-hidden="true"
+          />
+          <div
+            aria-hidden="true"
+            className="border-border-strong pointer-events-none absolute -inset-3 rounded-2xl border-2 border-dotted"
+          />
+
+          {/* The CTA sits on its own frosted card so it stays crisp and
+              inviting over the columns behind it. */}
+          <div className="absolute inset-0 flex items-center justify-center">
             <div className="border-border bg-background/85 flex max-w-[400px] flex-col items-center rounded-2xl border px-8 py-9 text-center shadow-xl backdrop-blur-md">
               <span
                 aria-hidden="true"
