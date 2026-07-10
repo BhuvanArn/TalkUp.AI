@@ -250,7 +250,11 @@ export class UsersService {
     try {
       const pdfData = await pdfParse(file.buffer);
       rawText = pdfData.text;
-    } catch {
+    } catch (error) {
+      // Most failures here are a non-PDF upload, but a genuine library/internal
+      // fault lands here too — log it so it stays visible to monitoring instead
+      // of being silently flattened into a 400.
+      this.logger.warn(`pdfParse failed during uploadCV: ${error}`);
       throw new BadRequestException(
         "The file is not a valid PDF or could not be parsed.",
       );

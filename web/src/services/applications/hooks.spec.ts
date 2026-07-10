@@ -92,9 +92,11 @@ describe('useUpdateApplicationStatus', () => {
 
     result.current.mutate({ applicationId: 'a1', status: 'interview' });
 
+    // Assert the rollback the moment the mutation errors — before onSettled's
+    // invalidation refetch can reconverge — so a broken onError can't be masked
+    // by the settled refetch (which legitimately also returns "sent" here,
+    // since the server never applied the change).
     await waitFor(() => expect(result.current.isError).toBe(true));
-
-    // onError restored the snapshot: the card is back in its original column.
     expect(cachedStatus(queryClient, 'a1')).toBe('sent');
   });
 });
