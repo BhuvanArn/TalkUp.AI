@@ -1,3 +1,4 @@
+import { iconMap } from '@/components/atoms/icon/icon-map';
 import { ApplicationsKanban } from '@/components/organisms/applications-kanban';
 import {
   useApplications,
@@ -22,6 +23,7 @@ function ApplicationsPage() {
   const { data: applications, isLoading, isError } = useApplications();
   const updateStatus = useUpdateApplicationStatus();
   const deleteApplication = useDeleteApplication();
+  const ApplicationsIcon = iconMap.applications;
 
   const pendingIds = new Set<string>();
   if (updateStatus.isPending && updateStatus.variables) {
@@ -45,7 +47,7 @@ function ApplicationsPage() {
   const isEmpty = Boolean(applications && applications.length === 0);
 
   return (
-    <div className="p-6">
+    <div className="flex min-h-full flex-col p-6">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-h4 text-text">Applications</h2>
@@ -80,13 +82,14 @@ function ApplicationsPage() {
       )}
 
       {isEmpty && (
-        <div className="relative">
+        <div className="relative flex flex-1">
           {/* The real board is rendered behind a forcefield: dimmed and made
               inert so it reads as "this is where your applications will live",
-              while the overlay owns the only interaction. */}
+              while the overlay owns the only interaction. It stretches to fill
+              the page so the empty state doesn't leave a blank lower half. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none opacity-40 blur-[1px] select-none"
+            className="pointer-events-none flex-1 opacity-70 select-none [&>div]:h-full [&_[data-testid^=kanban-column]]:h-full"
           >
             <ApplicationsKanban
               applications={[]}
@@ -97,18 +100,16 @@ function ApplicationsPage() {
             />
           </div>
 
-          {/* Forcefield: darkening wash + stippling, with the create CTA. */}
-          <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-[1px]">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 rounded-xl opacity-60 [background-image:radial-gradient(var(--color-border-strong)_1px,transparent_1px)] [background-size:10px_10px]"
-            />
-            <div className="relative flex max-w-[380px] flex-col items-center px-4 text-center">
+          {/* Forcefield: a light wash framed by a dotted border lets the board
+              glow through, while the CTA sits on its own frosted card so it
+              stays crisp and inviting over the columns behind it. */}
+          <div className="absolute inset-0 flex items-center justify-center rounded-xl border-2 border-dotted border-border-strong bg-background/25">
+            <div className="border-border bg-background/85 flex max-w-[400px] flex-col items-center rounded-2xl border px-8 py-9 text-center shadow-xl backdrop-blur-md">
               <span
                 aria-hidden="true"
-                className="bg-surface-raised mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
+                className="bg-surface-raised text-accent mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
               >
-                🎯
+                <ApplicationsIcon size={28} />
               </span>
               <p className="text-body-l-strong text-text">
                 No applications yet
