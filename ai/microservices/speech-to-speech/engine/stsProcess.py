@@ -21,6 +21,8 @@ from .notifications import Notifications
 from .queueService import StsQueueService
 from .settings import load_settings
 from .simulation_brief import SimulationBrief, SimulationBriefStore
+from .verbal_analyzer_client import analyze_transcription, finalize_session
+from .ws_auth import WsSessionClaims, authenticate_websocket, interview_id_allowed
 
 app = FastAPI(title="TalkUp STS Service")
 
@@ -81,6 +83,46 @@ async def _handle_simulation_context(
 	await _ws_send_json(websocket, send_lock, ack)
 
 
+async def _send_va_result_followup(
+	websocket: WebSocket,
+	send_lock: asyncio.Lock,
+	interview_id: str,
+	transcription: str,
+	request_id: int | None,
+) -> None:
+	"""Run VA off the STS reply path; failures are logged and never propagated."""
+	try:
+		va_payload = await asyncio.to_thread(
+			analyze_transcription,
+			interview_id,
+			transcription,
+			request_id,
+		)
+		if va_payload is None:
+			return
+
+		va_message: dict = {
+			"type": "va_result",
+			"interview_id": interview_id,
+			"data": va_payload,
+		}
+		if request_id is not None:
+			va_message["request_id"] = request_id
+		await _ws_send_json(websocket, send_lock, va_message)
+	except (WebSocketDisconnect, ConnectionClosed):
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			1,
+			"Client disconnected before VA follow-up could be sent",
+		)
+	except Exception as err:
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			1,
+			f"VA follow-up failed for interview {interview_id}: {err}",
+		)
+
+
 async def _process_stream_and_reply(
 	websocket: WebSocket,
 	send_lock: asyncio.Lock,
@@ -131,7 +173,22 @@ async def _process_stream_and_reply(
 		}
 		if request_id is not None:
 			payload["request_id"] = request_id
+
+		# Send audio/transcription immediately. VA runs in the background and
+		# arrives as a separate va_result frame; the C++ proxy forwards it when
+		# the next STS read picks it up. VA failures never block the reply.
 		await _ws_send_json(websocket, send_lock, payload)
+
+		if interview_id and result.transcription:
+			asyncio.create_task(
+				_send_va_result_followup(
+					websocket,
+					send_lock,
+					interview_id,
+					result.transcription,
+					request_id,
+				),
+			)
 	except (WebSocketDisconnect, ConnectionClosed):
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending STS result")
 	except Exception as tts_err:
@@ -175,6 +232,11 @@ async def websocket_endpoint(websocket: WebSocket):
 	Handles WebSocket connections for the STS service. Receives audio data, processes it through the pipeline,
 	and sends back transcriptions, AI responses, and synthesized audio chunks.
 	"""
+	claims: WsSessionClaims | None = None
+	should_continue, claims = await authenticate_websocket(websocket)
+	if not should_continue:
+		return
+
 	await websocket.accept()
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "Client connected to the STS service")
 	send_lock = asyncio.Lock()
@@ -217,6 +279,19 @@ async def websocket_endpoint(websocket: WebSocket):
 					await _ws_send_json(websocket, send_lock, {"type": "error", "text": "Invalid JSON payload"})
 					continue
 
+				if payload.get("type") == "session_end":
+					end_interview_id = payload.get("interview_id") or payload.get("stream_id")
+					if isinstance(end_interview_id, str) and end_interview_id.strip():
+						asyncio.create_task(
+							asyncio.to_thread(finalize_session, end_interview_id.strip()),
+						)
+					await _ws_send_json(
+						websocket,
+						send_lock,
+						{"type": "session_end_ack", "interview_id": end_interview_id},
+					)
+					continue
+
 				if payload.get("type") == "ping":
 					await _ws_send_json(
 						websocket,
@@ -240,6 +315,14 @@ async def websocket_endpoint(websocket: WebSocket):
 						interview_id = interview_id.strip() or None
 					else:
 						interview_id = None
+
+					if not interview_id_allowed(claims, interview_id):
+						await _ws_send_json(
+							websocket,
+							send_lock,
+							{"type": "error", "text": "interview_id does not match session token"},
+						)
+						continue
 
 					if request_id is not None and not isinstance(request_id, int):
 						try:

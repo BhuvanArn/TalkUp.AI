@@ -7,13 +7,107 @@
 
 #include "MicroservicesManager.hpp"
 
+#include "WsClientSession.hpp"
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <future>
+#include <unordered_map>
 
 namespace {
     std::atomic<uint64_t> g_sts_request_id{0};
+    constexpr int kStsVaFollowupMs = 5000;
+    // A registered VA follow-up that never receives its va_result would otherwise
+    // linger forever; expire entries older than this so the map cannot grow
+    // unbounded on slow/failed VA calls.
+    constexpr int kStsVaFollowupTtlMs = 30000;
+    std::mutex g_sts_va_followup_mutex;
+    struct StsVaFollowup {
+        ResponseCallback callback;
+        std::weak_ptr<talkup_network::WsClientSession> client_session;
+        std::chrono::steady_clock::time_point registered_at;
+    };
+    std::unordered_map<uint64_t, StsVaFollowup> g_sts_va_followup_callbacks;
+
+    // Caller must hold g_sts_va_followup_mutex.
+    void evict_expired_sts_va_followups_locked()
+    {
+        const auto now = std::chrono::steady_clock::now();
+        for (auto it = g_sts_va_followup_callbacks.begin();
+             it != g_sts_va_followup_callbacks.end();) {
+            const auto age = std::chrono::duration_cast<std::chrono::milliseconds>(
+                now - it->second.registered_at).count();
+            if (age >= kStsVaFollowupTtlMs) {
+                std::cout << "[MicroservicesManager] Expiring stale VA follow-up request_id="
+                          << it->first << std::endl;
+                it = g_sts_va_followup_callbacks.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    void register_sts_va_followup(
+        uint64_t request_id,
+        const ResponseCallback &callback,
+        const std::weak_ptr<talkup_network::WsClientSession> &client_session)
+    {
+        if (!callback)
+            return;
+        auto session = client_session.lock();
+        if (!session || !session->is_open())
+            return;
+        std::lock_guard<std::mutex> lock(g_sts_va_followup_mutex);
+        evict_expired_sts_va_followups_locked();
+        g_sts_va_followup_callbacks[request_id] =
+            StsVaFollowup{callback, client_session, std::chrono::steady_clock::now()};
+    }
+
+    bool try_dispatch_sts_va_followup(const nlohmann::json &msg_json)
+    {
+        if (msg_json.value("type", "") != "va_result")
+            return false;
+        if (!msg_json.contains("request_id"))
+            return false;
+
+        const uint64_t response_id = msg_json.value("request_id", static_cast<uint64_t>(0));
+        StsVaFollowup followup;
+        {
+            std::lock_guard<std::mutex> lock(g_sts_va_followup_mutex);
+            evict_expired_sts_va_followups_locked();
+            auto it = g_sts_va_followup_callbacks.find(response_id);
+            if (it == g_sts_va_followup_callbacks.end())
+                return false;
+            followup = it->second;
+            g_sts_va_followup_callbacks.erase(it);
+        }
+
+        auto session = followup.client_session.lock();
+        if (!session || !session->is_open())
+            return false;
+
+        std::cout << "[MicroservicesManager] Forwarding async VA follow-up request_id="
+                  << response_id << std::endl;
+        followup.callback(msg_json);
+        return true;
+    }
+
+    void cancel_va_followups_for_client_locked(
+        const std::shared_ptr<talkup_network::WsClientSession> &client_session)
+    {
+        if (!client_session)
+            return;
+        for (auto it = g_sts_va_followup_callbacks.begin();
+             it != g_sts_va_followup_callbacks.end();) {
+            auto bound = it->second.client_session.lock();
+            if (!bound || bound.get() == client_session.get()) {
+                it = g_sts_va_followup_callbacks.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
 
     nlohmann::json extract_text_from_sts_response(const nlohmann::json &data)
     {
@@ -146,7 +240,7 @@ void talkup_network::MicroservicesManager::create_service_worker(
                         job.context_data,
                         job.context_promise);
                 } else {
-                    process_sts_job(job.data, std::move(job.callback));
+                    process_sts_job(job.data, std::move(job.callback), job.client_session);
                 }
             } catch (const std::exception &e) {
                 std::cerr << "[MicroservicesManager] Worker error for service "
@@ -294,8 +388,47 @@ bool talkup_network::MicroservicesManager::ping_service(
             {"data", nlohmann::json::object()}};
         ws->write(boost::asio::buffer(ping_json.dump()));
 
+        const int timeout_ms = 5000;
+
+        // STS may have a stranded va_result ahead of the pong reply. Keep reading
+        // until pong or timeout, dispatching VA follow-ups instead of dropping them.
+        if (service_name == "sts") {
+            const auto deadline = std::chrono::steady_clock::now()
+                + std::chrono::milliseconds(timeout_ms);
+
+            while (std::chrono::steady_clock::now() < deadline) {
+                const int remaining_ms = static_cast<int>(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        deadline - std::chrono::steady_clock::now()).count());
+                if (remaining_ms <= 0)
+                    break;
+
+                nlohmann::json msg_json;
+                if (!read_sts_json_message(*ws, msg_json, remaining_ms))
+                    continue;
+
+                const std::string msg_type = msg_json.value("type", "");
+                if (msg_type == "pong") {
+                    std::cout << "[MicroservicesManager] Service " << service_name
+                              << " is reachable." << std::endl;
+                    return true;
+                }
+
+                if (try_dispatch_sts_va_followup(msg_json))
+                    continue;
+
+                if (msg_type == "simulation_context_ack")
+                    continue;
+
+                std::cout << "[MicroservicesManager] Ping read non-pong STS message type="
+                          << msg_type << ", waiting for pong" << std::endl;
+            }
+
+            std::cerr << "[MicroservicesManager] Ping timeout for service " << service_name << std::endl;
+            return false;
+        }
+
         boost::beast::flat_buffer buffer;
-        const int timeout_ms = 5000; // 5 seconds timeout for ping
         int fd = boost::beast::get_lowest_layer(*ws).socket().native_handle();
         struct pollfd pfd;
         pfd.fd = fd;
@@ -330,7 +463,8 @@ bool talkup_network::MicroservicesManager::ping_service(
 }
 
 void talkup_network::MicroservicesManager::send_to_sts_microservice(
-    const nlohmann::json &data, ResponseCallback callback)
+    const nlohmann::json &data, ResponseCallback callback,
+    const std::shared_ptr<WsClientSession> &client_session)
 {
     nlohmann::json err_response;
     bool enqueue_ok = false;
@@ -348,6 +482,8 @@ void talkup_network::MicroservicesManager::send_to_sts_microservice(
                 job.kind = WebSocketConnection::StsJobKind::StreamChunk;
                 job.data = data;
                 job.callback = std::move(callback);
+                if (client_session)
+                    job.client_session = client_session;
                 it->second.job_queue.push(std::move(job));
             }
             it->second.queue_cv.notify_one();
@@ -359,6 +495,58 @@ void talkup_network::MicroservicesManager::send_to_sts_microservice(
     if (!enqueue_ok && callback) {
         callback(err_response);
     }
+}
+
+void talkup_network::MicroservicesManager::send_session_end_to_sts(
+    const std::string &interview_id)
+{
+    if (interview_id.empty())
+        return;
+
+    try {
+        std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
+        std::mutex *io_mutex = nullptr;
+
+        {
+            std::lock_guard<std::mutex> lock(__ws_mutex);
+            auto it = __ws_connections.find("sts");
+            if (it == __ws_connections.end() || !it->second.is_connected ||
+                !it->second.ws || !it->second.ws->is_open()) {
+                if (!reconnect_service_connection("sts")) {
+                    std::cerr << "[MicroservicesManager] STS connection not available for session_end"
+                              << std::endl;
+                    return;
+                }
+                it = __ws_connections.find("sts");
+            }
+            if (it == __ws_connections.end() || !it->second.ws)
+                return;
+            ws = it->second.ws;
+            io_mutex = &it->second.io_mutex;
+        }
+
+        std::unique_lock<std::mutex> io_lock(*io_mutex);
+        nlohmann::json payload = {
+            {"services", {"STS"}},
+            {"type", "session_end"},
+            {"interview_id", interview_id},
+            {"stream_id", interview_id},
+            {"timestamp", std::time(nullptr)},
+            {"data", nlohmann::json::object()},
+        };
+        ws->write(boost::asio::buffer(payload.dump()));
+        std::cout << "[MicroservicesManager] Sent session_end interview_id="
+                  << interview_id << std::endl;
+    } catch (const std::exception &e) {
+        std::cerr << "[MicroservicesManager] session_end exception: " << e.what() << std::endl;
+    }
+}
+
+void talkup_network::MicroservicesManager::cancel_va_followups_for_client(
+    const std::shared_ptr<WsClientSession> &client_session)
+{
+    std::lock_guard<std::mutex> lock(g_sts_va_followup_mutex);
+    cancel_va_followups_for_client_locked(client_session);
 }
 
 bool talkup_network::MicroservicesManager::send_simulation_context_to_sts(
@@ -513,7 +701,10 @@ void talkup_network::MicroservicesManager::process_simulation_context_job(
     }
 }
 
-void talkup_network::MicroservicesManager::process_sts_job(const nlohmann::json &data, ResponseCallback callback)
+void talkup_network::MicroservicesManager::process_sts_job(
+    const nlohmann::json &data,
+    ResponseCallback callback,
+    const std::weak_ptr<WsClientSession> &client_session)
 {
     try {
         nlohmann::json chunk_val = get_chunks_val_from_data(data);
@@ -581,6 +772,10 @@ void talkup_network::MicroservicesManager::process_sts_job(const nlohmann::json 
                 continue;
             }
 
+            if (try_dispatch_sts_va_followup(msg_json)) {
+                continue;
+            }
+
             if (!msg_json.contains("request_id")) {
                 std::cout << "[MicroservicesManager] Ignoring STS message without request_id type="
                           << msg_type << std::endl;
@@ -589,6 +784,8 @@ void talkup_network::MicroservicesManager::process_sts_job(const nlohmann::json 
 
             const uint64_t response_id = msg_json.value("request_id", static_cast<uint64_t>(0));
             if (response_id != request_id) {
+                if (try_dispatch_sts_va_followup(msg_json))
+                    continue;
                 std::cout << "[MicroservicesManager] Ignoring STS message for request_id="
                           << response_id << " (expected " << request_id << ")" << std::endl;
                 continue;
@@ -596,6 +793,53 @@ void talkup_network::MicroservicesManager::process_sts_job(const nlohmann::json 
 
             std::cout << "[MicroservicesManager] Received STS message type=" << msg_type
                       << " request_id=" << request_id << std::endl;
+
+            if (msg_type == "sts_result") {
+                if (callback)
+                    callback(msg_json);
+
+                const auto va_deadline = std::chrono::steady_clock::now()
+                    + std::chrono::milliseconds(kStsVaFollowupMs);
+
+                while (std::chrono::steady_clock::now() < va_deadline) {
+                    const int va_remaining_ms = static_cast<int>(
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            va_deadline - std::chrono::steady_clock::now()).count());
+                    if (va_remaining_ms <= 0)
+                        break;
+
+                    nlohmann::json followup_json;
+                    if (!read_sts_json_message(
+                            *ws, followup_json, std::min(va_remaining_ms, 1000)))
+                        continue;
+
+                    const std::string followup_type = followup_json.value("type", "");
+                    if (followup_type == "pong" || followup_type == "simulation_context_ack")
+                        continue;
+
+                    if (followup_type == "va_result" &&
+                        followup_json.value("request_id", static_cast<uint64_t>(0)) == request_id) {
+                        std::cout << "[MicroservicesManager] Received VA follow-up request_id="
+                                  << request_id << std::endl;
+                        if (callback)
+                            callback(followup_json);
+                        io_lock.unlock();
+                        return;
+                    }
+
+                    if (try_dispatch_sts_va_followup(followup_json))
+                        continue;
+
+                    std::cout << "[MicroservicesManager] Ignoring unexpected STS follow-up type="
+                              << followup_type << std::endl;
+                }
+
+                if (callback)
+                    register_sts_va_followup(request_id, callback, client_session);
+                io_lock.unlock();
+                return;
+            }
+
             io_lock.unlock();
             if (callback)
                 callback(msg_json);
@@ -665,7 +909,7 @@ void talkup_network::MicroservicesManager::start_service_worker(const std::strin
                         job.context_data,
                         job.context_promise);
                 } else {
-                    process_sts_job(job.data, std::move(job.callback));
+                    process_sts_job(job.data, std::move(job.callback), job.client_session);
                 }
             } catch (const std::exception &e) {
                 std::cerr << "[MicroservicesManager] Worker error for service " << service_name << ": " << e.what() << std::endl;

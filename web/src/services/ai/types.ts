@@ -66,6 +66,16 @@ export interface UpdateAiInterviewDto {
   videoLink?: string;
 }
 
+export interface VerbalAnalysisResponse {
+  analysis_id: string;
+  interview_id: string;
+  overall_score: number | null;
+  aggregate: Record<string, unknown>;
+  turns: Record<string, unknown>[];
+  created_at: string;
+  updated_at: string;
+}
+
 /** Role of a chatbot conversation turn. */
 export type ChatRole = 'user' | 'assistant';
 
