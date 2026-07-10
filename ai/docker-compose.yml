@@ -111,6 +111,9 @@ services:
       start_period: 10s
 
 networks:
+  # Shared bridge between the AI stack and the backend (server/docker-compose.yml).
+  # Not marked external so whichever stack is brought up first creates this
+  # network (by its fixed name) and the other attaches to the same one — so the
+  # AI stack and the backend can each be launched standalone, in any order.
   talkup-ai:
-    external: true
     name: talkup-ai
