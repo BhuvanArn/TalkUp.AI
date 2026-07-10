@@ -4,14 +4,14 @@ import type {
 } from '@/services/applications/types';
 import { useDraggable } from '@dnd-kit/core';
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
-import { fr } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { useState } from 'react';
 
 export const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  sent: 'Envoyée',
-  interview: 'Entretien',
-  accepted: 'Acceptée',
-  rejected: 'Refusée',
+  sent: 'Sent',
+  interview: 'Interview',
+  accepted: 'Accepted',
+  rejected: 'Rejected',
 };
 
 interface ApplicationCardProps {
@@ -76,10 +76,10 @@ export const ApplicationCard = ({
           </span>
           <span className="min-w-0">
             <span className="text-body-m text-text block truncate font-bold font-display">
-              {application.companyName ?? 'Société inconnue'}
+              {application.companyName ?? 'Unknown company'}
             </span>
             <span className="text-body-s text-text-idle block truncate">
-              {application.jobTitle ?? 'Poste non précisé'}
+              {application.jobTitle ?? 'Role not specified'}
             </span>
           </span>
         </div>
@@ -87,7 +87,7 @@ export const ApplicationCard = ({
         <div className="relative">
           <button
             type="button"
-            aria-label="Actions de la candidature"
+            aria-label="Application actions"
             aria-expanded={isMenuOpen}
             disabled={isPending}
             onClick={() => (isMenuOpen ? closeMenu() : setIsMenuOpen(true))}
@@ -122,7 +122,7 @@ export const ApplicationCard = ({
                   }}
                   className="text-body-s text-error hover:bg-surface block w-full px-3 py-1.5 text-left font-bold"
                 >
-                  Confirmer la suppression
+                  Confirm deletion
                 </button>
               ) : (
                 <button
@@ -130,7 +130,7 @@ export const ApplicationCard = ({
                   onClick={() => setIsConfirmingDelete(true)}
                   className="text-body-s text-error hover:bg-surface block w-full px-3 py-1.5 text-left"
                 >
-                  Supprimer
+                  Delete
                 </button>
               )}
             </div>
@@ -139,10 +139,10 @@ export const ApplicationCard = ({
       </div>
 
       <p className="text-body-s text-text-weakest mt-2">
-        Envoyée{' '}
+        Sent{' '}
         {formatDistanceToNow(new Date(application.appliedAt), {
           addSuffix: true,
-          locale: fr,
+          locale: enUS,
         })}
       </p>
 
@@ -152,13 +152,13 @@ export const ApplicationCard = ({
           onClick={() => onOpenTraining(application.applicationId)}
           className="text-body-s-strong text-accent hover:text-accent-hover"
         >
-          Reprendre le training
+          Resume training
         </button>
         <span className="text-body-s text-text-weakest">
-          MAJ{' '}
+          Updated{' '}
           {formatDistanceToNow(new Date(application.updatedAt), {
             addSuffix: true,
-            locale: fr,
+            locale: enUS,
           })}
         </span>
       </div>

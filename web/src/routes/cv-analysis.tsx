@@ -109,10 +109,10 @@ function CVAnalysisPage() {
   };
 
   return (
-    <div className="bg-surface min-h-screen px-5 py-15">
+    <div className="bg-surface min-h-full px-5 py-8">
       {/* 1. HEADER - Hidden when results are shown */}
       {!isFinished && (
-        <header className="mb-12 text-center">
+        <header className="mb-8 text-center">
           <h1 className="text-h2 text-text">Compatibility Analysis</h1>
           <p className="text-body-l text-text-weaker mt-2">
             Upload your CV and paste the job offer link to begin.
@@ -196,7 +196,7 @@ function CVAnalysisPage() {
           </div>
 
           {/* Action Footer */}
-          <footer className="mt-12 text-center">
+          <footer className="mt-8 text-center">
             <button
               type="button"
               onClick={handleStartAnalysis}

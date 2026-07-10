@@ -19,7 +19,7 @@ describe('navigation-contexts', () => {
 
       const labels = rootNavigationContext.items.map((item) => item.label);
       expect(labels).toContain('Applications');
-      expect(labels).toContain('Curriculum Vitae');
+      expect(labels).toContain('CV Analysis');
       expect(labels).toContain('Agenda');
       expect(labels).toContain('Notes');
     });

@@ -19,19 +19,22 @@ test.describe('applications kanban', () => {
     );
   });
 
-  test('shows the empty state with a CTA when there is no application', async ({
+  test('shows the empty state with a single CTA and no add button', async ({
     page,
   }) => {
     await page.route('**/v1/api/applications', (route) =>
       route.fulfill({ json: [] }),
     );
     await page.goto('/applications');
+    await expect(page.getByText('No applications yet')).toBeVisible();
     await expect(
-      page.getByText("Aucune candidature pour l'instant"),
+      page.getByRole('link', { name: 'Start a CV + offer analysis' }),
     ).toBeVisible();
+    // The top-left "+ New application" button only appears once an application
+    // exists; the empty state's own CTA is the sole entry point.
     await expect(
-      page.getByRole('link', { name: 'Commencer une analyse CV + offre' }),
-    ).toBeVisible();
+      page.getByRole('link', { name: '+ New application' }),
+    ).toBeHidden();
   });
 
   test('renders a card in its column and persists a menu status change', async ({
@@ -51,8 +54,8 @@ test.describe('applications kanban', () => {
     const sentColumn = page.getByTestId('kanban-column-sent');
     await expect(sentColumn.getByText('Datadog Paris')).toBeVisible();
 
-    await page.getByLabel('Actions de la candidature').click();
-    await page.getByRole('button', { name: 'Entretien' }).click();
+    await page.getByLabel('Application actions').click();
+    await page.getByRole('button', { name: 'Interview' }).click();
 
     const interviewColumn = page.getByTestId('kanban-column-interview');
     await expect(interviewColumn.getByText('Datadog Paris')).toBeVisible();
@@ -120,8 +123,8 @@ test.describe('applications kanban', () => {
     );
 
     await page.goto('/applications');
-    await page.getByLabel('Actions de la candidature').click();
-    await page.getByRole('button', { name: 'Entretien' }).click();
+    await page.getByLabel('Application actions').click();
+    await page.getByRole('button', { name: 'Interview' }).click();
 
     // After the failed PATCH, onError restores the snapshot: card is back in
     // "sent" and absent from "interview".

@@ -24,22 +24,22 @@ const COLUMNS: {
   {
     status: 'sent',
     dotClass: 'bg-accent',
-    emptyHint: 'Déposez une carte ici — ou lancez une nouvelle analyse',
+    emptyHint: 'Drop a card here, or start a new analysis',
   },
   {
     status: 'interview',
     dotClass: 'bg-warning',
-    emptyHint: 'Déposez une carte ici quand un entretien est prévu',
+    emptyHint: 'Drop a card here when an interview is scheduled',
   },
   {
     status: 'accepted',
     dotClass: 'bg-success',
-    emptyHint: "Déposez une carte ici quand c'est gagné 🎉",
+    emptyHint: "Drop a card here when it's a win 🎉",
   },
   {
     status: 'rejected',
     dotClass: 'bg-error',
-    emptyHint: "Les refus s'archivent ici — le training, lui, reste acquis",
+    emptyHint: 'Rejections archive here. The training stays yours',
   },
 ];
 

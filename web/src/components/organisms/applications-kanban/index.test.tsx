@@ -33,7 +33,7 @@ describe('ApplicationsKanban', () => {
         onOpenTraining={noop}
       />,
     );
-    expect(screen.getByText('Envoyée')).toBeInTheDocument();
+    expect(screen.getByText('Sent')).toBeInTheDocument();
     const interviewColumn = screen.getByTestId('kanban-column-interview');
     expect(interviewColumn).toHaveTextContent('Co a2');
     expect(interviewColumn).toHaveTextContent('Co a3');
@@ -51,7 +51,7 @@ describe('ApplicationsKanban', () => {
       />,
     );
     expect(screen.getByTestId('kanban-column-accepted')).toHaveTextContent(
-      'Déposez une carte ici',
+      'Drop a card here',
     );
   });
 });

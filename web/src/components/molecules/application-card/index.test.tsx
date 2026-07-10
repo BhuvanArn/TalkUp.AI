@@ -36,7 +36,7 @@ describe('ApplicationCard', () => {
     );
     expect(screen.getByText('Datadog Paris')).toBeInTheDocument();
     expect(screen.getByText('SRE Junior')).toBeInTheDocument();
-    expect(screen.getByText('Reprendre le training')).toBeInTheDocument();
+    expect(screen.getByText('Resume training')).toBeInTheDocument();
   });
 
   it('changes status through the menu', () => {
@@ -50,8 +50,8 @@ describe('ApplicationCard', () => {
         onOpenTraining={noop}
       />,
     );
-    fireEvent.click(screen.getByLabelText('Actions de la candidature'));
-    fireEvent.click(screen.getByText('Entretien'));
+    fireEvent.click(screen.getByLabelText('Application actions'));
+    fireEvent.click(screen.getByText('Interview'));
     expect(onStatusChange).toHaveBeenCalledWith('a1', 'interview');
   });
 
@@ -66,10 +66,10 @@ describe('ApplicationCard', () => {
         onOpenTraining={noop}
       />,
     );
-    fireEvent.click(screen.getByLabelText('Actions de la candidature'));
-    fireEvent.click(screen.getByText('Supprimer'));
+    fireEvent.click(screen.getByLabelText('Application actions'));
+    fireEvent.click(screen.getByText('Delete'));
     expect(onDelete).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText('Confirmer la suppression'));
+    fireEvent.click(screen.getByText('Confirm deletion'));
     expect(onDelete).toHaveBeenCalledWith('a1');
   });
 
@@ -83,6 +83,6 @@ describe('ApplicationCard', () => {
         onOpenTraining={noop}
       />,
     );
-    expect(screen.getByLabelText('Actions de la candidature')).toBeDisabled();
+    expect(screen.getByLabelText('Application actions')).toBeDisabled();
   });
 });
