@@ -166,7 +166,7 @@ function CVAnalysisPage() {
                   <button
                     type="button"
                     onClick={() => setCvFile(null)}
-                    className="text-body-s text-error flex items-center font-semibold"
+                    className="text-body-s text-error flex cursor-pointer items-center font-semibold"
                   >
                     <TrashIcon size={16} className="mr-1" />
                     Remove
@@ -207,7 +207,7 @@ function CVAnalysisPage() {
               type="button"
               onClick={handleStartAnalysis}
               disabled={!canStart || isAnalyzing}
-              className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent rounded-2xl px-14 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled"
+              className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent cursor-pointer rounded-2xl px-14 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled"
             >
               Start TalkUp Analysis
             </button>
