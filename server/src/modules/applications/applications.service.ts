@@ -50,13 +50,22 @@ export class ApplicationsService {
     }
 
     // Per-user dedup: a repeated submission of the same job URL (double-submit,
-    // or a retry after a request that actually succeeded) returns the existing
+    // or a retry after a request that actually succeeded) reuses the existing
     // application instead of creating a duplicate card. Checked before scraping
-    // so a known URL also skips the scrape + LLM cost.
+    // so a known URL also skips the scrape + LLM cost. On a hit we still refresh
+    // the CV snapshot and interview date, because the primary flow re-uploads
+    // the CV right before this call — returning the row untouched would show a
+    // stale snapshot and drop the date the user just set.
     const existing = await this.applicationRepo.findOne({
       where: { user_id: userId, offer_url: url },
     });
-    if (existing) return existing;
+    if (existing) {
+      existing.cv_details = await this.buildCvSnapshot(userId);
+      if (interviewAt !== undefined) {
+        existing.interview_at = interviewAt ? new Date(interviewAt) : null;
+      }
+      return this.applicationRepo.save(existing);
+    }
 
     let pageText = "";
     const isLinkedIn = url.toLowerCase().includes("linkedin.com/jobs");
@@ -75,8 +84,6 @@ export class ApplicationsService {
     const data = await extractWithGroq<JobOfferExtraction>(
       this.buildOfferPrompt(pageText),
     );
-
-    const cv = await this.userCvRepo.findOne({ where: { user_id: userId } });
 
     const row = this.applicationRepo.create({
       user_id: userId,
@@ -103,21 +110,29 @@ export class ApplicationsService {
         company_values: data.company_values ?? [],
         team_description: data.team_description ?? null,
       },
-      cv_details: cv
-        ? {
-            desired_job: cv.desired_job,
-            resume: cv.resume,
-            experiences: cv.experiences,
-            education: cv.education,
-            technical_skills: cv.technical_skills,
-            languages: cv.languages,
-          }
-        : null,
+      cv_details: await this.buildCvSnapshot(userId),
     } as Partial<application>);
 
     const saved = await this.applicationRepo.save(row);
     this.logger.log(`Application created for user ID: ${userId}`);
     return saved;
+  }
+
+  /** Snapshot the user's current profile CV for storage on an application. */
+  private async buildCvSnapshot(
+    userId: string,
+  ): Promise<application["cv_details"]> {
+    const cv = await this.userCvRepo.findOne({ where: { user_id: userId } });
+    return cv
+      ? {
+          desired_job: cv.desired_job,
+          resume: cv.resume,
+          experiences: cv.experiences,
+          education: cv.education,
+          technical_skills: cv.technical_skills,
+          languages: cv.languages,
+        }
+      : null;
   }
 
   async listForUser(userId: string): Promise<application[]> {

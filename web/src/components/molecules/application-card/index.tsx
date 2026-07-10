@@ -53,6 +53,17 @@ const toDateInputValue = (iso: string | null): string =>
   iso ? format(new Date(iso), 'yyyy-MM-dd') : '';
 
 /**
+ * The date input yields a bare `YYYY-MM-DD`. `new Date(str)` would parse that as
+ * UTC midnight, which then renders one day earlier for any viewer west of UTC.
+ * Build a *local* date instead so the stored ISO round-trips to the same
+ * calendar day the user picked (matching the uploader card's behavior).
+ */
+const dateInputToIso = (value: string): string => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day).toISOString();
+};
+
+/**
  * Kanban card for one job application. A clearly bounded header (company + role)
  * is the drag handle between status columns; below it sit the applied date, an
  * interview-date row, the training link, and a ▾ menu (status fallback, set
@@ -209,7 +220,7 @@ export const ApplicationCard = ({
                     const val = e.target.value;
                     onInterviewAtChange(
                       application.applicationId,
-                      val ? new Date(val).toISOString() : null,
+                      val ? dateInputToIso(val) : null,
                     );
                   }}
                   className="text-body-s text-text bg-surface border-border focus-visible:border-accent min-w-0 flex-1 cursor-pointer rounded border px-2 py-1 outline-none"

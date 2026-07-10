@@ -93,7 +93,7 @@ export const ContextNavigation = ({ isCollapsed = false }: NavigationProps) => {
               className="flex flex-col gap-2"
             >
               <NavSelector
-                label={application.companyName ?? 'Candidature'}
+                label={application.companyName ?? 'Application'}
                 color={STATUS_COLORS[application.status] ?? '#2b70c9'}
                 isExpanded={isExpanded}
                 onToggle={() => {
