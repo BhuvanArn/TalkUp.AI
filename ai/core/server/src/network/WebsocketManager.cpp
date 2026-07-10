@@ -11,6 +11,7 @@
 
 #include "ExceptionManager.hpp"
 #include "WebsocketManager.hpp"
+#include "WsClientSession.hpp"
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -114,12 +115,15 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
             .timestamp = timestamp,
             .data = "audio chunk received"
         }).dump());
-        crow::websocket::connection *client_conn = &conn;
+        auto client_session = WsClientSession::bind(conn);
         microservices_manager->send_to_sts_microservice(json,
-            [this, client_conn, key, stream_id](const nlohmann::json& sts_resp) {
+            [this, client_session, key, stream_id](const nlohmann::json& sts_resp) {
+                if (!client_session->is_open())
+                    return;
+
                 const std::string sts_type = sts_resp.value("type", "");
                 if (sts_resp.contains("error") || sts_type == "error" || sts_type == "warning") {
-                    client_conn->send_text(set_respond_json_format({
+                    client_session->send_text(set_respond_json_format({
                         .type = "error",
                         .key = key,
                         .stream_id = stream_id,
@@ -139,7 +143,7 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
                     else
                         data_str = data_field.dump();
 
-                    client_conn->send_text(set_respond_json_format({
+                    client_session->send_text(set_respond_json_format({
                         .type = "va_result",
                         .key = key,
                         .stream_id = stream_id,
@@ -151,7 +155,7 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
                     return;
                 }
 
-                client_conn->send_text(set_respond_json_format({
+                client_session->send_text(set_respond_json_format({
                     .type = "sts_result",
                     .key = key,
                     .stream_id = stream_id,
@@ -237,8 +241,8 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
                 } catch (const std::exception &e) {
                     std::cerr << "[WsManager] Error extracting transcription: " << e.what() << std::endl;
                 }
-            }
-        );
+            },
+            client_session);
     }
 }
 
