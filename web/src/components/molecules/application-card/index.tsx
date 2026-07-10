@@ -7,7 +7,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { format } from 'date-fns/format';
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
 import { enUS } from 'date-fns/locale';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export const STATUS_LABELS: Record<ApplicationStatus, string> = {
   sent: 'Sent',
@@ -16,8 +16,22 @@ export const STATUS_LABELS: Record<ApplicationStatus, string> = {
   rejected: 'Rejected',
 };
 
+/** Same glyph vocabulary as the kanban column headers, so a status reads the
+ * same in the menu as on the board. */
+const STATUS_ICONS: Record<
+  ApplicationStatus,
+  (typeof iconMap)[keyof typeof iconMap]
+> = {
+  sent: iconMap.send,
+  interview: iconMap.schedule,
+  accepted: iconMap['check-circle'],
+  rejected: iconMap.times,
+};
+
 const CalendarIcon = iconMap.schedule;
 const DragIcon = iconMap.applications;
+const ChevronIcon = iconMap['caret-down'];
+const TrashIcon = iconMap.delete;
 
 interface ApplicationCardProps {
   application: Application;
@@ -53,6 +67,7 @@ export const ApplicationCard = ({
 }: ApplicationCardProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const menuContainerRef = useRef<HTMLDivElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -68,6 +83,26 @@ export const ApplicationCard = ({
     setIsMenuOpen(false);
     setIsConfirmingDelete(false);
   };
+
+  // Close the menu on an outside click or Escape so it behaves like a real
+  // popover instead of lingering until the trigger is clicked again.
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!menuContainerRef.current?.contains(event.target as Node)) {
+        closeMenu();
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenu();
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   return (
     <div
@@ -106,39 +141,66 @@ export const ApplicationCard = ({
           />
         </div>
 
-        <div className="relative">
+        <div className="relative" ref={menuContainerRef}>
           <button
             type="button"
             aria-label="Application actions"
+            aria-haspopup="menu"
             aria-expanded={isMenuOpen}
             disabled={isPending}
             onClick={() => (isMenuOpen ? closeMenu() : setIsMenuOpen(true))}
-            className="text-text-weakest hover:text-text cursor-pointer rounded px-1 disabled:cursor-not-allowed"
+            className={`text-text-weakest hover:text-text hover:bg-surface flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed ${
+              isMenuOpen ? 'bg-surface text-text' : ''
+            }`}
           >
-            ▾
+            <ChevronIcon
+              size={16}
+              aria-hidden="true"
+              className={`transition-transform duration-200 ${
+                isMenuOpen ? 'rotate-180' : ''
+              }`}
+            />
           </button>
           {isMenuOpen && (
-            <div className="bg-background border-border absolute right-0 z-20 mt-1 w-56 rounded-lg border py-1 shadow-lg">
+            <div
+              role="menu"
+              className="bg-background border-border absolute right-0 z-20 mt-1.5 w-56 overflow-hidden rounded-xl border py-1.5 shadow-xl"
+            >
+              <p className="text-body-s text-text-weakest px-3 pt-1 pb-1.5 font-semibold tracking-wide uppercase">
+                Move to
+              </p>
               {(Object.keys(STATUS_LABELS) as ApplicationStatus[])
                 .filter((status) => status !== application.status)
-                .map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => {
-                      onStatusChange(application.applicationId, status);
-                      closeMenu();
-                    }}
-                    className="text-body-s text-text hover:bg-surface block w-full cursor-pointer px-3 py-1.5 text-left"
-                  >
-                    Move to {STATUS_LABELS[status]}
-                  </button>
-                ))}
-              <hr className="border-border my-1" />
-              <span className="text-body-s text-text-weaker block px-3 pt-1 pb-0.5">
-                Interview date
-              </span>
-              <div className="flex items-center gap-1.5 px-3 pb-1.5">
+                .map((status) => {
+                  const StatusIcon = STATUS_ICONS[status];
+                  return (
+                    <button
+                      key={status}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        onStatusChange(application.applicationId, status);
+                        closeMenu();
+                      }}
+                      className="text-body-s text-text hover:bg-surface flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left"
+                    >
+                      <StatusIcon
+                        size={15}
+                        aria-hidden="true"
+                        className="text-text-weak shrink-0"
+                      />
+                      {STATUS_LABELS[status]}
+                    </button>
+                  );
+                })}
+
+              <hr className="border-border my-1.5" />
+              <div className="flex items-center gap-2.5 px-3 py-1">
+                <CalendarIcon
+                  size={15}
+                  aria-hidden="true"
+                  className="text-text-weak shrink-0"
+                />
                 <input
                   type="date"
                   aria-label="Interview date"
@@ -150,7 +212,7 @@ export const ApplicationCard = ({
                       val ? new Date(val).toISOString() : null,
                     );
                   }}
-                  className="text-body-s text-text bg-surface border-border focus-visible:border-accent flex-1 cursor-pointer rounded border px-2 py-1 outline-none"
+                  className="text-body-s text-text bg-surface border-border focus-visible:border-accent min-w-0 flex-1 cursor-pointer rounded border px-2 py-1 outline-none"
                 />
                 {application.interviewAt && (
                   <button
@@ -160,33 +222,32 @@ export const ApplicationCard = ({
                     onClick={() =>
                       onInterviewAtChange(application.applicationId, null)
                     }
-                    className="text-text-weakest hover:text-text cursor-pointer rounded px-1"
+                    className="text-text-weakest hover:text-text shrink-0 cursor-pointer rounded px-1"
                   >
-                    ✕
+                    <iconMap.times size={14} aria-hidden="true" />
                   </button>
                 )}
               </div>
-              <hr className="border-border my-1" />
-              {isConfirmingDelete ? (
-                <button
-                  type="button"
-                  onClick={() => {
+
+              <hr className="border-border my-1.5" />
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  if (isConfirmingDelete) {
                     onDelete(application.applicationId);
                     closeMenu();
-                  }}
-                  className="text-body-s text-error hover:bg-surface block w-full cursor-pointer px-3 py-1.5 text-left font-bold"
-                >
-                  Confirm deletion
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsConfirmingDelete(true)}
-                  className="text-body-s text-error hover:bg-surface block w-full cursor-pointer px-3 py-1.5 text-left"
-                >
-                  Delete
-                </button>
-              )}
+                  } else {
+                    setIsConfirmingDelete(true);
+                  }
+                }}
+                className={`text-body-s text-error hover:bg-error-weaker flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left ${
+                  isConfirmingDelete ? 'font-bold' : ''
+                }`}
+              >
+                <TrashIcon size={15} aria-hidden="true" className="shrink-0" />
+                {isConfirmingDelete ? 'Confirm deletion' : 'Delete'}
+              </button>
             </div>
           )}
         </div>

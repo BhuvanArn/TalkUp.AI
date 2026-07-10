@@ -54,7 +54,8 @@ describe('ApplicationCard', () => {
       />,
     );
     fireEvent.click(screen.getByLabelText('Application actions'));
-    fireEvent.click(screen.getByText('Move to Interview'));
+    // Menu items are grouped under a "Move to" header; the item is the status.
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Interview' }));
     expect(onStatusChange).toHaveBeenCalledWith('a1', 'interview');
   });
 
