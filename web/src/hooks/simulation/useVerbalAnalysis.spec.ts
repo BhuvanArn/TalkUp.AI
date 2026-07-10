@@ -1,15 +1,12 @@
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { useVerbalAnalysis } from './useVerbalAnalysis';
 
 describe('useVerbalAnalysis', () => {
   it('ignores non-va_result messages', () => {
-    const { result } = renderHook(() =>
-      useVerbalAnalysis({
-        message: { type: 'sts_result', data: '{}' },
-      }),
-    );
+    const message = { type: 'sts_result', data: '{}' };
+    const { result } = renderHook(() => useVerbalAnalysis({ message }));
 
     expect(result.current.analysis.latest).toBeNull();
     expect(result.current.analysis.history).toHaveLength(0);
@@ -134,20 +131,21 @@ describe('useVerbalAnalysis', () => {
       },
     };
 
-    const { result } = renderHook(() =>
-      useVerbalAnalysis({
-        message: {
-          type: 'sts_result',
-          data: JSON.stringify({
-            type: 'sts_result',
-            transcription: 'euh donc voilà',
-            response: 'ok',
-            audio_chunks: [],
-            verbal_analysis: payload,
-          }),
-        },
+    // The message ref must be stable across renders: the hook re-processes on
+    // message identity change, so inlining a fresh object inside the render
+    // callback would re-fire the effect every render and loop. Build it once.
+    const message = {
+      type: 'sts_result',
+      data: JSON.stringify({
+        type: 'sts_result',
+        transcription: 'euh donc voilà',
+        response: 'ok',
+        audio_chunks: [],
+        verbal_analysis: payload,
       }),
-    );
+    };
+
+    const { result } = renderHook(() => useVerbalAnalysis({ message }));
 
     expect(result.current.analysis.latest?.turn_index).toBe(3);
     expect(result.current.analysis.aggregate?.total_filler_words).toBe(4);

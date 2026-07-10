@@ -69,9 +69,7 @@ export default function VerbalAnalysisPanel({
       <div className="p-6 bg-white rounded-lg shadow-md border border-gray-100">
         <div className="flex items-center gap-2 mb-4">
           <Icon icon="notifications" size="md" color="accent" />
-          <h3 className="text-lg font-bold text-gray-800">
-            Analyse verbale
-          </h3>
+          <h3 className="text-lg font-bold text-gray-800">Analyse verbale</h3>
         </div>
         <p className="text-sm text-gray-600">
           L&apos;analyse apparaîtra après votre première prise de parole.
@@ -89,9 +87,7 @@ export default function VerbalAnalysisPanel({
       <div className="p-6 bg-white rounded-lg shadow-md border border-gray-100">
         <div className="flex items-center gap-2 mb-4">
           <Icon icon="notifications" size="md" color="accent" />
-          <h3 className="text-lg font-bold text-gray-800">
-            Analyse verbale
-          </h3>
+          <h3 className="text-lg font-bold text-gray-800">Analyse verbale</h3>
         </div>
 
         <div className="flex items-baseline gap-2 mb-4">
@@ -110,8 +106,7 @@ export default function VerbalAnalysisPanel({
         </div>
 
         <p className="text-sm text-gray-600">
-          Registre: <strong>{registerLabel}</strong> · Tour{' '}
-          {latest.turn_index}
+          Registre: <strong>{registerLabel}</strong> · Tour {latest.turn_index}
         </p>
       </div>
 

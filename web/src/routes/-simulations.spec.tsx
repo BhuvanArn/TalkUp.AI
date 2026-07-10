@@ -98,6 +98,13 @@ vi.mock('@/hooks/simulation', () => ({
     inputUrl: '',
     handleStreamToggle: mockHandleStreamToggle,
   })),
+  useVerbalAnalysis: vi.fn(() => ({
+    analysis: {
+      latest: null,
+      aggregate: null,
+      history: [],
+    },
+  })),
 }));
 
 vi.mock('@/components/organisms/simulation-video-area', () => ({
@@ -188,10 +195,12 @@ describe('Simulations', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders info boxes in sidebar', async () => {
+  it('renders the statistics info box and the verbal analysis panel in sidebar', async () => {
     renderWithProviders(<RouterProvider router={router} />);
     expect(await screen.findByText(/Statistics Overview/i)).toBeInTheDocument();
-    expect(screen.getByText(/Real time advice/i)).toBeInTheDocument();
+    // The old "Real time advice" info box was replaced by the verbal-analysis
+    // panel, which shows its "Analyse verbale" placeholder until the first turn.
+    expect(screen.getByText(/Analyse verbale/i)).toBeInTheDocument();
   });
 
   it('calls handleStreamToggle when stream is toggled on', async () => {

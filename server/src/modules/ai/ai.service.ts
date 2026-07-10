@@ -443,7 +443,9 @@ export class AiService {
       userId,
     );
     if (!record) {
-      throw new NotFoundException("Verbal analysis not found for this interview.");
+      throw new NotFoundException(
+        "Verbal analysis not found for this interview.",
+      );
     }
     return record;
   }
