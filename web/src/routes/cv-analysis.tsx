@@ -109,7 +109,11 @@ function CVAnalysisPage() {
   };
 
   return (
-    <div className="bg-surface min-h-full px-5 py-6">
+    <div
+      className={`bg-surface flex min-h-full flex-col px-5 ${
+        isFinished ? 'py-0' : 'py-6'
+      }`}
+    >
       {/* 1. HEADER - Hidden when results are shown */}
       {!isFinished && (
         <header className="mb-6 text-center">
@@ -127,11 +131,13 @@ function CVAnalysisPage() {
 
       {/* 3. MAIN CONTENT */}
       {isFinished && createdApplication ? (
-        <AnalysisResultCard
-          application={createdApplication}
-          onRetry={handleReset}
-          onStartCourse={handleStartCourse}
-        />
+        <div className="flex flex-1 items-center justify-center">
+          <AnalysisResultCard
+            application={createdApplication}
+            onRetry={handleReset}
+            onStartCourse={handleStartCourse}
+          />
+        </div>
       ) : (
         <>
           <div className="mx-auto grid max-w-[1100px] grid-cols-[repeat(auto-fit,minmax(350px,1fr))] gap-8">

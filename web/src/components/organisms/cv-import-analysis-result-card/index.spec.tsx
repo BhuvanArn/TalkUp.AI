@@ -76,7 +76,7 @@ describe('AnalysisResultCard', () => {
     it('renders the job title and company name', () => {
       render(<AnalysisResultCard {...defaultProps} />);
       expect(
-        screen.getByText('Frontend Engineer — Acme Corp'),
+        screen.getByText('Frontend Engineer · Acme Corp'),
       ).toBeInTheDocument();
     });
 
