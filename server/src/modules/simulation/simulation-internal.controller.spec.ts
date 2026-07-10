@@ -7,7 +7,10 @@ import { SimulationVerbalAnalysisService } from "./simulation-verbal-analysis.se
 describe("SimulationInternalController", () => {
   let controller: SimulationInternalController;
   let context: { getContextForSts: jest.Mock; appendTurn: jest.Mock };
-  let verbalAnalysis: { saveForInterview: jest.Mock; getForInterview: jest.Mock };
+  let verbalAnalysis: {
+    saveForInterview: jest.Mock;
+    getForInterview: jest.Mock;
+  };
 
   beforeEach(async () => {
     context = {
