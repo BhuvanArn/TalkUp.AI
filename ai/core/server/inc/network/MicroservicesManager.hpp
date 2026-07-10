@@ -35,6 +35,19 @@
 using ResponseCallback = std::function<void(const nlohmann::json&)>;
 
 namespace talkup_network {
+    /**
+     * @brief Live-connection registry for deferred (async) sends.
+     *
+     * Deferred VA follow-ups capture a raw crow websocket connection pointer and
+     * may fire after the client has disconnected. These helpers let the async
+     * path check whether a connection is still open before touching it, avoiding
+     * use-after-free on the dangling pointer.
+     */
+    void register_live_connection(const void *conn);
+    void unregister_live_connection(const void *conn);
+    bool is_connection_alive(const void *conn);
+
+    class MicroservicesManager {
     class MicroservicesManager {
         public:
             /**

@@ -117,6 +117,16 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
         crow::websocket::connection *client_conn = &conn;
         microservices_manager->send_to_sts_microservice(json,
             [this, client_conn, key, stream_id](const nlohmann::json& sts_resp) {
+                // This callback may run asynchronously (deferred VA follow-up),
+                // long after the client disconnected. Never touch the captured
+                // raw connection pointer once it is no longer live, or we would
+                // send_text on a freed connection.
+                if (!talkup_network::is_connection_alive(client_conn)) {
+                    std::cerr << "[WsManager] Dropping STS/VA response for closed connection"
+                              << std::endl;
+                    return;
+                }
+
                 const std::string sts_type = sts_resp.value("type", "");
                 if (sts_resp.contains("error") || sts_type == "error" || sts_type == "warning") {
                     client_conn->send_text(set_respond_json_format({

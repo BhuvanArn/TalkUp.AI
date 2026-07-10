@@ -82,8 +82,18 @@ async def authenticate_websocket(
 
 	secret = _jwt_secret()
 	if not secret:
-		# Dev fallback: auth requested but secret not configured.
-		return True, None
+		# Fail closed: auth is explicitly required but no JWT_SECRET is
+		# configured. Accepting here would silently bypass authentication, so
+		# reject instead and surface the misconfiguration. To run without auth,
+		# set STS_WS_AUTH_REQUIRED=false explicitly.
+		print(
+			"[ws_auth] STS_WS_AUTH_REQUIRED is on but JWT_SECRET is empty; "
+			"rejecting connection. Set JWT_SECRET, or disable auth explicitly "
+			"with STS_WS_AUTH_REQUIRED=false.",
+			flush=True,
+		)
+		await websocket.close(code=4401, reason="WebSocket auth misconfigured")
+		return False, None
 
 	token = extract_token_from_scope(websocket.scope)
 	if not token:

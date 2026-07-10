@@ -153,11 +153,13 @@ void talkup_network::Router::set_routes_definitions(crow::SimpleApp& app,
 
     CROW_ROUTE(app, "/ws").websocket()
     .onopen([](crow::websocket::connection& conn){
+        talkup_network::register_live_connection(&conn);
         std::ostringstream oss;
         oss << "[WS] Connection opened: " << (void*)&conn;
         std::cout << oss.str() << std::endl;
     })
     .onclose([](crow::websocket::connection& conn, const std::string& reason){
+        talkup_network::unregister_live_connection(&conn);
         std::ostringstream oss;
         oss << "[WS] Connection closed: " << (void*)&conn << " reason: " << reason;
         std::cout << oss.str() << std::endl;

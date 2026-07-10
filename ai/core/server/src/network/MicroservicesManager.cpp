@@ -12,19 +12,49 @@
 #include <chrono>
 #include <future>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace {
     std::atomic<uint64_t> g_sts_request_id{0};
     constexpr int kStsVaFollowupMs = 5000;
+    // A registered VA follow-up that never receives its va_result would otherwise
+    // linger forever; expire entries older than this so the map cannot grow
+    // unbounded on slow/failed VA calls.
+    constexpr int kStsVaFollowupTtlMs = 30000;
     std::mutex g_sts_va_followup_mutex;
-    std::unordered_map<uint64_t, ResponseCallback> g_sts_va_followup_callbacks;
+
+    struct StsVaFollowupEntry {
+        ResponseCallback callback;
+        std::chrono::steady_clock::time_point registered_at;
+    };
+    std::unordered_map<uint64_t, StsVaFollowupEntry> g_sts_va_followup_callbacks;
+
+    // Caller must hold g_sts_va_followup_mutex.
+    void evict_expired_sts_va_followups_locked()
+    {
+        const auto now = std::chrono::steady_clock::now();
+        for (auto it = g_sts_va_followup_callbacks.begin();
+             it != g_sts_va_followup_callbacks.end();) {
+            const auto age = std::chrono::duration_cast<std::chrono::milliseconds>(
+                now - it->second.registered_at).count();
+            if (age >= kStsVaFollowupTtlMs) {
+                std::cout << "[MicroservicesManager] Expiring stale VA follow-up request_id="
+                          << it->first << std::endl;
+                it = g_sts_va_followup_callbacks.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
 
     void register_sts_va_followup(uint64_t request_id, const ResponseCallback &callback)
     {
         if (!callback)
             return;
         std::lock_guard<std::mutex> lock(g_sts_va_followup_mutex);
-        g_sts_va_followup_callbacks[request_id] = callback;
+        evict_expired_sts_va_followups_locked();
+        g_sts_va_followup_callbacks[request_id] =
+            StsVaFollowupEntry{callback, std::chrono::steady_clock::now()};
     }
 
     bool try_dispatch_sts_va_followup(const nlohmann::json &msg_json)
@@ -38,10 +68,11 @@ namespace {
         ResponseCallback followup;
         {
             std::lock_guard<std::mutex> lock(g_sts_va_followup_mutex);
+            evict_expired_sts_va_followups_locked();
             auto it = g_sts_va_followup_callbacks.find(response_id);
             if (it == g_sts_va_followup_callbacks.end())
                 return false;
-            followup = it->second;
+            followup = it->second.callback;
             g_sts_va_followup_callbacks.erase(it);
         }
 
@@ -72,6 +103,33 @@ namespace {
 
         return "";
     }
+
+    std::mutex g_live_connections_mutex;
+    std::unordered_set<const void *> g_live_connections;
+}
+
+void talkup_network::register_live_connection(const void *conn)
+{
+    if (!conn)
+        return;
+    std::lock_guard<std::mutex> lock(g_live_connections_mutex);
+    g_live_connections.insert(conn);
+}
+
+void talkup_network::unregister_live_connection(const void *conn)
+{
+    if (!conn)
+        return;
+    std::lock_guard<std::mutex> lock(g_live_connections_mutex);
+    g_live_connections.erase(conn);
+}
+
+bool talkup_network::is_connection_alive(const void *conn)
+{
+    if (!conn)
+        return false;
+    std::lock_guard<std::mutex> lock(g_live_connections_mutex);
+    return g_live_connections.count(conn) > 0;
 }
 
 void talkup_network::MicroservicesManager::load_microservices_info(
