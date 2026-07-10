@@ -243,8 +243,18 @@ export class UsersService {
       throw new BadRequestException("Upload a PDF file.");
     }
 
-    const pdfData = await pdfParse(file.buffer);
-    const rawText = pdfData.text;
+    // The upload filter accepts by extension / generic mimetype (browsers don't
+    // reliably tag PDFs), so a non-PDF buffer can reach here and make pdfParse
+    // throw. Surface that as a clean 400 rather than a 500.
+    let rawText: string;
+    try {
+      const pdfData = await pdfParse(file.buffer);
+      rawText = pdfData.text;
+    } catch {
+      throw new BadRequestException(
+        "The file is not a valid PDF or could not be parsed.",
+      );
+    }
 
     if (!rawText || rawText.length === 0) {
       throw new BadRequestException(

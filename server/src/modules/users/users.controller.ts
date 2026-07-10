@@ -83,7 +83,20 @@ export class UsersController {
     FileInterceptor("file", {
       limits: { fileSize: 10 * 1024 * 1024 },
       fileFilter: (req, file, cb) => {
-        if (file.mimetype === "application/pdf") {
+        // Browsers don't always report `application/pdf` — drag-and-drop and
+        // some OSes send `application/octet-stream` or an empty type for a
+        // perfectly valid PDF. Accept those and any `.pdf` name; the actual
+        // PDF-ness is verified downstream when the service parses the buffer.
+        const acceptedMimetypes = [
+          "application/pdf",
+          "application/octet-stream",
+          "application/x-pdf",
+          "",
+        ];
+        const hasPdfExtension = file.originalname
+          ?.toLowerCase()
+          .endsWith(".pdf");
+        if (acceptedMimetypes.includes(file.mimetype) || hasPdfExtension) {
           cb(null, true);
         } else {
           cb(new BadRequestException("Only PDF files are accepted"), false);

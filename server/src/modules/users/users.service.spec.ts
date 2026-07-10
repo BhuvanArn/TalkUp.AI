@@ -388,11 +388,14 @@ describe("UsersService", () => {
       expect(promptSent.length).toBeLessThan(12000);
     });
 
-    it("lets unexpected errors bubble up", async () => {
-      mockPdfParse.mockRejectedValue(new Error("unexpected crash"));
+    it("returns a 400 when the buffer is not a parseable PDF", async () => {
+      // The upload filter accepts by extension / generic mimetype, so a non-PDF
+      // buffer can reach the service and make pdfParse throw; that must surface
+      // as a clean BadRequest, not an unhandled 500.
+      mockPdfParse.mockRejectedValue(new Error("Invalid PDF structure"));
 
       await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
-        "unexpected crash",
+        "The file is not a valid PDF or could not be parsed.",
       );
     });
   });
