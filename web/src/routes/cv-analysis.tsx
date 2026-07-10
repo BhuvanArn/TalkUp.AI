@@ -73,17 +73,14 @@ function CVAnalysisPage() {
       const app = await createApplicationMutation.mutateAsync(jobUrl);
       setCreatedApplication(app);
     } catch (error) {
-      // 5 créations/min max côté serveur (throttle) — message dédié sur 429.
+      // Server throttles application creation to 5/min, surfaced as 429.
       const isThrottled =
         axios.isAxiosError(error) && error.response?.status === 429;
-      const cvNotice = cvUploaded
-        ? ' Ton CV de profil a bien été mis à jour.'
-        : '';
+      const cvNotice = cvUploaded ? ' Your profile CV has been updated.' : '';
       toast.error(
         (isThrottled
-          ? 'Trop de tentatives — réessaie dans une minute.'
-          : "L'analyse a échoué. Vérifie le lien de l'offre et réessaie.") +
-          cvNotice,
+          ? 'Too many attempts. Please try again in a minute.'
+          : 'Analysis failed. Check the offer link and try again.') + cvNotice,
       );
     } finally {
       setAnalysisStep('idle');
@@ -109,10 +106,10 @@ function CVAnalysisPage() {
   };
 
   return (
-    <div className="bg-surface min-h-full px-5 py-8">
+    <div className="bg-surface min-h-full px-5 py-6">
       {/* 1. HEADER - Hidden when results are shown */}
       {!isFinished && (
-        <header className="mb-8 text-center">
+        <header className="mb-6 text-center">
           <h1 className="text-h2 text-text">Compatibility Analysis</h1>
           <p className="text-body-l text-text-weaker mt-2">
             Upload your CV and paste the job offer link to begin.
