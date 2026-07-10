@@ -121,6 +121,12 @@ void talkup_network::WsManager::handle_stream_chunk(const nlohmann::json& json, 
                 // long after the client disconnected. Never touch the captured
                 // raw connection pointer once it is no longer live, or we would
                 // send_text on a freed connection.
+                //
+                // NOTE: this liveness check shrinks but does not fully close the
+                // race — the connection can still be torn down on crow's
+                // io_service thread between this check and send_text below. A
+                // complete fix needs shared ownership (enable_shared_from_this)
+                // or routing the send through the connection's own io_service.
                 if (!talkup_network::is_connection_alive(client_conn)) {
                     std::cerr << "[WsManager] Dropping STS/VA response for closed connection"
                               << std::endl;
