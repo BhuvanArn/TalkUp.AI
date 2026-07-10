@@ -48,7 +48,6 @@ namespace talkup_network {
     bool is_connection_alive(const void *conn);
 
     class MicroservicesManager {
-    class MicroservicesManager {
         public:
             /**
              * @brief Construct a new MicroservicesManager object
