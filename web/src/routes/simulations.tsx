@@ -238,7 +238,7 @@ function Simulations() {
           <img src="/avatarworking.png" alt="Avatar Working" />
         </div>
       </div>
-      <NotesEditor />
+      <NotesEditor interviewID={interviewID} />
     </div>
   );
 }
