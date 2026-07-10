@@ -3,6 +3,7 @@ import { ApplicationsKanban } from '@/components/organisms/applications-kanban';
 import {
   useApplications,
   useDeleteApplication,
+  useUpdateApplicationInterviewAt,
   useUpdateApplicationStatus,
 } from '@/services/applications/hooks';
 import { createAuthGuard } from '@/utils/auth.guards';
@@ -22,12 +23,17 @@ function ApplicationsPage() {
   const navigate = Route.useNavigate();
   const { data: applications, isLoading, isError } = useApplications();
   const updateStatus = useUpdateApplicationStatus();
+  const updateInterviewAt = useUpdateApplicationInterviewAt();
   const deleteApplication = useDeleteApplication();
   const ApplicationsIcon = iconMap.applications;
+  const PlusIcon = iconMap.plus;
 
   const pendingIds = new Set<string>();
   if (updateStatus.isPending && updateStatus.variables) {
     pendingIds.add(updateStatus.variables.applicationId);
+  }
+  if (updateInterviewAt.isPending && updateInterviewAt.variables) {
+    pendingIds.add(updateInterviewAt.variables.applicationId);
   }
   if (deleteApplication.isPending && deleteApplication.variables) {
     pendingIds.add(deleteApplication.variables);
@@ -66,9 +72,10 @@ function ApplicationsPage() {
         {hasApplications && (
           <Link
             to="/cv-analysis"
-            className="text-button-m bg-accent hover:bg-accent-hover rounded-lg px-4 py-2 text-white transition-colors"
+            className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-lg px-4 py-2 text-white transition-colors"
           >
-            + New application
+            <PlusIcon size={18} aria-hidden="true" />
+            New application
           </Link>
         )}
       </div>
@@ -96,6 +103,7 @@ function ApplicationsPage() {
               pendingIds={pendingIds}
               onStatusChange={() => {}}
               onDelete={() => {}}
+              onInterviewAtChange={() => {}}
               onOpenTraining={() => {}}
             />
           </div>
@@ -148,6 +156,9 @@ function ApplicationsPage() {
             updateStatus.mutate({ applicationId, status })
           }
           onDelete={(applicationId) => deleteApplication.mutate(applicationId)}
+          onInterviewAtChange={(applicationId, interviewAt) =>
+            updateInterviewAt.mutate({ applicationId, interviewAt })
+          }
           onOpenTraining={openTraining}
         />
       )}

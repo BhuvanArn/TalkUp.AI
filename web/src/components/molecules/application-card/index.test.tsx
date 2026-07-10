@@ -18,6 +18,7 @@ const app: Application = {
   offerDetails: null,
   cvDetails: null,
   appliedAt: '2026-07-01T00:00:00.000Z',
+  interviewAt: null,
   updatedAt: '2026-07-08T00:00:00.000Z',
 };
 
@@ -31,6 +32,7 @@ describe('ApplicationCard', () => {
         isPending={false}
         onStatusChange={noop}
         onDelete={noop}
+        onInterviewAtChange={noop}
         onOpenTraining={noop}
       />,
     );
@@ -47,11 +49,12 @@ describe('ApplicationCard', () => {
         isPending={false}
         onStatusChange={onStatusChange}
         onDelete={noop}
+        onInterviewAtChange={noop}
         onOpenTraining={noop}
       />,
     );
     fireEvent.click(screen.getByLabelText('Application actions'));
-    fireEvent.click(screen.getByText('Interview'));
+    fireEvent.click(screen.getByText('Move to Interview'));
     expect(onStatusChange).toHaveBeenCalledWith('a1', 'interview');
   });
 
@@ -63,6 +66,7 @@ describe('ApplicationCard', () => {
         isPending={false}
         onStatusChange={noop}
         onDelete={onDelete}
+        onInterviewAtChange={noop}
         onOpenTraining={noop}
       />,
     );
@@ -80,6 +84,7 @@ describe('ApplicationCard', () => {
         isPending={true}
         onStatusChange={noop}
         onDelete={noop}
+        onInterviewAtChange={noop}
         onOpenTraining={noop}
       />,
     );

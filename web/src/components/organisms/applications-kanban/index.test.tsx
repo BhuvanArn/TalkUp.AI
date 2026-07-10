@@ -15,6 +15,7 @@ const make = (id: string, status: Application['status']): Application => ({
   offerDetails: null,
   cvDetails: null,
   appliedAt: '2026-07-01T00:00:00.000Z',
+  interviewAt: null,
   updatedAt: '2026-07-08T00:00:00.000Z',
 });
 
@@ -30,6 +31,7 @@ describe('ApplicationsKanban', () => {
         pendingIds={new Set()}
         onStatusChange={noop}
         onDelete={noop}
+        onInterviewAtChange={noop}
         onOpenTraining={noop}
       />,
     );
@@ -47,6 +49,7 @@ describe('ApplicationsKanban', () => {
         pendingIds={new Set()}
         onStatusChange={noop}
         onDelete={noop}
+        onInterviewAtChange={noop}
         onOpenTraining={noop}
       />,
     );
