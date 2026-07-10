@@ -182,7 +182,7 @@ describe("ApplicationsService", () => {
     });
   });
 
-  describe("updateStatus", () => {
+  describe("updateApplication", () => {
     it("updates the status of an owned application", async () => {
       const row = {
         application_id: "a1",
@@ -191,11 +191,9 @@ describe("ApplicationsService", () => {
       } as application;
       applicationRepo.findOne = jest.fn().mockResolvedValue(row);
 
-      const updated = await service.updateStatus(
-        "u1",
-        "a1",
-        ApplicationStatus.INTERVIEW,
-      );
+      const updated = await service.updateApplication("u1", "a1", {
+        status: ApplicationStatus.INTERVIEW,
+      });
 
       expect(applicationRepo.findOne).toHaveBeenCalledWith({
         where: { application_id: "a1", user_id: "u1" },
@@ -204,10 +202,32 @@ describe("ApplicationsService", () => {
       expect(applicationRepo.save).toHaveBeenCalledWith(row);
     });
 
+    it("sets the interview date and can clear it", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        status: ApplicationStatus.SENT,
+        interview_at: null,
+      } as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+
+      const set = await service.updateApplication("u1", "a1", {
+        interviewAt: "2026-07-15T14:00:00.000Z",
+      });
+      expect(set.interview_at).toEqual(new Date("2026-07-15T14:00:00.000Z"));
+
+      const cleared = await service.updateApplication("u1", "a1", {
+        interviewAt: null,
+      });
+      expect(cleared.interview_at).toBeNull();
+    });
+
     it("throws NotFound for an application owned by someone else", async () => {
       applicationRepo.findOne = jest.fn().mockResolvedValue(null);
       await expect(
-        service.updateStatus("u1", "a1", ApplicationStatus.ACCEPTED),
+        service.updateApplication("u1", "a1", {
+          status: ApplicationStatus.ACCEPTED,
+        }),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
   });

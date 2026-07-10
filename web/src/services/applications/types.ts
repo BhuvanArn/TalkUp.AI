@@ -42,5 +42,7 @@ export interface Application {
   offerDetails: OfferDetails | null;
   cvDetails: CvDetails | null;
   appliedAt: string;
+  /** Optional interview date/time (ISO string), null until scheduled. */
+  interviewAt: string | null;
   updatedAt: string;
 }

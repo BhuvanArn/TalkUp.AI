@@ -70,7 +70,10 @@ function CVAnalysisPage() {
       await uploadMyCV(cvFile);
       cvUploaded = true;
       setAnalysisStep('offer');
-      const app = await createApplicationMutation.mutateAsync(jobUrl);
+      const app = await createApplicationMutation.mutateAsync({
+        url: jobUrl,
+        interviewAt: deadline ? deadline.toISOString() : null,
+      });
       setCreatedApplication(app);
     } catch (error) {
       // Server throttles application creation to 5/min, surfaced as 429.

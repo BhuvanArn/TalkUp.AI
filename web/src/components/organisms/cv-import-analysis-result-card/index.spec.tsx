@@ -44,6 +44,7 @@ const baseApplication: Application = {
   },
   cvDetails: null,
   appliedAt: '2026-07-01T00:00:00.000Z',
+  interviewAt: null,
   updatedAt: '2026-07-01T00:00:00.000Z',
 };
 

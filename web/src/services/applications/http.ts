@@ -9,10 +9,13 @@ export async function fetchApplications(): Promise<Application[]> {
   return data;
 }
 
-export async function createApplication(url: string): Promise<Application> {
+export async function createApplication(
+  url: string,
+  interviewAt?: string | null,
+): Promise<Application> {
   const { data } = await axiosInstance.post<Application>(
     API_ROUTES.applications,
-    { url },
+    interviewAt ? { url, interviewAt } : { url },
   );
   return data;
 }
@@ -24,6 +27,17 @@ export async function updateApplicationStatus(
   const { data } = await axiosInstance.patch<Application>(
     `${API_ROUTES.applications}/${applicationId}`,
     { status },
+  );
+  return data;
+}
+
+export async function updateApplicationInterviewAt(
+  applicationId: string,
+  interviewAt: string | null,
+): Promise<Application> {
+  const { data } = await axiosInstance.patch<Application>(
+    `${API_ROUTES.applications}/${applicationId}`,
+    { interviewAt },
   );
   return data;
 }

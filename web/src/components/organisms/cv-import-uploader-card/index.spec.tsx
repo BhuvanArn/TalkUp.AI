@@ -154,15 +154,16 @@ describe('UploaderCard', () => {
   });
 
   describe('Deadline section', () => {
-    it('renders the Application Deadline label', () => {
+    it('renders the Interview date label', () => {
       render(<UploaderCard {...defaultProps} />);
-      expect(screen.getByText('Application Deadline')).toBeInTheDocument();
+      // The visible header and the sr-only input label share this text.
+      expect(screen.getAllByText('Interview date').length).toBeGreaterThan(0);
     });
 
-    it('renders the optional hint when no deadline is set', () => {
+    it('renders the optional hint when no date is set', () => {
       render(<UploaderCard {...defaultProps} deadline={null} />);
       expect(
-        screen.getByText(/Optional.*helps prioritize your applications/i),
+        screen.getByText(/Optional.*when is your interview/i),
       ).toBeInTheDocument();
     });
 
@@ -173,7 +174,7 @@ describe('UploaderCard', () => {
 
     it('labels the date input for accessibility', () => {
       render(<UploaderCard {...defaultProps} />);
-      expect(screen.getByLabelText('Application deadline')).toBeInTheDocument();
+      expect(screen.getByLabelText('Interview date')).toBeInTheDocument();
     });
 
     it('calls onDeadlineChange with a Date when a date is set', () => {
@@ -237,7 +238,7 @@ describe('UploaderCard', () => {
         />,
       );
       expect(screen.getByText('Overdue')).toBeInTheDocument();
-      expect(screen.getByText('The deadline has passed.')).toBeInTheDocument();
+      expect(screen.getByText('This date is in the past.')).toBeInTheDocument();
     });
 
     it('shows "Today!" badge when deadline is today', () => {

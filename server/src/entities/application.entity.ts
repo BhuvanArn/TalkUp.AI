@@ -53,6 +53,11 @@ export class application {
   @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   applied_at: Date;
 
+  // Optional interview date/time the candidate sets (at creation or later).
+  // Null until scheduled; shown on the kanban card.
+  @Column({ type: "timestamp", nullable: true })
+  interview_at: Date | null;
+
   @CreateDateColumn()
   created_at: Date;
 

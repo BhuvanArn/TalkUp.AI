@@ -48,6 +48,7 @@ export class GetApplicationDto {
   @ApiProperty({ nullable: true, type: CvDetailsDto })
   cvDetails: CvDetailsDto | null;
   @ApiProperty() appliedAt: Date;
+  @ApiProperty({ nullable: true, type: Date }) interviewAt: Date | null;
   @ApiProperty() updatedAt: Date;
 
   static fromEntity(row: application): GetApplicationDto {
@@ -60,6 +61,7 @@ export class GetApplicationDto {
     dto.offerDetails = (row.offer_details as OfferDetailsDto) ?? null;
     dto.cvDetails = (row.cv_details as CvDetailsDto) ?? null;
     dto.appliedAt = row.applied_at;
+    dto.interviewAt = row.interview_at ?? null;
     dto.updatedAt = row.updated_at;
     return dto;
   }

@@ -61,6 +61,7 @@ export class ApplicationsController {
     const row = await this.applicationsService.createFromUrl(
       user.user_id,
       dto.url,
+      dto.interviewAt,
     );
     return GetApplicationDto.fromEntity(row);
   }
@@ -74,7 +75,9 @@ export class ApplicationsController {
     return rows.map((row) => GetApplicationDto.fromEntity(row));
   }
 
-  @ApiOperation({ summary: "Update an application's tracking status" })
+  @ApiOperation({
+    summary: "Update an application's tracking status and/or interview date",
+  })
   @ApiOkResponse({
     description: "The updated application",
     type: GetApplicationDto,
@@ -88,10 +91,10 @@ export class ApplicationsController {
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateApplicationStatusDto,
   ): Promise<GetApplicationDto> {
-    const row = await this.applicationsService.updateStatus(
+    const row = await this.applicationsService.updateApplication(
       user.user_id,
       id,
-      dto.status,
+      { status: dto.status, interviewAt: dto.interviewAt },
     );
     return GetApplicationDto.fromEntity(row);
   }

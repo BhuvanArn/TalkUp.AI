@@ -32,7 +32,11 @@ export class ApplicationsService {
     private readonly userCvRepo: Repository<user_cv>,
   ) {}
 
-  async createFromUrl(userId: string, url: string): Promise<application> {
+  async createFromUrl(
+    userId: string,
+    url: string,
+    interviewAt?: string,
+  ): Promise<application> {
     try {
       new URL(url);
     } catch {
@@ -80,6 +84,7 @@ export class ApplicationsService {
       job_title: data.job_title ?? null,
       status: ApplicationStatus.SENT,
       offer_url: url,
+      interview_at: interviewAt ? new Date(interviewAt) : null,
       offer_details: {
         job_title: data.job_title ?? null,
         company_name: data.company_name ?? null,
@@ -122,13 +127,20 @@ export class ApplicationsService {
     });
   }
 
-  async updateStatus(
+  async updateApplication(
     userId: string,
     applicationId: string,
-    status: ApplicationStatus,
+    changes: { status?: ApplicationStatus; interviewAt?: string | null },
   ): Promise<application> {
     const row = await this.findOwned(userId, applicationId);
-    row.status = status;
+    if (changes.status !== undefined) {
+      row.status = changes.status;
+    }
+    if (changes.interviewAt !== undefined) {
+      row.interview_at = changes.interviewAt
+        ? new Date(changes.interviewAt)
+        : null;
+    }
     return this.applicationRepo.save(row);
   }
 

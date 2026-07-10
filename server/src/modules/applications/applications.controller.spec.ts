@@ -37,7 +37,7 @@ describe("ApplicationsController", () => {
     mockService = {
       createFromUrl: jest.fn().mockResolvedValue(row),
       listForUser: jest.fn().mockResolvedValue([row]),
-      updateStatus: jest
+      updateApplication: jest
         .fn()
         .mockResolvedValue({ ...row, status: ApplicationStatus.INTERVIEW }),
       remove: jest.fn().mockResolvedValue(undefined),
@@ -59,6 +59,7 @@ describe("ApplicationsController", () => {
     expect(mockService.createFromUrl).toHaveBeenCalledWith(
       "u1",
       "https://example.com/job",
+      undefined,
     );
     expect(dto.applicationId).toBe("a1");
     expect(dto.companyName).toBe("Datadog");
@@ -76,12 +77,21 @@ describe("ApplicationsController", () => {
     const dto = await controller.updateStatus(mockUser, "a1", {
       status: ApplicationStatus.INTERVIEW,
     });
-    expect(mockService.updateStatus).toHaveBeenCalledWith(
-      "u1",
-      "a1",
-      ApplicationStatus.INTERVIEW,
-    );
+    expect(mockService.updateApplication).toHaveBeenCalledWith("u1", "a1", {
+      status: ApplicationStatus.INTERVIEW,
+      interviewAt: undefined,
+    });
     expect(dto.status).toBe(ApplicationStatus.INTERVIEW);
+  });
+
+  it("updates the interview date", async () => {
+    await controller.updateStatus(mockUser, "a1", {
+      interviewAt: "2026-07-15T14:00:00.000Z",
+    });
+    expect(mockService.updateApplication).toHaveBeenCalledWith("u1", "a1", {
+      status: undefined,
+      interviewAt: "2026-07-15T14:00:00.000Z",
+    });
   });
 
   it("deletes an application", async () => {
