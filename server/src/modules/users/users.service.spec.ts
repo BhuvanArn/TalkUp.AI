@@ -22,10 +22,14 @@ import { UsersService } from "./users.service";
 const mockPdfParse = jest.fn();
 // Lazy wrappers: the service now imports these at module-load time, so the mock
 // factory must not touch the `mock*` consts until call time (avoids TDZ).
-jest.mock("pdf-parse-debugging-disabled", () => ({
-  __esModule: true,
-  default: (...args: unknown[]) => mockPdfParse(...args),
-}));
+// The service consumes this package as a CommonJS callable (`const pdfParse =
+// require(...)`), so the mock's module export must itself BE the function.
+jest.mock(
+  "pdf-parse-debugging-disabled",
+  () =>
+    (...args: unknown[]) =>
+      mockPdfParse(...args),
+);
 
 jest.mock("groq-sdk", () => ({
   __esModule: true,

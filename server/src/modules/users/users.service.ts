@@ -25,7 +25,15 @@ import {
 import { UpdateProfileDto } from "./dto/updateProfile.dto";
 import { GetProfileDto } from "./dto/getProfile.dto";
 import { user_cv } from "@entities/userCV.entity";
-import pdfParse from "pdf-parse-debugging-disabled";
+// `pdf-parse-debugging-disabled` is an untyped CommonJS module whose entire
+// export IS the parse function (`module.exports = Pdf`). With `esModuleInterop`
+// off (see server/tsconfig.json) a default import compiles to `.default`, which
+// is undefined at runtime, so we bind the CJS export directly via `require` and
+// give it a local call signature.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse: (
+  buffer: Buffer,
+) => Promise<{ text: string }> = require("pdf-parse-debugging-disabled");
 
 /** Minimal shape of the multer file we consume (avoids depending on the global
  * Express.Multer namespace, which is not in this project's tsconfig `types`). */
