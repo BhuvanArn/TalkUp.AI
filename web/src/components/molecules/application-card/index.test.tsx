@@ -59,7 +59,7 @@ describe('ApplicationCard', () => {
     expect(onStatusChange).toHaveBeenCalledWith('a1', 'interview');
   });
 
-  it('requires a confirmation click to delete', () => {
+  it('requires a confirmation modal to delete', () => {
     const onDelete = vi.fn();
     wrap(
       <ApplicationCard
@@ -71,10 +71,15 @@ describe('ApplicationCard', () => {
         onOpenTraining={noop}
       />,
     );
+    // The menu "Delete" item only opens the confirmation modal; it does not
+    // delete on its own.
     fireEvent.click(screen.getByLabelText('Application actions'));
     fireEvent.click(screen.getByText('Delete'));
     expect(onDelete).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText('Confirm deletion'));
+    expect(screen.getByText('Delete this application?')).toBeInTheDocument();
+
+    // Confirming in the modal fires the delete.
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalledWith('a1');
   });
 

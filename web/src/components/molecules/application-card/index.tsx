@@ -1,4 +1,5 @@
 import { iconMap } from '@/components/atoms/icon/icon-map';
+import { ConfirmModal } from '@/components/molecules/confirm-modal';
 import type {
   Application,
   ApplicationStatus,
@@ -66,7 +67,7 @@ export const ApplicationCard = ({
   onOpenTraining,
 }: ApplicationCardProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const menuContainerRef = useRef<HTMLDivElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -81,7 +82,6 @@ export const ApplicationCard = ({
 
   const closeMenu = () => {
     setIsMenuOpen(false);
-    setIsConfirmingDelete(false);
   };
 
   // Close the menu on an outside click or Escape so it behaves like a real
@@ -234,24 +234,35 @@ export const ApplicationCard = ({
                 type="button"
                 role="menuitem"
                 onClick={() => {
-                  if (isConfirmingDelete) {
-                    onDelete(application.applicationId);
-                    closeMenu();
-                  } else {
-                    setIsConfirmingDelete(true);
-                  }
+                  closeMenu();
+                  setIsDeleteModalOpen(true);
                 }}
-                className={`text-body-s text-error hover:bg-error-weaker flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left ${
-                  isConfirmingDelete ? 'font-bold' : ''
-                }`}
+                className="text-body-s text-error hover:bg-error-weaker flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left"
               >
                 <TrashIcon size={15} aria-hidden="true" className="shrink-0" />
-                {isConfirmingDelete ? 'Confirm deletion' : 'Delete'}
+                Delete
               </button>
             </div>
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Delete this application?"
+        message={`This removes ${
+          application.companyName ?? 'this application'
+        } and its training progress. This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmColor="error"
+        icon="trash"
+        onConfirm={() => {
+          onDelete(application.applicationId);
+          setIsDeleteModalOpen(false);
+        }}
+        onCancel={() => setIsDeleteModalOpen(false)}
+      />
 
       {/* Interview status: an explicit scheduled/not-scheduled line, most useful
           in the Interview column but shown whenever a date is set. */}
