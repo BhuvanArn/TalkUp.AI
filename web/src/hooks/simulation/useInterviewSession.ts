@@ -28,6 +28,8 @@ export interface UseInterviewSessionProps {
   onConnect: (url: string) => void;
   /** Callback to disconnect from WebSocket */
   onDisconnect: (code: number, reason: string) => void;
+  /** Optional callback before disconnect (e.g. send session_end) */
+  onBeforeDisconnect?: () => void;
   /** Optional callback to resume video streaming after page refresh */
   onResumeStream?: () => void;
 }
@@ -97,6 +99,7 @@ async function waitForReadyEntrypoint(
 export function useInterviewSession({
   onConnect,
   onDisconnect,
+  onBeforeDisconnect,
   onResumeStream,
 }: UseInterviewSessionProps): UseInterviewSessionReturn {
   const [inputUrl, setInputUrl] = useState('');
@@ -237,6 +240,7 @@ export function useInterviewSession({
         queueAbortRef.current?.abort();
 
         try {
+          onBeforeDisconnect?.();
           onDisconnect(WEBSOCKET_CLOSE_CODE_NORMAL, 'Call ended');
         } catch (error) {
           console.error('Failed to disconnect WebSocket:', error);
@@ -260,7 +264,7 @@ export function useInterviewSession({
         processingRef.current = false;
       }
     },
-    [onConnect, onDisconnect],
+    [onConnect, onDisconnect, onBeforeDisconnect],
   );
 
   return {

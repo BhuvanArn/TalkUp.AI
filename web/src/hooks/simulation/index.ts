@@ -24,3 +24,13 @@ export type {
   UseAudioPlaybackProps,
   UseAudioPlaybackReturn,
 } from './useAudioPlayback';
+
+export { useVerbalAnalysis } from './useVerbalAnalysis';
+export type {
+  SessionAggregate,
+  TurnAnalysis,
+  UseVerbalAnalysisProps,
+  UseVerbalAnalysisReturn,
+  VerbalAnalysisPayload,
+  VerbalAnalysisState,
+} from './useVerbalAnalysis';

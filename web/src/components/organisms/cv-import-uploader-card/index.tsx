@@ -218,12 +218,12 @@ export const UploaderCard = ({
         </div>
       </div>
 
-      {/* ── Deadline section ── */}
+      {/* ── Interview date section ── */}
       <div className="bg-surface border-border mx-10 mb-8 rounded-2xl border p-5">
         <div className="mb-3 flex items-center gap-2">
           <CalendarIcon size={16} className="text-accent" aria-hidden="true" />
           <span className="text-body-s-strong text-text flex-1">
-            Application Deadline
+            Interview date
           </span>
 
           {deadline && daysRemaining !== null && (
@@ -240,7 +240,7 @@ export const UploaderCard = ({
 
         <div className="flex items-center gap-2">
           <label htmlFor="cv-deadline" className="sr-only">
-            Application deadline
+            Interview date
           </label>
           <input
             id="cv-deadline"
@@ -273,12 +273,12 @@ export const UploaderCard = ({
 
         {!deadline && (
           <p className="text-body-s text-text-weakest mt-2">
-            Optional: helps prioritize your applications
+            Optional: when is your interview with this company?
           </p>
         )}
         {deadline && daysRemaining !== null && daysRemaining < 0 && (
           <p className="text-body-s text-error mt-2">
-            The deadline has passed.
+            This date is in the past.
           </p>
         )}
       </div>

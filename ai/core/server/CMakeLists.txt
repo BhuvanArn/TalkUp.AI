@@ -52,6 +52,7 @@ set(SOURCES
     src/network/Router.cpp
     src/network/WebsocketManager.cpp
     src/network/MicroservicesManager.cpp
+    src/network/WsClientSession.cpp
     main.cpp
 )
 
@@ -62,6 +63,7 @@ set(SOURCES_TESTS
     src/network/Router.cpp
     src/network/WebsocketManager.cpp
     src/network/MicroservicesManager.cpp
+    src/network/WsClientSession.cpp
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)

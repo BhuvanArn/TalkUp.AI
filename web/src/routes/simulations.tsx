@@ -4,6 +4,7 @@ import SimulationQueueBanner from '@/components/molecules/simulation-queue-banne
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
 import SimulationVideoArea from '@/components/organisms/simulation-video-area';
+import VerbalAnalysisPanel from '@/components/organisms/verbal-analysis-panel';
 import { WebSocketDebugPanel } from '@/components/organisms/websocket-debug-panel';
 import {
   WebSocketPacket,
@@ -11,6 +12,7 @@ import {
   useAudioStreaming,
   useInterviewSession,
   useSimulationWebSocket,
+  useVerbalAnalysis,
 } from '@/hooks/simulation';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
@@ -31,10 +33,31 @@ function Simulations() {
   const disconnectRef = useRef<(code?: number, reason?: string) => void>(
     () => {},
   );
+  const sendJsonMessageRef = useRef<(message: object) => void>(() => {});
+  const readyStateRef = useRef(ReadyState.CONNECTING);
+  const interviewIDRef = useRef<string | null>(null);
 
   const handleResumeStream = useCallback(() => {
     if (videoStreamToggleRef.current) {
       videoStreamToggleRef.current();
+    }
+  }, []);
+
+  const handleBeforeDisconnect = useCallback(() => {
+    if (
+      readyStateRef.current === ReadyState.OPEN &&
+      interviewIDRef.current &&
+      sendJsonMessageRef.current
+    ) {
+      sendJsonMessageRef.current({
+        type: 'session_end',
+        key: import.meta.env.VITE_WEBSOCKET_KEY,
+        interview_id: interviewIDRef.current,
+        stream_id: interviewIDRef.current,
+        format: 'text',
+        data: '{}',
+        timestamp: Date.now(),
+      });
     }
   }, []);
 
@@ -49,6 +72,7 @@ function Simulations() {
   } = useInterviewSession({
     onConnect: (url) => connectRef.current(url),
     onDisconnect: (code, reason) => disconnectRef.current(code, reason),
+    onBeforeDisconnect: handleBeforeDisconnect,
     onResumeStream: handleResumeStream,
   });
 
@@ -86,9 +110,7 @@ function Simulations() {
 
   connectRef.current = connect;
   disconnectRef.current = disconnect;
-
-  const sendJsonMessageRef = useRef(sendJsonMessage);
-  const readyStateRef = useRef(readyState);
+  interviewIDRef.current = interviewID;
 
   useEffect(() => {
     sendJsonMessageRef.current = sendJsonMessage;
@@ -105,9 +127,19 @@ function Simulations() {
     message: lastJsonMessage,
   });
 
+  const { analysis } = useVerbalAnalysis({
+    message: lastJsonMessage,
+    interviewID,
+  });
+
   const [transcriptions, setTranscriptions] = useState<TranscriptionProps[]>(
     [],
   );
+
+  useEffect(() => {
+    if (!interviewID) return;
+    setTranscriptions([]);
+  }, [interviewID]);
 
   useEffect(() => {
     if (!transcript) return;
@@ -201,16 +233,12 @@ function Simulations() {
             icon="notifications"
           />
 
-          <InfoBox
-            title="Real time advice"
-            text="Remember to keep your hands above the table"
-            icon="check"
-          />
+          <VerbalAnalysisPanel analysis={analysis} />
 
           <img src="/avatarworking.png" alt="Avatar Working" />
         </div>
       </div>
-      <NotesEditor />
+      <NotesEditor interviewID={interviewID} />
     </div>
   );
 }

@@ -20,4 +20,5 @@ numpy==1.25.2
 soundfile==0.12.1
 pydub==0.25.1
 pydantic==2.10.0
+PyJWT==2.9.0
 torch==2.4.0 --index-url https://download.pytorch.org/whl/cu124

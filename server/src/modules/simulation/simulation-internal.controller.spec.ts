@@ -2,10 +2,15 @@ import { Test, TestingModule } from "@nestjs/testing";
 
 import { SimulationInternalController } from "./simulation-internal.controller";
 import { SimulationContextService } from "./simulation-context.service";
+import { SimulationVerbalAnalysisService } from "./simulation-verbal-analysis.service";
 
 describe("SimulationInternalController", () => {
   let controller: SimulationInternalController;
   let context: { getContextForSts: jest.Mock; appendTurn: jest.Mock };
+  let verbalAnalysis: {
+    saveForInterview: jest.Mock;
+    getForInterview: jest.Mock;
+  };
 
   beforeEach(async () => {
     context = {
@@ -13,9 +18,20 @@ describe("SimulationInternalController", () => {
       appendTurn: jest.fn(),
     };
 
+    verbalAnalysis = {
+      saveForInterview: jest.fn(),
+      getForInterview: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SimulationInternalController],
-      providers: [{ provide: SimulationContextService, useValue: context }],
+      providers: [
+        { provide: SimulationContextService, useValue: context },
+        {
+          provide: SimulationVerbalAnalysisService,
+          useValue: verbalAnalysis,
+        },
+      ],
     }).compile();
 
     controller = module.get(SimulationInternalController);

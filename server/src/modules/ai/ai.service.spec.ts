@@ -16,6 +16,7 @@ import { AiService } from "./ai.service";
 import { SimulationCapacityService } from "../simulation/simulation-capacity.service";
 import { SimulationContextService } from "../simulation/simulation-context.service";
 import { SimulationPromotionService } from "../simulation/simulation-promotion.service";
+import { SimulationVerbalAnalysisService } from "../simulation/simulation-verbal-analysis.service";
 import { ChatRole } from "./dto/chat.dto";
 
 const mockGroqCreate = jest.fn();
@@ -45,6 +46,7 @@ describe("AiService", () => {
   let mockCapacity: any;
   let mockPromotion: any;
   let mockContext: any;
+  let mockVerbalAnalysis: any;
 
   beforeEach(async () => {
     mockGroqCreate.mockReset();
@@ -95,6 +97,11 @@ describe("AiService", () => {
       deleteContext: jest.fn(),
     };
 
+    mockVerbalAnalysis = {
+      saveForInterview: jest.fn(),
+      getForInterview: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AiService,
@@ -109,6 +116,10 @@ describe("AiService", () => {
         { provide: SimulationCapacityService, useValue: mockCapacity },
         { provide: SimulationContextService, useValue: mockContext },
         { provide: SimulationPromotionService, useValue: mockPromotion },
+        {
+          provide: SimulationVerbalAnalysisService,
+          useValue: mockVerbalAnalysis,
+        },
       ],
     }).compile();
 

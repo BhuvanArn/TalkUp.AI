@@ -1,6 +1,7 @@
 export interface Note {
   note_id: string;
   user_id: string;
+  interview_id?: string | null;
   title: string;
   content: string;
   color: string;
@@ -11,6 +12,7 @@ export interface Note {
 
 export interface CreateNoteDto {
   title: string;
+  interviewId?: string;
   content?: string;
   color?: string;
   is_favorite?: boolean;

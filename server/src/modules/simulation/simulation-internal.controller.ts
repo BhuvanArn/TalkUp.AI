@@ -5,13 +5,18 @@ import { UsePipes } from "@nestjs/common";
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { InternalApiKeyGuard } from "./guards/internal-api-key.guard";
 import { SimulationContextService } from "./simulation-context.service";
+import { SimulationVerbalAnalysisService } from "./simulation-verbal-analysis.service";
 import { AppendSimulationHistoryDto } from "./dto/appendSimulationHistory.dto";
+import { SaveVerbalAnalysisDto } from "./dto/saveVerbalAnalysis.dto";
 
 @ApiExcludeController()
 @Controller("ai/internal")
 @UseGuards(InternalApiKeyGuard)
 export class SimulationInternalController {
-  constructor(private readonly contextService: SimulationContextService) {}
+  constructor(
+    private readonly contextService: SimulationContextService,
+    private readonly verbalAnalysisService: SimulationVerbalAnalysisService,
+  ) {}
 
   @Get("sessions/:interviewId/context")
   getSessionContext(@Param("interviewId") interviewId: string) {
@@ -29,5 +34,14 @@ export class SimulationInternalController {
       dto.userText,
       dto.assistantText,
     );
+  }
+
+  @UsePipes(new PostValidationPipe())
+  @Post("sessions/:interviewId/verbal-analysis")
+  saveVerbalAnalysis(
+    @Param("interviewId") interviewId: string,
+    @Body() dto: SaveVerbalAnalysisDto,
+  ) {
+    return this.verbalAnalysisService.saveForInterview(interviewId, dto);
   }
 }

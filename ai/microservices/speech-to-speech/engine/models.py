@@ -137,10 +137,13 @@ def _load_whisper_model(model_path: str) -> WhisperModel:
 	Loads the Whisper model from the specified path.
 	Tries multiple device and compute type combinations to find a compatible configuration.
 	"""
+	# Prefer the GPU: int8_float16 fits comfortably on a 4 GB card and is far
+	# faster and more accurate than CPU int8. float16 is the next best when
+	# memory allows, and CPU int8 is the last-resort fallback.
 	attempts = [
-		("cpu", "int8"),
 		("cuda", "int8_float16"),
 		("cuda", "float16"),
+		("cpu", "int8"),
 	]
 	last_error = None
 

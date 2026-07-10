@@ -1,3 +1,4 @@
+import type { Application } from '@/services/applications/types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +18,38 @@ vi.mock('../../atoms/icon/icon-map', () => ({
   },
 }));
 
+const baseApplication: Application = {
+  applicationId: 'app-1',
+  companyName: 'Acme Corp',
+  jobTitle: 'Frontend Engineer',
+  status: 'sent',
+  offerUrl: 'https://example.com/job/1',
+  offerDetails: {
+    job_title: 'Frontend Engineer',
+    company_name: 'Acme Corp',
+    company_description: null,
+    sector: 'Tech',
+    contract_type: 'CDI',
+    location: 'Paris',
+    required_skills: [],
+    preferred_skills: [],
+    required_experience: null,
+    required_education: null,
+    missions: [],
+    soft_skills: [],
+    languages_required: [],
+    salary_range: null,
+    company_values: [],
+    team_description: null,
+  },
+  cvDetails: null,
+  appliedAt: '2026-07-01T00:00:00.000Z',
+  interviewAt: null,
+  updatedAt: '2026-07-01T00:00:00.000Z',
+};
+
 const defaultProps = {
+  application: baseApplication,
   onRetry: vi.fn(),
   onStartCourse: vi.fn(),
 };
@@ -40,22 +72,43 @@ describe('AnalysisResultCard', () => {
       render(<AnalysisResultCard {...defaultProps} />);
       expect(screen.getByTestId('icon-check-circle')).toBeInTheDocument();
     });
+
+    it('renders the job title and company name', () => {
+      render(<AnalysisResultCard {...defaultProps} />);
+      expect(
+        screen.getByText('Frontend Engineer · Acme Corp'),
+      ).toBeInTheDocument();
+    });
+
+    it('falls back to a generic role label when jobTitle is null', () => {
+      render(
+        <AnalysisResultCard
+          {...defaultProps}
+          application={{
+            ...baseApplication,
+            jobTitle: null,
+            companyName: null,
+          }}
+        />,
+      );
+      expect(screen.getByText('Your target role')).toBeInTheDocument();
+    });
   });
 
   describe('Highlights grid', () => {
-    it('renders Skills Validated highlight', () => {
+    it('renders the sector highlight', () => {
       render(<AnalysisResultCard {...defaultProps} />);
-      expect(screen.getByText('Skills Validated')).toBeInTheDocument();
+      expect(screen.getByText('Tech')).toBeInTheDocument();
     });
 
-    it('renders Optimized Path highlight', () => {
+    it('renders the location highlight', () => {
       render(<AnalysisResultCard {...defaultProps} />);
-      expect(screen.getByText('Optimized Path')).toBeInTheDocument();
+      expect(screen.getByText('Paris')).toBeInTheDocument();
     });
 
-    it('renders Personalized AI highlight', () => {
+    it('renders the contract type highlight', () => {
       render(<AnalysisResultCard {...defaultProps} />);
-      expect(screen.getByText('Personalized AI')).toBeInTheDocument();
+      expect(screen.getByText('CDI')).toBeInTheDocument();
     });
 
     it('renders all highlight icons', () => {
@@ -63,6 +116,18 @@ describe('AnalysisResultCard', () => {
       expect(screen.getByTestId('icon-tasks')).toBeInTheDocument();
       expect(screen.getByTestId('icon-progression')).toBeInTheDocument();
       expect(screen.getByTestId('icon-cog')).toBeInTheDocument();
+    });
+
+    it('renders no highlights when offerDetails is null', () => {
+      render(
+        <AnalysisResultCard
+          {...defaultProps}
+          application={{ ...baseApplication, offerDetails: null }}
+        />,
+      );
+      expect(screen.queryByTestId('icon-tasks')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('icon-progression')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('icon-cog')).not.toBeInTheDocument();
     });
   });
 

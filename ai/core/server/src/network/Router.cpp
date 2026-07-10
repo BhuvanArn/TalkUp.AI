@@ -16,6 +16,7 @@
 #include "WebsocketManager.hpp"
 #include "ExceptionManager.hpp"
 #include "Router.hpp"
+#include "WsClientSession.hpp"
 
 void talkup_network::Router::get_env_key(void)
 {
@@ -158,6 +159,7 @@ void talkup_network::Router::set_routes_definitions(crow::SimpleApp& app,
         std::cout << oss.str() << std::endl;
     })
     .onclose([](crow::websocket::connection& conn, const std::string& reason){
+        talkup_network::WsClientSession::close(conn);
         std::ostringstream oss;
         oss << "[WS] Connection closed: " << (void*)&conn << " reason: " << reason;
         std::cout << oss.str() << std::endl;

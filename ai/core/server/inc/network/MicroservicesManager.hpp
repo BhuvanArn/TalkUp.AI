@@ -35,6 +35,8 @@
 using ResponseCallback = std::function<void(const nlohmann::json&)>;
 
 namespace talkup_network {
+    class WsClientSession;
+
     class MicroservicesManager {
         public:
             /**
@@ -73,7 +75,16 @@ namespace talkup_network {
              *
              * @param data Json data containing the audio information to be sent to the STS microservice.
              */
-            static void send_to_sts_microservice(const nlohmann::json &data, ResponseCallback callback);
+            static void send_to_sts_microservice(
+                const nlohmann::json &data,
+                ResponseCallback callback,
+                const std::shared_ptr<WsClientSession> &client_session = nullptr);
+
+            /**
+             * @brief Drop pending async VA replies for a disconnected browser session.
+             */
+            static void cancel_va_followups_for_client(
+                const std::shared_ptr<WsClientSession> &client_session);
 
             /**
              * @brief Push structured simulation context (company, job offer) to STS for one interview.
@@ -82,6 +93,11 @@ namespace talkup_network {
             static bool send_simulation_context_to_sts(
                 const std::string &interview_id,
                 const nlohmann::json &context_data);
+
+            /**
+             * @brief Notify STS that an interview session ended (triggers VA finalize).
+             */
+            static void send_session_end_to_sts(const std::string &interview_id);
 
             /**
              * @brief Initialize WebSocket connections to all registered microservices.
@@ -126,6 +142,7 @@ namespace talkup_network {
                     StsJobKind kind = StsJobKind::StreamChunk;
                     nlohmann::json data;
                     ResponseCallback callback;
+                    std::weak_ptr<WsClientSession> client_session;
                     std::string interview_id;
                     nlohmann::json context_data;
                     std::shared_ptr<std::promise<bool>> context_promise;
@@ -185,7 +202,10 @@ namespace talkup_network {
              *
              * @param data The JSON data containing the job information.
              */
-            static void process_sts_job(const nlohmann::json &data, ResponseCallback callback);
+            static void process_sts_job(
+                const nlohmann::json &data,
+                ResponseCallback callback,
+                const std::weak_ptr<WsClientSession> &client_session = {});
 
             static void process_simulation_context_job(
                 const std::string &interview_id,
