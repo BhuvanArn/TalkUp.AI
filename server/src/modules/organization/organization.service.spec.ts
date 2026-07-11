@@ -1227,11 +1227,7 @@ describe("OrganizationService", () => {
       (userRepo.findOne as jest.Mock).mockResolvedValueOnce(userUserRow);
 
       await expect(
-        service.getOrganizationMemberDetail(
-          "org-id",
-          "member-id",
-          userUserRow,
-        ),
+        service.getOrganizationMemberDetail("org-id", "member-id", userUserRow),
       ).rejects.toThrow(new ForbiddenException("Insufficient permissions"));
     });
   });

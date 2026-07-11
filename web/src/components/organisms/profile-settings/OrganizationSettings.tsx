@@ -118,7 +118,10 @@ export function OrganizationSettings({
 
         <div className="flex flex-col gap-1.5">
           <span className="text-label-m text-idle">Your role</span>
-          <span className="text-sm font-semibold text-text" data-testid="org-role-label">
+          <span
+            className="text-sm font-semibold text-text"
+            data-testid="org-role-label"
+          >
             {roleLabel(userRole)}
           </span>
         </div>
@@ -130,7 +133,10 @@ export function OrganizationSettings({
         </h3>
 
         {memberQuery.isError ? (
-          <p className="text-body-s text-text-weaker" data-testid="org-stats-unavailable">
+          <p
+            className="text-body-s text-text-weaker"
+            data-testid="org-stats-unavailable"
+          >
             Your activity stats are not available right now.
           </p>
         ) : (
@@ -155,7 +161,10 @@ export function OrganizationSettings({
             </div>
             <div>
               <dt className="text-text-weaker">Last activity</dt>
-              <dd className="text-h5 text-text" data-testid="stat-last-activity">
+              <dd
+                className="text-h5 text-text"
+                data-testid="stat-last-activity"
+              >
                 {formatDateTime(lastActivityAt)}
               </dd>
             </div>
