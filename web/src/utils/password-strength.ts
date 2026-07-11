@@ -1,3 +1,5 @@
+import { PASSWORD_SYMBOL_REGEX } from './validators';
+
 /** Advisory strength score. NOT the validation gate — passwordSchema is. */
 export type StrengthScore = 0 | 1 | 2 | 3 | 4;
 export type StrengthLabel = 'Empty' | 'Weak' | 'Fair' | 'Good' | 'Strong';
@@ -43,7 +45,7 @@ export function scorePassword(pw: string): PasswordStrength {
     (/[a-z]/.test(pw) ? 1 : 0) +
     (/[A-Z]/.test(pw) ? 1 : 0) +
     (/[0-9]/.test(pw) ? 1 : 0) +
-    (/[^A-Za-z0-9]/.test(pw) ? 1 : 0);
+    (PASSWORD_SYMBOL_REGEX.test(pw) ? 1 : 0);
 
   // Trivial patterns cap low regardless of length.
   if (isSingleCharRepeat(pw) || isSequential(pw)) {

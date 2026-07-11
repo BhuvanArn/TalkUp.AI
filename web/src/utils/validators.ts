@@ -9,6 +9,13 @@ export const emailSchema = z
   .email('Invalid email address');
 
 /**
+ * Allowlisted "symbol" character class for password validation. Shared with
+ * the advisory strength meter (`@/utils/password-strength`) so the meter
+ * never scores a symbol the hard gate below would reject.
+ */
+export const PASSWORD_SYMBOL_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
+
+/**
  * Password validation schema for registration
  */
 export const passwordSchema = z
@@ -19,7 +26,7 @@ export const passwordSchema = z
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one symbol');
+  .regex(PASSWORD_SYMBOL_REGEX, 'Password must contain at least one symbol');
 
 /**
  * Password validation schema for login
