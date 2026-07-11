@@ -41,6 +41,22 @@ describe('scorePassword', () => {
     expect(scorePassword('abcdefghijkl').score).toBeLessThanOrEqual(1);
   });
 
+  // Regression: the sequential/repeat cap must NOT fire on a gate-passing
+  // password. A long enough consecutive ASCII run spans all four classes
+  // (digit → symbol → upper → symbol → lower) and clears the gate + the Zod
+  // passwordSchema (max 50), yet the naive cap labeled it "Weak", violating the
+  // invariant that a gate-passing password never scores below 2.
+  it('does not cap a gate-passing consecutive-ASCII run to Weak', () => {
+    // code points 57..97 (len 41): '9' digit, ':;<=>?@' symbols, 'A'-'Z' upper,
+    // '[\]^_`' then 'a' lower => all 4 classes, fully consecutive, <=50 chars.
+    let seq = '';
+    for (let c = 57; c <= 97; c++) seq += String.fromCharCode(c);
+    expect(seq.length).toBeLessThanOrEqual(50);
+    const r = scorePassword(seq);
+    expect(r.score).toBeGreaterThanOrEqual(2);
+    expect(r.label).not.toBe('Weak');
+  });
+
   // Regression: the meter's symbol class must match the gate's allowlist
   // (PASSWORD_SYMBOL_REGEX), NOT any non-alphanumeric char. `_` is not an
   // allowlisted symbol, so it must earn zero symbol-class credit — otherwise

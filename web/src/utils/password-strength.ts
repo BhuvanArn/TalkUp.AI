@@ -47,12 +47,16 @@ export function scorePassword(pw: string): PasswordStrength {
     (/[0-9]/.test(pw) ? 1 : 0) +
     (PASSWORD_SYMBOL_REGEX.test(pw) ? 1 : 0);
 
-  // Trivial patterns cap low regardless of length.
-  if (isSingleCharRepeat(pw) || isSequential(pw)) {
+  const meetsGate = pw.length >= 8 && classes === 4;
+
+  // Trivial patterns (single-char repeat, consecutive sequence) cap low — but
+  // only BELOW the gate. A long enough consecutive ASCII run can span all four
+  // classes (e.g. "9:;<…Z[\\]^_`a") and still clear the gate + passwordSchema;
+  // capping it to "Weak" would break the invariant that a gate-passing password
+  // never scores below 2. So the cap applies only when the gate is not met.
+  if (!meetsGate && (isSingleCharRepeat(pw) || isSequential(pw))) {
     return { score: 1, label: LABELS[1] };
   }
-
-  const meetsGate = pw.length >= 8 && classes === 4;
 
   let raw = 0;
   if (meetsGate) {
