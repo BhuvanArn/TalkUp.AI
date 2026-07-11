@@ -24,6 +24,8 @@ const HEARTBEAT_INTERVAL_MS = 60 * 1000;
  * Props for the useInterviewSession hook.
  */
 export interface UseInterviewSessionProps {
+  /** Application whose CV and job offer are sent to the AI at session init. */
+  applicationId?: string;
   /** Callback to connect to WebSocket with the given URL */
   onConnect: (url: string) => void;
   /** Callback to disconnect from WebSocket */
@@ -97,6 +99,7 @@ async function waitForReadyEntrypoint(
  * Custom hook to manage AI interview session lifecycle.
  */
 export function useInterviewSession({
+  applicationId,
   onConnect,
   onDisconnect,
   onBeforeDisconnect,
@@ -174,6 +177,7 @@ export function useInterviewSession({
           const created = await createInterview({
             type: 'technical',
             language: 'French',
+            ...(applicationId ? { applicationId } : {}),
           });
 
           setInterviewID(created.interviewID);
@@ -264,7 +268,7 @@ export function useInterviewSession({
         processingRef.current = false;
       }
     },
-    [onConnect, onDisconnect, onBeforeDisconnect],
+    [applicationId, onConnect, onDisconnect, onBeforeDisconnect],
   );
 
   return {

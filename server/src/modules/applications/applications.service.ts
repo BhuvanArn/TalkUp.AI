@@ -135,6 +135,55 @@ export class ApplicationsService {
       : null;
   }
 
+  private hasCvDetails(cv: application["cv_details"]): boolean {
+    if (!cv) return false;
+    return Boolean(
+      cv.desired_job?.trim() ||
+        cv.resume?.trim() ||
+        (cv.experiences?.length ?? 0) > 0 ||
+        (cv.education?.length ?? 0) > 0 ||
+        (cv.technical_skills?.length ?? 0) > 0 ||
+        (cv.languages?.length ?? 0) > 0,
+    );
+  }
+
+  /**
+   * Ensures application.cv_details is populated. If the snapshot is missing,
+   * copies the current profile CV (user_cv) and persists it on the application.
+   */
+  async ensureCvSnapshot(
+    userId: string,
+    applicationId: string,
+  ): Promise<application> {
+    const row = await this.findOwned(userId, applicationId);
+    if (this.hasCvDetails(row.cv_details)) {
+      return row;
+    }
+
+    const snapshot = await this.buildCvSnapshot(userId);
+    if (!snapshot) {
+      this.logger.warn(
+        `No profile CV to snapshot for application ${applicationId} (user ${userId})`,
+      );
+      return row;
+    }
+
+    row.cv_details = snapshot;
+    const saved = await this.applicationRepo.save(row);
+    this.logger.log(
+      `Backfilled cv_details on application ${applicationId} from profile CV`,
+    );
+    return saved;
+  }
+
+  /** Returns an application owned by the user (404 if missing or not owned). */
+  async getOwnedApplication(
+    userId: string,
+    applicationId: string,
+  ): Promise<application> {
+    return this.findOwned(userId, applicationId);
+  }
+
   async listForUser(userId: string): Promise<application[]> {
     return this.applicationRepo.find({
       where: { user_id: userId },

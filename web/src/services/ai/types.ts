@@ -8,7 +8,12 @@ export interface CreateAiInterviewDto {
   language: string;
   /** Optional initial status of the interview */
   status?: string;
-  /** CV / job offer / preparation notes for the AI persona */
+  /**
+   * Application to train on. The server loads CV + job offer from the owned
+   * application row and injects them into the AI prompt.
+   */
+  applicationId?: string;
+  /** Legacy free-text context (ignored when applicationId is set). */
   jobContext?: string;
 }
 

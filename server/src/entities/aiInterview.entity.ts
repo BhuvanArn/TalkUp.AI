@@ -47,6 +47,10 @@ export class ai_interview {
   @Column({ type: "text", nullable: true, name: "job_context" })
   job_context: string | null;
 
+  /** Application the candidate is training for (optional). */
+  @Column({ type: "uuid", nullable: true, name: "application_id" })
+  application_id: string | null;
+
   @CreateDateColumn({
     type: "timestamp with time zone",
     default: () => "CURRENT_TIMESTAMP",
