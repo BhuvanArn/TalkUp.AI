@@ -19,7 +19,10 @@ export const InviteCreateModal = ({
   isOpen: boolean;
   isAdmin: boolean;
   isCreating: boolean;
-  onCreate: (body: { email?: string; role: 'user' | 'employee' }) => void;
+  onCreate: (body: {
+    email?: string;
+    role: 'user' | 'employee';
+  }) => Promise<void>;
   onClose: () => void;
 }) => {
   const [email, setEmail] = useState('');
@@ -78,10 +81,17 @@ export const InviteCreateModal = ({
 
         <form
           className="flex flex-col gap-4"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            onCreate({ email: email.trim() || undefined, role });
-            onClose();
+            // Close only once the invite is actually created — on failure the
+            // modal stays open (the mutation surfaces its own error toast) so
+            // the user can retry instead of the modal vanishing mid-request.
+            try {
+              await onCreate({ email: email.trim() || undefined, role });
+              onClose();
+            } catch {
+              // Kept open; error is surfaced by the mutation's onError.
+            }
           }}
         >
           <label className="flex flex-col gap-1.5 text-body-s text-text-weaker">

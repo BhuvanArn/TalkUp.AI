@@ -17,11 +17,13 @@ export const MemberDetail = ({
   isOpen,
   detail,
   isLoading,
+  isError,
   onClose,
 }: {
   isOpen: boolean;
   detail: OrganizationMemberDetail | undefined;
   isLoading: boolean;
+  isError?: boolean;
   onClose: () => void;
 }) => {
   useEffect(() => {
@@ -60,7 +62,11 @@ export const MemberDetail = ({
           <Icon icon="times" size="sm" />
         </button>
 
-        {isLoading || !detail ? (
+        {isError ? (
+          <p className="text-body-m text-error">
+            Couldn&apos;t load this member&apos;s details. Please try again.
+          </p>
+        ) : isLoading || !detail ? (
           <p className="text-body-m text-text-weaker">Loading member…</p>
         ) : (
           <>

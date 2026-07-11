@@ -48,6 +48,7 @@ function OrganizationMembersPage() {
         isOpen={!!selectedUserId}
         detail={memberDetail.data}
         isLoading={memberDetail.isLoading && !!selectedUserId}
+        isError={memberDetail.isError && !!selectedUserId}
         onClose={() => setSelectedUserId(null)}
       />
     </OrgViewLayout>

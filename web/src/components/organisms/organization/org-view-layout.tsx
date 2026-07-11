@@ -20,12 +20,24 @@ const orgInitials = (name: string) =>
  * effectively free.
  */
 export function OrgViewLayout({ children }: { children: ReactNode }) {
-  const { data: org, isLoading } = useGetMyOrganization();
+  const { data: org, isLoading, isError } = useGetMyOrganization();
 
   if (isLoading) {
     return (
       <main className="mx-auto max-w-7xl px-6 py-10">
         <p className="text-body-m text-text-weaker">Loading organization…</p>
+      </main>
+    );
+  }
+
+  // A failed fetch is not the same as having no org — an affiliated manager
+  // hitting a transient error must not be told they're unaffiliated.
+  if (isError) {
+    return (
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <p className="text-body-m text-error">
+          Couldn&apos;t load your organization. Please try again in a moment.
+        </p>
       </main>
     );
   }

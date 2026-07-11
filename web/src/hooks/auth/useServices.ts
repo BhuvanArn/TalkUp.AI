@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import AuthService from '@/services/auth/http';
 import { type AuthStatus, checkAuthStatus } from '@/utils/auth.guards';
 import { extractErrorMessage } from '@/utils/error';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 
@@ -108,6 +108,7 @@ export const usePostRegisterOrganization = () => {
 export const usePostVerifyEmail = () => {
   const { login } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
@@ -123,6 +124,9 @@ export const usePostVerifyEmail = () => {
       return { redirectTo };
     },
     onSuccess: (data) => {
+      // New session — drop any cached role/org/profile from a prior account so
+      // stale cross-account state can't render (keys are static, no reload).
+      queryClient.clear();
       login();
       toast.success('Email verified');
       router.navigate({ to: data.redirectTo });
@@ -197,6 +201,7 @@ export const usePasswordResetComplete = () => {
 export const usePostLogin = () => {
   const { login } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
@@ -209,6 +214,9 @@ export const usePostLogin = () => {
       return await authService.postLogin(email, password);
     },
     onSuccess: () => {
+      // New session — drop any cached role/org/profile from a prior account so
+      // stale cross-account state can't render (keys are static, no reload).
+      queryClient.clear();
       login();
       toast.success('Login successful');
 
@@ -235,17 +243,23 @@ export const usePostLogin = () => {
 export const usePostLogout = () => {
   const { logout } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
       return await authService.postLogout();
     },
     onSuccess: () => {
+      // Wipe cached role/org/profile so the next account on this tab can't read
+      // the prior session's state (static query keys survive an SPA logout).
+      queryClient.clear();
       logout();
       toast.success('Logout successful');
       router.navigate({ to: '/login' });
     },
     onError: (error) => {
+      // Even if the server call fails we still log out locally — clear too.
+      queryClient.clear();
       logout();
       toast.error('Logout failed');
       console.error('Error during logout:', error);

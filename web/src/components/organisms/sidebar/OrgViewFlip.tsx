@@ -6,9 +6,10 @@ import type { CSSProperties } from 'react';
 
 import { NavigationProps } from './types';
 
-/** Emerald accent for the "on" (organization) state — matches the org-view
- * palette override so the switch reads as part of that theme. */
-const ORG_TOGGLE_ACCENT = '#1d9e75';
+/** Emerald accent for the "on" (organization) state. Uses the org-view accent
+ * token (remapped emerald under `[data-view='organization']`, which is active
+ * whenever the switch is on) so it tracks light/dark instead of a fixed hex. */
+const ORG_TOGGLE_ACCENT = 'var(--color-accent)';
 
 /**
  * Organization-view switch.

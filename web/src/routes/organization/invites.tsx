@@ -38,7 +38,9 @@ function OrganizationInvitesPage() {
         invites={invites.data ?? []}
         isAdmin={isAdmin}
         callerRole={auth?.role ?? null}
-        onCreate={(body) => createInvite.mutate(body)}
+        onCreate={(body) =>
+          createInvite.mutateAsync(body).then(() => undefined)
+        }
         onRevoke={(inviteId) => revokeInvite.mutate(inviteId)}
         isCreating={createInvite.isPending}
       />

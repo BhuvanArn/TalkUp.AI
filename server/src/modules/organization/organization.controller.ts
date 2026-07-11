@@ -252,6 +252,9 @@ export class OrganizationController {
   @ApiNotFoundResponse({
     description: "Invite not found in this organization.",
   })
+  @ApiConflictResponse({
+    description: "Only pending invites can be revoked.",
+  })
   @ApiUnauthorizedResponse({ description: "Not authenticated." })
   @ApiForbiddenResponse({ description: "Not an organization administrator." })
   @UseGuards(AccessTokenGuard)

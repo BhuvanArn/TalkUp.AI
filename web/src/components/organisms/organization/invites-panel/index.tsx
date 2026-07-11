@@ -34,7 +34,10 @@ export const InvitesPanel = ({
   invites: OrganizationInvite[];
   isAdmin: boolean;
   callerRole: string | null;
-  onCreate: (body: { email?: string; role: 'user' | 'employee' }) => void;
+  onCreate: (body: {
+    email?: string;
+    role: 'user' | 'employee';
+  }) => Promise<void>;
   onRevoke: (inviteId: string) => void;
   isCreating: boolean;
 }) => {
