@@ -76,4 +76,15 @@ describe('PasswordField', () => {
     );
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
   });
+
+  it('stretches the input to full width so the toggle sits inside it', () => {
+    // BaseInput has no intrinsic full width; inside the relative wrapper it must
+    // get w-full, otherwise the absolutely-positioned toggle detaches from the
+    // input's right edge and floats past it.
+    render(<PasswordField id="pw" value="secret" onChange={() => {}} />);
+    const input = screen.getByDisplayValue('secret');
+    expect(input).toHaveClass('w-full');
+    // the relative wrapper is the toggle's positioning context
+    expect(input.parentElement).toHaveClass('relative');
+  });
 });

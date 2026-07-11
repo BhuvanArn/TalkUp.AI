@@ -58,7 +58,7 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
           value={strValue}
           type={revealed ? 'text' : 'password'}
           aria-describedby={strengthId}
-          className={cn(showToggle && 'pr-10', className)}
+          className={cn('w-full', showToggle && 'pr-10', className)}
         />
 
         {showToggle && (
