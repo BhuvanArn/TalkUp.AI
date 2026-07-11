@@ -22,8 +22,15 @@ export interface AccountSession {
 }
 
 interface SecuritySettingsProps {
-  sessions: AccountSession[];
-  onRevokeSession: (sessionId: string) => void;
+  /**
+   * Active browser/app sessions. Currently unwired — mock data is hidden for
+   * the demo (real sessions API tracked in
+   * EpitechPromo2027/G-EIP-600-NAN-6-1-eip-tugdual.de-reviers#193). Pass a
+   * non-empty list once the API exists to show the "Devices & sessions"
+   * section. Defaults to empty, which hides the section.
+   */
+  sessions?: AccountSession[];
+  onRevokeSession?: (sessionId: string) => void;
   /** Controlled sign-in email notification toggle */
   emailOnNewDevice?: boolean;
   onEmailOnNewDeviceChange?: (enabled: boolean) => void;
@@ -44,7 +51,7 @@ const cardClass =
  * Security & account: password, sign-in alerts, active sessions, data export, delete account.
  */
 export function SecuritySettings({
-  sessions,
+  sessions = [],
   onRevokeSession,
   emailOnNewDevice,
   onEmailOnNewDeviceChange,
@@ -108,88 +115,90 @@ export function SecuritySettings({
         </div>
       </section>
 
-      <section className={cardClass}>
-        <h3 className="mb-1 text-base font-bold text-text">
-          Devices & sessions
-        </h3>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <p className="min-w-0 flex-1 text-sm text-text-weaker">
-            These sessions can use your account. Revoke any you do not
-            recognize.
-          </p>
-          {onLogoutEverywhere && (
-            <Button
-              type="button"
-              variant="outlined"
-              color="neutral"
-              size="sm"
-              disabled={otherSessionCount === 0}
-              title={
-                otherSessionCount === 0
-                  ? 'No other devices to sign out'
-                  : undefined
-              }
-              className="w-full shrink-0 sm:w-auto"
-              onClick={() => setLogoutEverywhereOpen(true)}
-            >
-              Log out everywhere
-            </Button>
-          )}
-        </div>
-        <ul className="flex flex-col divide-y divide-border">
-          {sessions.map((s) => (
-            <li
-              key={s.id}
-              className="flex items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-raised text-icon"
-                  aria-hidden
-                >
-                  {s.kind === 'mobile' ? (
-                    <Smartphone className="h-5 w-5" strokeWidth={1.75} />
-                  ) : (
-                    <Laptop className="h-5 w-5" strokeWidth={1.75} />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-text">
-                      {s.deviceLabel}
-                    </span>
-                    {s.isCurrent && (
-                      <Badge color="success" className="!h-5 !min-h-0 !py-0">
-                        This device
-                      </Badge>
+      {sessions.length > 0 && (
+        <section className={cardClass}>
+          <h3 className="mb-1 text-base font-bold text-text">
+            Devices & sessions
+          </h3>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <p className="min-w-0 flex-1 text-sm text-text-weaker">
+              These sessions can use your account. Revoke any you do not
+              recognize.
+            </p>
+            {onLogoutEverywhere && (
+              <Button
+                type="button"
+                variant="outlined"
+                color="neutral"
+                size="sm"
+                disabled={otherSessionCount === 0}
+                title={
+                  otherSessionCount === 0
+                    ? 'No other devices to sign out'
+                    : undefined
+                }
+                className="w-full shrink-0 sm:w-auto"
+                onClick={() => setLogoutEverywhereOpen(true)}
+              >
+                Log out everywhere
+              </Button>
+            )}
+          </div>
+          <ul className="flex flex-col divide-y divide-border">
+            {sessions.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-raised text-icon"
+                    aria-hidden
+                  >
+                    {s.kind === 'mobile' ? (
+                      <Smartphone className="h-5 w-5" strokeWidth={1.75} />
+                    ) : (
+                      <Laptop className="h-5 w-5" strokeWidth={1.75} />
                     )}
                   </div>
-                  {s.location && (
-                    <div className="mt-0.5 text-xs text-text-weaker">
-                      {s.location}
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-text">
+                        {s.deviceLabel}
+                      </span>
+                      {s.isCurrent && (
+                        <Badge color="success" className="!h-5 !min-h-0 !py-0">
+                          This device
+                        </Badge>
+                      )}
                     </div>
-                  )}
-                  <div className="mt-1 text-xs text-text-weakest">
-                    {s.lastActive}
+                    {s.location && (
+                      <div className="mt-0.5 text-xs text-text-weaker">
+                        {s.location}
+                      </div>
+                    )}
+                    <div className="mt-1 text-xs text-text-weakest">
+                      {s.lastActive}
+                    </div>
                   </div>
                 </div>
-              </div>
-              {!s.isCurrent && (
-                <Button
-                  type="button"
-                  variant="text"
-                  color="error"
-                  size="sm"
-                  className="min-h-0 shrink-0 self-center py-1.5"
-                  onClick={() => onRevokeSession(s.id)}
-                >
-                  Revoke
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
+                {!s.isCurrent && (
+                  <Button
+                    type="button"
+                    variant="text"
+                    color="error"
+                    size="sm"
+                    className="min-h-0 shrink-0 self-center py-1.5"
+                    onClick={() => onRevokeSession?.(s.id)}
+                  >
+                    Revoke
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {onRequestDataExport && (
         <section className={cardClass}>
