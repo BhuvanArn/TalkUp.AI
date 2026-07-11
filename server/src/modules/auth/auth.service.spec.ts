@@ -730,7 +730,7 @@ describe("AuthService", () => {
         .mockResolvedValue({ ...mockUser, status: UserStatus.PENDING });
 
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email is not verified"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
   });
@@ -769,23 +769,23 @@ describe("AuthService", () => {
     const email = "test@example.com";
     const password = "password123";
 
-    it("throws when email entity missing", async () => {
+    it("throws generic message when email entity missing", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email not found"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
 
-    it("throws when password or user entity missing", async () => {
+    it("throws generic message when password or user entity missing", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(null);
       mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email not found"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
 
-    it("throws when password does not match", async () => {
+    it("throws generic message when password does not match", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(mockPassword);
       mockUserRepo.findOne = jest
@@ -793,7 +793,7 @@ describe("AuthService", () => {
         .mockResolvedValue({ ...mockUser, status: UserStatus.ACTIVE });
       mockedBcrypt.compare.mockResolvedValue(false as never);
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Invalid password"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
   });

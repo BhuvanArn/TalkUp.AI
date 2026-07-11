@@ -60,8 +60,14 @@ const OTP_EXPIRATION_MINUTES = 15;
 const MAX_OTP_ATTEMPTS = 5;
 const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 const DUMMY_OTP_HASH = bcrypt.hashSync("000000", 10);
+// Precomputed bcrypt hash used to keep login timing constant on the
+// email-not-found / missing-row paths (see validateUser).
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync("dummy-password", 10);
 const PASSWORD_RESET_AUTHORIZED_PURPOSE = "PASSWORD_RESET_AUTHORIZED";
 const GENERIC_RESET_VERIFY_ERROR = "Invalid or expired verification code";
+// Single generic login failure message. Distinct messages for
+// email-not-found / wrong-password / unverified leak which accounts exist.
+const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
 const PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS = 120;
 
 @Injectable()
@@ -711,12 +717,18 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<user> {
+    // Every failure branch below returns the SAME generic message. Distinct
+    // messages ("email not found" vs "invalid password" vs "not verified")
+    // are an account-enumeration leak: they let an attacker probe which emails
+    // exist and which are unverified. Compare a password on the miss paths too
+    // (dummy hash) so response timing doesn't leak the same information.
     const emailEntity = await this.userEmailRepository.findOne({
       where: { email },
     });
 
     if (!emailEntity) {
-      throw new UnauthorizedException("Email not found");
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     const passwordEntity = await this.userPasswordRepository.findOne({
@@ -728,16 +740,18 @@ export class AuthService {
     });
 
     if (!passwordEntity || !userEntity) {
-      throw new UnauthorizedException("Email not found");
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     if (userEntity.status !== UserStatus.ACTIVE) {
-      throw new UnauthorizedException("Email is not verified");
+      await bcrypt.compare(password, passwordEntity.password);
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     const match = await bcrypt.compare(password, passwordEntity.password);
     if (!match) {
-      throw new UnauthorizedException("Invalid password");
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     return userEntity;
