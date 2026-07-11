@@ -124,10 +124,10 @@ export const usePostVerifyEmail = () => {
       return { redirectTo };
     },
     onSuccess: (data) => {
-      // New session — drop any cached role/org/profile from a prior account so
-      // stale cross-account state can't render (keys are static, no reload).
-      queryClient.clear();
       login();
+      // Fresh session on this tab — drop any leftover cache (incl. role/org)
+      // from a prior account so stale cross-account state can't render.
+      queryClient.clear();
       toast.success('Email verified');
       router.navigate({ to: data.redirectTo });
     },
@@ -214,10 +214,10 @@ export const usePostLogin = () => {
       return await authService.postLogin(email, password);
     },
     onSuccess: () => {
-      // New session — drop any cached role/org/profile from a prior account so
-      // stale cross-account state can't render (keys are static, no reload).
-      queryClient.clear();
       login();
+      // Discard any cache left over from a previous session on this tab (incl.
+      // role/org) so the newly signed-in account fetches its own data fresh.
+      queryClient.clear();
       toast.success('Login successful');
 
       const search = new URLSearchParams(window.location.search);
@@ -250,17 +250,17 @@ export const usePostLogout = () => {
       return await authService.postLogout();
     },
     onSuccess: () => {
-      // Wipe cached role/org/profile so the next account on this tab can't read
-      // the prior session's state (static query keys survive an SPA logout).
-      queryClient.clear();
       logout();
+      // Drop every cached query so the next account to sign in on this tab never
+      // sees the previous user's data (profile, role/org, applications, etc.).
+      queryClient.clear();
       toast.success('Logout successful');
       router.navigate({ to: '/login' });
     },
     onError: (error) => {
       // Even if the server call fails we still log out locally — clear too.
-      queryClient.clear();
       logout();
+      queryClient.clear();
       toast.error('Logout failed');
       console.error('Error during logout:', error);
       router.navigate({ to: '/login' });
