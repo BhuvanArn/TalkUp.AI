@@ -7,11 +7,13 @@ import {
 import { AppearanceSettings } from '@/components/organisms/profile-settings/AppearanceSettings';
 import { GeneralSettings } from '@/components/organisms/profile-settings/GeneralSettings';
 import { NotifSettings } from '@/components/organisms/profile-settings/NotifSettings';
+import { OrganizationSettings } from '@/components/organisms/profile-settings/OrganizationSettings';
 import {
   type AccountSession,
   SecuritySettings,
 } from '@/components/organisms/profile-settings/SecuritySettings';
 import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
+import { useAuthStatus } from '@/hooks/auth/useServices';
 import AuthService from '@/services/auth/http';
 import {
   deleteMyAccount,
@@ -45,7 +47,12 @@ const DEFAULT_JOB_TITLE = 'Product Manager Candidate';
 const SECURITY_SIGNIN_PREF_KEY = 'securityEmailOnNewDevice';
 const authService = new AuthService();
 
-type Tab = 'general' | 'appearance' | 'notifications' | 'security';
+type Tab =
+  | 'general'
+  | 'appearance'
+  | 'notifications'
+  | 'security'
+  | 'organization';
 
 function namesFromUsername(username: string): { first: string; last: string } {
   const parts = username.split(/[.\s_]+/).filter(Boolean);
@@ -174,12 +181,17 @@ const DEFAULT_SESSIONS: AccountSession[] = [
   },
 ];
 
-const TABS: { key: Tab; label: string }[] = [
+const BASE_TABS: { key: Tab; label: string }[] = [
   { key: 'general', label: 'General' },
   { key: 'appearance', label: 'Appearance' },
   { key: 'notifications', label: 'Notifications' },
   { key: 'security', label: 'Security' },
 ];
+
+const ORGANIZATION_TAB: { key: Tab; label: string } = {
+  key: 'organization',
+  label: 'Organization',
+};
 
 const emptySnapshot = (): ProfileSnapshot => ({
   firstName: '',
@@ -198,6 +210,9 @@ const emptySnapshot = (): ProfileSnapshot => ({
 
 function Profile() {
   const queryClient = useQueryClient();
+  const { data: authStatus } = useAuthStatus();
+  const organizationId = authStatus?.organizationId ?? null;
+  const authRole = authStatus?.role ?? null;
   const hydratedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<Tab>('general');
   const [firstName, setFirstName] = useState('');
@@ -329,6 +344,13 @@ function Profile() {
     (firstName.charAt(0) || '').toUpperCase() +
     (lastName.charAt(0) || '').toUpperCase();
 
+  // Role-agnostic gate: any org-affiliated account (admin / employee / user)
+  // sees the Organization tab. Absent when there is no organizationId.
+  const tabs = useMemo(
+    () => (organizationId ? [...BASE_TABS, ORGANIZATION_TAB] : BASE_TABS),
+    [organizationId],
+  );
+
   const currentSnapshot = useMemo<ProfileSnapshot>(
     () => ({
       firstName,
@@ -404,6 +426,15 @@ function Profile() {
       window.removeEventListener('scroll', updateAnchor, true);
     };
   }, []);
+
+  // If the active tab is no longer visible (e.g. org affiliation resolves to
+  // none after the initial render), fall back to General rather than showing an
+  // empty panel.
+  useEffect(() => {
+    if (!tabs.some((t) => t.key === activeTab)) {
+      setActiveTab('general');
+    }
+  }, [tabs, activeTab]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -689,7 +720,7 @@ function Profile() {
               </div>
 
               <div style={tabsBarStyle} role="tablist">
-                {TABS.map(({ key, label }) => (
+                {tabs.map(({ key, label }) => (
                   <Button
                     key={key}
                     type="button"
@@ -836,6 +867,13 @@ function Profile() {
                     }}
                     onRequestDataExport={() => {}}
                     onDeleteAccount={() => deleteAccountMutation.mutate()}
+                  />
+                )}
+                {activeTab === 'organization' && organizationId && (
+                  <OrganizationSettings
+                    organizationId={organizationId}
+                    userId={profileQuery.data?.userId ?? null}
+                    userRole={authRole}
                   />
                 )}
               </div>

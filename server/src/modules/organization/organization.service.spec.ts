@@ -1171,5 +1171,68 @@ describe("OrganizationService", () => {
         ),
       ).rejects.toThrow(NotFoundException);
     });
+
+    const userUserRow: user = {
+      user_id: "self-user-id",
+      username: "selfie",
+      user_role: OrganizationUserRole.USER,
+      organization_id: { organization_id: "org-id" } as Organization,
+    } as user;
+
+    it("lets a user-role caller read their own detail", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValueOnce(userUserRow);
+      userEmailRepo.findOne.mockResolvedValue({ email: "self@example.com" });
+      const interview = {
+        interview_id: "iv-self",
+        type: "behavioral",
+        status: "completed",
+        score: 90,
+        created_at: new Date(),
+        ended_at: new Date(),
+      };
+      aiInterviewRepo.createQueryBuilder
+        .mockReturnValueOnce(
+          statsQb([
+            {
+              user_id: "self-user-id",
+              interview_count: 1,
+              completed_count: 1,
+              avg_score: "90",
+              last_activity_at: interview.ended_at,
+            },
+          ]),
+        )
+        .mockReturnValueOnce(interviewsQb([interview]));
+
+      const detail = await service.getOrganizationMemberDetail(
+        "org-id",
+        "self-user-id",
+        userUserRow,
+      );
+
+      expect(detail).toEqual(
+        expect.objectContaining({
+          user_id: "self-user-id",
+          username: "selfie",
+          email: "self@example.com",
+          stats: expect.objectContaining({ interviewCount: 1, avgScore: 90 }),
+          recentInterviews: [
+            expect.objectContaining({ interview_id: "iv-self", score: 90 }),
+          ],
+        }),
+      );
+    });
+
+    it("still blocks a user-role caller from reading another member", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValueOnce(userUserRow);
+
+      await expect(
+        service.getOrganizationMemberDetail(
+          "org-id",
+          "member-id",
+          userUserRow,
+        ),
+      ).rejects.toThrow(new ForbiddenException("Insufficient permissions"));
+    });
   });
 });

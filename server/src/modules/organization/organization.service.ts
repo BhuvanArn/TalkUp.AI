@@ -458,6 +458,11 @@ export class OrganizationService {
     if (getUserOrganizationId(callerFull) !== organizationId) {
       throw new ForbiddenException("You are not a member of this organization");
     }
+
+    if (memberUserId === caller.user_id) {
+      return this.buildMemberDetail(callerFull);
+    }
+
     const callerRole = callerFull.user_role;
     if (
       callerRole !== OrganizationUserRole.ADMIN &&
@@ -481,6 +486,16 @@ export class OrganizationService {
       );
     }
 
+    return this.buildMemberDetail(member);
+  }
+
+  /**
+   * F14: shared tail for member detail — load email + stats + recent
+   * interviews and assemble the DTO. Single source of truth for the shape.
+   */
+  private async buildMemberDetail(
+    member: user,
+  ): Promise<OrganizationMemberDetailDto> {
     const emailEntity = await this.userEmailRepository.findOne({
       where: { user_id: member.user_id },
     });
