@@ -10,8 +10,58 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     if: github.repository == 'BhuvanArn/TalkUp.AI'
+    # Hard cap on the whole job. A green run is ~5min; without this a hung test
+    # or a backend that never boots would run to GitHub's 360min default and
+    # burn CI minutes for nothing. 20min leaves ample headroom over a healthy run.
+    timeout-minutes: 20
     container:
       image: mcr.microsoft.com/playwright:v1.56.1-jammy
+    # Backend-dependent specs (e.g. tests/org-flow.spec.ts) need a real API.
+    # The job container, Postgres and Redis all share the job network, so the
+    # NestJS server (which also runs inside this container) reaches them by
+    # service name (postgres / redis). The SPA reaches the server on localhost.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: talkup
+          POSTGRES_PASSWORD: talkup
+          POSTGRES_DB: talkup
+        options: >-
+          --health-cmd "pg_isready -U talkup"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      HOME: /root
+      # --- Server runtime config (org/auth flow only; no AI microservices) ---
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: talkup
+      POSTGRES_PASSWORD: talkup
+      POSTGRES_DB: talkup
+      # No migration files exist; let TypeORM create the schema on boot.
+      POSTGRES_SYNC: "true"
+      REDIS_URL: redis://redis:6379
+      PORT: "3000"
+      NODE_ENV: test
+      # Dummy secrets — the org/auth register flow only needs these to be set,
+      # not to be real. No production value is referenced here.
+      JWT_SECRET: e2e-ci-jwt-secret
+      JWT_REFRESH_SECRET: e2e-ci-refresh-secret
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      ORG_PROVISIONING_SECRET: e2e-ci-org-secret
+      AI_COMMUNICATION_KEY: e2e-ci-ai-key
+      FRONTEND_URL: http://localhost:8080
+      CORS_ORIGIN: http://localhost:8080
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,5 +69,41 @@ jobs:
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-with-cache
 
+      - name: Build server
+        run: npm run build:server
+
+      # Boots its own Nest app against the Postgres service (POSTGRES_SYNC
+      # creates the schema). Runs before the background server so the two
+      # don't race to sync the same DB. ORG_PROVISIONING_SECRET + POSTGRES_*
+      # come from the job-level env, so the suite actually runs (not skipped).
+      - name: Run server org integration e2e
+        run: npm --workspace=server run test:e2e
+
+      - name: Start backend (NestJS) in background
+        run: |
+          node server/dist/src/main > /tmp/server.log 2>&1 &
+          echo "$!" > /tmp/server.pid
+
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/v1/api || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "Backend healthy after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Backend failed to become healthy; dumping logs:"
+          cat /tmp/server.log || true
+          exit 1
+
       - name: Run e2e tests command
+        # Per-step cap on the Playwright run itself (the part that hung ~14min
+        # before). Fails fast well under the job cap so the report still uploads.
+        timeout-minutes: 12
         uses: ./.github/actions/run-e2e-tests
+
+      - name: Dump server logs on failure
+        if: failure()
+        run: cat /tmp/server.log || true

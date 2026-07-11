@@ -1,0 +1,31 @@
+meta {
+  name: change member role
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{host}}/organization/:id/members/:memberUserId/role
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 
+  memberUserId: 
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwMTlhYzVhNi1hZGE3LTdhOTYtOWEzOC0yMzgxOWYzN2FiOTAiLCJ1c2VybmFtZSI6IkFkbWluU3lzODE5IiwiaWF0IjoxNzY0MjUyNjI2LCJleHAiOjE3NjQ4NTc0MjZ9.QWxsKERfN-kqkmdXv2aHvjRkjPO3T21t83J-6zHzzhk
+}
+
+body:json {
+  {
+    "role": "employee"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

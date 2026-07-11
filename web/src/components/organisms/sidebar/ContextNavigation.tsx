@@ -70,6 +70,21 @@ export const ContextNavigation = ({ isCollapsed = false }: NavigationProps) => {
     );
   }
 
+  if (contextType === 'organization') {
+    const organizationContext = navigationContexts['organization'];
+    const organizationItems = organizationContext
+      ? organizationContext.items
+      : [];
+
+    return (
+      <div className="flex flex-col gap-2">
+        <hr className="border-border mb-2" />
+
+        <NavMenu items={organizationItems} isCollapsed={isCollapsed} />
+      </div>
+    );
+  }
+
   if (contextType === 'application') {
     const applicationContext = navigationContexts['application'];
     const appNavTemplate = applicationContext ? applicationContext.items : [];

@@ -38,6 +38,7 @@ const NO_LOGIN_REDIRECT_AFTER_REFRESH_FAIL = new Set([
   '/',
   '/login',
   '/register',
+  '/register-organization',
   '/verify-email',
   '/forgot-password',
   '/reset-password',

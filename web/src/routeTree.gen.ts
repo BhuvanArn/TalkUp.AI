@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as SimulationsRouteImport } from './routes/simulations'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RegisterOrganizationRouteImport } from './routes/register-organization'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProgressionRouteImport } from './routes/progression'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -24,12 +25,16 @@ import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as OrganizationIndexRouteImport } from './routes/organization/index'
 import { Route as NotesIndexRouteImport } from './routes/notes/index'
 import { Route as ApplicationsIndexRouteImport } from './routes/applications/index'
 import { Route as SettingsSecurityRouteImport } from './routes/settings/security'
 import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
 import { Route as SettingsIntegrationsRouteImport } from './routes/settings/integrations'
 import { Route as SettingsBillingRouteImport } from './routes/settings/billing'
+import { Route as OrganizationSettingsRouteImport } from './routes/organization/settings'
+import { Route as OrganizationMembersRouteImport } from './routes/organization/members'
+import { Route as OrganizationInvitesRouteImport } from './routes/organization/invites'
 import { Route as NotesNoteIdRouteImport } from './routes/notes/$noteId'
 import { Route as ApplicationsApplicationIdIndexRouteImport } from './routes/applications/$applicationId/index'
 import { Route as ApplicationsApplicationIdSimulationsRouteImport } from './routes/applications/$applicationId/simulations'
@@ -49,6 +54,11 @@ const SimulationsRoute = SimulationsRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterOrganizationRoute = RegisterOrganizationRouteImport.update({
+  id: '/register-organization',
+  path: '/register-organization',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -111,6 +121,11 @@ const SettingsIndexRoute = SettingsIndexRouteImport.update({
   path: '/settings/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrganizationIndexRoute = OrganizationIndexRouteImport.update({
+  id: '/organization/',
+  path: '/organization/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NotesIndexRoute = NotesIndexRouteImport.update({
   id: '/notes/',
   path: '/notes/',
@@ -139,6 +154,21 @@ const SettingsIntegrationsRoute = SettingsIntegrationsRouteImport.update({
 const SettingsBillingRoute = SettingsBillingRouteImport.update({
   id: '/settings/billing',
   path: '/settings/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationSettingsRoute = OrganizationSettingsRouteImport.update({
+  id: '/organization/settings',
+  path: '/organization/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationMembersRoute = OrganizationMembersRouteImport.update({
+  id: '/organization/members',
+  path: '/organization/members',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationInvitesRoute = OrganizationInvitesRouteImport.update({
+  id: '/organization/invites',
+  path: '/organization/invites',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotesNoteIdRoute = NotesNoteIdRouteImport.update({
@@ -183,16 +213,21 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
+  '/register-organization': typeof RegisterOrganizationRoute
   '/reset-password': typeof ResetPasswordRoute
   '/simulations': typeof SimulationsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
+  '/organization/invites': typeof OrganizationInvitesRoute
+  '/organization/members': typeof OrganizationMembersRoute
+  '/organization/settings': typeof OrganizationSettingsRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/applications': typeof ApplicationsIndexRoute
   '/notes': typeof NotesIndexRoute
+  '/organization': typeof OrganizationIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/applications/$applicationId/analytics': typeof ApplicationsApplicationIdAnalyticsRoute
   '/applications/$applicationId/dashboard': typeof ApplicationsApplicationIdDashboardRoute
@@ -211,16 +246,21 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
+  '/register-organization': typeof RegisterOrganizationRoute
   '/reset-password': typeof ResetPasswordRoute
   '/simulations': typeof SimulationsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
+  '/organization/invites': typeof OrganizationInvitesRoute
+  '/organization/members': typeof OrganizationMembersRoute
+  '/organization/settings': typeof OrganizationSettingsRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/applications': typeof ApplicationsIndexRoute
   '/notes': typeof NotesIndexRoute
+  '/organization': typeof OrganizationIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/applications/$applicationId/analytics': typeof ApplicationsApplicationIdAnalyticsRoute
   '/applications/$applicationId/dashboard': typeof ApplicationsApplicationIdDashboardRoute
@@ -240,16 +280,21 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
+  '/register-organization': typeof RegisterOrganizationRoute
   '/reset-password': typeof ResetPasswordRoute
   '/simulations': typeof SimulationsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
+  '/organization/invites': typeof OrganizationInvitesRoute
+  '/organization/members': typeof OrganizationMembersRoute
+  '/organization/settings': typeof OrganizationSettingsRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/applications/': typeof ApplicationsIndexRoute
   '/notes/': typeof NotesIndexRoute
+  '/organization/': typeof OrganizationIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/applications/$applicationId/analytics': typeof ApplicationsApplicationIdAnalyticsRoute
   '/applications/$applicationId/dashboard': typeof ApplicationsApplicationIdDashboardRoute
@@ -270,16 +315,21 @@ export interface FileRouteTypes {
     | '/profile'
     | '/progression'
     | '/register'
+    | '/register-organization'
     | '/reset-password'
     | '/simulations'
     | '/verify-email'
     | '/notes/$noteId'
+    | '/organization/invites'
+    | '/organization/members'
+    | '/organization/settings'
     | '/settings/billing'
     | '/settings/integrations'
     | '/settings/profile'
     | '/settings/security'
     | '/applications'
     | '/notes'
+    | '/organization'
     | '/settings'
     | '/applications/$applicationId/analytics'
     | '/applications/$applicationId/dashboard'
@@ -298,16 +348,21 @@ export interface FileRouteTypes {
     | '/profile'
     | '/progression'
     | '/register'
+    | '/register-organization'
     | '/reset-password'
     | '/simulations'
     | '/verify-email'
     | '/notes/$noteId'
+    | '/organization/invites'
+    | '/organization/members'
+    | '/organization/settings'
     | '/settings/billing'
     | '/settings/integrations'
     | '/settings/profile'
     | '/settings/security'
     | '/applications'
     | '/notes'
+    | '/organization'
     | '/settings'
     | '/applications/$applicationId/analytics'
     | '/applications/$applicationId/dashboard'
@@ -326,16 +381,21 @@ export interface FileRouteTypes {
     | '/profile'
     | '/progression'
     | '/register'
+    | '/register-organization'
     | '/reset-password'
     | '/simulations'
     | '/verify-email'
     | '/notes/$noteId'
+    | '/organization/invites'
+    | '/organization/members'
+    | '/organization/settings'
     | '/settings/billing'
     | '/settings/integrations'
     | '/settings/profile'
     | '/settings/security'
     | '/applications/'
     | '/notes/'
+    | '/organization/'
     | '/settings/'
     | '/applications/$applicationId/analytics'
     | '/applications/$applicationId/dashboard'
@@ -355,16 +415,21 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ProgressionRoute: typeof ProgressionRoute
   RegisterRoute: typeof RegisterRoute
+  RegisterOrganizationRoute: typeof RegisterOrganizationRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SimulationsRoute: typeof SimulationsRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   NotesNoteIdRoute: typeof NotesNoteIdRoute
+  OrganizationInvitesRoute: typeof OrganizationInvitesRoute
+  OrganizationMembersRoute: typeof OrganizationMembersRoute
+  OrganizationSettingsRoute: typeof OrganizationSettingsRoute
   SettingsBillingRoute: typeof SettingsBillingRoute
   SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
   ApplicationsIndexRoute: typeof ApplicationsIndexRoute
   NotesIndexRoute: typeof NotesIndexRoute
+  OrganizationIndexRoute: typeof OrganizationIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
   ApplicationsApplicationIdAnalyticsRoute: typeof ApplicationsApplicationIdAnalyticsRoute
   ApplicationsApplicationIdDashboardRoute: typeof ApplicationsApplicationIdDashboardRoute
@@ -393,6 +458,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register-organization': {
+      id: '/register-organization'
+      path: '/register-organization'
+      fullPath: '/register-organization'
+      preLoaderRoute: typeof RegisterOrganizationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -479,6 +551,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/organization/': {
+      id: '/organization/'
+      path: '/organization'
+      fullPath: '/organization'
+      preLoaderRoute: typeof OrganizationIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/notes/': {
       id: '/notes/'
       path: '/notes'
@@ -519,6 +598,27 @@ declare module '@tanstack/react-router' {
       path: '/settings/billing'
       fullPath: '/settings/billing'
       preLoaderRoute: typeof SettingsBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization/settings': {
+      id: '/organization/settings'
+      path: '/organization/settings'
+      fullPath: '/organization/settings'
+      preLoaderRoute: typeof OrganizationSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization/members': {
+      id: '/organization/members'
+      path: '/organization/members'
+      fullPath: '/organization/members'
+      preLoaderRoute: typeof OrganizationMembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization/invites': {
+      id: '/organization/invites'
+      path: '/organization/invites'
+      fullPath: '/organization/invites'
+      preLoaderRoute: typeof OrganizationInvitesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notes/$noteId': {
@@ -571,16 +671,21 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ProgressionRoute: ProgressionRoute,
   RegisterRoute: RegisterRoute,
+  RegisterOrganizationRoute: RegisterOrganizationRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SimulationsRoute: SimulationsRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   NotesNoteIdRoute: NotesNoteIdRoute,
+  OrganizationInvitesRoute: OrganizationInvitesRoute,
+  OrganizationMembersRoute: OrganizationMembersRoute,
+  OrganizationSettingsRoute: OrganizationSettingsRoute,
   SettingsBillingRoute: SettingsBillingRoute,
   SettingsIntegrationsRoute: SettingsIntegrationsRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
   ApplicationsIndexRoute: ApplicationsIndexRoute,
   NotesIndexRoute: NotesIndexRoute,
+  OrganizationIndexRoute: OrganizationIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
   ApplicationsApplicationIdAnalyticsRoute:
     ApplicationsApplicationIdAnalyticsRoute,

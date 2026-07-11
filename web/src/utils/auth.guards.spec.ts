@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  checkAuthStatus,
   createAuthGuard,
   createAuthRedirectGuard,
   createPublicRouteGuard,
@@ -178,6 +179,65 @@ describe('auth.guards', () => {
       await expect(
         createPublicRouteGuard('/verify-email')(),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('role-gated guard (B4)', () => {
+    it('lets an admin through /organization', async () => {
+      getRouteConfigMock.mockReturnValue({
+        requiresAuth: true,
+        roles: ['admin', 'employee'],
+      });
+      axiosGet.mockResolvedValue({
+        data: { authenticated: true, role: 'admin', organizationId: 'o1' },
+      });
+
+      const guard = createAuthGuard('/organization');
+      await expect(guard()).resolves.toBeUndefined();
+    });
+
+    it('redirects a user-role member away from /organization', async () => {
+      getRouteConfigMock.mockReturnValue({
+        requiresAuth: true,
+        roles: ['admin', 'employee'],
+      });
+      axiosGet.mockResolvedValue({
+        data: { authenticated: true, role: 'user', organizationId: 'o1' },
+      });
+
+      const guard = createAuthGuard('/organization');
+      await expect(guard()).rejects.toBeDefined();
+      expect(redirectMock).toHaveBeenCalledWith({ to: '/' });
+    });
+
+    it('still redirects anonymous visitors to login', async () => {
+      getRouteConfigMock.mockReturnValue({
+        requiresAuth: true,
+        roles: ['admin', 'employee'],
+      });
+      axiosGet.mockRejectedValue({
+        isAxiosError: true,
+        response: { status: 401 },
+      });
+
+      const guard = createAuthGuard('/organization');
+      await expect(guard()).rejects.toBeDefined();
+      expect(redirectMock).toHaveBeenCalledWith({
+        to: '/login',
+        search: { redirect: '/organization' },
+      });
+    });
+
+    it('exposes role fields from checkAuthStatus', async () => {
+      axiosGet.mockResolvedValue({
+        data: { authenticated: true, role: 'employee', organizationId: 'o1' },
+      });
+
+      await expect(checkAuthStatus()).resolves.toEqual({
+        isAuthenticated: true,
+        role: 'employee',
+        organizationId: 'o1',
+      });
     });
   });
 });

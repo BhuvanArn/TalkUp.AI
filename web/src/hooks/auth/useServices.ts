@@ -1,10 +1,21 @@
 import { useAuth } from '@/contexts/AuthContext';
 import AuthService from '@/services/auth/http';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { type AuthStatus, checkAuthStatus } from '@/utils/auth.guards';
+import { extractErrorMessage } from '@/utils/error';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 
 const authService = new AuthService();
+
+/** Role/org for UI gating (B4). Guards fetch their own copy; this one is for rendering. */
+export const useAuthStatus = () => {
+  return useQuery<AuthStatus>({
+    queryKey: ['auth', 'status'],
+    queryFn: checkAuthStatus,
+    staleTime: 60 * 1000,
+  });
+};
 
 /**
  * Custom hook for user registration functionality.
@@ -24,12 +35,19 @@ export const usePostRegister = () => {
       username,
       email,
       password,
+      organizationCode,
     }: {
       username: string;
       email: string;
       password: string;
+      organizationCode?: string;
     }) => {
-      return await authService.postRegister(username, email, password);
+      return await authService.postRegister(
+        username,
+        email,
+        password,
+        organizationCode,
+      );
     },
     onSuccess: (_data, variables) => {
       toast.success('Check your email for a verification code');
@@ -41,6 +59,45 @@ export const usePostRegister = () => {
     onError: (error) => {
       toast.error('Registration failed');
       console.error('Error during registration:', error);
+    },
+  });
+};
+
+/** F12: org signup → OTP verification → lands on /organization. */
+export const usePostRegisterOrganization = () => {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: async ({
+      organizationName,
+      email,
+      password,
+    }: {
+      organizationName: string;
+      email: string;
+      password: string;
+    }) => {
+      return await authService.postRegisterOrganization(
+        organizationName,
+        email,
+        password,
+      );
+    },
+    onSuccess: (_data, variables) => {
+      toast.success('Check your email for a verification code');
+      router.navigate({
+        to: '/verify-email',
+        search: { email: variables.email, redirect: '/organization' },
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        extractErrorMessage(
+          error,
+          'Organization signup failed. Please try again.',
+        ),
+      );
+      console.error('Error during organization signup:', error);
     },
   });
 };
@@ -68,7 +125,8 @@ export const usePostVerifyEmail = () => {
     },
     onSuccess: (data) => {
       login();
-      // Fresh session on this tab — drop any leftover cache from a prior account.
+      // Fresh session on this tab — drop any leftover cache (incl. role/org)
+      // from a prior account so stale cross-account state can't render.
       queryClient.clear();
       toast.success('Email verified');
       router.navigate({ to: data.redirectTo });
@@ -157,8 +215,8 @@ export const usePostLogin = () => {
     },
     onSuccess: () => {
       login();
-      // Discard any cache left over from a previous session on this tab so the
-      // newly signed-in account fetches its own data fresh.
+      // Discard any cache left over from a previous session on this tab (incl.
+      // role/org) so the newly signed-in account fetches its own data fresh.
       queryClient.clear();
       toast.success('Login successful');
 
@@ -193,13 +251,14 @@ export const usePostLogout = () => {
     },
     onSuccess: () => {
       logout();
-      // Drop every cached query so the next account to sign in on this tab
-      // never sees the previous user's data (profile, applications, etc.).
+      // Drop every cached query so the next account to sign in on this tab never
+      // sees the previous user's data (profile, role/org, applications, etc.).
       queryClient.clear();
       toast.success('Logout successful');
       router.navigate({ to: '/login' });
     },
     onError: (error) => {
+      // Even if the server call fails we still log out locally — clear too.
       logout();
       queryClient.clear();
       toast.error('Logout failed');

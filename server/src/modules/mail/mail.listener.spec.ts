@@ -3,6 +3,7 @@ import { Logger } from "@nestjs/common";
 import { OtpPurpose } from "@common/enums/OtpPurpose";
 
 import { OtpGeneratedEvent } from "@src/modules/auth/events/otp-generated.event";
+import { OrganizationInviteCreatedEvent } from "@src/modules/organization/events/organization-invite-created.event";
 
 import { MailListener } from "./mail.listener";
 import { MailService } from "./mail.service";
@@ -202,5 +203,66 @@ describe("MailListener", () => {
     expect(call.html).not.toContain("<script>alert(1)</script>");
     expect(call.html).toContain("&lt;script&gt;");
     expect(call.html).toContain("&quot;&gt;");
+  });
+
+  describe("onOrganizationInviteCreated", () => {
+    const invitePayload = (
+      overrides: Partial<OrganizationInviteCreatedEvent> = {},
+    ): OrganizationInviteCreatedEvent => ({
+      email: "candidate@example.com",
+      code: "ABCDEFGH2345",
+      organizationName: "Acme Inc",
+      role: "user",
+      expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      registerUrl: "https://talkup.example/register?code=ABCDEFGH2345",
+      ...overrides,
+    });
+
+    it("sends the invite mail with the org name and code when registerUrl is set", async () => {
+      await listener.onOrganizationInviteCreated(invitePayload());
+
+      expect(mailService.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: "candidate@example.com",
+          subject: "You're invited to join Acme Inc on TalkUp",
+          html: expect.stringContaining("Acme Inc"),
+        }),
+      );
+      const call = mailService.sendMail.mock.calls[0][0];
+      expect(call.html).toContain("ABCDEFGH2345");
+      expect(call.html).toContain(
+        "https://talkup.example/register?code=ABCDEFGH2345",
+      );
+      expect(call.text).toContain("ABCDEFGH2345");
+    });
+
+    it("still sends without a CTA when registerUrl is undefined", async () => {
+      await listener.onOrganizationInviteCreated(
+        invitePayload({ registerUrl: undefined }),
+      );
+
+      expect(mailService.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: "candidate@example.com",
+          subject: "You're invited to join Acme Inc on TalkUp",
+        }),
+      );
+      const call = mailService.sendMail.mock.calls[0][0];
+      expect(call.html).toContain("ABCDEFGH2345");
+      expect(call.html).toContain("Acme Inc");
+    });
+
+    it("swallows a sendMail rejection and logs the error", async () => {
+      mailService.sendMail.mockRejectedValueOnce(new Error("smtp down"));
+
+      await expect(
+        listener.onOrganizationInviteCreated(invitePayload()),
+      ).resolves.toBeUndefined();
+
+      expect(Logger.prototype.error).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to dispatch invite email"),
+        expect.any(String),
+      );
+    });
   });
 });

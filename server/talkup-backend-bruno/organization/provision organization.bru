@@ -1,0 +1,27 @@
+meta {
+  name: provision organization
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{host}}/organization
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-org-provisioning-secret: {{orgProvisioningSecret}}
+}
+
+body:json {
+  {
+    "OrganizationName": "TalkUp",
+    "OrganizationEmail": "talkup.doe@example.com"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

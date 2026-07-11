@@ -1,4 +1,5 @@
 import { validate } from "class-validator";
+import { plainToInstance } from "class-transformer";
 import { CreateUserDto } from "./createUser.dto";
 
 describe("CreateUserDto", () => {
@@ -398,6 +399,30 @@ describe("CreateUserDto", () => {
         const errors = await validate(testDto);
         expect(errors).toHaveLength(0);
       }
+    });
+  });
+
+  describe("organizationCode (F2)", () => {
+    it("accepts an optional organizationCode string", async () => {
+      const dto = plainToInstance(CreateUserDto, {
+        username: "candidate",
+        email: "candidate@example.com",
+        password: "Abcdefg1*",
+        organizationCode: "ABCDEFGHJKLM",
+      });
+      const errors = await validate(dto);
+      expect(errors).toHaveLength(0);
+    });
+
+    it("rejects a non-string organizationCode", async () => {
+      const dto = plainToInstance(CreateUserDto, {
+        username: "candidate",
+        email: "candidate@example.com",
+        password: "Abcdefg1*",
+        organizationCode: 12345,
+      });
+      const errors = await validate(dto);
+      expect(errors.some((e) => e.property === "organizationCode")).toBe(true);
     });
   });
 });

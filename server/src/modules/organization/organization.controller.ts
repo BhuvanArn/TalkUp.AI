@@ -16,6 +16,7 @@ import {
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
   ApiSecurity,
   ApiUnauthorizedResponse,
@@ -24,6 +25,8 @@ import {
 
 import { CreateOrganizationDto } from "./dto/createOrganization.dto";
 import { CreateOrganizationMemberDto } from "./dto/createOrganizationMember.dto";
+import { CreateOrganizationInviteDto } from "./dto/createOrganizationInvite.dto";
+import { UpdateMemberRoleDto } from "./dto/updateMemberRole.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { ParamId } from "@common/decorators/paramId.decorator";
@@ -41,6 +44,7 @@ import { UpdateOrganizationDto } from "./dto/updateOrganization.dto";
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
 
+  @ApiOperation({ summary: "Provision a new organization" })
   @ApiCreatedResponse({
     description: "The organization has been successfully created.",
     type: CreateOrganizationDto,
@@ -67,6 +71,7 @@ export class OrganizationController {
     );
   }
 
+  @ApiOperation({ summary: "Delete an organization" })
   @ApiOkResponse({
     description: "The organization has been successfully deleted.",
   })
@@ -81,6 +86,7 @@ export class OrganizationController {
     return await this.organizationService.deleteOrganization(id, currentUser);
   }
 
+  @ApiOperation({ summary: "Update an organization" })
   @ApiOkResponse({
     description: "The organization has been successfully updated.",
   })
@@ -106,6 +112,7 @@ export class OrganizationController {
     );
   }
 
+  @ApiOperation({ summary: "Get the current user's organization" })
   @ApiOkResponse({
     description: "The organization has been successfully found.",
   })
@@ -121,6 +128,7 @@ export class OrganizationController {
     return await this.organizationService.getMyOrganizationForUser(currentUser);
   }
 
+  @ApiOperation({ summary: "Create a member in the organization" })
   @ApiCreatedResponse({
     description: "A new member was created for the organization.",
   })
@@ -144,6 +152,7 @@ export class OrganizationController {
     );
   }
 
+  @ApiOperation({ summary: "Remove a member from the organization" })
   @ApiOkResponse({
     description: "The member was removed from the organization.",
   })
@@ -162,6 +171,102 @@ export class OrganizationController {
     return await this.organizationService.removeOrganizationMember(
       id,
       memberUserId,
+      currentUser,
+    );
+  }
+
+  @ApiOperation({ summary: "Change a member's role" })
+  @ApiOkResponse({ description: "Member role updated." })
+  @ApiNotFoundResponse({
+    description: "Target member not in this organization.",
+  })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Not an organization administrator." })
+  @UseGuards(AccessTokenGuard)
+  @UsePipes(new PostValidationPipe())
+  @Patch(":id/members/:memberUserId/role")
+  async changeMemberRole(
+    @ParamId() id: string,
+    @ParamId("memberUserId") memberUserId: string,
+    @Body() body: UpdateMemberRoleDto,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.changeMemberRole(
+      id,
+      memberUserId,
+      body.role,
+      currentUser,
+    );
+  }
+
+  @ApiOperation({ summary: "Generate an organization invite code" })
+  @ApiCreatedResponse({ description: "Invite code generated." })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Insufficient permissions." })
+  @UseGuards(AccessTokenGuard)
+  @UsePipes(new PostValidationPipe())
+  @Post(":id/invites")
+  async createInvite(
+    @ParamId() id: string,
+    @Body() body: CreateOrganizationInviteDto,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.createInvite(id, body, currentUser);
+  }
+
+  @ApiOperation({ summary: "Get a member's detail with interview stats" })
+  @ApiOkResponse({
+    description: "Member detail with stats and recent interviews.",
+  })
+  @ApiNotFoundResponse({
+    description: "Target member not in this organization.",
+  })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Insufficient permissions." })
+  @UseGuards(AccessTokenGuard)
+  @Get(":id/members/:memberUserId")
+  async getMemberDetail(
+    @ParamId() id: string,
+    @ParamId("memberUserId") memberUserId: string,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.getOrganizationMemberDetail(
+      id,
+      memberUserId,
+      currentUser,
+    );
+  }
+
+  @ApiOperation({ summary: "List the organization's invites" })
+  @ApiOkResponse({ description: "Invites for the organization." })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Insufficient permissions." })
+  @UseGuards(AccessTokenGuard)
+  @Get(":id/invites")
+  async listInvites(@ParamId() id: string, @CurrentUser() currentUser: user) {
+    return await this.organizationService.listInvites(id, currentUser);
+  }
+
+  @ApiOperation({ summary: "Revoke an organization invite" })
+  @ApiOkResponse({ description: "Invite revoked." })
+  @ApiNotFoundResponse({
+    description: "Invite not found in this organization.",
+  })
+  @ApiConflictResponse({
+    description: "Only pending invites can be revoked.",
+  })
+  @ApiUnauthorizedResponse({ description: "Not authenticated." })
+  @ApiForbiddenResponse({ description: "Not an organization administrator." })
+  @UseGuards(AccessTokenGuard)
+  @Delete(":id/invites/:inviteId")
+  async revokeInvite(
+    @ParamId() id: string,
+    @ParamId("inviteId") inviteId: string,
+    @CurrentUser() currentUser: user,
+  ) {
+    return await this.organizationService.revokeInvite(
+      id,
+      inviteId,
       currentUser,
     );
   }

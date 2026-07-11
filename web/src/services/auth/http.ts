@@ -13,6 +13,7 @@ export default class AuthService {
    * @param username - The username for the new account
    * @param email - The email address associated with the new account
    * @param password - The password for the new account
+   * @param organizationCode - Optional organization invite code (F2)
    * @returns A promise that resolves to a success message
    * @throws Will throw an error if the registration fails
    */
@@ -20,11 +21,14 @@ export default class AuthService {
     username: string,
     email: string,
     password: string,
+    organizationCode?: string,
   ): Promise<{ message: string }> => {
     const response = await axiosInstance.post(`${API_ROUTES.auth}/register`, {
       username,
       email,
       password,
+      // Only send the key when set: the backend pipe rejects unknown/empty noise.
+      ...(organizationCode ? { organizationCode } : {}),
     });
     return response.data;
   };
@@ -124,6 +128,22 @@ export default class AuthService {
     const response = await axiosInstance.patch(
       `${API_ROUTES.auth}/password-update`,
       { newPassword },
+    );
+    return response.data;
+  };
+
+  /**
+   * F12: public organization self-signup. 202 + verification mail; the admin
+   * logs in through the standard verify-email flow (no tokens here).
+   */
+  postRegisterOrganization = async (
+    organizationName: string,
+    email: string,
+    password: string,
+  ): Promise<{ message: string }> => {
+    const response = await axiosInstance.post(
+      `${API_ROUTES.auth}/register-organization`,
+      { organizationName, email, password },
     );
     return response.data;
   };

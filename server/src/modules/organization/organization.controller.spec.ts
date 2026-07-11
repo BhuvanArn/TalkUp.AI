@@ -25,6 +25,11 @@ describe("OrganizationController", () => {
       getMyOrganizationForUser: jest.fn(),
       createOrganizationMember: jest.fn(),
       removeOrganizationMember: jest.fn(),
+      changeMemberRole: jest.fn(),
+      getOrganizationMemberDetail: jest.fn(),
+      createInvite: jest.fn(),
+      listInvites: jest.fn(),
+      revokeInvite: jest.fn(),
     };
 
     const module: TestingModule = await applyMockAccessTokenGuard(
@@ -160,6 +165,89 @@ describe("OrganizationController", () => {
         mockUser,
       );
       expect(result).toBe(out);
+    });
+  });
+
+  describe("changeMemberRole", () => {
+    it("should call changeMemberRole with the role from the body", async () => {
+      const body = { role: "employee" as const };
+      const out = { message: "Member role updated" };
+      (service.changeMemberRole as jest.Mock).mockResolvedValue(out);
+
+      const result = await controller.changeMemberRole(
+        "org-id",
+        "member-id",
+        body,
+        mockUser,
+      );
+
+      expect(service.changeMemberRole).toHaveBeenCalledWith(
+        "org-id",
+        "member-id",
+        "employee",
+        mockUser,
+      );
+      expect(result).toBe(out);
+    });
+  });
+
+  describe("getMemberDetail", () => {
+    it("should call getOrganizationMemberDetail with id, memberUserId and user", async () => {
+      const out = { user_id: "member-id", username: "alice" };
+      (service.getOrganizationMemberDetail as jest.Mock).mockResolvedValue(out);
+
+      const result = await controller.getMemberDetail(
+        "org-id",
+        "member-id",
+        mockUser,
+      );
+
+      expect(service.getOrganizationMemberDetail).toHaveBeenCalledWith(
+        "org-id",
+        "member-id",
+        mockUser,
+      );
+      expect(result).toBe(out);
+    });
+  });
+
+  describe("invites", () => {
+    it("POST :id/invites delegates to service", async () => {
+      const dto = { email: "a@b.co", role: "user" as const };
+      (service.createInvite as jest.Mock).mockResolvedValue({ code: "X" });
+
+      await expect(
+        controller.createInvite("org-id", dto, mockUser),
+      ).resolves.toEqual({ code: "X" });
+      expect(service.createInvite).toHaveBeenCalledWith(
+        "org-id",
+        dto,
+        mockUser,
+      );
+    });
+
+    it("GET :id/invites delegates to service", async () => {
+      (service.listInvites as jest.Mock).mockResolvedValue([]);
+
+      await expect(controller.listInvites("org-id", mockUser)).resolves.toEqual(
+        [],
+      );
+      expect(service.listInvites).toHaveBeenCalledWith("org-id", mockUser);
+    });
+
+    it("DELETE :id/invites/:inviteId delegates to service", async () => {
+      (service.revokeInvite as jest.Mock).mockResolvedValue({
+        message: "Invite revoked",
+      });
+
+      await expect(
+        controller.revokeInvite("org-id", "invite-id", mockUser),
+      ).resolves.toEqual({ message: "Invite revoked" });
+      expect(service.revokeInvite).toHaveBeenCalledWith(
+        "org-id",
+        "invite-id",
+        mockUser,
+      );
     });
   });
 });

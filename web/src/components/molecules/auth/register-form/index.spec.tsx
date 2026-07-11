@@ -9,12 +9,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RegisterForm } from '.';
 
+const mutateMock = vi.fn();
+
 /**
  * Mocks the `usePostRegister` hook.
  */
 vi.mock('@/hooks/auth/useServices', () => ({
   usePostRegister: vi.fn(() => ({
-    mutate: vi.fn(),
+    mutate: mutateMock,
   })),
 }));
 vi.mock('@tanstack/react-router', () => ({
@@ -290,6 +292,85 @@ describe('RegisterForm', () => {
         /Create a secure password/i,
       );
       expect(passwordInput).toHaveAttribute('id', 'password');
+    });
+  });
+
+  /**
+   * Test Group: Organization code (F2)
+   * Ensures the optional organization code field renders, prefills from
+   * `initialCode`, and is included in (or omitted from) the submit payload.
+   */
+  describe('Organization code (F2)', () => {
+    it('renders an optional organization code field', () => {
+      render(<RegisterForm />);
+      expect(
+        screen.getByPlaceholderText(/organization code/i),
+      ).toBeInTheDocument();
+    });
+
+    it('prefills the code from initialCode', () => {
+      render(<RegisterForm initialCode="ABCDEFGHJKLM" />);
+      expect(screen.getByPlaceholderText(/organization code/i)).toHaveValue(
+        'ABCDEFGHJKLM',
+      );
+    });
+
+    it('submits the code with the registration payload', async () => {
+      render(<RegisterForm initialCode="ABCDEFGHJKLM" />);
+
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText(/Choose a username/i), {
+          target: { value: 'candidate1' },
+        });
+        fireEvent.change(screen.getByPlaceholderText(/Your email address/i), {
+          target: { value: 'c@example.com' },
+        });
+        fireEvent.change(
+          screen.getByPlaceholderText(/Create a secure password/i),
+          { target: { value: 'Abcdefg1*' } },
+        );
+        fireEvent.click(screen.getByRole('button', { name: /Register/i }));
+      });
+
+      await waitFor(() => {
+        expect(mutateMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            username: 'candidate1',
+            email: 'c@example.com',
+            organizationCode: 'ABCDEFGHJKLM',
+          }),
+          expect.anything(),
+        );
+      });
+    });
+
+    it('omits the code from the payload when left blank', async () => {
+      render(<RegisterForm />);
+
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText(/Choose a username/i), {
+          target: { value: 'candidate1' },
+        });
+        fireEvent.change(screen.getByPlaceholderText(/Your email address/i), {
+          target: { value: 'c@example.com' },
+        });
+        fireEvent.change(
+          screen.getByPlaceholderText(/Create a secure password/i),
+          { target: { value: 'Abcdefg1*' } },
+        );
+        fireEvent.click(screen.getByRole('button', { name: /Register/i }));
+      });
+
+      await waitFor(() => {
+        expect(mutateMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            username: 'candidate1',
+            email: 'c@example.com',
+            organizationCode: undefined,
+          }),
+          expect.anything(),
+        );
+      });
     });
   });
 });
