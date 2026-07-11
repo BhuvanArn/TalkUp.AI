@@ -18,7 +18,11 @@ import {
 } from "@entities/user.entity";
 import {
   CvExtraction,
+  CV_LOW_QUALITY_MESSAGE,
+  CV_UNREADABLE_PDF_MESSAGE,
+  isCvExtractionEmpty,
   MAX_LLM_INPUT_CHARS,
+  MIN_CV_EXTRACTABLE_TEXT_CHARS,
   extractWithGroq,
 } from "../../common/utils/groqExtraction";
 
@@ -260,13 +264,19 @@ export class UsersService {
       );
     }
 
-    if (!rawText || rawText.length === 0) {
-      throw new BadRequestException(
-        "The PDF file is empty or could not be parsed.",
-      );
+    if (!rawText || rawText.trim().length === 0) {
+      throw new BadRequestException(CV_UNREADABLE_PDF_MESSAGE);
     }
 
-    const cvText = rawText.substring(0, MAX_LLM_INPUT_CHARS);
+    const trimmedText = rawText.trim();
+    if (trimmedText.length < MIN_CV_EXTRACTABLE_TEXT_CHARS) {
+      this.logger.warn(
+        `uploadCV: insufficient extractable text (${trimmedText.length} chars) for user ${userId}`,
+      );
+      throw new BadRequestException(CV_UNREADABLE_PDF_MESSAGE);
+    }
+
+    const cvText = trimmedText.substring(0, MAX_LLM_INPUT_CHARS);
 
     const prompt = `You are a specialized CV analysis assistant. Analyze the following text extracted from a CV and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
       {
@@ -307,6 +317,13 @@ export class UsersService {
       ${cvText}`;
 
     const data = await extractWithGroq<CvExtraction>(prompt);
+
+    if (isCvExtractionEmpty(data)) {
+      this.logger.warn(
+        `uploadCV: Groq returned empty CV extraction for user ${userId} (${trimmedText.length} chars of source text)`,
+      );
+      throw new BadRequestException(CV_LOW_QUALITY_MESSAGE);
+    }
 
     const existed = await this.upsertByUser(this.user_cvRepo, userId, {
       desired_job: data.desired_job ?? null,

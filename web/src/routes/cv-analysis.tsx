@@ -2,6 +2,7 @@ import { useCreateApplication } from '@/services/applications/hooks';
 import type { Application } from '@/services/applications/types';
 import { uploadMyCV } from '@/services/users/http';
 import { createAuthGuard } from '@/utils/auth.guards';
+import { extractErrorMessage } from '@/utils/error';
 import { isAllowedJobUrl } from '@/utils/validators';
 import { createFileRoute } from '@tanstack/react-router';
 import axios from 'axios';
@@ -76,14 +77,25 @@ function CVAnalysisPage() {
       });
       setCreatedApplication(app);
     } catch (error) {
-      // Server throttles application creation to 5/min, surfaced as 429.
       const isThrottled =
         axios.isAxiosError(error) && error.response?.status === 429;
-      const cvNotice = cvUploaded ? ' Your profile CV has been updated.' : '';
+
+      if (!cvUploaded) {
+        toast.error(
+          extractErrorMessage(
+            error,
+            "Échec de l'upload du CV. Réessayez avec un PDF de meilleure qualité (texte sélectionnable).",
+          ),
+        );
+        return;
+      }
+
+      const cvNotice = ' Votre CV a bien été enregistré sur votre profil.';
       toast.error(
         (isThrottled
-          ? 'Too many attempts. Please try again in a minute.'
-          : 'Analysis failed. Check the offer link and try again.') + cvNotice,
+          ? 'Trop de tentatives. Réessayez dans une minute.'
+          : "L'analyse de l'offre a échoué. Vérifiez le lien et réessayez.") +
+          cvNotice,
       );
     } finally {
       setAnalysisStep('idle');
