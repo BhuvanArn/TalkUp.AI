@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { scorePassword } from './password-strength';
 
 describe('scorePassword', () => {
@@ -25,7 +26,10 @@ describe('scorePassword', () => {
   });
 
   it('rewards length: >=16 all-class => Strong', () => {
-    expect(scorePassword('Abcdefgh1*jklmno')).toEqual({ score: 4, label: 'Strong' });
+    expect(scorePassword('Abcdefgh1*jklmno')).toEqual({
+      score: 4,
+      label: 'Strong',
+    });
   });
 
   it('penalizes a single-class long repeat', () => {
@@ -35,5 +39,26 @@ describe('scorePassword', () => {
 
   it('penalizes an obvious ascending sequence', () => {
     expect(scorePassword('abcdefghijkl').score).toBeLessThanOrEqual(1);
+  });
+
+  // Regression: the meter's symbol class must match the gate's allowlist
+  // (PASSWORD_SYMBOL_REGEX), NOT any non-alphanumeric char. `_` is not an
+  // allowlisted symbol, so it must earn zero symbol-class credit — otherwise
+  // the meter would flatter a password the real gate (passwordSchema) rejects.
+  it('does not count a non-allowlist symbol (_) as a symbol class', () => {
+    // `_` is the only non-alphanumeric char => 3 classes (upper/lower/digit),
+    // so it must score exactly as if the `_` were simply absent.
+    expect(scorePassword('PasswordAbc1_').score).toEqual(
+      scorePassword('PasswordAbc1').score,
+    );
+  });
+
+  it('scores an allowlist symbol (!) strictly higher than a disallowed one (_)', () => {
+    // `!` is in the allowlist => 4 classes + len>=12 length bonus (Good),
+    // while `_` stays a 3-class below-gate password (Fair). Proves the meter
+    // and gate agree that `_` is not a symbol.
+    expect(scorePassword('PasswordAbc1!').score).toBeGreaterThan(
+      scorePassword('PasswordAbc1_').score,
+    );
   });
 });
