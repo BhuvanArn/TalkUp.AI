@@ -26,6 +26,7 @@ import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
 import { RegisterOrganizationDto } from "./dto/registerOrganization.dto";
 
+import { buildAdminUsername } from "@common/utils/buildAdminUsername";
 import { OtpPurpose } from "@common/enums/OtpPurpose";
 import { UserStatus } from "@common/enums/UserStatus";
 import { Otp } from "@entities/otp.entity";
@@ -329,7 +330,7 @@ export class AuthService {
     try {
       await this.register(
         {
-          username: `${dto.organizationName}_admin`,
+          username: buildAdminUsername(dto.organizationName),
           email: dto.email,
           password: dto.password,
           organization_id: savedOrganization.organization_id,

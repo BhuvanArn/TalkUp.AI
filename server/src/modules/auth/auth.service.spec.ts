@@ -1410,7 +1410,7 @@ describe("AuthService", () => {
       );
       expect(registerSpy).toHaveBeenCalledWith(
         {
-          username: "Acme School_admin",
+          username: "AcmeSchooladmin",
           email: dto.email,
           password: dto.password,
           organization_id: "new-org-id",

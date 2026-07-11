@@ -161,7 +161,7 @@ describe("OrganizationService", () => {
 
       expect(authService.register).toHaveBeenCalledWith(
         expect.objectContaining({
-          username: "TestOrg_admin",
+          username: "TestOrgadmin",
           email: "admin@test.com",
           user_role: OrganizationUserRole.ADMIN,
           organization_id: "org-id",
@@ -178,7 +178,7 @@ describe("OrganizationService", () => {
 
       expect(result.message).toBe("Creation successful");
       expect(result.adminUser).toEqual({
-        username: "TestOrg_admin",
+        username: "TestOrgadmin",
         email: "admin@test.com",
         password: registerArg.password,
       });
