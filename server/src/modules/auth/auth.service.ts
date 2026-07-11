@@ -69,6 +69,12 @@ const GENERIC_RESET_VERIFY_ERROR = "Invalid or expired verification code";
 // email-not-found / wrong-password / unverified leak which accounts exist.
 const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
 const PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS = 120;
+// Floor every resendOtp response to the same duration so the hit path (bcrypt
+// hash + DB write + emit) is not timing-distinguishable from the silent miss
+// paths (which skip the write). Set at/above the real send cost, matching the
+// password-reset envelope. Without this floor, response latency still leaks
+// which addresses exist even though status/body no longer do.
+const OTP_RESEND_MIN_RESPONSE_MS = 120;
 
 @Injectable()
 export class AuthService {
@@ -465,6 +471,7 @@ export class AuthService {
   }
 
   async resendOtp(email: string, purpose: OtpPurpose): Promise<void> {
+    const startedAt = Date.now();
     const existingOtp = await this.otpRepository.findOne({
       where: { email, purpose },
     });
@@ -490,10 +497,16 @@ export class AuthService {
     // unknown email, orphan email row, or an already-verified account — returns
     // the SAME silent success as a real resend. Throwing distinct errors here
     // (404/409) would let an attacker probe which addresses exist and which are
-    // already verified. Mirrors passwordResetRequest. Dummy hash keeps timing
-    // indistinguishable from the real send path below.
+    // already verified. Mirrors passwordResetRequest. The dummy hash keeps the
+    // bcrypt cost on par with the real path, and the OTP_RESEND_MIN_RESPONSE_MS
+    // floor below masks the DB write the real send performs but these paths skip
+    // — otherwise response timing alone would still leak which addresses exist.
     if (!emailEntity) {
       await bcrypt.compare("000000", DUMMY_OTP_HASH);
+      await this.applyMinimumResetRequestDuration(
+        startedAt,
+        OTP_RESEND_MIN_RESPONSE_MS,
+      );
       return;
     }
 
@@ -503,6 +516,10 @@ export class AuthService {
 
     if (!userEntity) {
       await bcrypt.compare("000000", DUMMY_OTP_HASH);
+      await this.applyMinimumResetRequestDuration(
+        startedAt,
+        OTP_RESEND_MIN_RESPONSE_MS,
+      );
       return;
     }
 
@@ -511,6 +528,10 @@ export class AuthService {
       userEntity.status === UserStatus.ACTIVE
     ) {
       await bcrypt.compare("000000", DUMMY_OTP_HASH);
+      await this.applyMinimumResetRequestDuration(
+        startedAt,
+        OTP_RESEND_MIN_RESPONSE_MS,
+      );
       return;
     }
 
@@ -554,6 +575,16 @@ export class AuthService {
     }
 
     this.eventEmitter.emit("auth.otp_generated", event);
+
+    // Floor the real send to the same duration as the silent miss paths above,
+    // so a shorter/longer response can't reveal whether a mail was actually
+    // dispatched. Emit is fire-and-forget, so this only bounds the send path's
+    // own DB/hash work, keeping it indistinguishable from the skipped-write
+    // paths.
+    await this.applyMinimumResetRequestDuration(
+      startedAt,
+      OTP_RESEND_MIN_RESPONSE_MS,
+    );
   }
 
   async passwordResetRequest(
@@ -1048,9 +1079,10 @@ export class AuthService {
 
   private async applyMinimumResetRequestDuration(
     startedAt: number,
+    minMs: number = PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS,
   ): Promise<void> {
     const elapsed = Date.now() - startedAt;
-    const remaining = PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS - elapsed;
+    const remaining = minMs - elapsed;
 
     if (remaining > 0) {
       await new Promise((resolve) => setTimeout(resolve, remaining));

@@ -1082,6 +1082,9 @@ describe("AuthService", () => {
         service.resendOtp("missing@example.com", OtpPurpose.REGISTER),
       ).resolves.toBeUndefined();
       expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      // Timing defense: the dummy bcrypt compare must run on the miss path so a
+      // refactor can't silently drop it.
+      expect(mockedBcrypt.compare).toHaveBeenCalled();
     });
 
     it("returns silently without sending when the email row has no user (enumeration defense)", async () => {
@@ -1094,6 +1097,7 @@ describe("AuthService", () => {
         service.resendOtp("orphan@example.com", OtpPurpose.REGISTER),
       ).resolves.toBeUndefined();
       expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      expect(mockedBcrypt.compare).toHaveBeenCalled();
     });
 
     it("returns silently without sending when REGISTER resend targets an already active account (enumeration defense)", async () => {
@@ -1102,11 +1106,13 @@ describe("AuthService", () => {
       mockUserRepo.findOne = jest
         .fn()
         .mockResolvedValue({ ...mockUser, status: UserStatus.ACTIVE });
+      mockedBcrypt.compare.mockResolvedValue(true as never);
 
       await expect(
         service.resendOtp("test@example.com", OtpPurpose.REGISTER),
       ).resolves.toBeUndefined();
       expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      expect(mockedBcrypt.compare).toHaveBeenCalled();
     });
 
     it("emits event when resend succeeds", async () => {
