@@ -49,8 +49,9 @@ const createWrapper = () => {
       },
     },
   });
-  return ({ children }: { children: React.ReactNode }) =>
+  const wrapper = ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
+  return { wrapper, queryClient };
 };
 
 /**
@@ -64,7 +65,7 @@ describe('useLogout', () => {
 
   it('returns a logout function', () => {
     const { result } = renderHook(() => useLogout(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper().wrapper,
     });
 
     expect(result.current).toHaveProperty('logout');
@@ -79,7 +80,7 @@ describe('useLogout', () => {
       logout: vi.fn(),
     });
     const { result } = renderHook(() => useLogout(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper().wrapper,
     });
 
     result.current.logout();
@@ -92,7 +93,7 @@ describe('useLogout', () => {
   it('shows success toast when logout function is invoked', async () => {
     const mockToastSuccess = vi.mocked(toast.success);
     const { result } = renderHook(() => useLogout(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper().wrapper,
     });
 
     result.current.logout();
@@ -108,7 +109,7 @@ describe('useLogout', () => {
       navigate: mockNavigate,
     } as unknown as ReturnType<typeof useRouter>);
     const { result } = renderHook(() => useLogout(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper().wrapper,
     });
 
     result.current.logout();
@@ -135,7 +136,7 @@ describe('useLogout', () => {
     } as unknown as ReturnType<typeof useRouter>);
 
     const { result } = renderHook(() => useLogout(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper().wrapper,
     });
 
     result.current.logout();
@@ -144,6 +145,21 @@ describe('useLogout', () => {
       expect(mockAuthLogout).toHaveBeenCalledTimes(1);
       expect(mockToastSuccess).toHaveBeenCalledWith('Logout successful');
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/login' });
+    });
+  });
+
+  it('clears the react-query cache so the next account does not see stale data', async () => {
+    const { wrapper, queryClient } = createWrapper();
+    queryClient.setQueryData(['user-profile'], {
+      email: 'old-account@example.com',
+    });
+
+    const { result } = renderHook(() => useLogout(), { wrapper });
+
+    result.current.logout();
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData(['user-profile'])).toBeUndefined();
     });
   });
 });

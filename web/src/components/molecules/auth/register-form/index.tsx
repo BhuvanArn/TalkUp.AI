@@ -30,9 +30,12 @@ import { useState } from 'react';
  * Visual styling is done with Tailwind CSS, creating a clean interface
  * with consistent spacing and typography matching the login form.
  *
+ * @param initialCode - Optional organization code to prefill (F2), e.g. from `?code=`.
  * @returns A register form component with validation and styling
  */
-export const RegisterForm = () => {
+export const RegisterForm = ({
+  initialCode,
+}: { initialCode?: string } = {}) => {
   const postRegister = usePostRegister();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -41,6 +44,7 @@ export const RegisterForm = () => {
       username: '',
       email: '',
       password: '',
+      organizationCode: initialCode ?? '',
     },
     onSubmit: ({ value }) => {
       setServerError(null);
@@ -49,6 +53,7 @@ export const RegisterForm = () => {
           username: value.username,
           email: value.email,
           password: value.password,
+          organizationCode: value.organizationCode.trim() || undefined,
         },
         {
           onError: (error: unknown) => {
@@ -145,6 +150,34 @@ export const RegisterForm = () => {
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
                 placeholder="Create a secure password"
+              />
+              {field.state.meta.errors.length > 0 && (
+                <span className="text-label-m text-error font-medium ml-1">
+                  {field.state.meta.errors}
+                </span>
+              )}
+            </div>
+          )}
+        </form.Field>
+        <form.Field
+          name="organizationCode"
+          validators={{
+            onChange: ({ value }) =>
+              value && value.trim().length > 32
+                ? 'Organization code is too long'
+                : undefined,
+          }}
+        >
+          {(field) => (
+            <div className="flex flex-col gap-2">
+              <InputMolecule
+                id="organizationCode"
+                inputType="base"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                placeholder="Organization code (optional)"
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">

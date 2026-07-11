@@ -1,5 +1,10 @@
 import { randomInt, randomUUID } from "crypto";
-import { DataSource, Repository } from "typeorm";
+import {
+  DataSource,
+  EntityManager,
+  QueryFailedError,
+  Repository,
+} from "typeorm";
 
 import {
   BadRequestException,
@@ -19,17 +24,21 @@ import { CreateUserDto } from "./dto/createUser.dto";
 import { VerifyEmailDto } from "./dto/verifyEmail.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
+import { RegisterOrganizationDto } from "./dto/registerOrganization.dto";
 
 import { OtpPurpose } from "@common/enums/OtpPurpose";
 import { UserStatus } from "@common/enums/UserStatus";
 import { Otp } from "@entities/otp.entity";
 import { user, user_password, user_email } from "@entities/user.entity";
+import { organization_invite } from "@entities/organizationInvite.entity";
+import { OrganizationInviteStatus } from "@common/enums/OrganizationInviteStatus";
 
 import { OtpGeneratedEvent } from "./events/otp-generated.event";
 import { hashPassword } from "@common/utils/passwordHasher";
 import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 import { Organization } from "@entities/organization.entity";
 import { ITokenStorage } from "@common/interfaces/token-storage";
+import { getUserOrganizationId } from "@common/utils/organizationUser.util";
 import {
   ACCESS_TOKEN_EXPIRY,
   REFRESH_TOKEN_EXPIRY,
@@ -98,6 +107,22 @@ export class AuthService {
           const userEmailRepo = manager.getRepository(user_email);
           const otpRepo = manager.getRepository(Otp);
 
+          // F2: invite redemption is resolved INSIDE the transaction so that
+          // validation, user link, and invite acceptance commit atomically —
+          // a failed registration must not consume the code.
+          const redemption =
+            !trusted && createUserDto.organizationCode
+              ? await this.resolveInviteRedemption(
+                  manager,
+                  createUserDto.organizationCode,
+                  createUserDto.email,
+                )
+              : null;
+          const effectiveOrgId = redemption?.organizationId ?? organizationId;
+          const effectiveRole = redemption?.role ?? userRole;
+
+          let registeredUserId: string;
+
           const emailEntity = await userEmailRepo.findOne({
             where: { email: createUserDto.email },
           });
@@ -106,12 +131,13 @@ export class AuthService {
             const newUser = userRepo.create({
               username: createUserDto.username,
               status: UserStatus.PENDING,
-              organization_id: organizationId
-                ? ({ organization_id: organizationId } as Organization)
+              organization_id: effectiveOrgId
+                ? ({ organization_id: effectiveOrgId } as Organization)
                 : null,
-              user_role: userRole,
+              user_role: effectiveRole,
             });
             const savedUser = await userRepo.save(newUser);
+            registeredUserId = savedUser.user_id;
 
             await userPasswordRepo.save(
               userPasswordRepo.create({
@@ -146,9 +172,29 @@ export class AuthService {
               );
             }
 
+            // Trusted provisioning (org member creation) must never mutate a
+            // pre-existing account: silently overwriting its password/username
+            // and dropping the intended org/role would corrupt a foreign
+            // account and produce a phantom member. Reject so the admin invites
+            // the existing account instead.
+            if (trusted) {
+              throw new ConflictException(
+                "An account with this email already exists",
+              );
+            }
+
             existingUser.username = createUserDto.username;
             existingUser.status = UserStatus.PENDING;
+
+            if (redemption) {
+              existingUser.organization_id = {
+                organization_id: redemption.organizationId,
+              } as Organization;
+              existingUser.user_role = redemption.role;
+            }
+
             await userRepo.save(existingUser);
+            registeredUserId = existingUser.user_id;
 
             const existingPassword = await userPasswordRepo.findOne({
               where: { user_id: existingUser.user_id },
@@ -166,6 +212,14 @@ export class AuthService {
               existingPassword.password = hashedPassword;
               await userPasswordRepo.save(existingPassword);
             }
+          }
+
+          if (redemption && !redemption.alreadyAccepted) {
+            const inviteRepo = manager.getRepository(organization_invite);
+            redemption.invite.status = OrganizationInviteStatus.ACCEPTED;
+            redemption.invite.accepted_by = registeredUserId;
+            redemption.invite.accepted_at = new Date();
+            await inviteRepo.save(redemption.invite);
           }
 
           const existingOtp = await otpRepo
@@ -230,6 +284,63 @@ export class AuthService {
           inviteEmailContext,
         }),
       );
+    }
+  }
+
+  /**
+   * F12: public self-serve org signup — creates the organization and its first
+   * admin in one step, then rides the standard OTP email-verification.
+   * Returns void (202); tokens only come from verifyEmail().
+   *
+   * NOT named registerOrganization: that name is the secret-gated ops
+   * provisioning method on OrganizationService.
+   */
+  async signUpOrganization(dto: RegisterOrganizationDto): Promise<void> {
+    const orgRepo = this.dataSource.getRepository(Organization);
+
+    const nameExists = await orgRepo.findOne({
+      where: { organization_name: dto.organizationName },
+    });
+    if (nameExists) {
+      throw new ConflictException(
+        "An organization with this name already exists",
+      );
+    }
+
+    let savedOrganization: Organization;
+    try {
+      savedOrganization = await orgRepo.save(
+        orgRepo.create({ organization_name: dto.organizationName }),
+      );
+    } catch (error) {
+      // Unique-constraint violation: a concurrent signup won the race between
+      // the pre-check above and this insert (Postgres error code 23505).
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === "23505"
+      ) {
+        throw new ConflictException(
+          "An organization with this name already exists",
+        );
+      }
+      throw error;
+    }
+
+    try {
+      await this.register(
+        {
+          username: `${dto.organizationName}_admin`,
+          email: dto.email,
+          password: dto.password,
+          organization_id: savedOrganization.organization_id,
+          user_role: OrganizationUserRole.ADMIN,
+        },
+        true,
+      );
+    } catch (error) {
+      // No orphan org when the admin account can't be created (e.g. email taken).
+      await orgRepo.remove(savedOrganization).catch(() => undefined);
+      throw error;
     }
   }
 
@@ -643,6 +754,31 @@ export class AuthService {
   }
 
   /**
+   * B4: payload for GET /auth/status. The guard only attaches the bare user row;
+   * the org relation must be loaded explicitly to expose organizationId.
+   */
+  async getAuthStatusPayload(userId: string): Promise<{
+    authenticated: true;
+    role: string;
+    organizationId: string | null;
+  }> {
+    const u = await this.userRepository.findOne({
+      where: { user_id: userId },
+      relations: ["organization_id"],
+    });
+
+    if (!u) {
+      throw new UnauthorizedException("User not found");
+    }
+
+    return {
+      authenticated: true,
+      role: u.user_role,
+      organizationId: getUserOrganizationId(u),
+    };
+  }
+
+  /**
    * Strict refresh-token rotation (RTR): one successful use consumes the old RT JTI,
    * then issues a new AT+RT pair. Concurrent refreshes with the same RT: only one
    * wins consumeRefreshJti; the other gets 401 (client should single-flight refresh).
@@ -775,6 +911,83 @@ export class AuthService {
       registrationChannel: "organization",
       organizationName: options.inviteEmailContext.organizationName,
       verifyUrl: this.buildVerifyEmailUrl(event.email),
+    };
+  }
+
+  /**
+   * F2: validates + locks an invite row for redemption. Runs inside the register
+   * transaction (see callsite) so acceptance is atomic with user creation.
+   * `alreadyAccepted` covers the pending-user re-register case: the same account
+   * retrying registration with its own consumed code is a no-op, not an error.
+   */
+  private async resolveInviteRedemption(
+    manager: EntityManager,
+    code: string,
+    email: string,
+  ): Promise<{
+    invite: organization_invite;
+    organizationId: string;
+    role: string;
+    alreadyAccepted: boolean;
+  }> {
+    const inviteRepo = manager.getRepository(organization_invite);
+
+    const invite = await inviteRepo
+      .createQueryBuilder("invite")
+      .setLock("pessimistic_write")
+      .where("invite.code = :code", { code })
+      .getOne();
+
+    if (!invite) {
+      throw new BadRequestException("Unknown organization code");
+    }
+
+    if (invite.status === OrganizationInviteStatus.REVOKED) {
+      throw new BadRequestException("This organization code has been revoked");
+    }
+
+    if (invite.status === OrganizationInviteStatus.ACCEPTED) {
+      // Idempotent path: same pending account re-registering with its own code.
+      const emailRepo = manager.getRepository(user_email);
+      const emailEntity = await emailRepo.findOne({
+        where: { email },
+      });
+      if (emailEntity && emailEntity.user_id === invite.accepted_by) {
+        return {
+          invite,
+          organizationId: invite.organization_id,
+          role: invite.role,
+          alreadyAccepted: true,
+        };
+      }
+      throw new BadRequestException(
+        "This organization code has already been used",
+      );
+    }
+
+    const isExpired =
+      invite.status === OrganizationInviteStatus.EXPIRED ||
+      invite.expires_at.getTime() < Date.now();
+    if (isExpired) {
+      // Expired-ness is derived on read (see toInviteRow in
+      // organization.service.ts) — persisting the flip here would be
+      // rolled back anyway by the throw below aborting this transaction.
+      throw new BadRequestException("This organization code has expired");
+    }
+
+    if (invite.email && invite.email.toLowerCase() !== email.toLowerCase()) {
+      throw new BadRequestException(
+        "This organization code is bound to a different email address",
+      );
+    }
+
+    // No org-existence check needed: the FK is onDelete CASCADE, so a live
+    // invite row implies a live organization.
+    return {
+      invite,
+      organizationId: invite.organization_id,
+      role: invite.role,
+      alreadyAccepted: false,
     };
   }
 

@@ -4,16 +4,16 @@ import { describe, expect, it, vi } from 'vitest';
 import LandingPage from './index';
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to, hash, onClick, className, ...rest }: any) => (
-    <a
-      href={hash ? `${to === '/' ? '' : to}#${hash}` : to}
-      onClick={onClick}
-      className={className}
-      {...rest}
-    >
-      {children}
-    </a>
-  ),
+  Link: ({ children, to, hash, search, onClick, className, ...rest }: any) => {
+    const base = to === '/' ? '' : to;
+    const query = search ? `?${new URLSearchParams(search).toString()}` : '';
+    const href = hash ? `${base}#${hash}` : `${to}${query}`;
+    return (
+      <a href={href} onClick={onClick} className={className} {...rest}>
+        {children}
+      </a>
+    );
+  },
   useRouterState: () => '/',
 }));
 
@@ -129,6 +129,22 @@ describe('LandingPage', () => {
     expect(within(panel).getByText('Business')).toBeInTheDocument();
     expect(within(panel).getByText('Enterprise')).toBeInTheDocument();
     expect(screen.getByText(/already invited/i)).toBeInTheDocument();
+  });
+
+  it('routes org CTAs to the org signup and code register flows', () => {
+    render(<LandingPage />);
+    fireEvent.click(screen.getByRole('tab', { name: 'For organizations' }));
+
+    const business = screen.getByRole('link', { name: 'Start a 30-day trial' });
+    expect(business).toHaveAttribute('href', '/register-organization');
+
+    const member = screen.getByRole('link', { name: 'I have a code' });
+    expect(member).toHaveAttribute('href', '/register?code=');
+
+    const codeLink = screen.getByRole('link', {
+      name: 'Sign up with your organization code',
+    });
+    expect(codeLink).toHaveAttribute('href', '/register?code=');
   });
 
   it('Enterprise tier uses mailto link via plain anchor', () => {

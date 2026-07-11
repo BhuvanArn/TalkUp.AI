@@ -26,6 +26,7 @@ import {
   ApiUnprocessableEntityResponse,
   ApiTags,
   ApiOkResponse,
+  ApiOperation,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 
@@ -36,6 +37,7 @@ import { ResendOtpDto } from "./dto/resendOtp.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
 import { PasswordUpdateDto } from "./dto/passwordUpdate.dto";
+import { RegisterOrganizationDto } from "./dto/registerOrganization.dto";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { UserId } from "@common/decorators/userId.decorator";
@@ -69,9 +71,28 @@ export class AuthController {
   })
   @UsePipes(new PostValidationPipe())
   @Post("register")
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.ACCEPTED)
   async register(@Body() createUserDto: CreateUserDto) {
     await this.authService.register(createUserDto);
+
+    return { message: "Verification email sent" };
+  }
+
+  @ApiOperation({ summary: "Register a new organization and its admin" })
+  @ApiAcceptedResponse({ description: "Verification email sent." })
+  @ApiBadRequestResponse({ description: "Badly formatted parameter." })
+  @ApiConflictResponse({
+    description: "Organization name or email already exists.",
+  })
+  @UsePipes(new PostValidationPipe())
+  @Post("register-organization")
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.ACCEPTED)
+  async signUpOrganization(@Body() dto: RegisterOrganizationDto) {
+    await this.authService.signUpOrganization(dto);
 
     return { message: "Verification email sent" };
   }
@@ -228,15 +249,15 @@ export class AuthController {
   }
 
   @ApiOkResponse({
-    description: "User is authenticated.",
+    description: "User is authenticated; includes org role and id.",
   })
   @ApiUnauthorizedResponse({
     description: "User is not authenticated or token is invalid.",
   })
   @UseGuards(AccessTokenGuard)
   @Get("status")
-  async getAuthStatus() {
-    return { authenticated: true };
+  async getAuthStatus(@UserId() userId: string) {
+    return await this.authService.getAuthStatusPayload(userId);
   }
 
   @ApiAcceptedResponse({

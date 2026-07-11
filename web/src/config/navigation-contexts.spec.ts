@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   applicationNavigationContext,
   navigationContexts,
+  organizationNavigationContext,
   publicNavigationContext,
   rootNavigationContext,
   settingsNavigationContext,
@@ -160,9 +161,49 @@ describe('navigation-contexts', () => {
     });
   });
 
+  describe('organizationNavigationContext', () => {
+    it('should have type "organization"', () => {
+      expect(organizationNavigationContext.type).toBe('organization');
+    });
+
+    it('should contain all expected navigation items', () => {
+      expect(organizationNavigationContext.items).toHaveLength(3);
+
+      const labels = organizationNavigationContext.items.map(
+        (item) => item.label,
+      );
+      expect(labels).toContain('Members');
+      expect(labels).toContain('Invites');
+      expect(labels).toContain('Settings');
+    });
+
+    it('should have parent context set to "root"', () => {
+      expect(organizationNavigationContext.parentContext).toBe('root');
+    });
+
+    it('should have all items visible in navigation', () => {
+      organizationNavigationContext.items.forEach((item) => {
+        expect(item.showInNav).toBe(true);
+      });
+    });
+
+    it('should have correct routes starting with /organization', () => {
+      organizationNavigationContext.items.forEach((item) => {
+        expect(item.to).toMatch(/^\/organization\//);
+      });
+    });
+
+    it('should have specific organization routes', () => {
+      const routes = organizationNavigationContext.items.map((item) => item.to);
+      expect(routes).toContain('/organization/members');
+      expect(routes).toContain('/organization/invites');
+      expect(routes).toContain('/organization/settings');
+    });
+  });
+
   describe('navigationContexts', () => {
     it('should contain all navigation contexts', () => {
-      expect(Object.keys(navigationContexts)).toHaveLength(4);
+      expect(Object.keys(navigationContexts)).toHaveLength(5);
     });
 
     it('should have root context', () => {
@@ -183,6 +224,13 @@ describe('navigation-contexts', () => {
     it('should have settings context', () => {
       expect(navigationContexts.settings).toBeDefined();
       expect(navigationContexts.settings).toBe(settingsNavigationContext);
+    });
+
+    it('should have organization context', () => {
+      expect(navigationContexts.organization).toBeDefined();
+      expect(navigationContexts.organization).toBe(
+        organizationNavigationContext,
+      );
     });
 
     it('should have all contexts with valid structure', () => {

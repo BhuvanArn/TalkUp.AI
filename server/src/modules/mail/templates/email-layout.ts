@@ -49,7 +49,8 @@ export interface OtpEmailInput {
   heading: string;
   intro: string;
   code: string;
-  expiryMinutes: number;
+  /** Omit when the code's validity isn't expressed in minutes (e.g. multi-day invites). */
+  expiryMinutes?: number;
   preHeading?: string;
   /** Structured verify CTA. Rendered only when `href` is a valid http(s) URL. */
   cta?: OtpEmailCta;
@@ -143,7 +144,15 @@ export function renderOtpEmail(input: OtpEmailInput): {
     securityNote,
     signoff,
   } = input;
-  const expiryLine = `This code expires in ${expiryMinutes} minutes.`;
+  const expiryLine =
+    expiryMinutes !== undefined
+      ? `This code expires in ${expiryMinutes} minutes.`
+      : undefined;
+  const expiryHtml = expiryLine
+    ? `<p style="margin:0;${font(BODY_STACK, "13px", 400, "1.6")}color:${COLORS.textIdle};">${escapeHtml(
+        expiryLine,
+      )}</p>`
+    : "";
   const securityContent = renderSecurityNote(securityNote);
   const signoffHtml = signoff
     ? `<p style="margin:20px 0 0;${font(BODY_STACK, "13px", 400, "1.6")}color:${COLORS.textIdle};">${escapeHtml(
@@ -205,9 +214,7 @@ ${preHeadingHtml}
   )}</p>
 ${ctaHtml}
 ${codeChip}
-<p style="margin:0;${font(BODY_STACK, "13px", 400, "1.6")}color:${COLORS.textIdle};">${escapeHtml(
-    expiryLine,
-  )}</p>
+${expiryHtml}
 ${securityContent.html}
 ${signoffHtml}
 </td>

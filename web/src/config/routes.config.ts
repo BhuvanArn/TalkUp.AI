@@ -13,6 +13,7 @@ export const routeConfigs: RouteConfig[] = [
   { path: '/forgot-password', requiresAuth: false },
   { path: '/reset-password', requiresAuth: false },
   { path: '/about', requiresAuth: false },
+  { path: '/register-organization', requiresAuth: false },
 
   // Protected routes - Main pages
   { path: '/profile', requiresAuth: true },
@@ -42,6 +43,25 @@ export const routeConfigs: RouteConfig[] = [
 
   // Protected routes - Agenda
   { path: '/agenda', requiresAuth: true },
+
+  // Protected routes - Organization (F12/F13/F14) — org-manager only
+  { path: '/organization', requiresAuth: true, roles: ['admin', 'employee'] },
+  { path: '/organization/', requiresAuth: true, roles: ['admin', 'employee'] },
+  {
+    path: '/organization/members',
+    requiresAuth: true,
+    roles: ['admin', 'employee'],
+  },
+  {
+    path: '/organization/invites',
+    requiresAuth: true,
+    roles: ['admin', 'employee'],
+  },
+  {
+    path: '/organization/settings',
+    requiresAuth: true,
+    roles: ['admin', 'employee'],
+  },
 ];
 
 /**

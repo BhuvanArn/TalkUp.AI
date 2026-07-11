@@ -1,0 +1,24 @@
+meta {
+  name: register-organization
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{host}}/auth/register-organization
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "organizationName": "Acme School",
+    "email": "admin@acme.example",
+    "password": "Abcdefg1*"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

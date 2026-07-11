@@ -64,4 +64,15 @@ export class CreateUserDto {
     example: "user",
   })
   user_role?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(4, 32)
+  @ApiProperty({
+    required: false,
+    description:
+      "Organization invite code (F2). When present, the new account is linked to the invite's organization with the invite's role.",
+    example: "ABCDEFGHJKLM",
+  })
+  organizationCode?: string;
 }

@@ -17,6 +17,24 @@ test.describe('applications kanban', () => {
     await page.route('**/v1/api/auth/status', (route) =>
       route.fulfill({ json: { authenticated: true } }),
     );
+    // The sidebar's account switcher mounts on every authenticated page and
+    // fetches the current user. Left unmocked it hits the real backend (now
+    // running in e2e CI), gets a 401, and the axios interceptor's failed-refresh
+    // path redirects the whole app to /login — so the page under test never
+    // renders. Serve a stub profile so the switcher is satisfied and we stay on
+    // /applications.
+    await page.route('**/v1/api/users/me', (route) =>
+      route.fulfill({
+        json: {
+          username: 'qa',
+          email: 'qa@talkup.ai',
+          firstName: null,
+          lastName: null,
+          profilePicture: null,
+          avatarAccentColor: null,
+        },
+      }),
+    );
   });
 
   test('shows the empty state with a single CTA and no add button', async ({
@@ -55,7 +73,7 @@ test.describe('applications kanban', () => {
     await expect(sentColumn.getByText('Datadog Paris')).toBeVisible();
 
     await page.getByLabel('Application actions').click();
-    await page.getByRole('button', { name: 'Interview' }).click();
+    await page.getByRole('menuitem', { name: 'Interview' }).click();
 
     const interviewColumn = page.getByTestId('kanban-column-interview');
     await expect(interviewColumn.getByText('Datadog Paris')).toBeVisible();
@@ -124,7 +142,7 @@ test.describe('applications kanban', () => {
 
     await page.goto('/applications');
     await page.getByLabel('Application actions').click();
-    await page.getByRole('button', { name: 'Interview' }).click();
+    await page.getByRole('menuitem', { name: 'Interview' }).click();
 
     // After the failed PATCH, onError restores the snapshot: card is back in
     // "sent" and absent from "interview".
