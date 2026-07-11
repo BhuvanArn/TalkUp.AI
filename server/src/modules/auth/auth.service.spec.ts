@@ -1073,17 +1073,30 @@ describe("AuthService", () => {
       ).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
     });
 
-    it("throws when email not found", async () => {
+    it("returns silently without sending when email not found (enumeration defense)", async () => {
       mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
       mockedBcrypt.compare.mockResolvedValue(true as never);
 
       await expect(
         service.resendOtp("missing@example.com", OtpPurpose.REGISTER),
-      ).rejects.toThrow(BadRequestException);
+      ).resolves.toBeUndefined();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
     });
 
-    it("throws when REGISTER resend is requested for an already active account", async () => {
+    it("returns silently without sending when the email row has no user (enumeration defense)", async () => {
+      mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockedBcrypt.compare.mockResolvedValue(true as never);
+
+      await expect(
+        service.resendOtp("orphan@example.com", OtpPurpose.REGISTER),
+      ).resolves.toBeUndefined();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it("returns silently without sending when REGISTER resend targets an already active account (enumeration defense)", async () => {
       mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserRepo.findOne = jest
@@ -1092,7 +1105,8 @@ describe("AuthService", () => {
 
       await expect(
         service.resendOtp("test@example.com", OtpPurpose.REGISTER),
-      ).rejects.toThrow(ConflictException);
+      ).resolves.toBeUndefined();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
     });
 
     it("emits event when resend succeeds", async () => {

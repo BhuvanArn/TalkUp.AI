@@ -486,10 +486,15 @@ export class AuthService {
       where: { email },
     });
 
-    // Perform dummy hash comparison to prevent timing attacks
+    // Enumeration defense: a resend for an address we can't (or won't) mail —
+    // unknown email, orphan email row, or an already-verified account — returns
+    // the SAME silent success as a real resend. Throwing distinct errors here
+    // (404/409) would let an attacker probe which addresses exist and which are
+    // already verified. Mirrors passwordResetRequest. Dummy hash keeps timing
+    // indistinguishable from the real send path below.
     if (!emailEntity) {
       await bcrypt.compare("000000", DUMMY_OTP_HASH);
-      throw new BadRequestException("Email not found");
+      return;
     }
 
     const userEntity = await this.userRepository.findOne({
@@ -498,14 +503,15 @@ export class AuthService {
 
     if (!userEntity) {
       await bcrypt.compare("000000", DUMMY_OTP_HASH);
-      throw new BadRequestException("Email not found");
+      return;
     }
 
     if (
       purpose === OtpPurpose.REGISTER &&
       userEntity.status === UserStatus.ACTIVE
     ) {
-      throw new ConflictException("Account is already active");
+      await bcrypt.compare("000000", DUMMY_OTP_HASH);
+      return;
     }
 
     const plainOtp = this.generateOtpCode();
