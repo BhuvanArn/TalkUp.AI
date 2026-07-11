@@ -7,6 +7,7 @@ import { applyMockAccessTokenGuard } from "../../test/utils/mock-guards";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { CreateUserDto } from "./dto/createUser.dto";
+import { RegisterOrganizationDto } from "./dto/registerOrganization.dto";
 import { LoginDto } from "./dto/login.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
@@ -41,6 +42,7 @@ describe("AuthController", () => {
   beforeEach(async () => {
     mockAuthService = {
       register: jest.fn(),
+      signUpOrganization: jest.fn(),
       verifyEmail: jest.fn(),
       resendOtp: jest.fn(),
       validateUser: jest.fn(),
@@ -120,6 +122,41 @@ describe("AuthController", () => {
       );
 
       expect(mockAuthService.register).toHaveBeenCalledWith(createUserDto);
+    });
+  });
+
+  describe("signUpOrganization", () => {
+    const dto: RegisterOrganizationDto = {
+      organizationName: "Acme School",
+      email: "admin@acme.example",
+      password: "Abcdefg1*",
+    };
+
+    it("should register the organization and return the sent message", async () => {
+      mockAuthService.signUpOrganization = jest
+        .fn()
+        .mockResolvedValue(undefined);
+
+      const result = await controller.signUpOrganization(dto);
+
+      expect(result).toEqual({ message: "Verification email sent" });
+      expect(mockAuthService.signUpOrganization).toHaveBeenCalledWith(dto);
+      expect(mockAuthService.signUpOrganization).toHaveBeenCalledTimes(1);
+    });
+
+    it("should propagate ConflictException from the service", async () => {
+      const conflictError = new ConflictException(
+        "An organization with this name already exists",
+      );
+      mockAuthService.signUpOrganization = jest
+        .fn()
+        .mockRejectedValue(conflictError);
+
+      await expect(controller.signUpOrganization(dto)).rejects.toThrow(
+        conflictError,
+      );
+
+      expect(mockAuthService.signUpOrganization).toHaveBeenCalledWith(dto);
     });
   });
 

@@ -25,6 +25,8 @@ describe("OrganizationController", () => {
       getMyOrganizationForUser: jest.fn(),
       createOrganizationMember: jest.fn(),
       removeOrganizationMember: jest.fn(),
+      changeMemberRole: jest.fn(),
+      getOrganizationMemberDetail: jest.fn(),
       createInvite: jest.fn(),
       listInvites: jest.fn(),
       revokeInvite: jest.fn(),
@@ -160,6 +162,49 @@ describe("OrganizationController", () => {
       expect(service.createOrganizationMember).toHaveBeenCalledWith(
         "org-id",
         body,
+        mockUser,
+      );
+      expect(result).toBe(out);
+    });
+  });
+
+  describe("changeMemberRole", () => {
+    it("should call changeMemberRole with the role from the body", async () => {
+      const body = { role: "employee" as const };
+      const out = { message: "Member role updated" };
+      (service.changeMemberRole as jest.Mock).mockResolvedValue(out);
+
+      const result = await controller.changeMemberRole(
+        "org-id",
+        "member-id",
+        body,
+        mockUser,
+      );
+
+      expect(service.changeMemberRole).toHaveBeenCalledWith(
+        "org-id",
+        "member-id",
+        "employee",
+        mockUser,
+      );
+      expect(result).toBe(out);
+    });
+  });
+
+  describe("getMemberDetail", () => {
+    it("should call getOrganizationMemberDetail with id, memberUserId and user", async () => {
+      const out = { user_id: "member-id", username: "alice" };
+      (service.getOrganizationMemberDetail as jest.Mock).mockResolvedValue(out);
+
+      const result = await controller.getMemberDetail(
+        "org-id",
+        "member-id",
+        mockUser,
+      );
+
+      expect(service.getOrganizationMemberDetail).toHaveBeenCalledWith(
+        "org-id",
+        "member-id",
         mockUser,
       );
       expect(result).toBe(out);

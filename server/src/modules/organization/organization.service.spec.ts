@@ -776,6 +776,33 @@ describe("OrganizationService", () => {
         service.createInvite("org-id", {}, adminUserRow),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it("rejects a member holding the plain user role", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue({
+        ...adminUserRow,
+        user_role: OrganizationUserRole.USER,
+      });
+
+      await expect(
+        service.createInvite("org-id", {}, adminUserRow),
+      ).rejects.toThrow(new ForbiddenException("Insufficient permissions"));
+      expect(inviteRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("throws InternalServerError when every generated code collides", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      // Every candidate code collides with an existing invite across all retries.
+      inviteRepo.findOne.mockResolvedValue({ invite_id: "existing" });
+
+      await expect(
+        service.createInvite("org-id", {}, adminUserRow),
+      ).rejects.toThrow(
+        new InternalServerErrorException(
+          "Could not generate a unique invite code",
+        ),
+      );
+      expect(inviteRepo.save).not.toHaveBeenCalled();
+    });
   });
 
   describe("listInvites", () => {
@@ -839,6 +866,19 @@ describe("OrganizationService", () => {
       await expect(
         service.listInvites("org-id", employeeUserRow),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("forbids a caller whose organization does not match", async () => {
+      (orgRepo.findOne as jest.Mock).mockResolvedValue(mockOrganization);
+      (userRepo.findOne as jest.Mock).mockResolvedValue({
+        ...adminUserRow,
+        organization_id: { organization_id: "other-org" } as Organization,
+      });
+
+      await expect(service.listInvites("org-id", adminUserRow)).rejects.toThrow(
+        new ForbiddenException("You are not a member of this organization"),
+      );
+      expect(inviteRepo.find).not.toHaveBeenCalled();
     });
   });
 
@@ -1229,6 +1269,23 @@ describe("OrganizationService", () => {
       await expect(
         service.getOrganizationMemberDetail("org-id", "member-id", userUserRow),
       ).rejects.toThrow(new ForbiddenException("Insufficient permissions"));
+    });
+
+    it("forbids a caller whose organization does not match", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValueOnce({
+        ...adminUserRow,
+        organization_id: { organization_id: "other-org" } as Organization,
+      });
+
+      await expect(
+        service.getOrganizationMemberDetail(
+          "org-id",
+          "member-id",
+          adminUserRow,
+        ),
+      ).rejects.toThrow(
+        new ForbiddenException("You are not a member of this organization"),
+      );
     });
   });
 });
