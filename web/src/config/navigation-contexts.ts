@@ -147,6 +147,38 @@ export const settingsNavigationContext: NavigationContext = {
 };
 
 /**
+ * Organization navigation context
+ * Shows the org-management area for admins/employees: Members, Invites, Settings
+ */
+export const organizationNavigationContext: NavigationContext = {
+  type: 'organization',
+  items: [
+    {
+      to: '/organization/members',
+      label: 'Members',
+      icon: 'members',
+      showInNav: true,
+      order: 1,
+    },
+    {
+      to: '/organization/invites',
+      label: 'Invites',
+      icon: 'invites',
+      showInNav: true,
+      order: 2,
+    },
+    {
+      to: '/organization/settings',
+      label: 'Settings',
+      icon: 'settings',
+      showInNav: true,
+      order: 3,
+    },
+  ],
+  parentContext: 'root',
+};
+
+/**
  * Map of all navigation contexts
  */
 export const navigationContexts: Record<string, NavigationContext> = {
@@ -154,4 +186,5 @@ export const navigationContexts: Record<string, NavigationContext> = {
   application: applicationNavigationContext,
   public: publicNavigationContext,
   settings: settingsNavigationContext,
+  organization: organizationNavigationContext,
 };

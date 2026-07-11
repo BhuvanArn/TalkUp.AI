@@ -29,10 +29,12 @@ import {
   PiArrowRight,
   PiArrowUp,
   PiArrowUpRight,
+  PiArrowsLeftRight,
   PiBell,
   PiBookOpen,
   PiBookmarkSimple,
   PiBookmarkSimpleFill,
+  PiBuildings,
   PiCalendar,
   PiCaretDown,
   PiCaretLeft,
@@ -42,6 +44,7 @@ import {
   PiChartLine,
   PiClock,
   PiDotsThreeVertical,
+  PiEnvelopeSimple,
   PiEye,
   PiEyeSlash,
   PiFingerprint,
@@ -95,6 +98,7 @@ import {
   PiTextUnderline,
   PiTrash,
   PiUser,
+  PiUsersThree,
   PiVideoCameraFill,
   PiVideoCameraSlashFill,
   PiWallet,
@@ -160,6 +164,12 @@ export const iconMap = {
   login: PiLock,
   register: PiUser,
   about: PiInfo,
+
+  // Organization icons
+  organization: PiBuildings,
+  members: PiUsersThree,
+  invites: PiEnvelopeSimple,
+  'view-flip': PiArrowsLeftRight,
 
   // Global Icons
   plus: PiPlus,

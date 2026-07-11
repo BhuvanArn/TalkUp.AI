@@ -33,6 +33,12 @@ function getContextFromRoute(pathname: string): NavigationContextType {
     return 'public';
   }
 
+  // Organization routes (checked before /settings so /organization/settings
+  // stays in the organization context, not the account-settings context)
+  if (pathname.startsWith('/organization')) {
+    return 'organization';
+  }
+
   // Settings routes
   if (pathname.startsWith('/settings')) {
     return 'settings';
@@ -88,6 +94,19 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({
       setContextData(undefined);
     }
   }, [pathname]);
+
+  // Reflect the active view on the document root so the org-view palette
+  // override in tailwind.css (`:root[data-view='organization']`) can recolor
+  // the whole UI — same mechanism as the `.dark` theme class.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (contextType === 'organization') {
+      root.setAttribute('data-view', 'organization');
+    } else {
+      root.removeAttribute('data-view');
+    }
+    return () => root.removeAttribute('data-view');
+  }, [contextType]);
 
   // Fetch dynamic navigation items when context changes
   useEffect(() => {

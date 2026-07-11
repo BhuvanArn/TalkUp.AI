@@ -10,10 +10,11 @@ import toast from 'react-hot-toast';
 const organizationService = new OrganizationApiService();
 
 /** F13: current caller's organization + members with stats. */
-export const useGetMyOrganization = () => {
+export const useGetMyOrganization = (enabled = true) => {
   return useQuery<OrganizationDetails>({
     queryKey: ['organization', 'me'],
     queryFn: organizationService.getMyOrganization,
+    enabled,
   });
 };
 

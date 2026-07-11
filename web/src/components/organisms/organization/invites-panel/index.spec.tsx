@@ -44,8 +44,8 @@ describe('InvitesPanel', () => {
     expect(screen.getByText('accepted')).toBeInTheDocument();
   });
 
-  it('offers employee role option to admins only', () => {
-    const { rerender } = render(
+  it('opens the create modal from the Create invite button', () => {
+    render(
       <InvitesPanel
         invites={[]}
         isAdmin={true}
@@ -55,10 +55,29 @@ describe('InvitesPanel', () => {
         isCreating={false}
       />,
     );
-    const select = screen.getByLabelText(/invite role/i);
-    expect(select).toContainHTML('employee');
+    // Modal (and its role select) is not mounted until the button is clicked.
+    expect(screen.queryByLabelText(/invite role/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /create invite/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByLabelText(/invite role/i)).toBeInTheDocument();
+  });
 
-    rerender(
+  it('offers employee role option to admins only', () => {
+    const { unmount } = render(
+      <InvitesPanel
+        invites={[]}
+        isAdmin={true}
+        callerRole="admin"
+        onCreate={vi.fn()}
+        onRevoke={vi.fn()}
+        isCreating={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /create invite/i }));
+    expect(screen.getByLabelText(/invite role/i)).toContainHTML('employee');
+    unmount();
+
+    render(
       <InvitesPanel
         invites={[]}
         isAdmin={false}
@@ -68,6 +87,7 @@ describe('InvitesPanel', () => {
         isCreating={false}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: /create invite/i }));
     expect(screen.getByLabelText(/invite role/i)).not.toContainHTML('employee');
   });
 
@@ -85,7 +105,7 @@ describe('InvitesPanel', () => {
     expect(screen.getAllByRole('button', { name: /revoke/i }).length).toBe(1);
   });
 
-  it('creates an invite with optional email + role', () => {
+  it('creates an invite with optional email + role from the modal', () => {
     const onCreate = vi.fn();
     render(
       <InvitesPanel
@@ -97,6 +117,7 @@ describe('InvitesPanel', () => {
         isCreating={false}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: /create invite/i }));
     fireEvent.change(screen.getByPlaceholderText(/email \(optional\)/i), {
       target: { value: 'new@member.co' },
     });
@@ -109,5 +130,21 @@ describe('InvitesPanel', () => {
       email: 'new@member.co',
       role: 'employee',
     });
+  });
+
+  it('does not show the create button to plain users', () => {
+    render(
+      <InvitesPanel
+        invites={invites}
+        isAdmin={false}
+        callerRole="user"
+        onCreate={vi.fn()}
+        onRevoke={vi.fn()}
+        isCreating={false}
+      />,
+    );
+    expect(
+      screen.queryByRole('button', { name: /create invite/i }),
+    ).not.toBeInTheDocument();
   });
 });

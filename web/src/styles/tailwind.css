@@ -150,6 +150,7 @@
 
   --color-background: #121212;
   --color-surface: #1e1e1e;
+  --color-surface-hover: #2a2a2a;
   --color-surface-raised: #2a2a2a;
   --color-surface-raised-hover: #3a3a3a;
 
@@ -217,6 +218,50 @@
 
   --color-icon: #909098;
   --color-icon-hover: #e8e8e8;
+}
+
+/*
+ * Organization-view palette override.
+ *
+ * The org-management area swaps ONLY the cool-blue brand color for emerald, so
+ * switching views is unmistakable without repainting the whole UI. We remap
+ * just the brand tokens — accent, primary, and the text link — on a
+ * `data-view="organization"` scope on the document root (set by
+ * NavigationProvider, the same mechanism as `.dark`). Surfaces, page
+ * backgrounds and neutral tints are deliberately left untouched: only what was
+ * blue turns green (logo/title, active nav, links, primary buttons). Both
+ * themes covered by the accent/primary values flipping under `.dark`.
+ */
+:root[data-view='organization'] {
+  --color-accent: #1d9e75;
+  --color-accent-hover: #178a63;
+  --color-accent-active: #0f6b4c;
+  --color-accent-weak: #e6f6f0;
+  --color-accent-weaker: #f0faf6;
+
+  --color-primary: #0f6b4c;
+  --color-primary-hover: #0c5a40;
+  --color-primary-active: #094833;
+  --color-primary-weak: #d0ebde;
+  --color-primary-weaker: #e8f5ee;
+
+  --color-text-link: #1d9e75;
+}
+
+:root.dark[data-view='organization'] {
+  --color-accent: #2fc48f;
+  --color-accent-hover: #40d49f;
+  --color-accent-active: #50e4af;
+  --color-accent-weak: #123a2c;
+  --color-accent-weaker: #0d2a1f;
+
+  --color-primary: #2fc48f;
+  --color-primary-hover: #40d49f;
+  --color-primary-active: #50e4af;
+  --color-primary-weak: #124a34;
+  --color-primary-weaker: #0d2a1f;
+
+  --color-text-link: #2fc48f;
 }
 
 @layer utilities {

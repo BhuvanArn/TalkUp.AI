@@ -44,8 +44,24 @@ export const routeConfigs: RouteConfig[] = [
   // Protected routes - Agenda
   { path: '/agenda', requiresAuth: true },
 
-  // Protected routes - Organization (F13/F14)
+  // Protected routes - Organization (F12/F13/F14) — org-manager only
   { path: '/organization', requiresAuth: true, roles: ['admin', 'employee'] },
+  { path: '/organization/', requiresAuth: true, roles: ['admin', 'employee'] },
+  {
+    path: '/organization/members',
+    requiresAuth: true,
+    roles: ['admin', 'employee'],
+  },
+  {
+    path: '/organization/invites',
+    requiresAuth: true,
+    roles: ['admin', 'employee'],
+  },
+  {
+    path: '/organization/settings',
+    requiresAuth: true,
+    roles: ['admin', 'employee'],
+  },
 ];
 
 /**

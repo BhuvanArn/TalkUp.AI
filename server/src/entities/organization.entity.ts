@@ -21,8 +21,9 @@ export class Organization {
   organization_name: string;
 
   @Column({
+    type: "text",
     nullable: true,
-    comment: "organization's profile picture as a base64 string",
+    comment: "organization's profile picture as a base64 data URI",
   })
   profile_picture: string;
 
