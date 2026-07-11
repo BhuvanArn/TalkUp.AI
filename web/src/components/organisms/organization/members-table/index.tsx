@@ -62,10 +62,20 @@ export const MembersTable = ({
 }) => {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
 
-  const visible =
-    isAdmin && roleFilter !== 'all'
-      ? members.filter((m) => m.user_role === roleFilter)
-      : members;
+  const isFiltered = isAdmin && roleFilter !== 'all';
+  const visible = isFiltered
+    ? members.filter((m) => m.user_role === roleFilter)
+    : members;
+
+  // Distinguish "the filter hid everything" from "there's genuinely no one to
+  // show". Employees have no filter control and see a backend-scoped list
+  // (user-role members only), so for them an empty table means no such members
+  // yet — never a filter.
+  const emptyMessage = isFiltered
+    ? 'No members match this filter yet.'
+    : isAdmin
+      ? 'No members yet.'
+      : 'No members with the user role yet.';
 
   return (
     <section className="flex flex-col gap-4">
@@ -191,7 +201,7 @@ export const MembersTable = ({
                   colSpan={7}
                   className="px-4 py-10 text-center text-text-weaker"
                 >
-                  No members match this filter yet.
+                  {emptyMessage}
                 </td>
               </tr>
             )}

@@ -89,6 +89,67 @@ describe('MembersTable', () => {
     expect(screen.getByText('bob')).toBeInTheDocument();
   });
 
+  it('shows a context-appropriate empty message when there are no members', () => {
+    // Employee, empty: their list is backend-scoped to user-role members, so
+    // an empty table means "no such members yet" — never a filter.
+    const { rerender } = render(
+      <MembersTable
+        members={[]}
+        isAdmin={false}
+        selectedUserId={null}
+        onSelect={vi.fn()}
+        onChangeRole={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByText(/no members with the user role yet/i),
+    ).toBeInTheDocument();
+
+    // Admin, empty, no filter applied.
+    rerender(
+      <MembersTable
+        members={[]}
+        isAdmin={true}
+        selectedUserId={null}
+        onSelect={vi.fn()}
+        onChangeRole={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/^no members yet\.$/i)).toBeInTheDocument();
+  });
+
+  it('shows the filter empty message when the filter matches no one', () => {
+    const employeesOnly: OrganizationMember[] = [
+      {
+        user_id: 'e1',
+        username: 'erin',
+        user_role: 'employee',
+        interviewCount: 0,
+        completedCount: 0,
+        avgScore: null,
+        lastActivityAt: null,
+      },
+    ];
+    render(
+      <MembersTable
+        members={employeesOnly}
+        isAdmin={true}
+        selectedUserId={null}
+        onSelect={vi.fn()}
+        onChangeRole={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText(/filter by role/i), {
+      target: { value: 'user' },
+    });
+    expect(
+      screen.getByText(/no members match this filter yet/i),
+    ).toBeInTheDocument();
+  });
+
   it('notifies selection via the View button', () => {
     const onSelect = vi.fn();
     render(
