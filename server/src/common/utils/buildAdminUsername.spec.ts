@@ -30,7 +30,9 @@ describe("buildAdminUsername", () => {
   });
 
   it("truncates a long org name so the result stays within 20 chars and keeps the suffix", () => {
-    const u = buildAdminUsername("Springfield Academy of Science and Technology");
+    const u = buildAdminUsername(
+      "Springfield Academy of Science and Technology",
+    );
     expect(u.length).toBeLessThanOrEqual(20);
     expect(u.endsWith("admin")).toBe(true);
     expect(u).toMatch(RULE);
