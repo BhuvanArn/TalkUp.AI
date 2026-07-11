@@ -264,6 +264,35 @@
   --color-text-link: #2fc48f;
 }
 
+@layer base {
+  /* Tailwind v4 Preflight resets buttons to `cursor: default`. Restore a
+     pointer cursor on every enabled interactive control app-wide so no
+     individual component has to remember `cursor-pointer` — and show
+     `not-allowed` when disabled. Covers native buttons, role="button",
+     links styled as actions, selects, and clickable inputs. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  label[for],
+  select:not(:disabled),
+  summary,
+  input[type='button']:not(:disabled),
+  input[type='submit']:not(:disabled),
+  input[type='reset']:not(:disabled),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
+  input[type='file']:not(:disabled),
+  input[type='color']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role='button'][aria-disabled='true'],
+  select:disabled,
+  input:disabled {
+    cursor: not-allowed;
+  }
+}
+
 @layer utilities {
   .text-h1 {
     font-family: var(--font-display);
