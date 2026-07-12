@@ -1,0 +1,174 @@
+import { AuthProvider } from '@/contexts/AuthContext';
+import {
+  useApplications,
+  useRegenerateRoadmap,
+  useRoadmap,
+} from '@/services/applications/hooks';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+} from '@tanstack/react-router';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { RoadmapPage } from './dashboard';
+
+vi.mock('@/utils/auth.guards', () => ({
+  createAuthGuard: vi.fn(() => () => Promise.resolve()),
+}));
+
+// Authed-page trap: never let the test hit /users/me for real (a live call
+// would 401 and cascade into the login redirect).
+vi.mock('@/services/users/http', () => ({
+  fetchMyProfile: vi.fn().mockResolvedValue({ username: 'alice' }),
+  updateMyProfile: vi.fn(),
+  deleteMyAccount: vi.fn(),
+  uploadMyCV: vi.fn(),
+}));
+
+vi.mock('@/services/applications/hooks', () => ({
+  useApplications: vi.fn(),
+  useRoadmap: vi.fn(),
+  useRegenerateRoadmap: vi.fn(),
+  useUpdateApplicationInterviewAt: vi.fn(() => ({ mutate: vi.fn() })),
+}));
+
+const application = {
+  applicationId: 'app-1',
+  companyName: 'Datadog',
+  jobTitle: 'SRE',
+  status: 'sent' as const,
+  offerUrl: 'https://example.com/job',
+  offerDetails: null,
+  cvDetails: null,
+  appliedAt: '2026-07-09T00:00:00.000Z',
+  interviewAt: null,
+  updatedAt: '2026-07-09T00:00:00.000Z',
+};
+
+const roadmap = {
+  match_score: 62,
+  summary: 'Close the Kubernetes gap.',
+  topics: [
+    {
+      title: 'Kubernetes fundamentals',
+      priority: 'HIGH' as const,
+      rationale: 'Required by the offer, absent from the CV.',
+      gap: true,
+    },
+  ],
+};
+
+const mockRegenerate = vi.fn();
+
+// Contingency (per brief): the mini route tree only contains the dashboard
+// route, and router.load() would not match the nested
+// /applications/app-1/dashboard path from a bare createFileRoute tree here.
+// Render RoadmapPage directly through a root route instead.
+const router = createRouter({
+  routeTree: createRootRoute({
+    component: () => <RoadmapPage applicationId="app-1" />,
+  }),
+  history: createMemoryHistory(),
+});
+
+const renderWithProviders = (component: React.ReactElement) => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>{component}</AuthProvider>
+    </QueryClientProvider>,
+  );
+};
+
+describe('ApplicationDashboard (roadmap page)', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    vi.mocked(useApplications).mockReturnValue({
+      data: [application],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useApplications>);
+    vi.mocked(useRoadmap).mockReturnValue({
+      data: roadmap,
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useRoadmap>);
+    vi.mocked(useRegenerateRoadmap).mockReturnValue({
+      mutate: mockRegenerate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useRegenerateRoadmap>);
+
+    await act(async () => {
+      await router.load();
+    });
+  });
+
+  it('renders heading, summary, timeline and gauge in the ready state', async () => {
+    renderWithProviders(<RouterProvider router={router} />);
+    expect(
+      await screen.findByRole('heading', { name: /SRE at Datadog/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Close the Kubernetes gap.')).toBeInTheDocument();
+    expect(screen.getByText('Kubernetes fundamentals')).toBeInTheDocument();
+    expect(screen.getByText('62%')).toBeInTheDocument();
+  });
+
+  it('points the CTAs at the simulation and notes routes', async () => {
+    renderWithProviders(<RouterProvider router={router} />);
+    const simLink = await screen.findByRole('link', {
+      name: /start simulation/i,
+    });
+    expect(simLink).toHaveAttribute('href', '/applications/app-1/simulations');
+    expect(screen.getByRole('link', { name: /my notes/i })).toHaveAttribute(
+      'href',
+      '/notes',
+    );
+  });
+
+  it('renders the loading state', async () => {
+    vi.mocked(useRoadmap).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    } as unknown as ReturnType<typeof useRoadmap>);
+    renderWithProviders(<RouterProvider router={router} />);
+    expect(
+      await screen.findByText(/building your preparation path/i),
+    ).toBeInTheDocument();
+  });
+
+  it('renders the error state and retries via regenerate', async () => {
+    vi.mocked(useRoadmap).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as unknown as ReturnType<typeof useRoadmap>);
+    renderWithProviders(<RouterProvider router={router} />);
+    const retry = await screen.findByRole('button', { name: /retry/i });
+    fireEvent.click(retry);
+    expect(mockRegenerate).toHaveBeenCalled();
+  });
+
+  it('renders the empty state when there is nothing to analyze', async () => {
+    vi.mocked(useRoadmap).mockReturnValue({
+      data: { match_score: 0, summary: '', topics: [] },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useRoadmap>);
+    renderWithProviders(<RouterProvider router={router} />);
+    expect(
+      await screen.findByText(/analyze an offer first/i),
+    ).toBeInTheDocument();
+  });
+
+  it('calls regenerate from the footer action', async () => {
+    renderWithProviders(<RouterProvider router={router} />);
+    fireEvent.click(await screen.findByRole('button', { name: /regenerate/i }));
+    expect(mockRegenerate).toHaveBeenCalled();
+  });
+});
