@@ -36,7 +36,9 @@ function hasNonEmptyListItem(item: unknown): boolean {
   if (item === null || item === undefined) return false;
   if (typeof item === "string") return item.trim().length > 0;
   if (typeof item === "object") {
-    return Object.values(item as Record<string, unknown>).some(hasNonEmptyString);
+    return Object.values(item as Record<string, unknown>).some(
+      hasNonEmptyString,
+    );
   }
   return false;
 }

@@ -88,8 +88,6 @@ describe("isCvExtractionEmpty", () => {
         experiences: [{ company: "Acme", title: "Dev" }],
       }),
     ).toBe(false);
-    expect(
-      isCvExtractionEmpty({ technical_skills: ["React"] }),
-    ).toBe(false);
+    expect(isCvExtractionEmpty({ technical_skills: ["React"] })).toBe(false);
   });
 });
