@@ -57,13 +57,21 @@ export const InterviewDatePill = ({
   }
 
   if (isPicking) {
+    // The whole pill is the hit target: the label sits over a full-bleed date
+    // input (opacity-0, inset-0) so a click anywhere opens the native picker —
+    // no hunting for the tiny calendar glyph. `showPicker()` (where supported)
+    // pops the calendar immediately on mount; the visible text stays as our
+    // own label so we never show the raw `dd/mm/yyyy` placeholder.
     return (
-      <label className="border-border text-text-weak flex items-center gap-2 rounded-full border border-dashed px-4 py-2">
-        <span className="text-label-m">Interview date</span>
+      <label className="border-accent text-accent bg-accent-weak relative flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2">
+        <span className="text-label-m">Pick a date</span>
         <input
+          ref={(node) => {
+            node?.showPicker?.();
+          }}
           type="date"
           aria-label="Interview date"
-          className="text-body-s text-text bg-transparent outline-none"
+          className="absolute inset-0 cursor-pointer opacity-0"
           onChange={(event) => {
             if (!event.target.value) return;
             updateInterviewAt.mutate({
@@ -81,7 +89,7 @@ export const InterviewDatePill = ({
     <button
       type="button"
       onClick={() => setIsPicking(true)}
-      className="border-border text-text-weak hover:border-accent hover:text-accent cursor-pointer rounded-full border border-dashed px-4 py-2"
+      className="border-border text-text-weak hover:border-accent hover:text-accent hover:bg-accent-weak cursor-pointer rounded-full border border-dashed px-4 py-2 transition-colors"
     >
       <span className="text-label-m">Add interview date +</span>
     </button>
