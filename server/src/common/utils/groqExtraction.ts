@@ -75,6 +75,21 @@ export interface JobOfferExtraction {
   team_description?: string | null;
 }
 
+/** One step on the F6 preparation path. */
+export interface RoadmapTopic {
+  title: string;
+  priority: "HIGH" | "MED" | "LOW";
+  rationale: string;
+  gap: boolean;
+}
+
+/** Shape returned by the roadmap generation prompt (F6 preparation path). */
+export interface RoadmapExtraction {
+  match_score: number;
+  summary: string;
+  topics: RoadmapTopic[];
+}
+
 const logger = new Logger("GroqExtraction");
 
 // Lazily built so a missing GROQ_API_KEY does not crash app bootstrap — the

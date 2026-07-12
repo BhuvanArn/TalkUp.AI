@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, getMetadataArgsStorage } from "typeorm";
 
 jest.mock("groq-sdk", () => ({
   __esModule: true,
@@ -384,5 +384,16 @@ describe("ApplicationsService", () => {
       expect(result).toBe(row);
       expect(applicationRepo.save).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("application entity roadmap column", () => {
+  it("registers a nullable json roadmap column on the application entity", () => {
+    const column = getMetadataArgsStorage().columns.find(
+      (col) => col.target === application && col.propertyName === "roadmap",
+    );
+    expect(column).toBeDefined();
+    expect(column?.options.type).toBe("json");
+    expect(column?.options.nullable).toBe(true);
   });
 });
