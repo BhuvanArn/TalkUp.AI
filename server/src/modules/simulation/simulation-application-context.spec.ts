@@ -1,4 +1,7 @@
-import { buildSimulationContextFromApplication } from "./simulation-application-context";
+import {
+  MAX_SIMULATION_CONTEXT_CHARS,
+  buildSimulationContextFromApplication,
+} from "./simulation-application-context";
 import type { application } from "@entities/application.entity";
 
 describe("buildSimulationContextFromApplication", () => {
@@ -12,7 +15,10 @@ describe("buildSimulationContextFromApplication", () => {
         company_name: "Sopra Steria",
         location: "Paris",
         required_skills: ["React", "TypeScript"],
-        missions: ["Développer des interfaces", "Participer aux revues de code"],
+        missions: [
+          "Développer des interfaces",
+          "Participer aux revues de code",
+        ],
       },
       cv_details: {
         desired_job: "Développeur full-stack",
@@ -47,8 +53,45 @@ describe("buildSimulationContextFromApplication", () => {
       offer_url: null,
       offer_details: null,
       cv_details: null,
-    } as application;
+    } as unknown as application;
 
     expect(buildSimulationContextFromApplication(app)).toBe("");
+  });
+
+  it("caps the context at the max length and appends a truncation marker", () => {
+    const app = {
+      company_name: "Acme",
+      job_title: "Dev",
+      offer_url: null,
+      offer_details: null,
+      cv_details: {
+        resume: "x".repeat(MAX_SIMULATION_CONTEXT_CHARS + 5000),
+      },
+    } as unknown as application;
+
+    const context = buildSimulationContextFromApplication(app);
+
+    expect(context.length).toBeLessThanOrEqual(MAX_SIMULATION_CONTEXT_CHARS);
+    expect(context).toContain(
+      "[... contexte tronqué pour respecter la limite]",
+    );
+  });
+
+  it("joins unrecognized object fields instead of emitting raw JSON", () => {
+    const app = {
+      company_name: null,
+      job_title: null,
+      offer_url: null,
+      offer_details: null,
+      cv_details: {
+        experiences: [{ description: "A meaningful description" }],
+      },
+    } as unknown as application;
+
+    const context = buildSimulationContextFromApplication(app);
+
+    expect(context).toContain("A meaningful description");
+    expect(context).not.toContain("{");
+    expect(context).not.toContain('"description"');
   });
 });

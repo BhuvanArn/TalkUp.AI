@@ -38,14 +38,25 @@ function formatListItem(item: unknown): string | null {
     const org = [record.company, record.school, record.institution]
       .map((part) => (typeof part === "string" ? part.trim() : ""))
       .find(Boolean);
-    const period = [record.start_date, record.end_date, record.period, record.year]
+    const period = [
+      record.start_date,
+      record.end_date,
+      record.period,
+      record.year,
+    ]
       .map((part) => (typeof part === "string" ? part.trim() : ""))
       .filter(Boolean)
       .join(" - ");
 
     const parts = [title, org, period].filter(Boolean);
     if (parts.length > 0) return parts.join(" @ ");
-    return JSON.stringify(item);
+
+    // Fallback for unrecognized object shapes: join the non-empty string values
+    // so no raw JSON leaks into the STS system prompt.
+    const values = Object.values(record)
+      .map((part) => (typeof part === "string" ? part.trim() : ""))
+      .filter(Boolean);
+    return values.length > 0 ? values.join(" - ") : null;
   }
   return String(item).trim() || null;
 }
@@ -112,9 +123,9 @@ export function buildSimulationContextFromApplication(
   if (!result) return "";
 
   if (result.length > MAX_SIMULATION_CONTEXT_CHARS) {
+    const suffix = "\n[... contexte tronqué pour respecter la limite]";
     result =
-      result.slice(0, MAX_SIMULATION_CONTEXT_CHARS) +
-      "\n[... contexte tronqué pour respecter la limite]";
+      result.slice(0, MAX_SIMULATION_CONTEXT_CHARS - suffix.length) + suffix;
   }
 
   return result;
