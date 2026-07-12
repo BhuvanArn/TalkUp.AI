@@ -14,6 +14,7 @@ import {
   JobOfferExtraction,
   MAX_LLM_INPUT_CHARS,
   RoadmapExtraction,
+  RoadmapTopic,
   extractWithGroq,
   isCvExtractionEmpty,
 } from "../../common/utils/groqExtraction";
@@ -255,7 +256,27 @@ export class ApplicationsService {
         ? Math.min(100, Math.max(0, Math.round(score)))
         : 0,
       summary: typeof raw.summary === "string" ? raw.summary : "",
-      topics: Array.isArray(raw.topics) ? raw.topics : [],
+      topics: Array.isArray(raw.topics)
+        ? (raw.topics as unknown[])
+            .filter(
+              (topic): topic is Record<string, unknown> =>
+                typeof topic === "object" && topic !== null,
+            )
+            .map((topic) => this.normalizeRoadmapTopic(topic))
+        : [],
+    };
+  }
+
+  /** Defensive shape-fixing on a single LLM-provided topic entry. */
+  private normalizeRoadmapTopic(t: Record<string, unknown>): RoadmapTopic {
+    return {
+      title: String(t?.title ?? ""),
+      rationale: String(t?.rationale ?? ""),
+      priority:
+        t?.priority === "HIGH" || t?.priority === "MED" || t?.priority === "LOW"
+          ? t.priority
+          : "LOW",
+      gap: Boolean(t?.gap),
     };
   }
 

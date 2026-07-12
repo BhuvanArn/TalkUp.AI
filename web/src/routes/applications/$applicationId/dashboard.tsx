@@ -63,6 +63,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
   }
 
   const isEmpty = roadmap.topics.length === 0 && !roadmap.summary;
+  const hasOfferButEmpty = isEmpty && Boolean(application?.offerDetails);
 
   return (
     <div className="bg-surface flex min-h-full flex-col gap-6 p-6">
@@ -82,12 +83,30 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
 
       {isEmpty ? (
         <div className="border-border flex flex-col items-center gap-3 rounded-2xl border border-dashed p-10 text-center">
-          <p className="text-body-l text-text-weak">
-            No preparation path yet. Analyze an offer first.
-          </p>
-          <Link to="/cv-analysis" className="text-button-m text-accent">
-            Go to CV analysis
-          </Link>
+          {hasOfferButEmpty ? (
+            <>
+              <p className="text-body-l text-text-weak">
+                Couldn't build a path from this offer yet — try Regenerate.
+              </p>
+              <button
+                type="button"
+                onClick={() => regenerate.mutate()}
+                disabled={regenerate.isPending}
+                className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-2xl px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-disabled"
+              >
+                {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-body-l text-text-weak">
+                No preparation path yet. Analyze an offer first.
+              </p>
+              <Link to="/cv-analysis" className="text-button-m text-accent">
+                Go to CV analysis
+              </Link>
+            </>
+          )}
         </div>
       ) : (
         <RoadmapTimeline
@@ -110,14 +129,21 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
         >
           My notes
         </Link>
-        <button
-          type="button"
-          onClick={() => regenerate.mutate()}
-          disabled={regenerate.isPending}
-          className="text-body-s text-text-weak hover:text-accent ml-auto cursor-pointer underline disabled:cursor-not-allowed"
-        >
-          {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
-        </button>
+        <div className="ml-auto flex flex-col items-end gap-1">
+          <button
+            type="button"
+            onClick={() => regenerate.mutate()}
+            disabled={regenerate.isPending}
+            className="text-body-s text-text-weak hover:text-accent cursor-pointer underline disabled:cursor-not-allowed"
+          >
+            {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
+          </button>
+          {regenerate.isError && (
+            <p className="text-body-s text-error">
+              Couldn't regenerate — try again in a minute.
+            </p>
+          )}
+        </div>
       </footer>
     </div>
   );

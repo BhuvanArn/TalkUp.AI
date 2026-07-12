@@ -512,6 +512,39 @@ describe("ApplicationsService", () => {
       expect(result).toEqual({ match_score: 0, summary: "", topics: [] });
     });
 
+    it("sanitizes a malformed topic instead of persisting it as-is", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                match_score: 50,
+                summary: "s",
+                topics: [
+                  {
+                    title: 123,
+                    priority: "URGENT",
+                    rationale: null,
+                    gap: "yes",
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.topics).toEqual([
+        { title: "123", priority: "LOW", rationale: "", gap: true },
+      ]);
+      expect(row.roadmap).toEqual(result);
+      expect(applicationRepo.save).toHaveBeenCalledWith(row);
+    });
+
     it("throws NotFound for an application owned by someone else", async () => {
       applicationRepo.findOne = jest.fn().mockResolvedValue(null);
 

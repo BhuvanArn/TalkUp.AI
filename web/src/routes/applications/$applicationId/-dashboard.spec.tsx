@@ -166,9 +166,40 @@ describe('ApplicationDashboard (roadmap page)', () => {
     ).toBeInTheDocument();
   });
 
+  it('offers a regenerate CTA when an offer was analyzed but the roadmap is empty', async () => {
+    vi.mocked(useApplications).mockReturnValue({
+      data: [{ ...application, offerDetails: { job_title: 'SRE' } }],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useApplications>);
+    vi.mocked(useRoadmap).mockReturnValue({
+      data: { match_score: 0, summary: '', topics: [] },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useRoadmap>);
+    renderWithProviders(<RouterProvider router={router} />);
+    expect(
+      await screen.findByText(/couldn't build a path from this offer yet/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/analyze an offer first/i),
+    ).not.toBeInTheDocument();
+  });
+
   it('calls regenerate from the footer action', async () => {
     renderWithProviders(<RouterProvider router={router} />);
     fireEvent.click(await screen.findByRole('button', { name: /regenerate/i }));
     expect(mockRegenerate).toHaveBeenCalled();
+  });
+
+  it('shows an inline error when regenerate fails', async () => {
+    vi.mocked(useRegenerateRoadmap).mockReturnValue({
+      mutate: mockRegenerate,
+      isPending: false,
+      isError: true,
+    } as unknown as ReturnType<typeof useRegenerateRoadmap>);
+    renderWithProviders(<RouterProvider router={router} />);
+    expect(
+      await screen.findByText(/couldn't regenerate — try again in a minute/i),
+    ).toBeInTheDocument();
   });
 });
