@@ -14,12 +14,25 @@ const RegenerateIcon = iconMap.redo;
 const NotesIcon = iconMap.notes;
 const StartIcon = iconMap['arrow-right'];
 
-/** Shared page frame: centered, width-capped so content never floats in a
- * top-left void on wide screens. Every state renders inside it. */
-function RoadmapShell({ children }: { children: ReactNode }) {
+/**
+ * Standard TalkUp window frame — matches Notes/Agenda: full-width with
+ * responsive side padding (no max-width centering), a fixed-height title band,
+ * then a content row that fills the rest of the viewport. `header` is the title
+ * band; `children` is the content row (which manages its own scroll).
+ */
+function RoadmapShell({
+  header,
+  children,
+}: {
+  header: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <div className="bg-surface min-h-full w-full">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
+    <div className="grid h-screen w-full min-w-0 grid-rows-[auto_1fr] gap-6 px-4 pt-11 pb-8 sm:px-8 md:px-16">
+      <div className="flex w-full min-w-0 flex-col justify-center">
+        {header}
+      </div>
+      <div className="flex min-h-0 w-full min-w-0 flex-col gap-6">
         {children}
       </div>
     </div>
@@ -57,20 +70,22 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
     : 'Preparation path';
 
   if (isLoading) {
-    // Skeleton of the rail (gauge dot + step cards) so the loading state has
-    // the same shape and centering as the finished page, instead of a bare
-    // line of text pinned to the corner.
+    // Skeleton of the rail (title + step cards) so the loading state shares the
+    // shape and framing of the finished page, not a bare line of corner text.
     return (
-      <RoadmapShell>
-        <div className="flex flex-col gap-2">
-          <div className="bg-surface-raised h-7 w-72 animate-pulse rounded-lg" />
-          <div className="bg-surface-raised h-4 w-96 max-w-full animate-pulse rounded" />
-        </div>
+      <RoadmapShell
+        header={
+          <div className="flex flex-col gap-2">
+            <div className="bg-surface-raised h-9 w-80 max-w-full animate-pulse rounded-lg" />
+            <div className="bg-surface-raised h-4 w-96 max-w-full animate-pulse rounded" />
+          </div>
+        }
+      >
         <div className="flex gap-6 overflow-hidden">
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-surface-raised h-40 w-64 shrink-0 animate-pulse rounded-2xl"
+              className="bg-surface-raised h-40 w-60 shrink-0 animate-pulse rounded-2xl"
             />
           ))}
         </div>
@@ -83,7 +98,9 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
 
   if (isError || !roadmap) {
     return (
-      <RoadmapShell>
+      <RoadmapShell
+        header={<h1 className="text-h1 text-text-idle">{heading}</h1>}
+      >
         <div className="border-border flex flex-col items-center gap-3 rounded-2xl border border-dashed p-10 text-center">
           <p className="text-body-l text-error">
             Could not load your preparation path.
@@ -110,56 +127,66 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
   const hasOfferButEmpty = isEmpty && Boolean(application?.offerDetails);
 
   return (
-    <RoadmapShell>
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-h4 text-text">{heading}</h1>
-          {roadmap.summary && (
-            <p className="text-body-m text-text-weak mt-1">{roadmap.summary}</p>
-          )}
-        </div>
-        <InterviewDatePill
-          applicationId={applicationId}
-          interviewAt={application?.interviewAt ?? null}
-          topicsCount={roadmap.topics.length}
-        />
-      </header>
-
-      {isEmpty ? (
-        <div className="border-border flex flex-col items-center gap-3 rounded-2xl border border-dashed p-10 text-center">
-          {hasOfferButEmpty ? (
-            <>
-              <p className="text-body-l text-text-weak">
-                Couldn't build a path from this offer yet — try Regenerate.
+    <RoadmapShell
+      header={
+        <div className="flex w-full min-w-0 flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-h1 text-text-idle">{heading}</h1>
+            {roadmap.summary && (
+              <p className="text-body-m text-text-weak mt-1">
+                {roadmap.summary}
               </p>
-              <button
-                type="button"
-                onClick={() => regenerate.mutate()}
-                disabled={regenerate.isPending}
-                className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-2xl px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-disabled"
-              >
-                {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-body-l text-text-weak">
-                No preparation path yet. Analyze an offer first.
-              </p>
-              <Link to="/cv-analysis" className="text-button-m text-accent">
-                Go to CV analysis
-              </Link>
-            </>
-          )}
+            )}
+          </div>
+          <InterviewDatePill
+            applicationId={applicationId}
+            interviewAt={application?.interviewAt ?? null}
+            topicsCount={roadmap.topics.length}
+          />
         </div>
-      ) : (
-        <RoadmapTimeline
-          roadmap={roadmap}
-          interviewAt={application?.interviewAt ?? null}
-        />
-      )}
+      }
+    >
+      {/* Timeline zone — the ONLY part that scrolls horizontally. `flex-1
+          min-h-0` lets it take the free height; the footer below stays put. */}
+      <div className="min-h-0 flex-1">
+        {isEmpty ? (
+          <div className="border-border flex h-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-10 text-center">
+            {hasOfferButEmpty ? (
+              <>
+                <p className="text-body-l text-text-weak">
+                  Couldn't build a path from this offer yet — try Regenerate.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => regenerate.mutate()}
+                  disabled={regenerate.isPending}
+                  className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-2xl px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-disabled"
+                >
+                  {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-body-l text-text-weak">
+                  No preparation path yet. Analyze an offer first.
+                </p>
+                <Link to="/cv-analysis" className="text-button-m text-accent">
+                  Go to CV analysis
+                </Link>
+              </>
+            )}
+          </div>
+        ) : (
+          <RoadmapTimeline
+            roadmap={roadmap}
+            interviewAt={application?.interviewAt ?? null}
+          />
+        )}
+      </div>
 
-      <footer className="border-border mt-2 flex flex-wrap items-center gap-4 border-t pt-6">
+      {/* Fixed action bar — outside the scroll zone, so it never moves when the
+          timeline scrolls sideways. */}
+      <footer className="border-border flex shrink-0 flex-wrap items-center gap-4 border-t pt-6">
         <Link
           to="/applications/$applicationId/simulations"
           params={{ applicationId }}

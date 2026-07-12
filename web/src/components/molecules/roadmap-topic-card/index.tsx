@@ -15,9 +15,9 @@ const PRIORITY_STYLES: Record<RoadmapTopic['priority'], string> = {
 
 /**
  * One milestone card under a roadmap timeline node. Token-only styling.
- * `h-full` lets sibling cards match the tallest in a row (the timeline sets
- * `items-stretch`), so a long rationale no longer leaves a ragged bottom edge.
- * The gap note is pushed to the base with `mt-auto` so it aligns across cards.
+ * `h-full` fills the timeline's fixed-height half-column so cards on the same
+ * side line up (no ragged edge); the gap note is pinned to the base with
+ * `mt-auto`. Width is driven by the timeline column, so the card just fills it.
  */
 export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => (
   <article className="bg-surface-raised border-border flex h-full w-full flex-col gap-2 rounded-2xl border p-4">

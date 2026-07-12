@@ -35,27 +35,20 @@ const RailDot = ({
   );
 };
 
-/** The end/origin fixed-width nodes (gauge, goal) share this column width so
- * the rail's start/end insets line up with their dot centers. */
-const EDGE_W = 'lg:w-44';
-const STEP_W = 'lg:w-64';
-
 /**
- * Preparation rail: the signature element. A single continuous accent line
- * threads through every node — origin gauge → one numbered step per topic →
- * job-ready goal — so the page reads as a walkable route rather than a wall of
- * cards. The dots sit ON the rail (dot `z-10` over the line at `z-0`); cards
- * hang beneath.
+ * Preparation rail — the signature element. On `lg+` it's a zig-zag timeline:
+ * a single accent line runs the full width, the gauge anchors the start and the
+ * job-ready node the end, and the numbered step cards alternate ABOVE and BELOW
+ * the line (odd above, even below) so the eye walks the route left-to-right.
  *
- * Horizontal on `lg+` (scrolls when it overflows, with a right-edge fade hint
- * so hidden steps are discoverable); collapses to a vertical stepper below,
- * where the rail runs down the left gutter instead. Token-only — every color
- * theme-flips, so dark mode needs no special-casing.
+ * Each column reserves equal space above and below the centered rail; a step
+ * renders its card in one half and leaves the other empty. Columns `flex-1` to
+ * fill the width when there are few topics, but keep a min-width so with many
+ * topics the row overflows and the timeline scrolls horizontally — the scroll
+ * lives inside this component, so the page CTAs below stay put.
  *
- * The rail is drawn ONCE per orientation (not per node) to avoid Tailwind
- * utility-ordering collisions between trimmed segments; the fixed edge-column
- * width (`lg:w-44` → 176px) lets the horizontal line inset exactly to the first
- * and last dot centers (88px = half that column).
+ * Below `lg` it collapses to a vertical stepper: rail down the left gutter,
+ * cards stacked. Token-only — every color theme-flips, no dark-mode casing.
  */
 export const RoadmapTimeline = ({
   roadmap,
@@ -66,69 +59,112 @@ export const RoadmapTimeline = ({
     : 'Job-ready goal';
 
   return (
-    // Outer wrapper holds the fade hint (pinned to the visible edge, outside
-    // the scroller). The middle div is the scroller; the <ol> shrinks to its
-    // content width (`lg:w-max`) so the absolute rail insets from the true
-    // content edges (last dot), not the viewport edge.
-    <div className="relative">
-      <div className="lg:overflow-x-auto lg:pb-1">
-        <ol
-          data-testid="roadmap-timeline"
-          className="relative flex flex-col gap-4 lg:w-max lg:flex-row lg:items-stretch lg:gap-0 lg:pb-4"
-        >
-          {/* Vertical rail (mobile): runs down the left dot gutter. Dot center is
-            at 16px (top-4) from each row's top; left-4 aligns to the 32px dot's
-            center. Sits behind the dots. */}
-          <span
-            aria-hidden="true"
-            className="bg-accent-weak absolute top-4 bottom-4 left-4 w-0.5 lg:hidden"
-          />
-          {/* Horizontal rail (lg+): one line at dot-center height, inset to the
-            first/last dot centers (half of the 176px edge column). */}
-          <span
-            aria-hidden="true"
-            className="bg-accent-weak absolute top-4 left-[88px] right-[88px] hidden h-0.5 lg:block"
-          />
+    <div className="h-full lg:flex lg:items-center lg:overflow-x-auto">
+      <ol
+        data-testid="roadmap-timeline"
+        className="relative flex h-full w-full flex-col gap-4 lg:h-auto lg:w-max lg:min-w-full lg:flex-row lg:items-stretch lg:gap-2"
+      >
+        {/* Vertical rail (mobile): down the left dot gutter, behind the dots. */}
+        <span
+          aria-hidden="true"
+          className="bg-accent-weak absolute top-4 bottom-4 left-4 w-0.5 lg:hidden"
+        />
 
-          {/* Origin — the match gauge, anchored to the start of the rail. */}
-          <li
-            className={`flex items-start gap-4 ${EDGE_W} lg:shrink-0 lg:flex-col lg:items-center lg:gap-3`}
-          >
-            <RailDot variant="origin">%</RailDot>
-            <div className="flex flex-col items-center gap-1 lg:pt-2">
+        {/* Origin — match gauge. Anchors the start; its label sits below. */}
+        <ZigNode
+          half="bottom"
+          edge="start"
+          dot={<RailDot variant="origin">%</RailDot>}
+          payload={
+            <div className="flex flex-col items-center gap-1">
               <MatchGauge score={roadmap.match_score} />
               <p className="text-label-m text-text-weak">Match score</p>
             </div>
-          </li>
+          }
+        />
 
-          {roadmap.topics.map((topic, index) => (
-            <li
-              key={`${index}-${topic.title}`}
-              className={`flex items-start gap-4 ${STEP_W} lg:shrink-0 lg:flex-col lg:items-center lg:gap-3`}
-            >
-              <RailDot variant="step">{index + 1}</RailDot>
-              <RoadmapTopicCard step={index + 1} topic={topic} />
-            </li>
-          ))}
+        {roadmap.topics.map((topic, index) => (
+          <ZigNode
+            key={`${index}-${topic.title}`}
+            half={index % 2 === 0 ? 'top' : 'bottom'}
+            dot={<RailDot variant="step">{index + 1}</RailDot>}
+            payload={<RoadmapTopicCard step={index + 1} topic={topic} />}
+          />
+        ))}
 
-          {/* Goal — the end of the route. */}
-          <li
-            className={`flex items-start gap-4 ${EDGE_W} lg:shrink-0 lg:flex-col lg:items-center lg:gap-3`}
-          >
-            <RailDot variant="goal">✓</RailDot>
-            <p className="text-label-m text-text pt-1 lg:pt-2 lg:text-center">
+        {/* Goal — the end of the route; label sits below the node. */}
+        <ZigNode
+          half="bottom"
+          edge="end"
+          dot={<RailDot variant="goal">✓</RailDot>}
+          payload={
+            <p className="text-label-m text-text max-w-[9rem] text-center">
               {goalLabel}
             </p>
-          </li>
-        </ol>
-      </div>
-
-      {/* Right-edge fade: hints that the rail scrolls to more steps (lg+). */}
-      <span
-        aria-hidden="true"
-        className="from-surface pointer-events-none absolute inset-y-0 right-0 hidden w-12 bg-gradient-to-l to-transparent lg:block"
-      />
+          }
+        />
+      </ol>
     </div>
+  );
+};
+
+/**
+ * One column of the zig-zag, rendering `payload` exactly ONCE (no duplicate
+ * DOM — matters for a11y and for tests that assert a single match).
+ *
+ * Desktop (`lg+`): the column is a flex column of three cells —
+ * [top slot | rail band | bottom slot]. Each of the top/bottom slots keeps an
+ * equal min-height so every column is the same height and the rail line stays
+ * vertically centered; the payload occupies the slot named by `half` and the
+ * opposite slot is an empty spacer. The rail line is drawn per-column across the
+ * band, so columns tile into one continuous line with no viewport-edge
+ * clipping; `edge` trims it at the first/last column so it starts/ends on a dot.
+ *
+ * Mobile: the column becomes a plain flex row (dot then payload). The empty
+ * spacer slot collapses (`min-h-0`) and CSS `order` pulls the payload up next
+ * to the dot, so the single payload instance flows inline regardless of `half`.
+ */
+const ZigNode = ({
+  half,
+  edge,
+  dot,
+  payload,
+}: {
+  half: 'top' | 'bottom';
+  edge?: 'start' | 'end';
+  dot: ReactNode;
+  payload: ReactNode;
+}) => {
+  const railLine =
+    edge === 'start'
+      ? 'left-1/2 right-0'
+      : edge === 'end'
+        ? 'left-0 right-1/2'
+        : 'inset-x-0';
+
+  // Single payload instance. Mobile: static, inline after the dot (order-2).
+  // Desktop: absolutely positioned into the top or bottom half of the
+  // fixed-height column, so the dot stays exactly on the midline (one straight
+  // rail through all dots) while the cards zig-zag above/below it.
+  const payloadPlacement =
+    half === 'top'
+      ? 'lg:absolute lg:inset-x-0 lg:top-0 lg:bottom-1/2 lg:flex lg:items-end lg:justify-center lg:px-2 lg:pb-6'
+      : 'lg:absolute lg:inset-x-0 lg:top-1/2 lg:bottom-0 lg:flex lg:items-start lg:justify-center lg:px-2 lg:pt-6';
+
+  return (
+    <li className="relative flex min-w-0 items-center gap-4 lg:h-[26rem] lg:w-[15.5rem] lg:shrink-0 lg:flex-col lg:items-stretch lg:justify-center lg:gap-0">
+      <div className={`order-2 min-w-0 ${payloadPlacement}`}>{payload}</div>
+
+      {/* Rail band: the line + the dot, on the column midline (desktop) or first
+          in the row (mobile, via order-1). */}
+      <div className="order-1 flex shrink-0 items-center justify-center lg:relative lg:h-8">
+        <span
+          aria-hidden="true"
+          className={`bg-accent-weak absolute top-1/2 hidden h-0.5 -translate-y-1/2 lg:block ${railLine}`}
+        />
+        {dot}
+      </div>
+    </li>
   );
 };
 
