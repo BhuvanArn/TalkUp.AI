@@ -320,5 +320,43 @@ describe("ApplicationsService", () => {
       });
       expect(applicationRepo.save).toHaveBeenCalled();
     });
+
+    it("returns the row without saving when there is no profile CV", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        cv_details: null,
+      } as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      cvRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      const result = await service.ensureCvSnapshot("u1", "a1");
+
+      expect(result).toBe(row);
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("returns the row without saving when the profile CV is empty", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        cv_details: null,
+      } as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      cvRepo.findOne = jest.fn().mockResolvedValue({
+        user_id: "u1",
+        desired_job: null,
+        resume: null,
+        experiences: [],
+        education: [],
+        technical_skills: [],
+        languages: [],
+      });
+
+      const result = await service.ensureCvSnapshot("u1", "a1");
+
+      expect(result).toBe(row);
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+    });
   });
 });

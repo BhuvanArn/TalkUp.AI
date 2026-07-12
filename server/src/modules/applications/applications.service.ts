@@ -161,9 +161,9 @@ export class ApplicationsService {
     }
 
     const snapshot = await this.buildCvSnapshot(userId);
-    if (!snapshot) {
+    if (!snapshot || !this.hasCvDetails(snapshot)) {
       this.logger.warn(
-        `No profile CV to snapshot for application ${applicationId} (user ${userId})`,
+        `No usable profile CV to snapshot for application ${applicationId} (user ${userId})`,
       );
       return row;
     }
@@ -174,14 +174,6 @@ export class ApplicationsService {
       `Backfilled cv_details on application ${applicationId} from profile CV`,
     );
     return saved;
-  }
-
-  /** Returns an application owned by the user (404 if missing or not owned). */
-  async getOwnedApplication(
-    userId: string,
-    applicationId: string,
-  ): Promise<application> {
-    return this.findOwned(userId, applicationId);
   }
 
   async listForUser(userId: string): Promise<application[]> {
