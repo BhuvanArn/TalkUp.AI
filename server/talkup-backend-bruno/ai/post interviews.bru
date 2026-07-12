@@ -18,8 +18,19 @@ body:json {
   {
     "type": "technical",
     "language": "French",
-    "status": "asked"
+    "applicationId": "01890000-0000-7000-8000-000000000001"
   }
+}
+
+docs {
+  Creates an AI interview.
+
+  applicationId (optional, UUID): when set, the server loads the owned
+  application row and injects its CV snapshot and job offer into the STS
+  system prompt. The client jobContext is ignored in that case.
+
+  jobContext (optional, legacy free text): used only when applicationId is
+  not provided.
 }
 
 settings {
