@@ -14,6 +14,7 @@ import {
   JobOfferExtraction,
   MAX_LLM_INPUT_CHARS,
   extractWithGroq,
+  isCvExtractionEmpty,
 } from "../../common/utils/groqExtraction";
 import {
   scrapeLinkedin,
@@ -137,14 +138,10 @@ export class ApplicationsService {
 
   private hasCvDetails(cv: application["cv_details"]): boolean {
     if (!cv) return false;
-    return Boolean(
-      cv.desired_job?.trim() ||
-        cv.resume?.trim() ||
-        (cv.experiences?.length ?? 0) > 0 ||
-        (cv.education?.length ?? 0) > 0 ||
-        (cv.technical_skills?.length ?? 0) > 0 ||
-        (cv.languages?.length ?? 0) > 0,
-    );
+    // Use the same meaningful-content check as the upload path so placeholder
+    // entries (empty strings, blank experience objects) do not count as a
+    // populated snapshot and correctly trigger a backfill from the profile CV.
+    return !isCvExtractionEmpty(cv);
   }
 
   /**

@@ -295,6 +295,32 @@ describe("ApplicationsService", () => {
       expect(cvRepo.findOne).not.toHaveBeenCalled();
     });
 
+    it("backfills when cv_details holds only placeholder entries", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        cv_details: {
+          desired_job: "   ",
+          resume: "",
+          experiences: [{}],
+          technical_skills: [""],
+        },
+      } as unknown as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      cvRepo.findOne = jest.fn().mockResolvedValue({
+        user_id: "u1",
+        resume: "Profil réel",
+        technical_skills: ["React"],
+      });
+
+      const result = await service.ensureCvSnapshot("u1", "a1");
+
+      expect(result.cv_details).toEqual(
+        expect.objectContaining({ resume: "Profil réel" }),
+      );
+      expect(applicationRepo.save).toHaveBeenCalled();
+    });
+
     it("backfills cv_details from the profile CV when the snapshot is missing", async () => {
       const row = {
         application_id: "a1",
