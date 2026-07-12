@@ -84,18 +84,17 @@ function CVAnalysisPage() {
         toast.error(
           extractErrorMessage(
             error,
-            "Échec de l'upload du CV. Réessayez avec un PDF de meilleure qualité (texte sélectionnable).",
+            'CV upload failed. Try again with a higher-quality PDF (selectable text).',
           ),
         );
         return;
       }
 
-      const cvNotice = ' Votre CV a bien été enregistré sur votre profil.';
+      const cvNotice = ' Your CV has been saved to your profile.';
       toast.error(
         (isThrottled
-          ? 'Trop de tentatives. Réessayez dans une minute.'
-          : "L'analyse de l'offre a échoué. Vérifiez le lien et réessayez.") +
-          cvNotice,
+          ? 'Too many attempts. Try again in a minute.'
+          : 'Offer analysis failed. Check the link and try again.') + cvNotice,
       );
     } finally {
       setAnalysisStep('idle');

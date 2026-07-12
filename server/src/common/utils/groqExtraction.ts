@@ -23,10 +23,10 @@ export interface CvExtraction {
 export const MIN_CV_EXTRACTABLE_TEXT_CHARS = 80;
 
 export const CV_UNREADABLE_PDF_MESSAGE =
-  "Impossible d'extraire le texte de votre CV. Utilisez un PDF de bonne qualité avec du texte sélectionnable (pas un scan flou ou une photo).";
+  "Could not extract text from your CV. Use a good-quality PDF with selectable text (not a blurry scan or a photo).";
 
 export const CV_LOW_QUALITY_MESSAGE =
-  "Impossible d'analyser votre CV. Le document est illisible ou de mauvaise qualité — utilisez un PDF exporté numériquement (Word, LinkedIn, etc.) avec du texte sélectionnable.";
+  "Could not analyze your CV. The document is unreadable or low quality. Use a digitally exported PDF (Word, LinkedIn, etc.) with selectable text.";
 
 function hasNonEmptyString(value: unknown): boolean {
   return typeof value === "string" && value.trim().length > 0;

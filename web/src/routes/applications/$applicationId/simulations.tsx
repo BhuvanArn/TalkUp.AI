@@ -20,13 +20,13 @@ function ApplicationSimulations() {
   const contextLabel = application
     ? [application.jobTitle, application.companyName]
         .filter(Boolean)
-        .join(' chez ')
+        .join(' at ')
     : undefined;
 
   if (isLoading) {
     return (
       <div className="p-6">
-        <p className="text-text-weak">Chargement du contexte de candidature…</p>
+        <p className="text-text-weak">Loading application context…</p>
       </div>
     );
   }
@@ -40,7 +40,7 @@ function ApplicationSimulations() {
     <SimulationWorkspace
       applicationId={applicationId}
       title="Simulations"
-      description="Entraînez-vous avec le recruteur IA sur cette offre d'emploi."
+      description="Practice with the AI recruiter for this job offer."
       contextLabel={contextLabel}
     />
   );
