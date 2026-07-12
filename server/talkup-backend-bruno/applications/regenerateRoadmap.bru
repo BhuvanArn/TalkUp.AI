@@ -1,0 +1,16 @@
+meta {
+  name: regenerateRoadmap
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{host}}/applications/{{applicationId}}/roadmap/regenerate
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

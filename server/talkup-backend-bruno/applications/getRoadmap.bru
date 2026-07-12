@@ -1,0 +1,16 @@
+meta {
+  name: getRoadmap
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{host}}/applications/{{applicationId}}/roadmap
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
