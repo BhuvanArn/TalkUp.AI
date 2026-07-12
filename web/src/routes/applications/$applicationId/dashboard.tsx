@@ -126,6 +126,48 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
   const isEmpty = roadmap.topics.length === 0 && !roadmap.summary;
   const hasOfferButEmpty = isEmpty && Boolean(application?.offerDetails);
 
+  // Action bar — shared by the ready state (pinned inside the timeline's scroll
+  // frame) and the empty state (plain footer). Never scrolls horizontally.
+  const actions = (
+    <div className="flex flex-wrap items-center gap-4">
+      <Link
+        to="/applications/$applicationId/simulations"
+        params={{ applicationId }}
+        className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-2xl px-8 py-3 text-white"
+      >
+        Start simulation
+        <StartIcon size={16} aria-hidden="true" />
+      </Link>
+      <Link
+        to="/notes"
+        className="text-button-m border-accent text-accent hover:bg-accent-weak flex items-center gap-2 rounded-2xl border px-8 py-3 transition-colors"
+      >
+        <NotesIcon size={16} aria-hidden="true" />
+        My notes
+      </Link>
+      <div className="ml-auto flex flex-col items-end gap-1">
+        <button
+          type="button"
+          onClick={() => regenerate.mutate()}
+          disabled={regenerate.isPending}
+          className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-2xl border px-5 py-3 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <RegenerateIcon
+            size={16}
+            aria-hidden="true"
+            className={regenerate.isPending ? 'animate-spin' : ''}
+          />
+          {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
+        </button>
+        {regenerate.isError && (
+          <p className="text-body-s text-error">
+            Couldn't regenerate — try again in a minute.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <RoadmapShell
       header={
@@ -146,11 +188,9 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
         </div>
       }
     >
-      {/* Timeline zone — the ONLY part that scrolls horizontally. `flex-1
-          min-h-0` lets it take the free height; the footer below stays put. */}
-      <div className="min-h-0 flex-1">
-        {isEmpty ? (
-          <div className="border-border flex h-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-10 text-center">
+      {isEmpty ? (
+        <div className="flex min-h-0 flex-1 flex-col gap-6">
+          <div className="border-border flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-10 text-center">
             {hasOfferButEmpty ? (
               <>
                 <p className="text-body-l text-text-weak">
@@ -176,53 +216,19 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
               </>
             )}
           </div>
-        ) : (
+          <footer className="border-border shrink-0 border-t pt-6">
+            {actions}
+          </footer>
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1">
           <RoadmapTimeline
             roadmap={roadmap}
             interviewAt={application?.interviewAt ?? null}
+            actions={actions}
           />
-        )}
-      </div>
-
-      {/* Fixed action bar — outside the scroll zone, so it never moves when the
-          timeline scrolls sideways. */}
-      <footer className="border-border flex shrink-0 flex-wrap items-center gap-4 border-t pt-6">
-        <Link
-          to="/applications/$applicationId/simulations"
-          params={{ applicationId }}
-          className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-2xl px-8 py-3 text-white"
-        >
-          Start simulation
-          <StartIcon size={16} aria-hidden="true" />
-        </Link>
-        <Link
-          to="/notes"
-          className="text-button-m border-accent text-accent hover:bg-accent-weak flex items-center gap-2 rounded-2xl border px-8 py-3 transition-colors"
-        >
-          <NotesIcon size={16} aria-hidden="true" />
-          My notes
-        </Link>
-        <div className="ml-auto flex flex-col items-end gap-1">
-          <button
-            type="button"
-            onClick={() => regenerate.mutate()}
-            disabled={regenerate.isPending}
-            className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-2xl border px-5 py-3 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RegenerateIcon
-              size={16}
-              aria-hidden="true"
-              className={regenerate.isPending ? 'animate-spin' : ''}
-            />
-            {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
-          </button>
-          {regenerate.isError && (
-            <p className="text-body-s text-error">
-              Couldn't regenerate — try again in a minute.
-            </p>
-          )}
         </div>
-      </footer>
+      )}
     </RoadmapShell>
   );
 }

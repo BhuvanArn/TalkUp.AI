@@ -8,6 +8,12 @@ interface RoadmapTimelineProps {
   roadmap: Roadmap;
   /** ISO string or null — drives the goal node label only. */
   interviewAt: string | null;
+  /**
+   * The page action bar. Rendered as a `sticky left-0` row INSIDE the same
+   * horizontal scroll container as the rail, so it stays pinned in place while
+   * the timeline scrolls sideways and the native scrollbar sits below it.
+   */
+  actions?: ReactNode;
 }
 
 type RailDotVariant = 'origin' | 'step' | 'goal';
@@ -53,16 +59,20 @@ const RailDot = ({
 export const RoadmapTimeline = ({
   roadmap,
   interviewAt,
+  actions,
 }: RoadmapTimelineProps) => {
   const goalLabel = interviewAt
     ? `Job-ready by ${format(new Date(interviewAt), 'd MMM yyyy')}`
     : 'Job-ready goal';
 
   return (
-    <div className="h-full lg:flex lg:items-center lg:overflow-x-auto">
+    // Single horizontal scroll container: the rail scrolls, the action bar is a
+    // `sticky left-0` row that stays put while it does, and the native scrollbar
+    // renders at the container's bottom edge — below the pinned actions.
+    <div className="border-border flex h-full flex-col rounded-2xl border lg:overflow-x-auto">
       <ol
         data-testid="roadmap-timeline"
-        className="relative flex h-full w-full flex-col gap-4 lg:h-auto lg:w-max lg:min-w-full lg:flex-row lg:items-stretch lg:gap-2"
+        className="relative flex w-full flex-1 flex-col gap-4 p-4 lg:h-auto lg:w-max lg:min-w-full lg:flex-row lg:items-stretch lg:gap-2 lg:p-0"
       >
         {/* Vertical rail (mobile): down the left dot gutter, behind the dots. */}
         <span
@@ -104,6 +114,12 @@ export const RoadmapTimeline = ({
           }
         />
       </ol>
+
+      {actions && (
+        <div className="border-border bg-surface sticky left-0 z-20 shrink-0 border-t px-4 py-4 lg:w-screen lg:max-w-full">
+          {actions}
+        </div>
+      )}
     </div>
   );
 };
@@ -152,7 +168,7 @@ const ZigNode = ({
       : 'lg:absolute lg:inset-x-0 lg:top-1/2 lg:bottom-0 lg:flex lg:items-start lg:justify-center lg:px-2 lg:pt-6';
 
   return (
-    <li className="relative flex min-w-0 items-center gap-4 lg:h-[26rem] lg:w-[15.5rem] lg:shrink-0 lg:flex-col lg:items-stretch lg:justify-center lg:gap-0">
+    <li className="relative flex min-w-0 items-center gap-4 lg:h-[30rem] lg:w-[15.5rem] lg:shrink-0 lg:flex-col lg:items-stretch lg:justify-center lg:gap-0">
       <div className={`order-2 min-w-0 ${payloadPlacement}`}>{payload}</div>
 
       {/* Rail band: the line + the dot, on the column midline (desktop) or first
