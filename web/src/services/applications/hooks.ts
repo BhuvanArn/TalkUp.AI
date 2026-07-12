@@ -4,6 +4,8 @@ import {
   createApplication,
   deleteApplication,
   fetchApplications,
+  fetchRoadmap,
+  regenerateRoadmap,
   updateApplicationInterviewAt,
   updateApplicationStatus,
 } from './http';
@@ -122,6 +124,23 @@ export const useDeleteApplication = () => {
     mutationFn: (applicationId: string) => deleteApplication(applicationId),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATIONS_QUERY_KEY });
+    },
+  });
+};
+
+/** Server lazily generates on first call; afterwards this returns the cache. */
+export const useRoadmap = (applicationId: string) =>
+  useQuery({
+    queryKey: ['roadmap', applicationId],
+    queryFn: () => fetchRoadmap(applicationId),
+  });
+
+export const useRegenerateRoadmap = (applicationId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => regenerateRoadmap(applicationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roadmap', applicationId] });
     },
   });
 };

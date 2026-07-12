@@ -46,3 +46,21 @@ export interface Application {
   interviewAt: string | null;
   updatedAt: string;
 }
+
+export interface RoadmapTopic {
+  title: string;
+  priority: 'HIGH' | 'MED' | 'LOW';
+  rationale: string;
+  gap: boolean;
+}
+
+/**
+ * Mirror of the server GetRoadmapDto (F6 preparation path). Keys stay
+ * snake_case exactly as the LLM extraction produces them, like
+ * OfferDetails/CvDetails above.
+ */
+export interface Roadmap {
+  match_score: number;
+  summary: string;
+  topics: RoadmapTopic[];
+}
