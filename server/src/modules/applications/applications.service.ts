@@ -218,6 +218,18 @@ export class ApplicationsService {
     return this.generateAndSaveRoadmap(row);
   }
 
+  /**
+   * Owner-guarded forced rebuild: always re-runs the LLM and overwrites the
+   * cached roadmap. Throttled at the controller (LLM-cost endpoint).
+   */
+  async regenerateRoadmap(
+    userId: string,
+    applicationId: string,
+  ): Promise<RoadmapExtraction> {
+    const row = await this.findOwned(userId, applicationId);
+    return this.generateAndSaveRoadmap(row);
+  }
+
   /** Valid-but-empty roadmap; fresh object each time so callers cannot share state. */
   private emptyRoadmap(): RoadmapExtraction {
     return { match_score: 0, summary: "", topics: [] };

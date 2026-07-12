@@ -535,6 +535,40 @@ describe("ApplicationsService", () => {
       expect(row.roadmap).toBeNull();
     });
   });
+
+  describe("regenerateRoadmap", () => {
+    it("always calls Groq and overwrites the cached roadmap", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        offer_details: { job_title: "SRE" },
+        cv_details: null,
+        roadmap: { match_score: 10, summary: "stale", topics: [] },
+      } as unknown as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      const result = await service.regenerateRoadmap("u1", "a1");
+
+      expect(mockGroqCreate).toHaveBeenCalledTimes(1);
+      expect(result.summary).toBe(
+        "Solid backend profile; close the Kubernetes gap before interviewing.",
+      );
+      expect(row.roadmap).toEqual(result);
+      expect(applicationRepo.save).toHaveBeenCalledWith(row);
+    });
+
+    it("throws NotFound for an unknown application", async () => {
+      applicationRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.regenerateRoadmap("u1", "nope"),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe("application entity roadmap column", () => {
