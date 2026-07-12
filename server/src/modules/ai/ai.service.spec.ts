@@ -105,7 +105,6 @@ describe("AiService", () => {
     };
 
     mockApplicationsService = {
-      getOwnedApplication: jest.fn(),
       ensureCvSnapshot: jest.fn(),
     };
 
@@ -254,6 +253,61 @@ describe("AiService", () => {
         expect.anything(),
         expect.objectContaining({
           jobContext: expect.stringContaining("Profil développeur web"),
+        }),
+      );
+    });
+
+    it("propagates NotFound when the applicationId is not owned and saves no interview", async () => {
+      mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
+      mockApplicationsService.ensureCvSnapshot.mockRejectedValueOnce(
+        new NotFoundException("Application not found."),
+      );
+
+      await expect(
+        service.createInterview(
+          {
+            type: "Technical",
+            language: "French",
+            applicationId: "unknown-app",
+          } as any,
+          "user-1",
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(mockAiInterviewRepo.create).not.toHaveBeenCalled();
+      expect(mockAiInterviewRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("stores a null job_context when the application has no CV or offer context", async () => {
+      mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
+      mockCapacity.tryAcquireSlot.mockResolvedValueOnce({
+        acquired: false,
+        reason: "capacity",
+      });
+      mockAiInterviewRepo.save.mockResolvedValueOnce({
+        interview_id: "new-id",
+      });
+      mockApplicationsService.ensureCvSnapshot.mockResolvedValueOnce({
+        company_name: null,
+        job_title: null,
+        offer_url: null,
+        offer_details: null,
+        cv_details: null,
+      });
+
+      await service.createInterview(
+        {
+          type: "Technical",
+          language: "French",
+          applicationId: "app-empty",
+        } as any,
+        "user-1",
+      );
+
+      expect(mockAiInterviewRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          application_id: "app-empty",
+          job_context: null,
         }),
       );
     });

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -221,7 +222,9 @@ export class AiService {
       if (
         error instanceof ConflictException ||
         error instanceof ServiceUnavailableException ||
-        error instanceof InternalServerErrorException
+        error instanceof InternalServerErrorException ||
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
       ) {
         throw error;
       }
