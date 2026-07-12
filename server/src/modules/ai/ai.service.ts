@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -34,6 +35,8 @@ import { SimulationContextService } from "../simulation/simulation-context.servi
 import { SimulationPromotionService } from "../simulation/simulation-promotion.service";
 import { SimulationVerbalAnalysisService } from "../simulation/simulation-verbal-analysis.service";
 import { loadSimulationConfig } from "../simulation/simulation.config";
+import { ApplicationsService } from "../applications/applications.service";
+import { buildSimulationContextFromApplication } from "../simulation/simulation-application-context";
 
 const CHATBOT_SYSTEM_PROMPT =
   "You are TalkUp AI, a friendly interview-preparation coach embedded in the " +
@@ -69,6 +72,7 @@ export class AiService {
     private readonly context: SimulationContextService,
     private readonly promotion: SimulationPromotionService,
     private readonly verbalAnalysis: SimulationVerbalAnalysisService,
+    private readonly applicationsService: ApplicationsService,
   ) {
     this.logger = new Logger(AiService.name);
   }
@@ -140,11 +144,14 @@ export class AiService {
         );
       }
 
+      const resolved = await this.resolveInterviewContext(dto, userId);
+
       const newInterview = this.aiInterviewRepository.create({
         user_id: userId,
         type: dto.type,
         language: dto.language,
-        job_context: dto.jobContext?.trim() || null,
+        job_context: resolved.jobContext,
+        application_id: resolved.applicationId,
         status: AiInterviewStatus.QUEUED,
       });
 
@@ -159,7 +166,7 @@ export class AiService {
         try {
           const { entrypoint } = await this.promotion.prepareReadySession(
             newInterview,
-            dto,
+            resolved.sessionDto,
           );
 
           return {
@@ -215,7 +222,9 @@ export class AiService {
       if (
         error instanceof ConflictException ||
         error instanceof ServiceUnavailableException ||
-        error instanceof InternalServerErrorException
+        error instanceof InternalServerErrorException ||
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
       ) {
         throw error;
       }
@@ -514,5 +523,51 @@ export class AiService {
         "Internal server error while getting the interview.",
       );
     }
+  }
+
+  /**
+   * Resolves simulation context server-side from an owned application when
+   * applicationId is provided. Client-supplied jobContext is ignored in that case.
+   */
+  private async resolveInterviewContext(
+    dto: CreateAiInterviewDto,
+    userId: string,
+  ): Promise<{
+    jobContext: string | null;
+    applicationId: string | null;
+    sessionDto: CreateAiInterviewDto;
+  }> {
+    if (dto.applicationId) {
+      const application = await this.applicationsService.ensureCvSnapshot(
+        userId,
+        dto.applicationId,
+      );
+      const jobContext = buildSimulationContextFromApplication(application);
+
+      if (!jobContext) {
+        this.logger.warn(
+          `Application ${dto.applicationId} has no CV/offer context for user ${userId}`,
+        );
+      }
+
+      return {
+        jobContext: jobContext || null,
+        applicationId: dto.applicationId,
+        sessionDto: {
+          ...dto,
+          jobContext: jobContext || undefined,
+        },
+      };
+    }
+
+    const legacyContext = dto.jobContext?.trim() || null;
+    return {
+      jobContext: legacyContext,
+      applicationId: null,
+      sessionDto: {
+        ...dto,
+        jobContext: legacyContext ?? undefined,
+      },
+    };
   }
 }

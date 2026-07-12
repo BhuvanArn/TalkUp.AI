@@ -18,6 +18,10 @@ import {
 import { user_cv } from "@entities/userCV.entity";
 
 import { UsersService } from "./users.service";
+import {
+  CV_LOW_QUALITY_MESSAGE,
+  CV_UNREADABLE_PDF_MESSAGE,
+} from "../../common/utils/groqExtraction";
 
 const mockPdfParse = jest.fn();
 // Lazy wrappers: the service now imports these at module-load time, so the mock
@@ -44,6 +48,8 @@ const mockGroqCreate = jest.fn();
 
 const USER_ID = "uid-1";
 const pdfFile = () => ({ buffer: Buffer.from("fake pdf content") });
+const SAMPLE_CV_TEXT =
+  "John Doe - Software Engineer with 5 years of experience in TypeScript, React and Node.js at Acme Corp.";
 
 const validCvGroqResponse = JSON.stringify({
   desired_job: "Software Engineer",
@@ -240,12 +246,21 @@ describe("UsersService", () => {
       mockPdfParse.mockResolvedValue({ text: "" });
 
       await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
-        "The PDF file is empty or could not be parsed.",
+        CV_UNREADABLE_PDF_MESSAGE,
       );
     });
 
+    it("throws BadRequest when the PDF text is too short to analyze", async () => {
+      mockPdfParse.mockResolvedValue({ text: "cv" });
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        CV_UNREADABLE_PDF_MESSAGE,
+      );
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+    });
+
     it("throws InternalServerError on an empty AI response", async () => {
-      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: null } }],
       });
@@ -256,7 +271,7 @@ describe("UsersService", () => {
     });
 
     it("throws InternalServerError on invalid JSON", async () => {
-      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: "not valid json }{" } }],
       });
@@ -267,7 +282,7 @@ describe("UsersService", () => {
     });
 
     it("creates a new CV and returns the created message", async () => {
-      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: validCvGroqResponse } }],
       });
@@ -286,7 +301,7 @@ describe("UsersService", () => {
     });
 
     it("updates an existing CV and returns the updated message", async () => {
-      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: validCvGroqResponse } }],
       });
@@ -302,7 +317,7 @@ describe("UsersService", () => {
     });
 
     it("falls back to update when a concurrent insert wins the unique race", async () => {
-      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: validCvGroqResponse } }],
       });
@@ -325,7 +340,7 @@ describe("UsersService", () => {
     });
 
     it("rethrows non-unique-violation save errors", async () => {
-      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: validCvGroqResponse } }],
       });
@@ -338,7 +353,7 @@ describe("UsersService", () => {
     });
 
     it("strips markdown fences before parsing JSON", async () => {
-      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
       mockGroqCreate.mockResolvedValue({
         choices: [
           { message: { content: "```json\n" + validCvGroqResponse + "\n```" } },
@@ -351,26 +366,18 @@ describe("UsersService", () => {
       expect(result).toEqual({ message: "CV uploaded successfully" });
     });
 
-    it("applies defaults when fields are absent", async () => {
-      mockPdfParse.mockResolvedValue({ text: "some cv text" });
+    it("throws BadRequest when Groq returns an empty extraction", async () => {
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
       mockGroqCreate.mockResolvedValue({
         choices: [{ message: { content: "{}" } }],
       });
       cvRepo.findOne.mockResolvedValue(null);
 
-      await service.uploadCV(USER_ID, pdfFile());
-
-      expect(cvRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_id: USER_ID,
-          desired_job: null,
-          resume: null,
-          experiences: [],
-          education: [],
-          technical_skills: [],
-          languages: [],
-        }),
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        CV_LOW_QUALITY_MESSAGE,
       );
+      expect(cvRepo.save).not.toHaveBeenCalled();
+      expect(cvRepo.create).not.toHaveBeenCalled();
     });
 
     it("truncates the CV text before sending it to the LLM", async () => {

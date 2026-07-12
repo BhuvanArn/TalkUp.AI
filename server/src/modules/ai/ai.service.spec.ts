@@ -17,6 +17,7 @@ import { SimulationCapacityService } from "../simulation/simulation-capacity.ser
 import { SimulationContextService } from "../simulation/simulation-context.service";
 import { SimulationPromotionService } from "../simulation/simulation-promotion.service";
 import { SimulationVerbalAnalysisService } from "../simulation/simulation-verbal-analysis.service";
+import { ApplicationsService } from "../applications/applications.service";
 import { ChatRole } from "./dto/chat.dto";
 
 const mockGroqCreate = jest.fn();
@@ -47,6 +48,7 @@ describe("AiService", () => {
   let mockPromotion: any;
   let mockContext: any;
   let mockVerbalAnalysis: any;
+  let mockApplicationsService: any;
 
   beforeEach(async () => {
     mockGroqCreate.mockReset();
@@ -102,6 +104,10 @@ describe("AiService", () => {
       getForInterview: jest.fn(),
     };
 
+    mockApplicationsService = {
+      ensureCvSnapshot: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AiService,
@@ -120,6 +126,7 @@ describe("AiService", () => {
           provide: SimulationVerbalAnalysisService,
           useValue: mockVerbalAnalysis,
         },
+        { provide: ApplicationsService, useValue: mockApplicationsService },
       ],
     }).compile();
 
@@ -198,6 +205,109 @@ describe("AiService", () => {
       expect(mockAiInterviewRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           job_context: "Backend role at Acme",
+          application_id: null,
+        }),
+      );
+    });
+
+    it("builds jobContext from an owned application and ignores client jobContext", async () => {
+      mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
+      mockAiInterviewRepo.save.mockResolvedValueOnce({
+        interview_id: "new-id",
+      });
+      mockApplicationsService.ensureCvSnapshot.mockResolvedValueOnce({
+        company_name: "Sopra Steria",
+        job_title: "Développeur web",
+        offer_url: "https://example.com/job",
+        offer_details: {
+          location: "Paris",
+          required_skills: ["React"],
+        },
+        cv_details: {
+          resume: "Profil développeur web",
+          technical_skills: ["React"],
+        },
+      });
+
+      await service.createInterview(
+        {
+          type: "Technical",
+          language: "French",
+          applicationId: "app-1",
+          jobContext: "SHOULD BE IGNORED",
+        } as any,
+        "user-1",
+      );
+
+      expect(mockApplicationsService.ensureCvSnapshot).toHaveBeenCalledWith(
+        "user-1",
+        "app-1",
+      );
+      expect(mockAiInterviewRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          application_id: "app-1",
+          job_context: expect.stringContaining("Sopra Steria"),
+        }),
+      );
+      expect(mockPromotion.prepareReadySession).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          jobContext: expect.stringContaining("Profil développeur web"),
+        }),
+      );
+    });
+
+    it("propagates NotFound when the applicationId is not owned and saves no interview", async () => {
+      mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
+      mockApplicationsService.ensureCvSnapshot.mockRejectedValueOnce(
+        new NotFoundException("Application not found."),
+      );
+
+      await expect(
+        service.createInterview(
+          {
+            type: "Technical",
+            language: "French",
+            applicationId: "unknown-app",
+          } as any,
+          "user-1",
+        ),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(mockAiInterviewRepo.create).not.toHaveBeenCalled();
+      expect(mockAiInterviewRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("stores a null job_context when the application has no CV or offer context", async () => {
+      mockAiInterviewRepo.findOne.mockResolvedValueOnce(null);
+      mockCapacity.tryAcquireSlot.mockResolvedValueOnce({
+        acquired: false,
+        reason: "capacity",
+      });
+      mockAiInterviewRepo.save.mockResolvedValueOnce({
+        interview_id: "new-id",
+      });
+      mockApplicationsService.ensureCvSnapshot.mockResolvedValueOnce({
+        company_name: null,
+        job_title: null,
+        offer_url: null,
+        offer_details: null,
+        cv_details: null,
+      });
+
+      await service.createInterview(
+        {
+          type: "Technical",
+          language: "French",
+          applicationId: "app-empty",
+        } as any,
+        "user-1",
+      );
+
+      expect(mockAiInterviewRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          application_id: "app-empty",
+          job_context: null,
         }),
       );
     });

@@ -14,6 +14,7 @@ import {
   JobOfferExtraction,
   MAX_LLM_INPUT_CHARS,
   extractWithGroq,
+  isCvExtractionEmpty,
 } from "../../common/utils/groqExtraction";
 import {
   scrapeLinkedin,
@@ -133,6 +134,43 @@ export class ApplicationsService {
           languages: cv.languages,
         }
       : null;
+  }
+
+  private hasCvDetails(cv: application["cv_details"]): boolean {
+    if (!cv) return false;
+    // Use the same meaningful-content check as the upload path so placeholder
+    // entries (empty strings, blank experience objects) do not count as a
+    // populated snapshot and correctly trigger a backfill from the profile CV.
+    return !isCvExtractionEmpty(cv);
+  }
+
+  /**
+   * Ensures application.cv_details is populated. If the snapshot is missing,
+   * copies the current profile CV (user_cv) and persists it on the application.
+   */
+  async ensureCvSnapshot(
+    userId: string,
+    applicationId: string,
+  ): Promise<application> {
+    const row = await this.findOwned(userId, applicationId);
+    if (this.hasCvDetails(row.cv_details)) {
+      return row;
+    }
+
+    const snapshot = await this.buildCvSnapshot(userId);
+    if (!snapshot || !this.hasCvDetails(snapshot)) {
+      this.logger.warn(
+        `No usable profile CV to snapshot for application ${applicationId} (user ${userId})`,
+      );
+      return row;
+    }
+
+    row.cv_details = snapshot;
+    const saved = await this.applicationRepo.save(row);
+    this.logger.log(
+      `Backfilled cv_details on application ${applicationId} from profile CV`,
+    );
+    return saved;
   }
 
   async listForUser(userId: string): Promise<application[]> {

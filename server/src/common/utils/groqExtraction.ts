@@ -19,6 +19,42 @@ export interface CvExtraction {
   languages?: unknown[];
 }
 
+/** Minimum extractable PDF text length before we reject low-quality scans. */
+export const MIN_CV_EXTRACTABLE_TEXT_CHARS = 80;
+
+export const CV_UNREADABLE_PDF_MESSAGE =
+  "Could not extract text from your CV. Use a good-quality PDF with selectable text (not a blurry scan or a photo).";
+
+export const CV_LOW_QUALITY_MESSAGE =
+  "Could not analyze your CV. The document is unreadable or low quality. Use a digitally exported PDF (Word, LinkedIn, etc.) with selectable text.";
+
+function hasNonEmptyString(value: unknown): boolean {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function hasNonEmptyListItem(item: unknown): boolean {
+  if (item === null || item === undefined) return false;
+  if (typeof item === "string") return item.trim().length > 0;
+  if (typeof item === "object") {
+    return Object.values(item as Record<string, unknown>).some(
+      hasNonEmptyString,
+    );
+  }
+  return false;
+}
+
+/** True when Groq returned no usable CV fields (typical of unreadable PDFs). */
+export function isCvExtractionEmpty(data: CvExtraction): boolean {
+  if (hasNonEmptyString(data.desired_job) || hasNonEmptyString(data.resume)) {
+    return false;
+  }
+  if ((data.experiences ?? []).some(hasNonEmptyListItem)) return false;
+  if ((data.education ?? []).some(hasNonEmptyListItem)) return false;
+  if ((data.technical_skills ?? []).some(hasNonEmptyString)) return false;
+  if ((data.languages ?? []).some(hasNonEmptyListItem)) return false;
+  return true;
+}
+
 /** Shape returned by the job-offer extraction prompt. */
 export interface JobOfferExtraction {
   job_title?: string | null;

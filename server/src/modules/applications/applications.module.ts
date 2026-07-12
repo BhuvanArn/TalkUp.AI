@@ -12,5 +12,6 @@ import { AuthModule } from "../auth/auth.module";
   imports: [TypeOrmModule.forFeature([application, user, user_cv]), AuthModule],
   controllers: [ApplicationsController],
   providers: [ApplicationsService, AccessTokenGuard],
+  exports: [ApplicationsService],
 })
 export class ApplicationsModule {}

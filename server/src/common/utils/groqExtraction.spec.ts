@@ -11,7 +11,7 @@ jest.mock("groq-sdk", () => ({
 
 const mockGroqCreate = jest.fn();
 
-import { extractWithGroq } from "./groqExtraction";
+import { extractWithGroq, isCvExtractionEmpty } from "./groqExtraction";
 
 describe("extractWithGroq", () => {
   beforeEach(() => mockGroqCreate.mockReset());
@@ -63,5 +63,31 @@ describe("extractWithGroq", () => {
     await expect(extractWithGroq("prompt")).rejects.toBeInstanceOf(
       InternalServerErrorException,
     );
+  });
+});
+
+describe("isCvExtractionEmpty", () => {
+  it("returns true for an all-empty extraction", () => {
+    expect(isCvExtractionEmpty({})).toBe(true);
+    expect(
+      isCvExtractionEmpty({
+        desired_job: null,
+        resume: "   ",
+        experiences: [],
+        education: [],
+        technical_skills: [],
+        languages: [],
+      }),
+    ).toBe(true);
+  });
+
+  it("returns false when any meaningful field is present", () => {
+    expect(isCvExtractionEmpty({ resume: "Développeur web" })).toBe(false);
+    expect(
+      isCvExtractionEmpty({
+        experiences: [{ company: "Acme", title: "Dev" }],
+      }),
+    ).toBe(false);
+    expect(isCvExtractionEmpty({ technical_skills: ["React"] })).toBe(false);
   });
 });

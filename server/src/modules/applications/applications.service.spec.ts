@@ -278,4 +278,111 @@ describe("ApplicationsService", () => {
       );
     });
   });
+
+  describe("ensureCvSnapshot", () => {
+    it("returns the application unchanged when cv_details is already populated", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        cv_details: { resume: "Existing CV" },
+      } as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+
+      const result = await service.ensureCvSnapshot("u1", "a1");
+
+      expect(result).toBe(row);
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+      expect(cvRepo.findOne).not.toHaveBeenCalled();
+    });
+
+    it("backfills when cv_details holds only placeholder entries", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        cv_details: {
+          desired_job: "   ",
+          resume: "",
+          experiences: [{}],
+          technical_skills: [""],
+        },
+      } as unknown as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      cvRepo.findOne = jest.fn().mockResolvedValue({
+        user_id: "u1",
+        resume: "Profil réel",
+        technical_skills: ["React"],
+      });
+
+      const result = await service.ensureCvSnapshot("u1", "a1");
+
+      expect(result.cv_details).toEqual(
+        expect.objectContaining({ resume: "Profil réel" }),
+      );
+      expect(applicationRepo.save).toHaveBeenCalled();
+    });
+
+    it("backfills cv_details from the profile CV when the snapshot is missing", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        cv_details: null,
+      } as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      cvRepo.findOne = jest.fn().mockResolvedValue({
+        user_id: "u1",
+        resume: "Profil actuel",
+        technical_skills: ["React"],
+      });
+
+      const result = await service.ensureCvSnapshot("u1", "a1");
+
+      expect(result.cv_details).toEqual({
+        desired_job: undefined,
+        resume: "Profil actuel",
+        experiences: undefined,
+        education: undefined,
+        technical_skills: ["React"],
+        languages: undefined,
+      });
+      expect(applicationRepo.save).toHaveBeenCalled();
+    });
+
+    it("returns the row without saving when there is no profile CV", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        cv_details: null,
+      } as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      cvRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      const result = await service.ensureCvSnapshot("u1", "a1");
+
+      expect(result).toBe(row);
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("returns the row without saving when the profile CV is empty", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        cv_details: null,
+      } as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      cvRepo.findOne = jest.fn().mockResolvedValue({
+        user_id: "u1",
+        desired_job: null,
+        resume: null,
+        experiences: [],
+        education: [],
+        technical_skills: [],
+        languages: [],
+      });
+
+      const result = await service.ensureCvSnapshot("u1", "a1");
+
+      expect(result).toBe(row);
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+    });
+  });
 });
