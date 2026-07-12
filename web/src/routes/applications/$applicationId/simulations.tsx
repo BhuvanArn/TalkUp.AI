@@ -31,17 +31,11 @@ function ApplicationSimulations() {
     );
   }
 
-  if (!application) {
-    return (
-      <div className="p-6">
-        <h2 className="text-h4 text-idle">Simulations</h2>
-        <p className="mt-2 text-text-weak">
-          Candidature introuvable. Retournez à la liste des applications.
-        </p>
-      </div>
-    );
-  }
-
+  // The workspace only needs applicationId (from the route params), and the
+  // backend resolves the CV and offer server-side. Render it even when the
+  // application row is not in the cached list yet (stale cache after a fresh
+  // creation, or a direct deep-link); contextLabel is cosmetic and simply
+  // omitted until the list catches up.
   return (
     <SimulationWorkspace
       applicationId={applicationId}
