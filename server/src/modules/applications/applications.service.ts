@@ -13,6 +13,7 @@ import { ApplicationStatus } from "@common/enums/ApplicationStatus";
 import {
   JobOfferExtraction,
   MAX_LLM_INPUT_CHARS,
+  RoadmapExtraction,
   extractWithGroq,
   isCvExtractionEmpty,
 } from "../../common/utils/groqExtraction";
@@ -200,6 +201,85 @@ export class ApplicationsService {
   async remove(userId: string, applicationId: string): Promise<void> {
     const row = await this.findOwned(userId, applicationId);
     await this.applicationRepo.remove(row);
+  }
+
+  /**
+   * Lazily builds the F6 preparation roadmap. Cached on the row after the
+   * first generation; both-null offer/cv short-circuits to an empty roadmap
+   * so we never spend an LLM call on nothing.
+   */
+  async getRoadmap(
+    userId: string,
+    applicationId: string,
+  ): Promise<RoadmapExtraction> {
+    const row = await this.findOwned(userId, applicationId);
+    if (row.roadmap) return row.roadmap;
+    if (!row.offer_details && !row.cv_details) return this.emptyRoadmap();
+    return this.generateAndSaveRoadmap(row);
+  }
+
+  /** Valid-but-empty roadmap; fresh object each time so callers cannot share state. */
+  private emptyRoadmap(): RoadmapExtraction {
+    return { match_score: 0, summary: "", topics: [] };
+  }
+
+  private async generateAndSaveRoadmap(
+    row: application,
+  ): Promise<RoadmapExtraction> {
+    const raw = await extractWithGroq<RoadmapExtraction>(
+      this.buildRoadmapPrompt(row.offer_details, row.cv_details),
+    );
+    row.roadmap = this.normalizeRoadmap(raw);
+    await this.applicationRepo.save(row);
+    this.logger.log(`Roadmap generated for application ${row.application_id}`);
+    return row.roadmap;
+  }
+
+  /** Defensive shape-fixing on LLM output: clamp the score, default the rest. */
+  private normalizeRoadmap(raw: RoadmapExtraction): RoadmapExtraction {
+    const score = Number(raw.match_score);
+    return {
+      match_score: Number.isFinite(score)
+        ? Math.min(100, Math.max(0, Math.round(score)))
+        : 0,
+      summary: typeof raw.summary === "string" ? raw.summary : "",
+      topics: Array.isArray(raw.topics) ? raw.topics : [],
+    };
+  }
+
+  /** Strict-JSON roadmap prompt, same style as buildOfferPrompt below. */
+  private buildRoadmapPrompt(
+    offer: application["offer_details"],
+    cv: application["cv_details"],
+  ): string {
+    return `You are a career-preparation coach. Compare the JOB OFFER and the CANDIDATE CV below and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
+      {
+        "match_score": 0,
+        "summary": "string",
+        "topics": [
+          {
+            "title": "string",
+            "priority": "HIGH",
+            "rationale": "string",
+            "gap": true
+          }
+        ]
+      }
+
+      Rules:
+      - Always return valid JSON, even if the offer or the CV is missing or incomplete
+      - "match_score" is an integer from 0 to 100 estimating how well the CV matches the offer; use 0 when there is not enough data
+      - "summary" is one short sentence describing the candidate's readiness for this offer
+      - "topics" is the ordered preparation plan (most important first, 3 to 8 items); each topic is one subject to revise or practice before the interview
+      - "priority" is exactly one of "HIGH", "MED", "LOW": "HIGH" for topics the offer requires and the CV lacks, "MED" for topics to strengthen, "LOW" for topics to refresh
+      - "gap" is true when the offer requires the topic and the CV shows no evidence of it
+      - If one input is null, build the plan from the other; if both are null, return {"match_score": 0, "summary": "", "topics": []}
+
+      JOB OFFER:
+      ${JSON.stringify(offer)}
+
+      CANDIDATE CV:
+      ${JSON.stringify(cv)}`;
   }
 
   // 404 (not 403) when the row exists but belongs to someone else: do not leak

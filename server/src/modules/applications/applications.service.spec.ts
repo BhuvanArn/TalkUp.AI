@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+} from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Repository, getMetadataArgsStorage } from "typeorm";
@@ -34,6 +38,20 @@ const validOfferResponse = JSON.stringify({
   job_title: "DevOps Engineer",
   company_name: "Datadog",
   sector: "Tech",
+});
+
+const validRoadmapResponse = JSON.stringify({
+  match_score: 62,
+  summary:
+    "Solid backend profile; close the Kubernetes gap before interviewing.",
+  topics: [
+    {
+      title: "Kubernetes fundamentals",
+      priority: "HIGH",
+      rationale: "Required by the offer, absent from the CV.",
+      gap: true,
+    },
+  ],
 });
 
 describe("ApplicationsService", () => {
@@ -383,6 +401,138 @@ describe("ApplicationsService", () => {
 
       expect(result).toBe(row);
       expect(applicationRepo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getRoadmap", () => {
+    const ownedRow = () =>
+      ({
+        application_id: "a1",
+        user_id: "u1",
+        offer_details: { job_title: "SRE", required_skills: ["kubernetes"] },
+        cv_details: { desired_job: "Backend dev", technical_skills: ["node"] },
+        roadmap: null,
+      }) as unknown as application;
+
+    it("returns the cached roadmap without calling Groq", async () => {
+      const row = ownedRow();
+      row.roadmap = { match_score: 80, summary: "cached", topics: [] };
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result).toEqual({
+        match_score: 80,
+        summary: "cached",
+        topics: [],
+      });
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("returns an empty roadmap without Groq when offer and cv are both null", async () => {
+      const row = ownedRow();
+      row.offer_details = null;
+      row.cv_details = null;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result).toEqual({ match_score: 0, summary: "", topics: [] });
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("generates, persists and returns the roadmap on first call", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.match_score).toBe(62);
+      expect(result.topics).toHaveLength(1);
+      expect(result.topics[0].priority).toBe("HIGH");
+      expect(row.roadmap).toEqual(result);
+      expect(applicationRepo.save).toHaveBeenCalledWith(row);
+    });
+
+    it("sends both the offer and the cv to the LLM prompt", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      await service.getRoadmap("u1", "a1");
+
+      const callArg = mockGroqCreate.mock.calls[0][0] as {
+        messages: { content: string }[];
+      };
+      const prompt = callArg.messages[0].content;
+      expect(prompt).toContain('"required_skills":["kubernetes"]');
+      expect(prompt).toContain('"technical_skills":["node"]');
+    });
+
+    it("clamps an out-of-range match_score into 0-100", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                match_score: 250,
+                summary: "s",
+                topics: [],
+              }),
+            },
+          },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.match_score).toBe(100);
+    });
+
+    it("normalizes a malformed payload (bad score, missing summary and topics)", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          { message: { content: JSON.stringify({ match_score: "high" }) } },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result).toEqual({ match_score: 0, summary: "", topics: [] });
+    });
+
+    it("throws NotFound for an application owned by someone else", async () => {
+      applicationRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(service.getRoadmap("u1", "a1")).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+    });
+
+    it("propagates a Groq failure without persisting a half-written roadmap", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: "not json {{" } }],
+      });
+
+      await expect(service.getRoadmap("u1", "a1")).rejects.toBeInstanceOf(
+        InternalServerErrorException,
+      );
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+      expect(row.roadmap).toBeNull();
     });
   });
 });
