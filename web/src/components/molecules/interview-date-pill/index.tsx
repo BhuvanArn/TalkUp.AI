@@ -1,6 +1,6 @@
 import { useUpdateApplicationInterviewAt } from '@/services/applications/hooks';
 import { format } from 'date-fns';
-import { useState } from 'react';
+import { useRef } from 'react';
 
 interface InterviewDatePillProps {
   applicationId: string;
@@ -34,7 +34,7 @@ export const InterviewDatePill = ({
   interviewAt,
   topicsCount,
 }: InterviewDatePillProps) => {
-  const [isPicking, setIsPicking] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const updateInterviewAt = useUpdateApplicationInterviewAt();
 
   if (interviewAt) {
@@ -56,43 +56,41 @@ export const InterviewDatePill = ({
     );
   }
 
-  if (isPicking) {
-    // The whole pill is the hit target: the label sits over a full-bleed date
-    // input (opacity-0, inset-0) so a click anywhere opens the native picker —
-    // no hunting for the tiny calendar glyph. `showPicker()` (where supported)
-    // pops the calendar immediately on mount; the visible text stays as our
-    // own label so we never show the raw `dd/mm/yyyy` placeholder.
-    return (
-      <label className="border-accent text-accent bg-accent-weak relative flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2">
-        <span className="text-label-m">Pick a date</span>
-        <input
-          ref={(node) => {
-            node?.showPicker?.();
-          }}
-          type="date"
-          aria-label="Interview date"
-          className="absolute inset-0 cursor-pointer opacity-0"
-          onChange={(event) => {
-            if (!event.target.value) return;
-            updateInterviewAt.mutate({
-              applicationId,
-              interviewAt: dateInputToIso(event.target.value),
-            });
-            setIsPicking(false);
-          }}
-        />
-      </label>
-    );
-  }
+  // Unset: the whole dashed pill is the hit target. A full-bleed, transparent
+  // date input covers it (no hunting for the tiny native calendar glyph). The
+  // click handler calls `showPicker()` INSIDE the user gesture — it must not run
+  // from a ref/effect, where the browser rejects it ("requires a user gesture").
+  // `showPicker` is best-effort: on browsers without it, clicking the input
+  // still opens the native picker, and we swallow the gesture error defensively.
+  const openPicker = () => {
+    try {
+      inputRef.current?.showPicker?.();
+    } catch {
+      // Some browsers throw if the gesture is deemed stale; the native input is
+      // focused anyway, so the user can still open the picker.
+    }
+  };
 
   return (
-    <button
-      type="button"
-      onClick={() => setIsPicking(true)}
-      className="border-border text-text-weak hover:border-accent hover:text-accent hover:bg-accent-weak cursor-pointer rounded-full border border-dashed px-4 py-2 transition-colors"
+    <label
+      onClick={openPicker}
+      className="border-border text-text-weak hover:border-accent hover:text-accent hover:bg-accent-weak relative flex cursor-pointer items-center gap-2 rounded-full border border-dashed px-4 py-2 transition-colors"
     >
       <span className="text-label-m">Add interview date +</span>
-    </button>
+      <input
+        ref={inputRef}
+        type="date"
+        aria-label="Interview date"
+        className="absolute inset-0 cursor-pointer opacity-0"
+        onChange={(event) => {
+          if (!event.target.value) return;
+          updateInterviewAt.mutate({
+            applicationId,
+            interviewAt: dateInputToIso(event.target.value),
+          });
+        }}
+      />
+    </label>
   );
 };
 

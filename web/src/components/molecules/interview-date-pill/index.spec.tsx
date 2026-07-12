@@ -33,7 +33,7 @@ describe('InterviewDatePill', () => {
     expect(screen.getByText(/2 topics\/week/)).toBeInTheDocument();
   });
 
-  it('opens the picker from the unset state and saves the picked date', () => {
+  it('saves the picked date from the unset state', () => {
     render(
       <InterviewDatePill
         applicationId="app-1"
@@ -41,14 +41,29 @@ describe('InterviewDatePill', () => {
         topicsCount={4}
       />,
     );
-    fireEvent.click(
-      screen.getByRole('button', { name: /add interview date/i }),
-    );
+    // Unset pill shows the prompt and a full-bleed date input as the hit target.
+    expect(screen.getByText(/add interview date/i)).toBeInTheDocument();
     const input = screen.getByLabelText('Interview date');
     fireEvent.change(input, { target: { value: '2026-07-26' } });
     expect(mockMutate).toHaveBeenCalledWith({
       applicationId: 'app-1',
       interviewAt: new Date(2026, 6, 26).toISOString(),
     });
+  });
+
+  it('opening the picker never throws showPicker gesture errors', () => {
+    // Regression: showPicker() must be called from the click gesture, not a ref
+    // (which threw "requires a user gesture"). jsdom has no showPicker, so the
+    // guarded call must simply no-op rather than crash.
+    render(
+      <InterviewDatePill
+        applicationId="app-1"
+        interviewAt={null}
+        topicsCount={4}
+      />,
+    );
+    expect(() =>
+      fireEvent.click(screen.getByText(/add interview date/i)),
+    ).not.toThrow();
   });
 });
