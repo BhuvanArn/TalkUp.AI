@@ -28,7 +28,7 @@ export interface SimulationWorkspaceProps {
 export function SimulationWorkspace({
   applicationId,
   title = 'Simulations',
-  description = 'Simulations let you practice interview scenarios in a safe environment.',
+  description = 'Entraînez-vous à vos entretiens dans un environnement sécurisé.',
   contextLabel,
 }: SimulationWorkspaceProps) {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
@@ -184,10 +184,10 @@ export function SimulationWorkspace({
     <div className="p-6 h-full">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-          <p className="text-gray-600">{description}</p>
+          <h1 className="text-2xl font-bold text-text">{title}</h1>
+          <p className="text-text-weak">{description}</p>
           {contextLabel ? (
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-idle">
               Contexte de l&apos;entretien : {contextLabel}
             </p>
           ) : null}
@@ -237,8 +237,8 @@ export function SimulationWorkspace({
           />
 
           <InfoBox
-            title="Statistics Overview"
-            text="Real-time statistics will appear here."
+            title="Aperçu des statistiques"
+            text="Les statistiques en temps réel apparaîtront ici."
             icon="notifications"
           />
 

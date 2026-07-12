@@ -197,7 +197,9 @@ describe('Simulations', () => {
 
   it('renders the statistics info box and the verbal analysis panel in sidebar', async () => {
     renderWithProviders(<RouterProvider router={router} />);
-    expect(await screen.findByText(/Statistics Overview/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Aperçu des statistiques/i),
+    ).toBeInTheDocument();
     // The old "Real time advice" info box was replaced by the verbal-analysis
     // panel, which shows its "Analyse verbale" placeholder until the first turn.
     expect(screen.getByText(/Analyse verbale/i)).toBeInTheDocument();

@@ -18,13 +18,15 @@ function ApplicationSimulations() {
   );
 
   const contextLabel = application
-    ? [application.jobTitle, application.companyName].filter(Boolean).join(' chez ')
+    ? [application.jobTitle, application.companyName]
+        .filter(Boolean)
+        .join(' chez ')
     : undefined;
 
   if (isLoading) {
     return (
       <div className="p-6">
-        <p className="text-gray-600">Chargement du contexte de candidature…</p>
+        <p className="text-text-weak">Chargement du contexte de candidature…</p>
       </div>
     );
   }
@@ -33,7 +35,7 @@ function ApplicationSimulations() {
     return (
       <div className="p-6">
         <h2 className="text-h4 text-idle">Simulations</h2>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-text-weak">
           Candidature introuvable. Retournez à la liste des applications.
         </p>
       </div>
