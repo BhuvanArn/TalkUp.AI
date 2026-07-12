@@ -58,6 +58,11 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
         >
           {regenerate.isPending ? 'Retrying…' : 'Retry'}
         </button>
+        {regenerate.isError && (
+          <p className="text-body-s text-error">
+            Couldn't regenerate — try again in a minute.
+          </p>
+        )}
       </div>
     );
   }

@@ -154,6 +154,23 @@ describe('ApplicationDashboard (roadmap page)', () => {
     expect(mockRegenerate).toHaveBeenCalled();
   });
 
+  it('surfaces a regenerate failure from the error state', async () => {
+    vi.mocked(useRoadmap).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as unknown as ReturnType<typeof useRoadmap>);
+    vi.mocked(useRegenerateRoadmap).mockReturnValue({
+      mutate: mockRegenerate,
+      isPending: false,
+      isError: true,
+    } as unknown as ReturnType<typeof useRegenerateRoadmap>);
+    renderWithProviders(<RouterProvider router={router} />);
+    expect(
+      await screen.findByText(/couldn't regenerate — try again in a minute/i),
+    ).toBeInTheDocument();
+  });
+
   it('renders the empty state when there is nothing to analyze', async () => {
     vi.mocked(useRoadmap).mockReturnValue({
       data: { match_score: 0, summary: '', topics: [] },
