@@ -7,14 +7,22 @@ import SimulationVideoArea from '@/components/organisms/simulation-video-area';
 import VerbalAnalysisPanel from '@/components/organisms/verbal-analysis-panel';
 import { WebSocketDebugPanel } from '@/components/organisms/websocket-debug-panel';
 import {
+  RECRUITER_DISPLAY_NAME,
+  RECRUITER_DISPLAY_ROLE,
+  clearAvatarFallbackForced,
+} from '@/config/recruiter-avatar';
+import {
   WebSocketPacket,
   useAudioPlayback,
   useAudioStreaming,
   useInterviewSession,
+  useRecruiterAvatarCapability,
   useSimulationWebSocket,
   useVerbalAnalysis,
 } from '@/hooks/simulation';
+import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { ReadyState } from 'react-use-websocket';
 
 export interface SimulationWorkspaceProps {
@@ -34,6 +42,13 @@ export function SimulationWorkspace({
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [wsError, setWsError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const [isAwaitingAiResponse, setIsAwaitingAiResponse] = useState(false);
+  const [avatarModeOverride, setAvatarModeOverride] =
+    useState<RecruiterAvatarMode | null>(null);
+  const [avatarRuntimeFallbackReason, setAvatarRuntimeFallbackReason] = useState<
+    string | null
+  >(null);
+  const packetsSentRef = useRef(0);
   const videoStreamToggleRef = useRef<(() => void) | null>(null);
   const connectRef = useRef<(url?: string) => void>(() => {});
   const disconnectRef = useRef<(code?: number, reason?: string) => void>(
@@ -130,9 +145,26 @@ export function SimulationWorkspace({
     }
   }, []);
 
-  const { isAiSpeaking, transcript } = useAudioPlayback({
+  const {
+    mode: detectedAvatarMode,
+    avatarUrl,
+    fallbackReason: capabilityFallbackReason,
+  } = useRecruiterAvatarCapability();
+
+  const effectiveAvatarMode = avatarModeOverride ?? detectedAvatarMode;
+
+  const {
+    isAiSpeaking,
+    transcript,
+    speechTurn,
+  } = useAudioPlayback({
     message: lastJsonMessage,
   });
+
+  const handleAvatarFallbackRequest = useCallback((reason: string) => {
+    setAvatarModeOverride('fallback');
+    setAvatarRuntimeFallbackReason(reason);
+  }, []);
 
   const { analysis } = useVerbalAnalysis({
     message: lastJsonMessage,
@@ -146,6 +178,9 @@ export function SimulationWorkspace({
   useEffect(() => {
     if (!interviewID) return;
     setTranscriptions([]);
+    clearAvatarFallbackForced();
+    setAvatarModeOverride(null);
+    setAvatarRuntimeFallbackReason(null);
   }, [interviewID]);
 
   useEffect(() => {
@@ -166,6 +201,20 @@ export function SimulationWorkspace({
     }
   }, [transcript]);
 
+  useEffect(() => {
+    if (!lastJsonMessage || typeof lastJsonMessage !== 'object') return;
+    const packet = lastJsonMessage as Record<string, unknown>;
+    const type = packet.type;
+    if (type !== 'error' && type !== 'warning') return;
+
+    setIsAwaitingAiResponse(false);
+    const text =
+      typeof packet.text === 'string' && packet.text.trim()
+        ? packet.text
+        : 'Une erreur est survenue pendant la transcription.';
+    toast.error(text);
+  }, [lastJsonMessage]);
+
   const {
     isListening,
     isSpeaking,
@@ -179,6 +228,32 @@ export function SimulationWorkspace({
     onAudioPacket: handleAudioPacket,
     isActive: isCallActive && readyState === ReadyState.OPEN && !isAiSpeaking,
   });
+
+  useEffect(() => {
+    if (packetsSent > packetsSentRef.current) {
+      setIsAwaitingAiResponse(true);
+    }
+    packetsSentRef.current = packetsSent;
+  }, [packetsSent]);
+
+  useEffect(() => {
+    if (isAiSpeaking) {
+      setIsAwaitingAiResponse(false);
+    }
+  }, [isAiSpeaking]);
+
+  useEffect(() => {
+    if (!isCallActive) {
+      setIsAwaitingAiResponse(false);
+    }
+  }, [isCallActive]);
+
+  const avatarStatusText =
+    effectiveAvatarMode === '3d'
+      ? 'Interactive 3D avatar active.'
+      : avatarRuntimeFallbackReason ??
+        capabilityFallbackReason ??
+        'Static interviewer image active.';
 
   return (
     <div className="p-6 h-full">
@@ -207,6 +282,14 @@ export function SimulationWorkspace({
         <div>
           <SimulationVideoArea
             isAiSpeaking={isAiSpeaking}
+            isAwaitingAiResponse={isAwaitingAiResponse}
+            speechTurn={speechTurn}
+            avatarUrl={avatarUrl}
+            avatarMode={effectiveAvatarMode}
+            avatarFallbackReason={
+              avatarRuntimeFallbackReason ?? capabilityFallbackReason
+            }
+            onAvatarFallbackRequest={handleAvatarFallbackRequest}
             onStreamToggle={handleStreamToggle}
             onStreamChange={setMediaStream}
             onToggleRef={(toggleFn) => {
@@ -237,14 +320,12 @@ export function SimulationWorkspace({
           />
 
           <InfoBox
-            title="Statistics Overview"
-            text="Real-time statistics will appear here."
-            icon="notifications"
+            title={RECRUITER_DISPLAY_NAME}
+            text={`${RECRUITER_DISPLAY_ROLE}. ${avatarStatusText}`}
+            icon="members"
           />
 
           <VerbalAnalysisPanel analysis={analysis} />
-
-          <img src="/avatarworking.png" alt="Avatar Working" />
         </div>
       </div>
       <NotesEditor interviewID={interviewID} />

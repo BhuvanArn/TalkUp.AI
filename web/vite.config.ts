@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vitest/config';
 
+import { talkingHeadLipsyncPlugin } from './vite/talkinghead-lipsync-plugin';
+
 const aliases = {
   '@/components': path.resolve(__dirname, 'src/components'),
   '@/assets': path.resolve(__dirname, 'src/assets'),
@@ -24,6 +26,7 @@ export default defineConfig({
     TanStackRouterVite({ target: 'react', autoCodeSplitting: true }),
     react(),
     tailwindcss(),
+    talkingHeadLipsyncPlugin(),
   ],
   define: {
     'import.meta.env.VITE_VERCEL_ENV': JSON.stringify(process.env.VERCEL_ENV),
@@ -38,6 +41,20 @@ export default defineConfig({
     alias: {
       ...aliases,
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+  optimizeDeps: {
+    // TalkingHead dynamically imports ./lipsync-*.mjs; pre-bundling breaks those paths.
+    exclude: ['@met4citizen/talkinghead'],
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/three')) return 'three';
+          if (id.includes('@met4citizen/talkinghead')) return 'talkinghead';
+        },
+      },
     },
   },
   server: {

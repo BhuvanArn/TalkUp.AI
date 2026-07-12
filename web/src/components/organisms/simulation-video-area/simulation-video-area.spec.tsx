@@ -3,7 +3,22 @@ import { describe, expect, it, vi } from 'vitest';
 
 import SimulationVideoArea from './index';
 
-// The "Speaking…" badge only renders while the video stream is live, so mock
+vi.mock('@/components/organisms/recruiter-avatar', () => ({
+  default: ({
+    isAiSpeaking,
+    isAwaitingAiResponse,
+  }: {
+    isAiSpeaking: boolean;
+    isAwaitingAiResponse: boolean;
+  }) => (
+    <div data-testid="recruiter-avatar-panel">
+      {isAiSpeaking ? <span>Speaking…</span> : null}
+      {isAwaitingAiResponse ? <span>Thinking…</span> : null}
+    </div>
+  ),
+}));
+
+// The avatar badge only renders while the video stream is live, so mock
 // the stream hooks to report an active stream and provide the refs/handlers the
 // component expects.
 vi.mock('../../../hooks/streams/useVideoStream', () => ({
@@ -43,5 +58,16 @@ describe('SimulationVideoArea', () => {
     render(<SimulationVideoArea isAiSpeaking={false} />);
 
     expect(screen.queryByText('Speaking…')).not.toBeInTheDocument();
+  });
+
+  it('shows the Thinking… indicator while awaiting an AI response', () => {
+    render(
+      <SimulationVideoArea
+        isAiSpeaking={false}
+        isAwaitingAiResponse={true}
+      />,
+    );
+
+    expect(screen.getByText('Thinking…')).toBeInTheDocument();
   });
 });
