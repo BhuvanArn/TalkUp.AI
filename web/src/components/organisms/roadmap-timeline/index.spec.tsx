@@ -21,6 +21,7 @@ const roadmap: Roadmap = {
       gap: false,
     },
   ],
+  talking_points: [],
 };
 
 describe('RoadmapTimeline', () => {

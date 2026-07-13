@@ -28,6 +28,7 @@ const roadmap: Roadmap = {
       gap: true,
     },
   ],
+  talking_points: [],
 };
 
 describe('roadmap http', () => {
