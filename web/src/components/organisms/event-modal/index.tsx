@@ -58,7 +58,7 @@ const CalendarModal = () => {
       <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
         <button
           type="button"
-          className="w-full h-full absolute bg-black/40"
+          className="w-full h-full absolute bg-scrim/40"
           onClick={closeModal}
           aria-label="Close event modal"
         />

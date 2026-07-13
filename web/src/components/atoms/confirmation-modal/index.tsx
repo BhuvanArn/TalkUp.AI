@@ -39,7 +39,7 @@ const ConfirmationModal = ({
 
   return createPortal(
     <div
-      className="bg-black/50 fixed inset-0 z-[100] flex items-center justify-center p-4"
+      className="bg-scrim/50 fixed inset-0 z-[100] flex items-center justify-center p-4"
       onClick={onCancel}
       role="presentation"
     >

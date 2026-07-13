@@ -4,6 +4,7 @@
 
 @source inline('{text,fill}-{primary,accent}');
 @source inline('{,hover:,active:}{bg,border,text}-{primary,accent,black,white,error,danger,warning,success,neutral,note-card,video-off}{,-hover,-active,-weak,-weaker}');
+@source inline('bg-scrim/{40,50,60}');
 @source inline('{bg,border}-surface-sidebar{,-hover,-active}');
 @source inline('text-{idle,active,hover,weak,weaker,weakest}');
 
@@ -47,6 +48,11 @@
   --color-note-card-hover: #dfe0e9;
 
   --color-video-off: #000;
+
+  /* Modal/dialog scrim (backdrop overlay). Non-inverting: stays literal
+     black in both themes, unlike the theme-flipping `black` token — use
+     `bg-scrim/<alpha>` for overlays so raising opacity always darkens. */
+  --color-scrim: #000000;
 
   --color-text-accent: #f0effb;
   --color-accent: #2b70c9;
