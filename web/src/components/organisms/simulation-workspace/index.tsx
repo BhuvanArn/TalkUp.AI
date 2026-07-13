@@ -217,7 +217,7 @@ export function SimulationWorkspace({
         </div>
 
         <div className="space-y-6">
-          {import.meta.env.DEV && (
+          {import.meta.env.VITE_SHOW_WS_DEBUG === 'true' && (
             <WebSocketDebugPanel
               inputUrl={inputUrl}
               readyState={readyState}
