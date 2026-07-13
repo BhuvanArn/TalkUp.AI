@@ -193,8 +193,7 @@ describe('useAudioPlayback', () => {
 
   it('delegates audio to the avatar in avatar playback mode', async () => {
     const { result, rerender } = renderHook(
-      ({ message }) =>
-        useAudioPlayback({ message, playbackMode: 'avatar' }),
+      ({ message }) => useAudioPlayback({ message, playbackMode: 'avatar' }),
       { initialProps: { message: null as unknown } },
     );
 

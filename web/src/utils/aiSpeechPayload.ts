@@ -18,10 +18,7 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
  * Split response text into words and distribute timing proportionally by
  * character weight across the actual audio duration (Piper has no phonemes).
  */
-export function buildWordTimings(
-  text: string,
-  durationMs: number,
-): WordTiming {
+export function buildWordTimings(text: string, durationMs: number): WordTiming {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0 || durationMs <= 0) {
     return { words: [], wtimes: [], wdurations: [] };
@@ -60,7 +57,9 @@ export function concatAudioBuffers(
   let offset = 0;
   for (const buffer of buffers) {
     for (let channel = 0; channel < channels; channel++) {
-      merged.getChannelData(channel).set(buffer.getChannelData(channel), offset);
+      merged
+        .getChannelData(channel)
+        .set(buffer.getChannelData(channel), offset);
     }
     offset += buffer.length;
   }

@@ -93,10 +93,7 @@ export function useAudioPlayback({
     if (!audioContextRef.current) {
       const ctx = new AudioContext();
       ctx.onstatechange = () => {
-        if (
-          playbackModeRef.current === 'direct' &&
-          ctx.state !== 'running'
-        ) {
+        if (playbackModeRef.current === 'direct' && ctx.state !== 'running') {
           setIsAiSpeaking(false);
         }
       };

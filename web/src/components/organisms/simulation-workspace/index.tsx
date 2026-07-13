@@ -45,9 +45,8 @@ export function SimulationWorkspace({
   const [isAwaitingAiResponse, setIsAwaitingAiResponse] = useState(false);
   const [avatarModeOverride, setAvatarModeOverride] =
     useState<RecruiterAvatarMode | null>(null);
-  const [avatarRuntimeFallbackReason, setAvatarRuntimeFallbackReason] = useState<
-    string | null
-  >(null);
+  const [avatarRuntimeFallbackReason, setAvatarRuntimeFallbackReason] =
+    useState<string | null>(null);
   const packetsSentRef = useRef(0);
   const videoStreamToggleRef = useRef<(() => void) | null>(null);
   const connectRef = useRef<(url?: string) => void>(() => {});
@@ -153,11 +152,7 @@ export function SimulationWorkspace({
 
   const effectiveAvatarMode = avatarModeOverride ?? detectedAvatarMode;
 
-  const {
-    isAiSpeaking,
-    transcript,
-    speechTurn,
-  } = useAudioPlayback({
+  const { isAiSpeaking, transcript, speechTurn } = useAudioPlayback({
     message: lastJsonMessage,
   });
 
@@ -251,9 +246,9 @@ export function SimulationWorkspace({
   const avatarStatusText =
     effectiveAvatarMode === '3d'
       ? 'Interactive 3D avatar active.'
-      : avatarRuntimeFallbackReason ??
+      : (avatarRuntimeFallbackReason ??
         capabilityFallbackReason ??
-        'Static interviewer image active.';
+        'Static interviewer image active.');
 
   return (
     <div className="p-6 h-full">

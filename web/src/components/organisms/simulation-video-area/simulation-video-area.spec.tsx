@@ -62,10 +62,7 @@ describe('SimulationVideoArea', () => {
 
   it('shows the Thinking… indicator while awaiting an AI response', () => {
     render(
-      <SimulationVideoArea
-        isAiSpeaking={false}
-        isAwaitingAiResponse={true}
-      />,
+      <SimulationVideoArea isAiSpeaking={false} isAwaitingAiResponse={true} />,
     );
 
     expect(screen.getByText('Thinking…')).toBeInTheDocument();

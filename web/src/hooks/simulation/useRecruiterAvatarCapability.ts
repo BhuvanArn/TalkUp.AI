@@ -1,11 +1,10 @@
- import { useEffect, useState } from 'react';
-
 import {
   clearAvatarFallbackForced,
   isAvatarFallbackForced,
   resolveRecruiterAvatarUrl,
 } from '@/config/recruiter-avatar';
 import { detectWebGLSupport } from '@/utils/webgl';
+import { useEffect, useState } from 'react';
 
 export type RecruiterAvatarMode = 'loading' | '3d' | 'fallback';
 

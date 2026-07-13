@@ -1,7 +1,10 @@
 /** Avaturn recruiter model is ~14 MB; allow time on slower connections. */
 const AVATAR_LOAD_TIMEOUT_MS = 45_000;
 
-async function fetchAvatarBlob(url: string, onProgress?: (pct: number) => void) {
+async function fetchAvatarBlob(
+  url: string,
+  onProgress?: (pct: number) => void,
+) {
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`Avatar model HTTP ${response.status} for ${url}`);
@@ -70,4 +73,9 @@ function waitForElementSize(
   });
 }
 
-export { AVATAR_LOAD_TIMEOUT_MS, fetchAvatarBlob, waitForElementSize, withTimeout };
+export {
+  AVATAR_LOAD_TIMEOUT_MS,
+  fetchAvatarBlob,
+  waitForElementSize,
+  withTimeout,
+};

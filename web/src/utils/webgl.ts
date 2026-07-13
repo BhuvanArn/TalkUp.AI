@@ -14,9 +14,7 @@ export interface WebGLSupportResult {
  * Detects basic WebGL availability without creating a persistent context.
  * Safe to call during SSR (returns unsupported).
  */
-export function detectWebGLSupport(
-  forceFallback = false,
-): WebGLSupportResult {
+export function detectWebGLSupport(forceFallback = false): WebGLSupportResult {
   if (forceFallback) {
     return { supported: false, reason: 'forced-fallback' };
   }

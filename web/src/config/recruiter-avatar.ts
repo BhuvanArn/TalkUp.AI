@@ -91,9 +91,12 @@ function appendRecruiterAvatarAssetVersion(url: string): string {
  * Resolves the office room background image URL from env, restricted to same-origin paths.
  */
 export function resolveRecruiterOfficeBackgroundUrl(): string {
-  const configured = import.meta.env.VITE_RECRUITER_OFFICE_BACKGROUND_URL?.trim();
+  const configured =
+    import.meta.env.VITE_RECRUITER_OFFICE_BACKGROUND_URL?.trim();
   if (!configured) {
-    return appendOfficeBackgroundVersion(DEFAULT_RECRUITER_OFFICE_BACKGROUND_URL);
+    return appendOfficeBackgroundVersion(
+      DEFAULT_RECRUITER_OFFICE_BACKGROUND_URL,
+    );
   }
 
   if (configured.startsWith('/') && !configured.startsWith('//')) {

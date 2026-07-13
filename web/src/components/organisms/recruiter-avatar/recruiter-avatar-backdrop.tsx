@@ -16,7 +16,10 @@ export function RecruiterAvatarBackdrop({
 
   return (
     <div
-      className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)}
+      className={cn(
+        'pointer-events-none absolute inset-0 overflow-hidden',
+        className,
+      )}
       aria-hidden="true"
     >
       <img

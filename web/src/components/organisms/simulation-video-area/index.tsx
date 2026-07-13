@@ -1,6 +1,6 @@
 import { Icon } from '@/components/atoms/icon';
-import RecruiterAvatarPanel from '@/components/organisms/recruiter-avatar';
 import VideoAreaControlsBar from '@/components/molecules/video-area-controls-bar';
+import RecruiterAvatarPanel from '@/components/organisms/recruiter-avatar';
 import type { AiSpeechTurn } from '@/hooks/simulation/useAudioPlayback';
 import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
 import { cn } from '@/utils/cn';

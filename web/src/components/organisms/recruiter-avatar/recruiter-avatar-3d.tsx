@@ -4,10 +4,7 @@ import {
   RECRUITER_DISPLAY_ROLE,
 } from '@/config/recruiter-avatar';
 import type { AiSpeechTurn } from '@/hooks/simulation/useAudioPlayback';
-import {
-  buildWordTimings,
-  decodeAudioChunks,
-} from '@/utils/aiSpeechPayload';
+import { buildWordTimings, decodeAudioChunks } from '@/utils/aiSpeechPayload';
 import { TalkingHead } from '@met4citizen/talkinghead';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -51,7 +48,6 @@ function ensureRendererRunning(head: TalkingHead, container: HTMLElement) {
 export function RecruiterAvatar3D({
   active,
   avatarUrl,
-  isAiSpeaking,
   isAwaitingAiResponse,
   speechTurn,
   onLoadError,
@@ -210,59 +206,57 @@ export function RecruiterAvatar3D({
     };
   }, [active, avatarUrl, disposeHead]);
 
-  const playSpeechTurn = useCallback(async (turn: AiSpeechTurn) => {
-    const head = headRef.current;
-    if (!head || initState !== 'ready') return;
+  const playSpeechTurn = useCallback(
+    async (turn: AiSpeechTurn) => {
+      const head = headRef.current;
+      if (!head || initState !== 'ready') return;
 
-    try {
-      if (head.audioCtx.state === 'suspended') {
-        await head.audioCtx.resume();
+      try {
+        if (head.audioCtx.state === 'suspended') {
+          await head.audioCtx.resume();
+        }
+
+        head.stopSpeaking();
+
+        const audioBuffer = await decodeAudioChunks(
+          head.audioCtx,
+          turn.audioChunks,
+        );
+        if (!audioBuffer) return;
+
+        const durationMs = audioBuffer.duration * 1000;
+        const { words, wtimes, wdurations } = buildWordTimings(
+          turn.response,
+          durationMs,
+        );
+
+        head.speakAudio(
+          {
+            audio: audioBuffer,
+            words,
+            wtimes,
+            wdurations,
+          },
+          { lipsyncLang: 'fr' },
+        );
+      } catch {
+        // Visual-only failure — audio still plays via useAudioPlayback.
       }
+    },
+    [initState],
+  );
 
-      head.stopSpeaking();
-
-      const audioBuffer = await decodeAudioChunks(
-        head.audioCtx,
-        turn.audioChunks,
-      );
-      if (!audioBuffer) return;
-
-      const durationMs = audioBuffer.duration * 1000;
-      const { words, wtimes, wdurations } = buildWordTimings(
-        turn.response,
-        durationMs,
-      );
-
-      head.speakAudio(
-        {
-          audio: audioBuffer,
-          words,
-          wtimes,
-          wdurations,
-        },
-        { lipsyncLang: 'fr' },
-      );
-    } catch {
-      // Visual-only failure — audio still plays via useAudioPlayback.
-    }
-  }, [initState]);
-
+  // Start lipsync once per new speech turn. Audio always plays via
+  // useAudioPlayback (direct Web Audio); the avatar is visual-only, so lipsync
+  // is driven by the turn arriving, independent of `isAiSpeaking` (which flips
+  // asynchronously in direct mode and would otherwise race the turn).
   useEffect(() => {
     if (initState !== 'ready' || !speechTurn) return;
     if (lastSpeechTurnIdRef.current === speechTurn.id) return;
-    if (!isAiSpeaking) return;
 
     lastSpeechTurnIdRef.current = speechTurn.id;
     void playSpeechTurn(speechTurn);
-  }, [speechTurn, playSpeechTurn, initState, isAiSpeaking]);
-
-  useEffect(() => {
-    if (initState !== 'ready' || !speechTurn || isAiSpeaking) return;
-    if (lastSpeechTurnIdRef.current === speechTurn.id) return;
-
-    lastSpeechTurnIdRef.current = speechTurn.id;
-    void playSpeechTurn(speechTurn);
-  }, [initState, speechTurn, isAiSpeaking, playSpeechTurn]);
+  }, [speechTurn, playSpeechTurn, initState]);
 
   useEffect(() => {
     const head = headRef.current;

@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildWordTimings,
-  concatAudioBuffers,
-} from './aiSpeechPayload';
+import { buildWordTimings, concatAudioBuffers } from './aiSpeechPayload';
 
 describe('buildWordTimings', () => {
   it('returns empty arrays for blank text', () => {
@@ -27,11 +24,7 @@ describe('buildWordTimings', () => {
 describe('concatAudioBuffers', () => {
   it('returns null for an empty list', () => {
     const ctx = {
-      createBuffer: (
-        channels: number,
-        length: number,
-        sampleRate: number,
-      ) => ({
+      createBuffer: (channels: number, length: number, sampleRate: number) => ({
         numberOfChannels: channels,
         length,
         sampleRate,

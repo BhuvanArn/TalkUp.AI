@@ -1,11 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
-
 import {
   DEFAULT_RECRUITER_OFFICE_BACKGROUND_URL,
   RECRUITER_OFFICE_BACKGROUND_VERSION,
   resolveRecruiterAvatarUrl,
   resolveRecruiterOfficeBackgroundUrl,
 } from '@/config/recruiter-avatar';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('resolveRecruiterAvatarUrl', () => {
   it('returns the bundled default with a cache-bust version when env is unset', () => {
@@ -37,8 +36,13 @@ describe('resolveRecruiterOfficeBackgroundUrl', () => {
   });
 
   it('allows same-origin relative paths from env', () => {
-    vi.stubEnv('VITE_RECRUITER_OFFICE_BACKGROUND_URL', '/backgrounds/custom.jpg');
-    expect(resolveRecruiterOfficeBackgroundUrl()).toBe('/backgrounds/custom.jpg');
+    vi.stubEnv(
+      'VITE_RECRUITER_OFFICE_BACKGROUND_URL',
+      '/backgrounds/custom.jpg',
+    );
+    expect(resolveRecruiterOfficeBackgroundUrl()).toBe(
+      '/backgrounds/custom.jpg',
+    );
     vi.unstubAllEnvs();
   });
 });
