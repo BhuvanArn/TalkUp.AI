@@ -38,6 +38,7 @@ const RailDot = ({
   return (
     <span
       aria-hidden="true"
+      data-rail-dot
       className={`text-label-s relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 font-semibold ${styles[variant]}`}
     >
       {children}
@@ -73,13 +74,27 @@ export const RoadmapTimeline = ({
   // rail can still scroll right (there's off-screen content and we're not at the
   // end). Otherwise the horizontal scroll isn't discoverable.
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const railRef = useRef<HTMLOListElement>(null);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  // The chevron is centered on the RAIL, not the frame — the frame is taller
+  // than the rail (it also holds the pinned action bar + scrollbar), so
+  // centering in the frame would drop the chevron below the line. `null` until
+  // measured; the chevron stays hidden until then.
+  const [railCenterY, setRailCenterY] = useState<number | null>(null);
 
   const syncScrollHint = useCallback(() => {
     const el = scrollerRef.current;
     if (!el) return;
     // 2px slack so sub-pixel rounding at the end doesn't leave the hint stuck on.
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    // Rail center = the dot band's vertical middle, relative to the frame top
+    // (measured via bounding rects so nested offsetParents don't matter).
+    const dot = railRef.current?.querySelector<HTMLElement>('[data-rail-dot]');
+    if (dot) {
+      const dotRect = dot.getBoundingClientRect();
+      const frameTop = el.getBoundingClientRect().top;
+      setRailCenterY(dotRect.top - frameTop + dotRect.height / 2);
+    }
   }, []);
 
   // Measure on mount and whenever the content/size changes (topic count, resize).
@@ -105,6 +120,7 @@ export const RoadmapTimeline = ({
         className="border-border flex h-full flex-col rounded-2xl border lg:overflow-x-auto"
       >
         <ol
+          ref={railRef}
           data-testid="roadmap-timeline"
           className="relative flex w-full flex-1 flex-col gap-4 p-4 lg:h-auto lg:w-max lg:min-w-full lg:flex-row lg:items-stretch lg:gap-2 lg:p-0"
         >
@@ -156,24 +172,29 @@ export const RoadmapTimeline = ({
         )}
       </div>
 
-      {/* Scroll affordance: a right-edge fade + an animated chevron nudging
-          right, shown only while more of the rail is off-screen. `aria-hidden`
-          + pointer-events-none so it's purely decorative and never blocks the
+      {/* Scroll affordance: an animated chevron nudging right, shown only while
+          more of the rail is off-screen. Pinned to the RAIL's vertical center
+          (`railCenterY`) — not the frame center, which sits lower because the
+          frame also holds the pinned action bar. `aria-hidden` +
+          pointer-events-none so it's purely decorative and never blocks the
           scrollbar/cards underneath. Fades out smoothly at the end. */}
-      <div
-        aria-hidden="true"
-        className={`pointer-events-none absolute inset-y-0 right-0 hidden items-center rounded-r-2xl pr-2 pl-10 transition-opacity duration-300 lg:flex ${
-          canScrollRight ? 'opacity-100' : 'opacity-0'
-        }`}
-        style={{
-          background:
-            'linear-gradient(to left, var(--color-surface) 30%, transparent)',
-        }}
-      >
-        <span className="border-border bg-surface-raised text-accent flex h-8 w-8 animate-[scroll-nudge_1.2s_ease-in-out_infinite] items-center justify-center rounded-full border shadow-sm">
-          <ScrollHintIcon size={16} />
-        </span>
-      </div>
+      {railCenterY !== null && (
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute right-0 hidden -translate-y-1/2 items-center rounded-r-2xl pr-2 pl-10 transition-opacity duration-300 lg:flex ${
+            canScrollRight ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            top: `${railCenterY}px`,
+            background:
+              'linear-gradient(to left, var(--color-surface) 30%, transparent)',
+          }}
+        >
+          <span className="border-border bg-surface-raised text-accent flex h-8 w-8 animate-[scroll-nudge_1.2s_ease-in-out_infinite] items-center justify-center rounded-full border shadow-sm">
+            <ScrollHintIcon size={16} />
+          </span>
+        </div>
+      )}
     </div>
   );
 };
