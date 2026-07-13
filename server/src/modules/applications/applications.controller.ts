@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
-import { Throttle } from "@nestjs/throttler";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import {
   ApiBadRequestResponse,
   ApiNoContentResponse,
@@ -52,6 +52,9 @@ export class ApplicationsController {
   })
   @ApiUnauthorizedResponse()
   @UsePipes(new PostValidationPipe())
+  // The class-level AccessTokenGuard runs before this route guard, so req.userId
+  // is set; ThrottlerGuard makes the @Throttle actually fire (keyed per-user).
+  @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post()
   async create(
