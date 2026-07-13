@@ -33,6 +33,26 @@ describe('InterviewDatePill', () => {
     expect(screen.getByText(/2 topics\/week/)).toBeInTheDocument();
   });
 
+  it('lets the user edit an already-set date', () => {
+    render(
+      <InterviewDatePill
+        applicationId="app-1"
+        interviewAt="2026-07-26T10:00:00.000Z"
+        topicsCount={4}
+      />,
+    );
+    // Set state exposes an Edit affordance and a seeded date input.
+    expect(screen.getByText(/edit/i)).toBeInTheDocument();
+    const input = screen.getByLabelText<HTMLInputElement>('Interview date');
+    expect(input.value).toBe('2026-07-26');
+    // Picking a new date writes it through the same mutation.
+    fireEvent.change(input, { target: { value: '2026-08-15' } });
+    expect(mockMutate).toHaveBeenCalledWith({
+      applicationId: 'app-1',
+      interviewAt: new Date(2026, 7, 15).toISOString(),
+    });
+  });
+
   it('saves the picked date from the unset state', () => {
     render(
       <InterviewDatePill
