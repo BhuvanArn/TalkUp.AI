@@ -152,7 +152,10 @@ async def _process_stream_and_reply(
 
 		result = await queue_service.submit(audio_bytes, interview_id=interview_id)
 
-		if result.ai_response and result.audio_chunks:
+		# Gate on the AI text, not the audio: a valid reply whose TTS yielded
+		# no chunks must still reach the client (transcript/avatar) as an
+		# sts_result rather than a generic error that swallows the text.
+		if result.ai_response:
 			if result.transcription:
 				NOTIFIER.send_notification(
 					EnumMcs.MicroservicesNames.STS, 0, f"User: {result.transcription}",

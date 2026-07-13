@@ -20,7 +20,6 @@ _HALLUCINATION_SUBSTRINGS: tuple[str, ...] = (
 	"sous-titr",
 	"sous titr",
 	"amara.org",
-	"amara",
 	"st 501",
 	"st'501",
 	"subtitles",
@@ -50,10 +49,14 @@ def normalize_for_match(text: str) -> str:
 
 
 def contains_hallucination_pattern(text: str) -> bool:
+	"""Detects subtitle/credit *artifacts* only — never short canned phrases.
+
+	Canned phrases like ``merci`` or ``au revoir`` are legitimate interview
+	answers and are handled separately under length/confidence guards, so they
+	are deliberately excluded here to avoid rejecting genuine replies.
+	"""
 	cleaned = normalize_for_match(text)
 	if not cleaned:
-		return True
-	if cleaned in _HALLUCINATION_PHRASES:
 		return True
 	if _HALLUCINATION_RE.search(cleaned):
 		return True
@@ -81,9 +84,9 @@ def validate_transcription(text: str) -> tuple[bool, str]:
 	if non_space > 0 and letters / non_space < 0.45:
 		return False, "low_quality"
 
-	if cleaned in _HALLUCINATION_PHRASES and len(words) <= 4:
-		return False, "hallucination"
-
+	# Short canned phrases (``merci``, ``au revoir`` …) are NOT rejected here:
+	# by this point the segment already survived confidence-based dropping in
+	# ``should_drop_segment_text``, so a confident short reply is genuine.
 	return True, ""
 
 
