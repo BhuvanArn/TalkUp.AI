@@ -128,17 +128,17 @@ export const RoadmapTimeline = ({
  * One column of the zig-zag, rendering `payload` exactly ONCE (no duplicate
  * DOM — matters for a11y and for tests that assert a single match).
  *
- * Desktop (`lg+`): the column is a flex column of three cells —
- * [top slot | rail band | bottom slot]. Each of the top/bottom slots keeps an
- * equal min-height so every column is the same height and the rail line stays
- * vertically centered; the payload occupies the slot named by `half` and the
- * opposite slot is an empty spacer. The rail line is drawn per-column across the
- * band, so columns tile into one continuous line with no viewport-edge
- * clipping; `edge` trims it at the first/last column so it starts/ends on a dot.
+ * Desktop (`lg+`): a 3-row CSS grid `[minmax(0,1fr) auto minmax(0,1fr)]` —
+ * top card row, the rail band, bottom card row. The two `1fr` rows split the
+ * column's free space evenly, so the `auto` band (the dot) always sits on the
+ * vertical midline; because the `<ol>` stretches every column to the tallest
+ * one (`items-stretch`), those midlines align into one straight rail across all
+ * columns. Cards live in a `1fr` row and grow to their content WITHOUT a fixed
+ * height, so a long rationale can never clip past the frame. The rail line is
+ * drawn per-column across the band and `edge` trims it at the first/last dot.
  *
- * Mobile: the column becomes a plain flex row (dot then payload). The empty
- * spacer slot collapses (`min-h-0`) and CSS `order` pulls the payload up next
- * to the dot, so the single payload instance flows inline regardless of `half`.
+ * Mobile: the grid collapses to a plain flex row (dot then payload) via
+ * `order`, so the single payload instance flows inline regardless of `half`.
  */
 const ZigNode = ({
   half,
@@ -158,22 +158,24 @@ const ZigNode = ({
         ? 'left-0 right-1/2'
         : 'inset-x-0';
 
-  // Single payload instance. Mobile: static, inline after the dot (order-2).
-  // Desktop: absolutely positioned into the top or bottom half of the
-  // fixed-height column, so the dot stays exactly on the midline (one straight
-  // rail through all dots) while the cards zig-zag above/below it.
-  const payloadPlacement =
+  // Card cell: top row (grid-row 1, aligned to the rail) or bottom row (row 3).
+  // `order-2` keeps it after the dot on mobile's flex row.
+  const cardCell =
     half === 'top'
-      ? 'lg:absolute lg:inset-x-0 lg:top-0 lg:bottom-1/2 lg:flex lg:items-end lg:justify-center lg:px-2 lg:pb-6'
-      : 'lg:absolute lg:inset-x-0 lg:top-1/2 lg:bottom-0 lg:flex lg:items-start lg:justify-center lg:px-2 lg:pt-6';
+      ? 'lg:row-start-1 lg:items-end lg:pb-6'
+      : 'lg:row-start-3 lg:items-start lg:pt-6';
 
   return (
-    <li className="relative flex min-w-0 items-center gap-4 lg:h-[30rem] lg:w-[15.5rem] lg:shrink-0 lg:flex-col lg:items-stretch lg:justify-center lg:gap-0">
-      <div className={`order-2 min-w-0 ${payloadPlacement}`}>{payload}</div>
+    <li className="relative flex min-w-0 items-center gap-4 lg:grid lg:w-[15.5rem] lg:shrink-0 lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-0">
+      <div
+        className={`order-2 flex min-w-0 justify-center lg:px-2 ${cardCell}`}
+      >
+        {payload}
+      </div>
 
-      {/* Rail band: the line + the dot, on the column midline (desktop) or first
-          in the row (mobile, via order-1). */}
-      <div className="order-1 flex shrink-0 items-center justify-center lg:relative lg:h-8">
+      {/* Rail band (grid row 2): the line + the dot, on the column midline
+          (desktop) or first in the row (mobile, via order-1). */}
+      <div className="order-1 flex shrink-0 items-center justify-center lg:relative lg:row-start-2 lg:h-8">
         <span
           aria-hidden="true"
           className={`bg-accent-weak absolute top-1/2 hidden h-0.5 -translate-y-1/2 lg:block ${railLine}`}
