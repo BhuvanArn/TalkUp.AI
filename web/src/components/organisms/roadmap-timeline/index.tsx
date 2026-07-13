@@ -1,8 +1,12 @@
+import { iconMap } from '@/components/atoms/icon/icon-map';
 import { MatchGauge } from '@/components/atoms/match-gauge';
 import { RoadmapTopicCard } from '@/components/molecules/roadmap-topic-card';
 import type { Roadmap } from '@/services/applications/types';
 import { format } from 'date-fns';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+
+const ScrollHintIcon = iconMap['arrow-right'];
 
 interface RoadmapTimelineProps {
   roadmap: Roadmap;
@@ -65,61 +69,111 @@ export const RoadmapTimeline = ({
     ? `Job-ready by ${format(new Date(interviewAt), 'd MMM yyyy')}`
     : 'Job-ready goal';
 
+  // Scroll-affordance: show a right-edge fade + animated chevron only while the
+  // rail can still scroll right (there's off-screen content and we're not at the
+  // end). Otherwise the horizontal scroll isn't discoverable.
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const syncScrollHint = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    // 2px slack so sub-pixel rounding at the end doesn't leave the hint stuck on.
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  }, []);
+
+  // Measure on mount and whenever the content/size changes (topic count, resize).
+  useLayoutEffect(() => {
+    syncScrollHint();
+    const el = scrollerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(syncScrollHint);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [syncScrollHint, roadmap.topics.length]);
+
   return (
-    // Single horizontal scroll container: the rail scrolls, the action bar is a
-    // `sticky left-0` row that stays put while it does, and the native scrollbar
-    // renders at the container's bottom edge — below the pinned actions.
-    <div className="border-border flex h-full flex-col rounded-2xl border lg:overflow-x-auto">
-      <ol
-        data-testid="roadmap-timeline"
-        className="relative flex w-full flex-1 flex-col gap-4 p-4 lg:h-auto lg:w-max lg:min-w-full lg:flex-row lg:items-stretch lg:gap-2 lg:p-0"
+    // `relative` so the scroll-hint overlay can pin to the frame's right edge,
+    // outside the scroll flow (it must not scroll away with the rail).
+    <div className="relative h-full">
+      {/* Single horizontal scroll container: the rail scrolls, the action bar is
+          a `sticky left-0` row that stays put while it does, and the native
+          scrollbar renders at the container's bottom edge — below the actions. */}
+      <div
+        ref={scrollerRef}
+        onScroll={syncScrollHint}
+        className="border-border flex h-full flex-col rounded-2xl border lg:overflow-x-auto"
       >
-        {/* Vertical rail (mobile): down the left dot gutter, behind the dots. */}
-        <span
-          aria-hidden="true"
-          className="bg-accent-weak absolute top-4 bottom-4 left-4 w-0.5 lg:hidden"
-        />
-
-        {/* Origin — match gauge. Anchors the start; its label sits below. */}
-        <ZigNode
-          half="bottom"
-          edge="start"
-          dot={<RailDot variant="origin">%</RailDot>}
-          payload={
-            <div className="flex flex-col items-center gap-1">
-              <MatchGauge score={roadmap.match_score} />
-              <p className="text-label-m text-text-weak">Match score</p>
-            </div>
-          }
-        />
-
-        {roadmap.topics.map((topic, index) => (
-          <ZigNode
-            key={`${index}-${topic.title}`}
-            half={index % 2 === 0 ? 'top' : 'bottom'}
-            dot={<RailDot variant="step">{index + 1}</RailDot>}
-            payload={<RoadmapTopicCard step={index + 1} topic={topic} />}
+        <ol
+          data-testid="roadmap-timeline"
+          className="relative flex w-full flex-1 flex-col gap-4 p-4 lg:h-auto lg:w-max lg:min-w-full lg:flex-row lg:items-stretch lg:gap-2 lg:p-0"
+        >
+          {/* Vertical rail (mobile): down the left dot gutter, behind the dots. */}
+          <span
+            aria-hidden="true"
+            className="bg-accent-weak absolute top-4 bottom-4 left-4 w-0.5 lg:hidden"
           />
-        ))}
 
-        {/* Goal — the end of the route; label sits below the node. */}
-        <ZigNode
-          half="bottom"
-          edge="end"
-          dot={<RailDot variant="goal">✓</RailDot>}
-          payload={
-            <p className="text-label-m text-text max-w-[9rem] text-center">
-              {goalLabel}
-            </p>
-          }
-        />
-      </ol>
+          {/* Origin — match gauge. Anchors the start; its label sits below. */}
+          <ZigNode
+            half="bottom"
+            edge="start"
+            dot={<RailDot variant="origin">%</RailDot>}
+            payload={
+              <div className="flex flex-col items-center gap-1">
+                <MatchGauge score={roadmap.match_score} />
+                <p className="text-label-m text-text-weak">Match score</p>
+              </div>
+            }
+          />
 
-      {actions && (
-        <div className="border-border bg-surface sticky left-0 z-20 shrink-0 border-t px-4 py-4 lg:w-screen lg:max-w-full">
-          {actions}
-        </div>
-      )}
+          {roadmap.topics.map((topic, index) => (
+            <ZigNode
+              key={`${index}-${topic.title}`}
+              half={index % 2 === 0 ? 'top' : 'bottom'}
+              dot={<RailDot variant="step">{index + 1}</RailDot>}
+              payload={<RoadmapTopicCard step={index + 1} topic={topic} />}
+            />
+          ))}
+
+          {/* Goal — the end of the route; label sits below the node. */}
+          <ZigNode
+            half="bottom"
+            edge="end"
+            dot={<RailDot variant="goal">✓</RailDot>}
+            payload={
+              <p className="text-label-m text-text max-w-[9rem] text-center">
+                {goalLabel}
+              </p>
+            }
+          />
+        </ol>
+
+        {actions && (
+          <div className="border-border bg-surface sticky left-0 z-20 shrink-0 border-t px-4 py-4 lg:w-screen lg:max-w-full">
+            {actions}
+          </div>
+        )}
+      </div>
+
+      {/* Scroll affordance: a right-edge fade + an animated chevron nudging
+          right, shown only while more of the rail is off-screen. `aria-hidden`
+          + pointer-events-none so it's purely decorative and never blocks the
+          scrollbar/cards underneath. Fades out smoothly at the end. */}
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-y-0 right-0 hidden items-center rounded-r-2xl pr-2 pl-10 transition-opacity duration-300 lg:flex ${
+          canScrollRight ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          background:
+            'linear-gradient(to left, var(--color-surface) 30%, transparent)',
+        }}
+      >
+        <span className="border-border bg-surface-raised text-accent flex h-8 w-8 animate-[scroll-nudge_1.2s_ease-in-out_infinite] items-center justify-center rounded-full border shadow-sm">
+          <ScrollHintIcon size={16} />
+        </span>
+      </div>
     </div>
   );
 };

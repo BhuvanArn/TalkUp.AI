@@ -416,3 +416,23 @@
     );
   }
 }
+
+/* Roadmap scroll-hint chevron: a small rightward nudge that repeats, cueing the
+   user that the timeline scrolls horizontally. Referenced via the arbitrary
+   `animate-[scroll-nudge_...]` utility on the chevron. */
+@keyframes scroll-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+
+/* Respect users who ask for less motion: hold the chevron still. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[scroll-nudge_1\.2s_ease-in-out_infinite\] {
+    animation: none;
+  }
+}
