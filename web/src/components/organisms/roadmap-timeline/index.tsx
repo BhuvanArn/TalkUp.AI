@@ -172,23 +172,31 @@ export const RoadmapTimeline = ({
         )}
       </div>
 
-      {/* Scroll affordance: an animated chevron nudging right, shown only while
-          more of the rail is off-screen. Pinned to the RAIL's vertical center
-          (`railCenterY`) — not the frame center, which sits lower because the
-          frame also holds the pinned action bar. `aria-hidden` +
-          pointer-events-none so it's purely decorative and never blocks the
-          scrollbar/cards underneath. Fades out smoothly at the end. */}
+      {/* Scroll affordance, two decorative layers shown only while more of the
+          rail is off-screen (both `aria-hidden` + pointer-events-none so they
+          never block the scrollbar/cards, and both fade out at the end):
+          1. a full-height right-edge fade that signals "content continues"
+             (behind the action bar it just blends into the surface);
+          2. an animated chevron pinned to the RAIL's vertical center — not the
+             frame center, which sits lower because the frame also holds the
+             pinned action bar + scrollbar. */}
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-y-0 right-0 hidden w-24 rounded-r-2xl transition-opacity duration-300 lg:block ${
+          canScrollRight ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          background:
+            'linear-gradient(to left, var(--color-surface) 25%, transparent)',
+        }}
+      />
       {railCenterY !== null && (
         <div
           aria-hidden="true"
-          className={`pointer-events-none absolute right-0 hidden -translate-y-1/2 items-center rounded-r-2xl pr-2 pl-10 transition-opacity duration-300 lg:flex ${
+          className={`pointer-events-none absolute right-2 hidden -translate-y-1/2 transition-opacity duration-300 lg:block ${
             canScrollRight ? 'opacity-100' : 'opacity-0'
           }`}
-          style={{
-            top: `${railCenterY}px`,
-            background:
-              'linear-gradient(to left, var(--color-surface) 30%, transparent)',
-          }}
+          style={{ top: `${railCenterY}px` }}
         >
           <span className="border-border bg-surface-raised text-accent flex h-8 w-8 animate-[scroll-nudge_1.2s_ease-in-out_infinite] items-center justify-center rounded-full border shadow-sm">
             <ScrollHintIcon size={16} />
