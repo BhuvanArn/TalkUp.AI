@@ -61,9 +61,21 @@ const OTP_EXPIRATION_MINUTES = 15;
 const MAX_OTP_ATTEMPTS = 5;
 const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 const DUMMY_OTP_HASH = bcrypt.hashSync("000000", 10);
+// Precomputed bcrypt hash used to keep login timing constant on the
+// email-not-found / missing-row paths (see validateUser).
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync("dummy-password", 10);
 const PASSWORD_RESET_AUTHORIZED_PURPOSE = "PASSWORD_RESET_AUTHORIZED";
 const GENERIC_RESET_VERIFY_ERROR = "Invalid or expired verification code";
+// Single generic login failure message. Distinct messages for
+// email-not-found / wrong-password / unverified leak which accounts exist.
+const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
 const PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS = 120;
+// Floor every resendOtp response to the same duration so the hit path (bcrypt
+// hash + DB write + emit) is not timing-distinguishable from the silent miss
+// paths (which skip the write). Set at/above the real send cost, matching the
+// password-reset envelope. Without this floor, response latency still leaks
+// which addresses exist even though status/body no longer do.
+const OTP_RESEND_MIN_RESPONSE_MS = 120;
 
 @Injectable()
 export class AuthService {
@@ -460,6 +472,7 @@ export class AuthService {
   }
 
   async resendOtp(email: string, purpose: OtpPurpose): Promise<void> {
+    const startedAt = Date.now();
     const existingOtp = await this.otpRepository.findOne({
       where: { email, purpose },
     });
@@ -481,10 +494,21 @@ export class AuthService {
       where: { email },
     });
 
-    // Perform dummy hash comparison to prevent timing attacks
+    // Enumeration defense: a resend for an address we can't (or won't) mail —
+    // unknown email, orphan email row, or an already-verified account — returns
+    // the SAME silent success as a real resend. Throwing distinct errors here
+    // (404/409) would let an attacker probe which addresses exist and which are
+    // already verified. Mirrors passwordResetRequest. The dummy hash keeps the
+    // bcrypt cost on par with the real path, and the OTP_RESEND_MIN_RESPONSE_MS
+    // floor below masks the DB write the real send performs but these paths skip
+    // — otherwise response timing alone would still leak which addresses exist.
     if (!emailEntity) {
       await bcrypt.compare("000000", DUMMY_OTP_HASH);
-      throw new BadRequestException("Email not found");
+      await this.applyMinimumResetRequestDuration(
+        startedAt,
+        OTP_RESEND_MIN_RESPONSE_MS,
+      );
+      return;
     }
 
     const userEntity = await this.userRepository.findOne({
@@ -493,14 +517,23 @@ export class AuthService {
 
     if (!userEntity) {
       await bcrypt.compare("000000", DUMMY_OTP_HASH);
-      throw new BadRequestException("Email not found");
+      await this.applyMinimumResetRequestDuration(
+        startedAt,
+        OTP_RESEND_MIN_RESPONSE_MS,
+      );
+      return;
     }
 
     if (
       purpose === OtpPurpose.REGISTER &&
       userEntity.status === UserStatus.ACTIVE
     ) {
-      throw new ConflictException("Account is already active");
+      await bcrypt.compare("000000", DUMMY_OTP_HASH);
+      await this.applyMinimumResetRequestDuration(
+        startedAt,
+        OTP_RESEND_MIN_RESPONSE_MS,
+      );
+      return;
     }
 
     const plainOtp = this.generateOtpCode();
@@ -543,6 +576,16 @@ export class AuthService {
     }
 
     this.eventEmitter.emit("auth.otp_generated", event);
+
+    // Floor the real send to the same duration as the silent miss paths above,
+    // so a shorter/longer response can't reveal whether a mail was actually
+    // dispatched. Emit is fire-and-forget, so this only bounds the send path's
+    // own DB/hash work, keeping it indistinguishable from the skipped-write
+    // paths.
+    await this.applyMinimumResetRequestDuration(
+      startedAt,
+      OTP_RESEND_MIN_RESPONSE_MS,
+    );
   }
 
   async passwordResetRequest(
@@ -712,12 +755,18 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<user> {
+    // Every failure branch below returns the SAME generic message. Distinct
+    // messages ("email not found" vs "invalid password" vs "not verified")
+    // are an account-enumeration leak: they let an attacker probe which emails
+    // exist and which are unverified. Compare a password on the miss paths too
+    // (dummy hash) so response timing doesn't leak the same information.
     const emailEntity = await this.userEmailRepository.findOne({
       where: { email },
     });
 
     if (!emailEntity) {
-      throw new UnauthorizedException("Email not found");
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     const passwordEntity = await this.userPasswordRepository.findOne({
@@ -729,16 +778,18 @@ export class AuthService {
     });
 
     if (!passwordEntity || !userEntity) {
-      throw new UnauthorizedException("Email not found");
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     if (userEntity.status !== UserStatus.ACTIVE) {
-      throw new UnauthorizedException("Email is not verified");
+      await bcrypt.compare(password, passwordEntity.password);
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     const match = await bcrypt.compare(password, passwordEntity.password);
     if (!match) {
-      throw new UnauthorizedException("Invalid password");
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     return userEntity;
@@ -1029,9 +1080,10 @@ export class AuthService {
 
   private async applyMinimumResetRequestDuration(
     startedAt: number,
+    minMs: number = PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS,
   ): Promise<void> {
     const elapsed = Date.now() - startedAt;
-    const remaining = PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS - elapsed;
+    const remaining = minMs - elapsed;
 
     if (remaining > 0) {
       await new Promise((resolve) => setTimeout(resolve, remaining));

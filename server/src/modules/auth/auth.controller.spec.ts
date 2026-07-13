@@ -241,7 +241,9 @@ describe("AuthController", () => {
     });
 
     it("should throw UnauthorizedException when email not found", async () => {
-      const unauthorizedError = new UnauthorizedException("Email not found");
+      const unauthorizedError = new UnauthorizedException(
+        "Invalid email or password",
+      );
       mockAuthService.validateUser = jest
         .fn()
         .mockRejectedValue(unauthorizedError);
@@ -261,7 +263,7 @@ describe("AuthController", () => {
 
     it("should throw UnauthorizedException when password is invalid", async () => {
       const invalidPasswordError = new UnauthorizedException(
-        "Invalid password",
+        "Invalid email or password",
       );
       mockAuthService.validateUser = jest
         .fn()
