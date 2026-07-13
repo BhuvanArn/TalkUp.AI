@@ -426,7 +426,7 @@ const PricingCard = ({ tier }: { tier: PricingTier }) => (
         </li>
       ))}
     </ul>
-    <div className="mt-8">
+    <div className="mt-auto pt-8">
       <PricingCta tier={tier} />
     </div>
   </article>
