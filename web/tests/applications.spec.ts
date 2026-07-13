@@ -14,8 +14,15 @@ const app = {
 
 test.describe('applications kanban', () => {
   test.beforeEach(async ({ page }) => {
+    // /auth/status is additive since #151: besides `authenticated` it now
+    // returns the caller's org `role` and `organizationId`. /applications has no
+    // role gate (requiresAuth only), so a plain user with no org is the right
+    // stub — mirror the real payload shape so the guard reads the same fields it
+    // would in the real-backend e2e run. (#190)
     await page.route('**/v1/api/auth/status', (route) =>
-      route.fulfill({ json: { authenticated: true } }),
+      route.fulfill({
+        json: { authenticated: true, role: 'user', organizationId: null },
+      }),
     );
     // The sidebar's account switcher mounts on every authenticated page and
     // fetches the current user. Left unmocked it hits the real backend (now
