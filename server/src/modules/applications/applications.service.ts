@@ -285,7 +285,7 @@ export class ApplicationsService {
     offer: application["offer_details"],
     cv: application["cv_details"],
   ): string {
-    return `You are a career-preparation coach. Compare the JOB OFFER and the CANDIDATE CV below and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
+    return `You are a career-preparation coach speaking DIRECTLY to the candidate, who is the reader. Compare the JOB OFFER and the reader's CV below and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
       {
         "match_score": 0,
         "summary": "string",
@@ -301,17 +301,19 @@ export class ApplicationsService {
 
       Rules:
       - Always return valid JSON, even if the offer or the CV is missing or incomplete
-      - "match_score" is an integer from 0 to 100 estimating how well the CV matches the offer; use 0 when there is not enough data
-      - "summary" is one short sentence describing the candidate's readiness for this offer
+      - Voice: address the reader in the SECOND PERSON ("you", "your") in every "summary" and "rationale". Never write "the candidate", "the candidate's CV", "the applicant", or any third-person reference to the reader — say "you" and "your CV" instead.
+      - "match_score" is an integer from 0 to 100 estimating how well your CV matches the offer; use 0 when there is not enough data
+      - "summary" is one short sentence describing your readiness for this offer (e.g. "You're well-prepared for this role, with a few areas to sharpen.")
       - "topics" is the ordered preparation plan (most important first, 3 to 8 items); each topic is one subject to revise or practice before the interview
-      - "priority" is exactly one of "HIGH", "MED", "LOW": "HIGH" for topics the offer requires and the CV lacks, "MED" for topics to strengthen, "LOW" for topics to refresh
-      - "gap" is true when the offer requires the topic and the CV shows no evidence of it
+      - "rationale" is one short sentence, addressed to you, explaining why this topic matters (e.g. "The offer requires GraphQL, which your CV doesn't mention yet.")
+      - "priority" is exactly one of "HIGH", "MED", "LOW": "HIGH" for topics the offer requires and your CV lacks, "MED" for topics to strengthen, "LOW" for topics to refresh
+      - "gap" is true when the offer requires the topic and your CV shows no evidence of it
       - If one input is null, build the plan from the other; if both are null, return {"match_score": 0, "summary": "", "topics": []}
 
       JOB OFFER:
       ${JSON.stringify(offer)}
 
-      CANDIDATE CV:
+      YOUR CV:
       ${JSON.stringify(cv)}`;
   }
 

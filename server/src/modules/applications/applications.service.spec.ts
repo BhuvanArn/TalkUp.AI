@@ -476,6 +476,24 @@ describe("ApplicationsService", () => {
       expect(prompt).toContain('"technical_skills":["node"]');
     });
 
+    it("instructs the LLM to address the reader in the second person", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      await service.getRoadmap("u1", "a1");
+
+      const callArg = mockGroqCreate.mock.calls[0][0] as {
+        messages: { content: string }[];
+      };
+      const prompt = callArg.messages[0].content;
+      // User-facing copy must be "you"/"your", never "the candidate".
+      expect(prompt).toContain("SECOND PERSON");
+      expect(prompt).toContain('Never write "the candidate"');
+    });
+
     it("clamps an out-of-range match_score into 0-100", async () => {
       const row = ownedRow();
       applicationRepo.findOne = jest.fn().mockResolvedValue(row);
