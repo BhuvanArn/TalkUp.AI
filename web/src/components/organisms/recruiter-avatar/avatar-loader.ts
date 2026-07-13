@@ -18,7 +18,10 @@ async function fetchAvatarBlob(
   }
 
   const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
+  // Typed as BlobPart[] so `new Blob(chunks)` type-checks: a Uint8Array's
+  // backing buffer is ArrayBufferLike (possibly SharedArrayBuffer), which the
+  // BlobPart[] parameter of Blob accepts but Uint8Array[] does not under lib.dom.
+  const chunks: BlobPart[] = [];
   let loaded = 0;
 
   while (true) {
