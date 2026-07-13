@@ -2,6 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import {
   BadRequestException,
+  ConflictException,
   InternalServerErrorException,
 } from "@nestjs/common";
 
@@ -73,7 +74,13 @@ describe("UsersService", () => {
   let userRepo: { save: jest.Mock; delete: jest.Mock };
   let profileRepo: { findOne: jest.Mock; create: jest.Mock; save: jest.Mock };
   let emailRepo: { findOne: jest.Mock };
-  let phoneRepo: { findOne: jest.Mock };
+  let phoneRepo: {
+    findOne: jest.Mock;
+    create: jest.Mock;
+    save: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+  };
   let cvRepo: {
     findOne: jest.Mock;
     create: jest.Mock;
@@ -127,7 +134,13 @@ describe("UsersService", () => {
       save: jest.fn((p: user_profile) => Promise.resolve(p)),
     };
     emailRepo = { findOne: jest.fn() };
-    phoneRepo = { findOne: jest.fn() };
+    phoneRepo = {
+      findOne: jest.fn(),
+      create: jest.fn((p) => p),
+      save: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
     cvRepo = {
       findOne: jest.fn(),
       create: jest.fn((cv) => cv),
@@ -212,6 +225,140 @@ describe("UsersService", () => {
 
       await expect(
         service.updateProfile(baseUser, { bio: "x" }),
+      ).rejects.toThrow(InternalServerErrorException);
+    });
+
+    it("does not touch the phone table when phone is absent", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+
+      await service.updateProfile(baseUser, { firstName: "Zed" });
+
+      expect(phoneRepo.save).not.toHaveBeenCalled();
+      expect(phoneRepo.update).not.toHaveBeenCalled();
+      expect(phoneRepo.delete).not.toHaveBeenCalled();
+    });
+
+    it("inserts a phone number when none exists and reflects it in the view", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      // First findOne (persistPhone) → none; second (assembleProfileView) → new row.
+      phoneRepo.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ phone_number: "+33123456789" });
+
+      const v = await service.updateProfile(baseUser, {
+        phone: "+33123456789",
+      });
+
+      expect(phoneRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: baseUser.user_id,
+          phone_number: "+33123456789",
+          is_verified: false,
+        }),
+      );
+      expect(phoneRepo.save).toHaveBeenCalled();
+      expect(v.phone).toBe("+33123456789");
+    });
+
+    it("trims the phone number before persisting", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+
+      await service.updateProfile(baseUser, { phone: "  +33123456789  " });
+
+      expect(phoneRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ phone_number: "+33123456789" }),
+      );
+    });
+
+    it("updates a changed phone number and resets verification", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue({
+        user_id: baseUser.user_id,
+        phone_number: "+33000000000",
+        is_verified: true,
+      });
+
+      await service.updateProfile(baseUser, { phone: "+33123456789" });
+
+      expect(phoneRepo.update).toHaveBeenCalledWith(
+        { user_id: baseUser.user_id },
+        { phone_number: "+33123456789", is_verified: false },
+      );
+      expect(phoneRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("is a no-op when the phone number is unchanged (keeps verification)", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue({
+        user_id: baseUser.user_id,
+        phone_number: "+33123456789",
+        is_verified: true,
+      });
+
+      await service.updateProfile(baseUser, { phone: "+33123456789" });
+
+      expect(phoneRepo.update).not.toHaveBeenCalled();
+      expect(phoneRepo.save).not.toHaveBeenCalled();
+      expect(phoneRepo.delete).not.toHaveBeenCalled();
+    });
+
+    it("deletes the phone row when cleared with an empty string", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue({
+        user_id: baseUser.user_id,
+        phone_number: "+33123456789",
+        is_verified: false,
+      });
+
+      await service.updateProfile(baseUser, { phone: "" });
+
+      expect(phoneRepo.delete).toHaveBeenCalledWith({
+        user_id: baseUser.user_id,
+      });
+      expect(phoneRepo.update).not.toHaveBeenCalled();
+    });
+
+    it("does not delete when clearing an already-absent phone", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+
+      await service.updateProfile(baseUser, { phone: "   " });
+
+      expect(phoneRepo.delete).not.toHaveBeenCalled();
+    });
+
+    it("raises 409 Conflict when the phone number belongs to another account", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+      const uniqueViolation = new QueryFailedError("insert", [], new Error());
+      (
+        uniqueViolation as unknown as { driverError: { code: string } }
+      ).driverError = { code: "23505" };
+      phoneRepo.save.mockRejectedValueOnce(uniqueViolation);
+
+      await expect(
+        service.updateProfile(baseUser, { phone: "+33123456789" }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it("wraps non-unique phone errors as a 500", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+      phoneRepo.save.mockRejectedValueOnce(new Error("db down"));
+
+      await expect(
+        service.updateProfile(baseUser, { phone: "+33123456789" }),
       ).rejects.toThrow(InternalServerErrorException);
     });
   });

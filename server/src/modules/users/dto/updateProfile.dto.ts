@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   Length,
+  Matches,
   MaxLength,
   ValidateIf,
 } from "class-validator";
@@ -63,6 +64,20 @@ export class UpdateProfileDto {
   @MaxLength(512)
   @ApiPropertyOptional()
   linkedinUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  // An empty string is a valid value: it means "clear my phone number". Only
+  // enforce the phone format on a non-empty value.
+  @ValidateIf((_, v) => typeof v === "string" && v.trim() !== "")
+  @MaxLength(32)
+  @Matches(/^\+?[0-9\s().-]{6,}$/, {
+    message: "phone must be a valid phone number",
+  })
+  @ApiPropertyOptional({
+    description: "E.164-ish phone number; empty string clears it",
+  })
+  phone?: string;
 
   @IsString()
   @IsOptional()
