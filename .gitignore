@@ -24,3 +24,6 @@ ai/llm-core/unsloth_compiled_cache/
 ai/microservices/**/llm/
 *.wav
 *.mp4
+
+# superpowers brainstorm companion artifacts
+.superpowers/

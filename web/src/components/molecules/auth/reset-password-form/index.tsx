@@ -1,7 +1,7 @@
 import { BaseInput } from '@/components/atoms/base-input';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
-import { InputMolecule } from '@/components/molecules/input-molecule';
+import { PasswordField } from '@/components/molecules/auth/password-field';
 import {
   usePasswordResetComplete,
   usePostResendOtp,
@@ -168,15 +168,14 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
         >
           {(field) => (
             <div className="flex flex-col gap-2">
-              <InputMolecule
+              <PasswordField
                 id="reset-new-password"
-                inputType="base"
-                type="password"
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
                 placeholder="New password"
                 autoComplete="new-password"
+                showStrength
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
@@ -190,10 +189,8 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
         <form.Field name="confirmPassword">
           {(field) => (
             <div className="flex flex-col gap-2">
-              <InputMolecule
+              <PasswordField
                 id="reset-confirm-password"
-                inputType="base"
-                type="password"
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
