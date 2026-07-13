@@ -217,24 +217,26 @@ export function SimulationWorkspace({
         </div>
 
         <div className="space-y-6">
-          <WebSocketDebugPanel
-            inputUrl={inputUrl}
-            readyState={readyState}
-            isCallActive={isCallActive}
-            sendMessage={sendMessage}
-            sendJsonMessage={sendJsonMessage}
-            sendPing={sendPing}
-            lastMessage={lastMessage}
-            lastJsonMessage={lastJsonMessage}
-            isListening={isListening}
-            isSpeaking={isSpeaking}
-            isRecording={isRecording}
-            packetsSent={packetsSent}
-            supportedMimeType={supportedMimeType}
-            audioError={audioError}
-            wsError={wsError}
-            connectionAttempts={connectionAttempts}
-          />
+          {import.meta.env.DEV && (
+            <WebSocketDebugPanel
+              inputUrl={inputUrl}
+              readyState={readyState}
+              isCallActive={isCallActive}
+              sendMessage={sendMessage}
+              sendJsonMessage={sendJsonMessage}
+              sendPing={sendPing}
+              lastMessage={lastMessage}
+              lastJsonMessage={lastJsonMessage}
+              isListening={isListening}
+              isSpeaking={isSpeaking}
+              isRecording={isRecording}
+              packetsSent={packetsSent}
+              supportedMimeType={supportedMimeType}
+              audioError={audioError}
+              wsError={wsError}
+              connectionAttempts={connectionAttempts}
+            />
+          )}
 
           <InfoBox
             title="Statistics Overview"
