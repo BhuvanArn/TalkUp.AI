@@ -122,7 +122,7 @@ export const RoadmapTimeline = ({
         <ol
           ref={railRef}
           data-testid="roadmap-timeline"
-          className="relative flex w-full flex-1 flex-col gap-4 p-4 lg:h-auto lg:w-max lg:min-w-full lg:flex-row lg:items-stretch lg:gap-2 lg:p-0"
+          className="relative flex w-full flex-1 flex-col gap-4 p-4 lg:h-auto lg:min-w-full lg:flex-row lg:items-stretch lg:gap-2 lg:p-0"
         >
           {/* Vertical rail (mobile): down the left dot gutter, behind the dots. */}
           <span
@@ -249,7 +249,10 @@ const ZigNode = ({
       : 'lg:row-start-3 lg:items-start lg:pt-6';
 
   return (
-    <li className="relative flex min-w-0 items-center gap-4 lg:grid lg:w-[15.5rem] lg:shrink-0 lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-0">
+    // `flex-1` + a `basis` floor: columns STRETCH to fill the frame when there
+    // are few (so the goal node reaches the right edge, no dead space), but keep
+    // a readable min-width and let the row overflow-scroll when there are many.
+    <li className="relative flex min-w-0 items-center gap-4 lg:grid lg:min-w-[13rem] lg:flex-1 lg:basis-[15.5rem] lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-0">
       <div
         className={`order-2 flex min-w-0 justify-center lg:px-2 ${cardCell}`}
       >
