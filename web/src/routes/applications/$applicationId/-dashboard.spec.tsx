@@ -219,4 +219,43 @@ describe('ApplicationDashboard (roadmap page)', () => {
       await screen.findByText(/couldn't regenerate — try again in a minute/i),
     ).toBeInTheDocument();
   });
+
+  it('hides the talking-points tab when the roadmap has none', async () => {
+    // Default fixture has no talking_points → single view, no tablist.
+    renderWithProviders(<RouterProvider router={router} />);
+    await screen.findByText('Kubernetes fundamentals');
+    expect(
+      screen.queryByRole('tab', { name: /interview talking points/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows a talking-points tab and switches to it when points exist', async () => {
+    vi.mocked(useRoadmap).mockReturnValue({
+      data: {
+        ...roadmap,
+        talking_points: [
+          {
+            mission: 'Own the deployment pipeline',
+            angle: "You've run GitHub Actions, so you'd start there.",
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useRoadmap>);
+
+    renderWithProviders(<RouterProvider router={router} />);
+
+    // Path tab shows the timeline first; the talking point is not yet visible.
+    await screen.findByText('Kubernetes fundamentals');
+    expect(
+      screen.queryByText('Own the deployment pipeline'),
+    ).not.toBeInTheDocument();
+
+    // Switching to the talking-points tab reveals it.
+    fireEvent.click(
+      screen.getByRole('tab', { name: /interview talking points/i }),
+    );
+    expect(screen.getByText('Own the deployment pipeline')).toBeInTheDocument();
+  });
 });

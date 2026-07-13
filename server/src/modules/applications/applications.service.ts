@@ -14,6 +14,7 @@ import {
   JobOfferExtraction,
   MAX_LLM_INPUT_CHARS,
   RoadmapExtraction,
+  RoadmapTalkingPoint,
   RoadmapTopic,
   extractWithGroq,
   isCvExtractionEmpty,
@@ -233,7 +234,7 @@ export class ApplicationsService {
 
   /** Valid-but-empty roadmap; fresh object each time so callers cannot share state. */
   private emptyRoadmap(): RoadmapExtraction {
-    return { match_score: 0, summary: "", topics: [] };
+    return { match_score: 0, summary: "", topics: [], talking_points: [] };
   }
 
   private async generateAndSaveRoadmap(
@@ -264,6 +265,16 @@ export class ApplicationsService {
             )
             .map((topic) => this.normalizeRoadmapTopic(topic))
         : [],
+      talking_points: Array.isArray(raw.talking_points)
+        ? (raw.talking_points as unknown[])
+            .filter(
+              (tp): tp is Record<string, unknown> =>
+                typeof tp === "object" && tp !== null,
+            )
+            .map((tp) => this.normalizeTalkingPoint(tp))
+            // Drop entries the LLM left blank so the section only shows real ones.
+            .filter((tp) => tp.mission !== "" && tp.angle !== "")
+        : [],
     };
   }
 
@@ -277,6 +288,16 @@ export class ApplicationsService {
           ? t.priority
           : "LOW",
       gap: Boolean(t?.gap),
+    };
+  }
+
+  /** Defensive shape-fixing on a single LLM-provided talking point. */
+  private normalizeTalkingPoint(
+    t: Record<string, unknown>,
+  ): RoadmapTalkingPoint {
+    return {
+      mission: String(t?.mission ?? "").trim(),
+      angle: String(t?.angle ?? "").trim(),
     };
   }
 
@@ -296,19 +317,26 @@ export class ApplicationsService {
             "rationale": "string",
             "gap": true
           }
+        ],
+        "talking_points": [
+          {
+            "mission": "string",
+            "angle": "string"
+          }
         ]
       }
 
       Rules:
       - Always return valid JSON, even if the offer or the CV is missing or incomplete
-      - Voice: address the reader in the SECOND PERSON ("you", "your") in every "summary" and "rationale". Never write "the candidate", "the candidate's CV", "the applicant", or any third-person reference to the reader — say "you" and "your CV" instead.
+      - Voice: address the reader in the SECOND PERSON ("you", "your") in every "summary", "rationale" and "angle". Never write "the candidate", "the candidate's CV", "the applicant", or any third-person reference to the reader — say "you" and "your CV" instead.
       - "match_score" is an integer from 0 to 100 estimating how well your CV matches the offer; use 0 when there is not enough data
       - "summary" is one short sentence describing your readiness for this offer (e.g. "You're well-prepared for this role, with a few areas to sharpen.")
       - "topics" is the ordered preparation plan (most important first, 3 to 8 items); each topic is one subject to revise or practice before the interview
       - "rationale" is one short sentence, addressed to you, explaining why this topic matters (e.g. "The offer requires GraphQL, which your CV doesn't mention yet.")
       - "priority" is exactly one of "HIGH", "MED", "LOW": "HIGH" for topics the offer requires and your CV lacks, "MED" for topics to strengthen, "LOW" for topics to refresh
       - "gap" is true when the offer requires the topic and your CV shows no evidence of it
-      - If one input is null, build the plan from the other; if both are null, return {"match_score": 0, "summary": "", "topics": []}
+      - "talking_points" are forward-looking interview talking points drawn from the offer's "missions" (the responsibilities you would take on if hired), most important first, 3 to 5 items. For each, "mission" restates one responsibility from the offer, and "angle" is ONE short sentence, addressed to you, on how you would approach or assess that responsibility — and it MUST explicitly draw on a concrete skill or experience from YOUR CV (e.g. mission "Maintain legacy C services", angle "You've stabilised code with characterization tests before, so you'd start by mapping the C modules and adding tests around them."). Do NOT invent missions the offer does not mention. If the offer lists no missions (or there is no offer), return "talking_points": []
+      - If one input is null, build the plan from the other; if both are null, return {"match_score": 0, "summary": "", "topics": [], "talking_points": []}
 
       JOB OFFER:
       ${JSON.stringify(offer)}

@@ -14,3 +14,17 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Returns the preparation roadmap (lazily generated on first request, then
+  cached on the application row).
+
+  Response (Roadmap):
+  - match_score (0-100): how well the CV matches the offer.
+  - summary (string): one sentence on your readiness, addressed to you.
+  - topics: gap-driven prep items { title, priority (HIGH|MED|LOW), rationale, gap }.
+  - talking_points: forward-looking interview points drawn from the offer's
+    missions { mission, angle }. The "angle" is grounded in a CV skill. Empty
+    array when the offer lists no missions or for roadmaps cached before this
+    field existed.
+}

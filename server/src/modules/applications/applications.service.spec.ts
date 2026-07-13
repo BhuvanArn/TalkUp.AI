@@ -52,6 +52,12 @@ const validRoadmapResponse = JSON.stringify({
       gap: true,
     },
   ],
+  talking_points: [
+    {
+      mission: "Own the deployment pipeline",
+      angle: "You've run GitHub Actions before, so you'd start there.",
+    },
+  ],
 });
 
 describe("ApplicationsService", () => {
@@ -416,7 +422,12 @@ describe("ApplicationsService", () => {
 
     it("returns the cached roadmap without calling Groq", async () => {
       const row = ownedRow();
-      row.roadmap = { match_score: 80, summary: "cached", topics: [] };
+      row.roadmap = {
+        match_score: 80,
+        summary: "cached",
+        topics: [],
+        talking_points: [],
+      };
       applicationRepo.findOne = jest.fn().mockResolvedValue(row);
 
       const result = await service.getRoadmap("u1", "a1");
@@ -425,6 +436,7 @@ describe("ApplicationsService", () => {
         match_score: 80,
         summary: "cached",
         topics: [],
+        talking_points: [],
       });
       expect(mockGroqCreate).not.toHaveBeenCalled();
       expect(applicationRepo.save).not.toHaveBeenCalled();
@@ -438,7 +450,12 @@ describe("ApplicationsService", () => {
 
       const result = await service.getRoadmap("u1", "a1");
 
-      expect(result).toEqual({ match_score: 0, summary: "", topics: [] });
+      expect(result).toEqual({
+        match_score: 0,
+        summary: "",
+        topics: [],
+        talking_points: [],
+      });
       expect(mockGroqCreate).not.toHaveBeenCalled();
       expect(applicationRepo.save).not.toHaveBeenCalled();
     });
@@ -457,6 +474,75 @@ describe("ApplicationsService", () => {
       expect(result.topics[0].priority).toBe("HIGH");
       expect(row.roadmap).toEqual(result);
       expect(applicationRepo.save).toHaveBeenCalledWith(row);
+    });
+
+    it("keeps well-formed talking points from the LLM", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.talking_points).toEqual([
+        {
+          mission: "Own the deployment pipeline",
+          angle: "You've run GitHub Actions before, so you'd start there.",
+        },
+      ]);
+    });
+
+    it("drops talking points the LLM left blank", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                match_score: 50,
+                summary: "s",
+                topics: [],
+                talking_points: [
+                  { mission: "Real mission", angle: "You'd do X." },
+                  { mission: "", angle: "orphan angle" },
+                  { mission: "orphan mission", angle: "" },
+                  "not-an-object",
+                ],
+              }),
+            },
+          },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.talking_points).toEqual([
+        { mission: "Real mission", angle: "You'd do X." },
+      ]);
+    });
+
+    it("defaults talking_points to [] when the LLM omits the field", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                match_score: 50,
+                summary: "s",
+                topics: [],
+              }),
+            },
+          },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.talking_points).toEqual([]);
     });
 
     it("sends both the offer and the cv to the LLM prompt", async () => {
@@ -494,6 +580,27 @@ describe("ApplicationsService", () => {
       expect(prompt).toContain('Never write "the candidate"');
     });
 
+    it("instructs the LLM to build CV-grounded talking points from the offer missions", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      await service.getRoadmap("u1", "a1");
+
+      const callArg = mockGroqCreate.mock.calls[0][0] as {
+        messages: { content: string }[];
+      };
+      const prompt = callArg.messages[0].content;
+      expect(prompt).toContain('"talking_points"');
+      expect(prompt).toContain('the offer\'s "missions"');
+      expect(prompt).toContain(
+        "draw on a concrete skill or experience from YOUR CV",
+      );
+      expect(prompt).toContain('return "talking_points": []');
+    });
+
     it("clamps an out-of-range match_score into 0-100", async () => {
       const row = ownedRow();
       applicationRepo.findOne = jest.fn().mockResolvedValue(row);
@@ -527,7 +634,12 @@ describe("ApplicationsService", () => {
 
       const result = await service.getRoadmap("u1", "a1");
 
-      expect(result).toEqual({ match_score: 0, summary: "", topics: [] });
+      expect(result).toEqual({
+        match_score: 0,
+        summary: "",
+        topics: [],
+        talking_points: [],
+      });
     });
 
     it("sanitizes a malformed topic instead of persisting it as-is", async () => {

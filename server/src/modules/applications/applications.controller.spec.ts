@@ -46,6 +46,12 @@ describe("ApplicationsController", () => {
         gap: true,
       },
     ],
+    talking_points: [
+      {
+        mission: "Own the deployment pipeline",
+        angle: "You've run GitHub Actions before, so you'd start there.",
+      },
+    ],
   };
 
   beforeEach(async () => {
@@ -123,6 +129,7 @@ describe("ApplicationsController", () => {
     expect(mockService.getRoadmap).toHaveBeenCalledWith("u1", "a1");
     expect(dto.match_score).toBe(62);
     expect(dto.topics[0].title).toBe("Kubernetes fundamentals");
+    expect(dto.talking_points[0].mission).toBe("Own the deployment pipeline");
   });
 
   it("regenerates the roadmap", async () => {

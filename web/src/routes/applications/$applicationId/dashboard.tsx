@@ -1,5 +1,6 @@
 import { iconMap } from '@/components/atoms/icon/icon-map';
 import { InterviewDatePill } from '@/components/molecules/interview-date-pill';
+import { RoadmapTalkingPoints } from '@/components/organisms/roadmap-talking-points';
 import { RoadmapTimeline } from '@/components/organisms/roadmap-timeline';
 import {
   useApplications,
@@ -8,6 +9,7 @@ import {
 } from '@/services/applications/hooks';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { Link, createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 const RegenerateIcon = iconMap.redo;
@@ -62,6 +64,9 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
   );
   const { data: roadmap, isLoading, isError } = useRoadmap(applicationId);
   const regenerate = useRegenerateRoadmap(applicationId);
+  // Which view is showing. The "talking" tab only appears when there are points
+  // (see below), so this only ever reaches 'talking' while that tab exists.
+  const [activeTab, setActiveTab] = useState<'path' | 'talking'>('path');
 
   const heading = application
     ? [application.jobTitle, application.companyName]
@@ -125,6 +130,9 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
 
   const isEmpty = roadmap.topics.length === 0 && !roadmap.summary;
   const hasOfferButEmpty = isEmpty && Boolean(application?.offerDetails);
+  // `?? []` guards roadmaps cached before talking_points existed (field absent
+  // on the wire). Drives whether the second tab shows at all.
+  const talkingPoints = roadmap.talking_points ?? [];
 
   // Action bar — shared by the ready state (pinned inside the timeline's scroll
   // frame) and the empty state (plain footer). Never scrolls horizontally.
@@ -221,14 +229,70 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
           </footer>
         </div>
       ) : (
-        <div className="min-h-0 flex-1">
-          <RoadmapTimeline
-            roadmap={roadmap}
-            interviewAt={application?.interviewAt ?? null}
-            actions={actions}
-          />
-        </div>
+        <>
+          {talkingPoints.length > 0 && (
+            <div
+              role="tablist"
+              aria-label="Roadmap views"
+              className="border-border flex shrink-0 gap-1 border-b"
+            >
+              <TabButton
+                isActive={activeTab === 'path'}
+                onClick={() => setActiveTab('path')}
+              >
+                Preparation path
+              </TabButton>
+              <TabButton
+                isActive={activeTab === 'talking'}
+                onClick={() => setActiveTab('talking')}
+              >
+                Interview talking points
+              </TabButton>
+            </div>
+          )}
+
+          {activeTab === 'talking' && talkingPoints.length > 0 ? (
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <RoadmapTalkingPoints points={talkingPoints} />
+            </div>
+          ) : (
+            <div className="min-h-0 flex-1">
+              <RoadmapTimeline
+                roadmap={roadmap}
+                interviewAt={application?.interviewAt ?? null}
+                actions={actions}
+              />
+            </div>
+          )}
+        </>
       )}
     </RoadmapShell>
+  );
+}
+
+/** Underline tab button matching the profile-page tab idiom (token-only). */
+function TabButton({
+  isActive,
+  onClick,
+  children,
+}: {
+  isActive: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={isActive}
+      onClick={onClick}
+      className={`text-button-m cursor-pointer rounded-none border-b-[2.5px] px-5 py-3 transition-colors ${
+        isActive
+          ? 'border-accent text-text'
+          : 'text-text-weaker hover:text-text border-transparent'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
