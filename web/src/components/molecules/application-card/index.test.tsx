@@ -1,6 +1,7 @@
 import type { Application } from '@/services/applications/types';
 import { DndContext } from '@dnd-kit/core';
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -57,6 +58,54 @@ describe('ApplicationCard', () => {
     // Menu items are grouped under a "Move to" header; the item is the status.
     fireEvent.click(screen.getByRole('menuitem', { name: 'Interview' }));
     expect(onStatusChange).toHaveBeenCalledWith('a1', 'interview');
+  });
+
+  // Regression for the CI e2e flake (issue #189): the outside-dismiss handler
+  // must not swallow a menuitem activation. user-event fires the real
+  // pointerdown/mousedown -> mouseup -> click ordering against a live document
+  // listener, unlike fireEvent.click above, so it reproduces the race where a
+  // press inside the menu closed it before the click landed.
+  it('activates a menu item through a full press/release gesture', async () => {
+    const user = userEvent.setup();
+    const onStatusChange = vi.fn();
+    wrap(
+      <ApplicationCard
+        application={app}
+        isPending={false}
+        onStatusChange={onStatusChange}
+        onDelete={noop}
+        onInterviewAtChange={noop}
+        onOpenTraining={noop}
+      />,
+    );
+    await user.click(screen.getByLabelText('Application actions'));
+    await user.click(screen.getByRole('menuitem', { name: 'Interview' }));
+    expect(onStatusChange).toHaveBeenCalledWith('a1', 'interview');
+  });
+
+  it('closes the menu on an outside press but keeps it open for inside presses', async () => {
+    const user = userEvent.setup();
+    wrap(
+      <ApplicationCard
+        application={app}
+        isPending={false}
+        onStatusChange={noop}
+        onDelete={noop}
+        onInterviewAtChange={noop}
+        onOpenTraining={noop}
+      />,
+    );
+    await user.click(screen.getByLabelText('Application actions'));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+
+    // A press that starts inside the menu (e.g. on the interview date input)
+    // must not dismiss it mid-gesture.
+    await user.click(screen.getByLabelText('Interview date'));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+
+    // A genuine outside press dismisses.
+    await user.click(document.body);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
   it('requires a confirmation modal to delete', () => {
