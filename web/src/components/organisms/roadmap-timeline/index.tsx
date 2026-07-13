@@ -117,7 +117,7 @@ export const RoadmapTimeline = ({
       <div
         ref={scrollerRef}
         onScroll={syncScrollHint}
-        className="border-border flex h-full flex-col rounded-2xl border lg:overflow-x-auto"
+        className="border-border flex h-full flex-col rounded-2xl border lg:overflow-x-auto lg:overflow-y-hidden"
       >
         <ol
           ref={railRef}
