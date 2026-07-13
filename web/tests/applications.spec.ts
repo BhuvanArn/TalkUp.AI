@@ -18,10 +18,13 @@ test.describe('applications kanban', () => {
     // returns the caller's org `role` and `organizationId`. /applications has no
     // role gate (requiresAuth only), so a plain user with no org is the right
     // stub — mirror the real payload shape so the guard reads the same fields it
-    // would in the real-backend e2e run. (#190)
+    // would in the real-backend e2e run. A no-org account is `role: 'none'` (the
+    // user entity default); `'user'` is an org-*member* role and the backend only
+    // ever sets it alongside a non-null organizationId, so `'user'` + null org is
+    // a payload the real API never emits. (#190)
     await page.route('**/v1/api/auth/status', (route) =>
       route.fulfill({
-        json: { authenticated: true, role: 'user', organizationId: null },
+        json: { authenticated: true, role: 'none', organizationId: null },
       }),
     );
     // The sidebar's account switcher mounts on every authenticated page and
