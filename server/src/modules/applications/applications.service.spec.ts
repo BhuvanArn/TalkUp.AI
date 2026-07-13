@@ -193,6 +193,30 @@ describe("ApplicationsService", () => {
       expect(applicationRepo.save).toHaveBeenCalledWith(existing);
     });
 
+    it("dedups on the canonical url, ignoring tracking params, and stores the canonical form", async () => {
+      // No existing row: the create path runs and must persist the canonical url.
+      applicationRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockScrapeLinkedin.mockResolvedValue("linkedin job text");
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validOfferResponse } }],
+      });
+
+      const row = await service.createFromUrl(
+        "u1",
+        "https://www.linkedin.com/jobs/view/123?trackingId=abc&refId=xyz",
+      );
+
+      // Dedup lookup uses the stripped url...
+      expect(applicationRepo.findOne).toHaveBeenCalledWith({
+        where: {
+          user_id: "u1",
+          offer_url: "https://www.linkedin.com/jobs/view/123",
+        },
+      });
+      // ...and the stored row keeps the canonical url so future analyses dedup.
+      expect(row.offer_url).toBe("https://www.linkedin.com/jobs/view/123");
+    });
+
     it("leaves the interview date untouched on dedup when none is provided", async () => {
       const existing = {
         application_id: "a1",

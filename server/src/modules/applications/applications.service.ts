@@ -23,7 +23,10 @@ import {
   scrapeLinkedin,
   scrapeAxios,
 } from "../../common/utils/JobOfferExtraction";
-import { isSafeFetchUrl } from "../../common/utils/urlGuard";
+import {
+  canonicalizeOfferUrl,
+  isSafeFetchUrl,
+} from "../../common/utils/urlGuard";
 
 @Injectable()
 export class ApplicationsService {
@@ -53,6 +56,12 @@ export class ApplicationsService {
       throw new BadRequestException("This URL target is not allowed.");
     }
 
+    // Dedup/store on the CANONICAL url (query + fragment stripped) so the same
+    // posting maps to one application even when the link carries per-visit
+    // tracking params (LinkedIn's trackingId/refId/eBP, etc.) — otherwise a
+    // re-analysis of the same offer would create a duplicate training path.
+    const canonicalUrl = canonicalizeOfferUrl(url);
+
     // Per-user dedup: a repeated submission of the same job URL (double-submit,
     // or a retry after a request that actually succeeded) reuses the existing
     // application instead of creating a duplicate card. Checked before scraping
@@ -61,7 +70,7 @@ export class ApplicationsService {
     // the CV right before this call — returning the row untouched would show a
     // stale snapshot and drop the date the user just set.
     const existing = await this.applicationRepo.findOne({
-      where: { user_id: userId, offer_url: url },
+      where: { user_id: userId, offer_url: canonicalUrl },
     });
     if (existing) {
       existing.cv_details = await this.buildCvSnapshot(userId);
@@ -94,7 +103,7 @@ export class ApplicationsService {
       company_name: data.company_name ?? null,
       job_title: data.job_title ?? null,
       status: ApplicationStatus.SENT,
-      offer_url: url,
+      offer_url: canonicalUrl,
       interview_at: interviewAt ? new Date(interviewAt) : null,
       offer_details: {
         job_title: data.job_title ?? null,
