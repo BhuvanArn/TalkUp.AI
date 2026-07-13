@@ -83,11 +83,16 @@ export class UsersService {
     this.applyProfileDto(profile, dto);
 
     try {
-      await this.userRepo.save(userEntity);
-      await this.profileRepo.save(profile);
+      // Persist the phone FIRST so a duplicate-number conflict (a normal user
+      // action) aborts before we commit any profile/user changes. These are
+      // three separate writes with no enclosing transaction, so ordering the
+      // most-likely-to-reject write first keeps the common 409 path from
+      // leaving a half-applied profile behind.
       if (dto.phone !== undefined) {
         await this.persistPhone(userEntity.user_id, dto.phone);
       }
+      await this.userRepo.save(userEntity);
+      await this.profileRepo.save(profile);
       return this.assembleProfileView(userEntity, profile);
     } catch (error) {
       // A duplicate-phone conflict is a client error (someone else already owns
@@ -113,6 +118,12 @@ export class UsersService {
    *   - a changed number resets `is_verified` (the new number is unverified);
    *   - a number already owned by another user raises Postgres 23505, which we
    *     translate to a 409 Conflict instead of a 500.
+   *
+   * This does NOT reuse `upsertByUser`: there the unique column is `user_id`, so
+   * a 23505 means the *same* user raced their own insert and the helper
+   * swallows it into an update. Here the unique column is `phone_number`, so a
+   * 23505 means a *different* user owns the number — that must surface as a 409,
+   * not be silently retried. Same shape, opposite conflict semantics.
    */
   private async persistPhone(userId: string, phone: string): Promise<void> {
     const trimmed = phone.trim();

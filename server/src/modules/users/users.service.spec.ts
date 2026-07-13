@@ -351,6 +351,29 @@ describe("UsersService", () => {
       ).rejects.toThrow(ConflictException);
     });
 
+    it("does not commit profile changes when the phone conflicts (409)", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+      const uniqueViolation = new QueryFailedError("insert", [], new Error());
+      (
+        uniqueViolation as unknown as { driverError: { code: string } }
+      ).driverError = { code: "23505" };
+      phoneRepo.save.mockRejectedValueOnce(uniqueViolation);
+
+      await expect(
+        service.updateProfile(baseUser, {
+          firstName: "Zed",
+          phone: "+33123456789",
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      // Phone is persisted first, so its conflict aborts before the profile /
+      // user rows are ever written — no half-applied save leaks out.
+      expect(profileRepo.save).not.toHaveBeenCalled();
+      expect(userRepo.save).not.toHaveBeenCalled();
+    });
+
     it("wraps non-unique phone errors as a 500", async () => {
       profileRepo.findOne.mockResolvedValue({ ...baseProfile });
       emailRepo.findOne.mockResolvedValue(emailRow);

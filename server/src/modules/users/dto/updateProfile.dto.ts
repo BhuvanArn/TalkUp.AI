@@ -71,7 +71,10 @@ export class UpdateProfileDto {
   // enforce the phone format on a non-empty value.
   @ValidateIf((_, v) => typeof v === "string" && v.trim() !== "")
   @MaxLength(32)
-  @Matches(/^\+?[0-9\s().-]{6,}$/, {
+  // Require at least 6 actual digits (the `(?=(?:\D*\d){6,})` lookahead) so
+  // digit-free noise like "------" or "(.)(.)" can't masquerade as a number,
+  // while still allowing spaces / dashes / parens / a leading "+" as separators.
+  @Matches(/^(?=(?:\D*\d){6,})\+?[0-9\s().-]+$/, {
     message: "phone must be a valid phone number",
   })
   @ApiPropertyOptional({
