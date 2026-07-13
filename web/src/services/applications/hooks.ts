@@ -128,11 +128,17 @@ export const useDeleteApplication = () => {
   });
 };
 
-/** Server lazily generates on first call; afterwards this returns the cache. */
+/**
+ * Server lazily generates on first call; afterwards this returns the cache.
+ * `retry: false` because a cache-miss GET triggers a Groq generation server
+ * side — the default 3 retries would fan a transient failure into 3 extra
+ * LLM calls. The error state offers a manual Retry (regenerate) instead.
+ */
 export const useRoadmap = (applicationId: string) =>
   useQuery({
     queryKey: ['roadmap', applicationId],
     queryFn: () => fetchRoadmap(applicationId),
+    retry: false,
   });
 
 export const useRegenerateRoadmap = (applicationId: string) => {

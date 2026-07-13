@@ -9,7 +9,7 @@ import {
 } from '@/services/applications/hooks';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { Link, createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 const RegenerateIcon = iconMap.redo;
@@ -228,71 +228,132 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
             {actions}
           </footer>
         </div>
+      ) : talkingPoints.length > 0 ? (
+        <RoadmapTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          timeline={
+            <RoadmapTimeline
+              roadmap={roadmap}
+              interviewAt={application?.interviewAt ?? null}
+              actions={actions}
+            />
+          }
+          talkingPoints={<RoadmapTalkingPoints points={talkingPoints} />}
+        />
       ) : (
-        <>
-          {talkingPoints.length > 0 && (
-            <div
-              role="tablist"
-              aria-label="Roadmap views"
-              className="border-border flex shrink-0 gap-1 border-b"
-            >
-              <TabButton
-                isActive={activeTab === 'path'}
-                onClick={() => setActiveTab('path')}
-              >
-                Preparation path
-              </TabButton>
-              <TabButton
-                isActive={activeTab === 'talking'}
-                onClick={() => setActiveTab('talking')}
-              >
-                Interview talking points
-              </TabButton>
-            </div>
-          )}
-
-          {activeTab === 'talking' && talkingPoints.length > 0 ? (
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <RoadmapTalkingPoints points={talkingPoints} />
-            </div>
-          ) : (
-            <div className="min-h-0 flex-1">
-              <RoadmapTimeline
-                roadmap={roadmap}
-                interviewAt={application?.interviewAt ?? null}
-                actions={actions}
-              />
-            </div>
-          )}
-        </>
+        <div className="min-h-0 flex-1">
+          <RoadmapTimeline
+            roadmap={roadmap}
+            interviewAt={application?.interviewAt ?? null}
+            actions={actions}
+          />
+        </div>
       )}
     </RoadmapShell>
   );
 }
 
-/** Underline tab button matching the profile-page tab idiom (token-only). */
-function TabButton({
-  isActive,
-  onClick,
-  children,
+const TABS = [
+  { key: 'path', label: 'Preparation path' },
+  { key: 'talking', label: 'Interview talking points' },
+] as const;
+
+/**
+ * Two-view switcher implementing the full ARIA tabs pattern: a `tablist` of
+ * `tab`s wired to their `tabpanel`s via `aria-controls`/`aria-labelledby`, with
+ * roving tabindex + Left/Right/Home/End arrow-key navigation (only the active
+ * tab is in the tab order; arrows move between them).
+ */
+function RoadmapTabs({
+  activeTab,
+  onTabChange,
+  timeline,
+  talkingPoints,
 }: {
-  isActive: boolean;
-  onClick: () => void;
-  children: ReactNode;
+  activeTab: 'path' | 'talking';
+  onTabChange: (tab: 'path' | 'talking') => void;
+  timeline: ReactNode;
+  talkingPoints: ReactNode;
 }) {
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const focusTab = (index: number) => {
+    const bounded = (index + TABS.length) % TABS.length;
+    onTabChange(TABS[bounded].key);
+    tabRefs.current[bounded]?.focus();
+  };
+
+  const onKeyDown = (event: React.KeyboardEvent, index: number) => {
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      focusTab(index + 1);
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      focusTab(index - 1);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      focusTab(0);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      focusTab(TABS.length - 1);
+    }
+  };
+
   return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={isActive}
-      onClick={onClick}
-      className={`text-button-m cursor-pointer rounded-none border-b-[2.5px] px-5 py-3 transition-colors ${
-        isActive
-          ? 'border-accent text-text'
-          : 'text-text-weaker hover:text-text border-transparent'
-      }`}
-    >
-      {children}
-    </button>
+    <>
+      <div
+        role="tablist"
+        aria-label="Roadmap views"
+        className="border-border flex shrink-0 gap-1 border-b"
+      >
+        {TABS.map((tab, index) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              ref={(node) => {
+                tabRefs.current[index] = node;
+              }}
+              type="button"
+              role="tab"
+              id={`roadmap-tab-${tab.key}`}
+              aria-selected={isActive}
+              aria-controls={`roadmap-panel-${tab.key}`}
+              tabIndex={isActive ? 0 : -1}
+              onClick={() => onTabChange(tab.key)}
+              onKeyDown={(event) => onKeyDown(event, index)}
+              className={`text-button-m cursor-pointer rounded-none border-b-[2.5px] px-5 py-3 transition-colors ${
+                isActive
+                  ? 'border-accent text-text'
+                  : 'text-text-weaker hover:text-text border-transparent'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div
+        role="tabpanel"
+        id="roadmap-panel-path"
+        aria-labelledby="roadmap-tab-path"
+        hidden={activeTab !== 'path'}
+        className="min-h-0 flex-1"
+      >
+        {activeTab === 'path' && timeline}
+      </div>
+      <div
+        role="tabpanel"
+        id="roadmap-panel-talking"
+        aria-labelledby="roadmap-tab-talking"
+        hidden={activeTab !== 'talking'}
+        tabIndex={0}
+        className="min-h-0 flex-1 overflow-y-auto"
+      >
+        {activeTab === 'talking' && talkingPoints}
+      </div>
+    </>
   );
 }

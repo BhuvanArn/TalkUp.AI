@@ -1,5 +1,5 @@
 import type { RoadmapTopic } from '@/services/applications/types';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 
 interface RoadmapTopicCardProps {
   /** 1-based position of this topic on the timeline. */
@@ -27,6 +27,7 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
   const rationaleRef = useRef<HTMLParagraphElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const panelId = useId();
   const [isTruncated, setIsTruncated] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -76,6 +77,7 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
         role={isTruncated ? 'button' : undefined}
         tabIndex={isTruncated ? 0 : undefined}
         aria-expanded={isTruncated ? isOpen : undefined}
+        aria-controls={isTruncated ? panelId : undefined}
         onKeyDown={
           isTruncated
             ? (e) => {
@@ -114,7 +116,8 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
 
       {isOpen && (
         <div
-          role="dialog"
+          id={panelId}
+          role="region"
           aria-label={`${topic.title} details`}
           className="bg-surface-raised border-border absolute top-0 left-0 z-30 flex w-[min(20rem,80vw)] flex-col gap-2 rounded-2xl border p-4 shadow-lg"
         >

@@ -500,6 +500,74 @@ describe("ApplicationsService", () => {
       expect(applicationRepo.save).toHaveBeenCalledWith(row);
     });
 
+    it("coalesces concurrent cache-miss generations into one Groq call", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      let resolveGroq: (v: unknown) => void = () => {};
+      mockGroqCreate.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveGroq = resolve;
+          }),
+      );
+
+      // Fire three concurrent gets for the same row before the LLM resolves.
+      const p1 = service.getRoadmap("u1", "a1");
+      const p2 = service.getRoadmap("u1", "a1");
+      const p3 = service.getRoadmap("u1", "a1");
+      // Let all three get past `findOwned` and register/await the in-flight
+      // promise before we resolve the single Groq call.
+      await new Promise((resolve) => setImmediate(resolve));
+      resolveGroq({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+      const [r1, r2, r3] = await Promise.all([p1, p2, p3]);
+
+      // One shared generation: a single Groq call and a single save.
+      expect(mockGroqCreate).toHaveBeenCalledTimes(1);
+      expect(applicationRepo.save).toHaveBeenCalledTimes(1);
+      expect(r1).toEqual(r2);
+      expect(r2).toEqual(r3);
+    });
+
+    it("clears the in-flight lock so a later generation runs fresh", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      await service.regenerateRoadmap("u1", "a1");
+      await service.regenerateRoadmap("u1", "a1");
+
+      // Two sequential regenerations = two calls (lock cleared between them).
+      expect(mockGroqCreate).toHaveBeenCalledTimes(2);
+    });
+
+    it("defaults a non-number match_score (e.g. an array) to 0", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                match_score: [50],
+                summary: "s",
+                topics: [],
+              }),
+            },
+          },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      // Number([50]) === 50 would pass Number.isFinite; the typeof guard rejects
+      // it and falls back to 0 instead of trusting a coerced array.
+      expect(result.match_score).toBe(0);
+    });
+
     it("keeps well-formed talking points from the LLM", async () => {
       const row = ownedRow();
       applicationRepo.findOne = jest.fn().mockResolvedValue(row);

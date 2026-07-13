@@ -32,6 +32,16 @@ import {
 export class ApplicationsService {
   private readonly logger = new Logger(ApplicationsService.name);
 
+  // In-flight generation lock, keyed by application id. Concurrent cache-miss
+  // requests for the SAME row would each read `roadmap: null` and fire their own
+  // Groq call (N requests → N calls, last-write-wins). We coalesce them onto one
+  // shared promise so a row is generated exactly once at a time. Process-local
+  // (single instance); a multi-instance deploy would need a DB row lock instead.
+  private readonly inFlightRoadmaps = new Map<
+    string,
+    Promise<RoadmapExtraction>
+  >();
+
   constructor(
     @InjectRepository(application)
     private readonly applicationRepo: Repository<application>,
@@ -56,10 +66,9 @@ export class ApplicationsService {
       throw new BadRequestException("This URL target is not allowed.");
     }
 
-    // Dedup/store on the CANONICAL url (query + fragment stripped) so the same
-    // posting maps to one application even when the link carries per-visit
-    // tracking params (LinkedIn's trackingId/refId/eBP, etc.) — otherwise a
-    // re-analysis of the same offer would create a duplicate training path.
+    // Dedup + store on the canonical url so re-analysing the same posting
+    // doesn't create a duplicate training path (see canonicalizeOfferUrl for
+    // what it strips and why).
     const canonicalUrl = canonicalizeOfferUrl(url);
 
     // Per-user dedup: a repeated submission of the same job URL (double-submit,
@@ -226,7 +235,7 @@ export class ApplicationsService {
     const row = await this.findOwned(userId, applicationId);
     if (row.roadmap) return row.roadmap;
     if (!row.offer_details && !row.cv_details) return this.emptyRoadmap();
-    return this.generateAndSaveRoadmap(row);
+    return this.generateOnce(row);
   }
 
   /**
@@ -238,7 +247,24 @@ export class ApplicationsService {
     applicationId: string,
   ): Promise<RoadmapExtraction> {
     const row = await this.findOwned(userId, applicationId);
-    return this.generateAndSaveRoadmap(row);
+    return this.generateOnce(row);
+  }
+
+  /**
+   * Coalesces concurrent generations for one application onto a single Groq
+   * call: the first caller registers an in-flight promise, later callers await
+   * it instead of firing their own. Cleared in `finally` so the next request
+   * (e.g. a regenerate) can start fresh.
+   */
+  private generateOnce(row: application): Promise<RoadmapExtraction> {
+    const existing = this.inFlightRoadmaps.get(row.application_id);
+    if (existing) return existing;
+
+    const promise = this.generateAndSaveRoadmap(row).finally(() => {
+      this.inFlightRoadmaps.delete(row.application_id);
+    });
+    this.inFlightRoadmaps.set(row.application_id, promise);
+    return promise;
   }
 
   /** Valid-but-empty roadmap; fresh object each time so callers cannot share state. */
@@ -260,7 +286,10 @@ export class ApplicationsService {
 
   /** Defensive shape-fixing on LLM output: clamp the score, default the rest. */
   private normalizeRoadmap(raw: RoadmapExtraction): RoadmapExtraction {
-    const score = Number(raw.match_score);
+    // typeof check first: Number([50]) === 50 would slip a non-number past
+    // Number.isFinite, so only coerce values that are already numbers.
+    const score =
+      typeof raw.match_score === "number" ? raw.match_score : Number.NaN;
     return {
       match_score: Number.isFinite(score)
         ? Math.min(100, Math.max(0, Math.round(score)))

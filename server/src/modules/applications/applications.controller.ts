@@ -119,6 +119,13 @@ export class ApplicationsController {
   @ApiOkResponse({ description: "The roadmap", type: GetRoadmapDto })
   @ApiNotFoundResponse({ description: "Application not found" })
   @ApiUnauthorizedResponse()
+  // A cache-miss GET reaches the same Groq generation as regenerate, so it needs
+  // its own limit — otherwise spamming GET on an uncached row bypasses the
+  // regenerate throttle. The service also coalesces concurrent same-row misses
+  // onto one call; this bounds the sustained rate. Route-level guard because the
+  // app has no global ThrottlerGuard (@Throttle alone would be a no-op here).
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Get(":id/roadmap")
   async getRoadmap(
     @CurrentUser() user: user,
@@ -139,7 +146,9 @@ export class ApplicationsController {
   @ApiUnauthorizedResponse()
   // Route-level guard ADDS to the class-level AccessTokenGuard. @Throttle
   // alone would be a no-op on this controller (no global ThrottlerGuard) —
-  // an unthrottled LLM endpoint means unbounded Groq spend per user.
+  // an unthrottled LLM endpoint means unbounded Groq spend. The limit is keyed
+  // per-IP (app-wide ThrottlerModule.getTracker uses req.ip), so co-located
+  // users behind one NAT share the budget — acceptable for a cost ceiling.
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post(":id/roadmap/regenerate")

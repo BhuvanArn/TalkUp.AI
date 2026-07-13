@@ -158,4 +158,19 @@ describe("ApplicationsController", () => {
     );
     expect(throttleKeys.length).toBeGreaterThan(0);
   });
+
+  it("attaches ThrottlerGuard AND throttle metadata to the GET roadmap route", () => {
+    // A cache-miss GET reaches the same Groq generation, so it must be throttled
+    // too — otherwise GET-spam bypasses the regenerate limit. Same guard-must-be
+    // -attached assertion as regenerate (a bare @Throttle would be a no-op).
+    const handler = ApplicationsController.prototype.getRoadmap;
+    const guards =
+      (Reflect.getMetadata("__guards__", handler) as unknown[]) ?? [];
+    expect(guards).toContain(ThrottlerGuard);
+
+    const throttleKeys = Reflect.getMetadataKeys(handler).filter((k) =>
+      String(k).toLowerCase().includes("throttler"),
+    );
+    expect(throttleKeys.length).toBeGreaterThan(0);
+  });
 });

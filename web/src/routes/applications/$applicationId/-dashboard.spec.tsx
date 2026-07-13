@@ -258,4 +258,48 @@ describe('ApplicationDashboard (roadmap page)', () => {
     );
     expect(screen.getByText('Own the deployment pipeline')).toBeInTheDocument();
   });
+
+  it('wires the ARIA tabs contract and roving arrow-key focus', async () => {
+    vi.mocked(useRoadmap).mockReturnValue({
+      data: {
+        ...roadmap,
+        talking_points: [
+          {
+            mission: 'Own the deployment pipeline',
+            angle: "You've run GitHub Actions, so you'd start there.",
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useRoadmap>);
+
+    renderWithProviders(<RouterProvider router={router} />);
+
+    const pathTab = await screen.findByRole('tab', {
+      name: /preparation path/i,
+    });
+    const talkingTab = screen.getByRole('tab', {
+      name: /interview talking points/i,
+    });
+
+    // Each tab controls a panel; the active panel is labelled by its tab.
+    expect(pathTab).toHaveAttribute('aria-controls', 'roadmap-panel-path');
+    expect(screen.getByRole('tabpanel')).toHaveAttribute(
+      'aria-labelledby',
+      'roadmap-tab-path',
+    );
+
+    // Roving tabindex: only the active tab is in the tab order.
+    expect(pathTab).toHaveAttribute('tabindex', '0');
+    expect(talkingTab).toHaveAttribute('tabindex', '-1');
+
+    // ArrowRight moves selection + focus to the next tab.
+    fireEvent.keyDown(pathTab, { key: 'ArrowRight' });
+    expect(talkingTab).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel')).toHaveAttribute(
+      'aria-labelledby',
+      'roadmap-tab-talking',
+    );
+  });
 });
