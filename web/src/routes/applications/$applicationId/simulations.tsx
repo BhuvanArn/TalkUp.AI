@@ -17,7 +17,7 @@ export const Route = createFileRoute(
  * In-app return to this application's roadmap. Without it the only way back
  * from a simulation is the browser back arrow (#195). Kept in the route (not
  * the shared SimulationWorkspace, which the standalone /simulations page also
- * uses and has no dashboard to return to).
+ * uses and has no roadmap to return to).
  */
 function BackToRoadmap({ applicationId }: { applicationId: string }) {
   // Sits above the workspace, which carries its own `p-6`; only add the matching
@@ -25,7 +25,7 @@ function BackToRoadmap({ applicationId }: { applicationId: string }) {
   // doubling the horizontal padding.
   return (
     <Link
-      to="/applications/$applicationId/dashboard"
+      to="/applications/$applicationId/roadmap"
       params={{ applicationId }}
       className="text-button-m text-text-weak hover:text-text inline-flex items-center gap-2 px-6 pt-6 transition-colors"
     >

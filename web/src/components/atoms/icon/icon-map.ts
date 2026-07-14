@@ -147,7 +147,7 @@ export const iconMap = {
   cv: PiReadCvLogo,
   notes: PiNote,
   agenda: PiCalendar,
-  dashboard: PiSquaresFour,
+  roadmap: PiSquaresFour,
   simulations: PiMonitorPlay,
   analytics: PiChartDonut,
   'app-notes': PiNotePencil,

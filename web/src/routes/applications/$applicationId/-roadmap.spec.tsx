@@ -14,7 +14,7 @@ import {
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { RoadmapPage } from './dashboard';
+import { RoadmapPage } from './roadmap';
 
 vi.mock('@/utils/auth.guards', () => ({
   createAuthGuard: vi.fn(() => () => Promise.resolve()),
@@ -64,9 +64,9 @@ const roadmap = {
 
 const mockRegenerate = vi.fn();
 
-// Contingency (per brief): the mini route tree only contains the dashboard
+// Contingency (per brief): the mini route tree only contains the roadmap
 // route, and router.load() would not match the nested
-// /applications/app-1/dashboard path from a bare createFileRoute tree here.
+// /applications/app-1/roadmap path from a bare createFileRoute tree here.
 // Render RoadmapPage directly through a root route instead.
 const router = createRouter({
   routeTree: createRootRoute({
@@ -86,7 +86,7 @@ const renderWithProviders = (component: React.ReactElement) => {
   );
 };
 
-describe('ApplicationDashboard (roadmap page)', () => {
+describe('ApplicationRoadmap (roadmap page)', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.mocked(useApplications).mockReturnValue({

@@ -9,11 +9,11 @@ export const Route = createFileRoute('/applications/$applicationId/')({
 /**
  * Application detail index page
  *
- * Redirects to the dashboard by default when visiting an application.
+ * Redirects to the roadmap by default when visiting an application.
  */
 function ApplicationIndex() {
   const { applicationId } = Route.useParams();
 
-  // Redirect to dashboard by default
-  return <Navigate to={`/applications/${applicationId}/dashboard`} />;
+  // Redirect to the roadmap by default
+  return <Navigate to={`/applications/${applicationId}/roadmap`} />;
 }
