@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 // #195: from an application's simulation page, an in-app "Back to roadmap"
-// control must return to that application's dashboard (roadmap) route, so the
+// control must return to that application's roadmap route, so the
 // roadmap → simulate → back loop never needs the browser back arrow.
 const app = {
   applicationId: '01890000-0000-7000-8000-000000000001',
@@ -51,6 +51,6 @@ test('back control on the simulation page returns to the application roadmap', a
   await back.click();
 
   await expect(page).toHaveURL(
-    new RegExp(`/applications/${app.applicationId}/dashboard$`),
+    new RegExp(`/applications/${app.applicationId}/roadmap$`),
   );
 });
