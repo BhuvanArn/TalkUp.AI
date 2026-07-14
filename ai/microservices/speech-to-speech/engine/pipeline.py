@@ -16,8 +16,15 @@ import numpy as np
 from dataclasses import dataclass
 from .audio_decode import decode_audio_to_float32
 from .models import STSModels, generate_ai_response, synthesize_tts_chunks
-from .simulation_brief import build_messages_for_turn
-from .session_context import append_session_history
+from .simulation_brief import build_messages_for_turn, build_messages_for_opening
+from .session_context import append_session_history, append_assistant_turn, fetch_session_history
+from .interview_flow import (
+	InterviewFlowStore,
+	CLOSING_TURN_THRESHOLD,
+	count_user_turns,
+	get_turn_instruction,
+	mark_presentation_done,
+)
 
 # Canned phrases faster-whisper frequently hallucinates on silence/noise (FR).
 # These are only discarded when the model is also unsure speech was present, so
@@ -82,6 +89,7 @@ class STSResult:
 	transcription: str
 	ai_response: str
 	audio_chunks: list[bytes]
+	simulation_complete: bool = False
 
 def process_sts_request(
 	models: STSModels,
@@ -128,16 +136,78 @@ def process_sts_request(
 	if not user_text or len(user_text) < 2:
 		return STSResult(transcription="", ai_response="", audio_chunks=[])
 
+	flow = InterviewFlowStore.get(interview_id) if interview_id else None
+	history = fetch_session_history(interview_id) if interview_id else []
+	user_turn_count = count_user_turns(history) + 1
+	farewell_sent = flow.farewell_sent if flow else False
+	presentation_done = flow.presentation_done if flow else False
+	extra_instruction = get_turn_instruction(
+		history,
+		user_turn_count,
+		user_text,
+		farewell_sent,
+		presentation_done,
+	)
+
 	messages = build_messages_for_turn(
 		models.settings.system_prompt,
 		interview_id,
 		user_text,
+		extra_instruction=extra_instruction,
 	)
 
 	ai_response = generate_ai_response(models, messages)
 	audio_chunks = list(synthesize_tts_chunks(models, ai_response))
 
+	simulation_complete = False
 	if interview_id and ai_response:
+		if farewell_sent:
+			simulation_complete = True
+			if flow:
+				InterviewFlowStore.clear(interview_id)
+		elif user_turn_count >= CLOSING_TURN_THRESHOLD and flow:
+			flow.farewell_sent = True
+
+		if flow:
+			mark_presentation_done(interview_id, user_text)
+
 		append_session_history(interview_id, user_text, ai_response)
 
-	return STSResult(transcription=user_text, ai_response=ai_response, audio_chunks=audio_chunks)
+	return STSResult(
+		transcription=user_text,
+		ai_response=ai_response,
+		audio_chunks=audio_chunks,
+		simulation_complete=simulation_complete,
+	)
+
+
+def generate_opening_greeting(
+	models: STSModels,
+	interview_id: str | None = None,
+) -> STSResult:
+	"""Generate the proactive opening greeting when a session starts."""
+	if not interview_id:
+		return STSResult(transcription="", ai_response="", audio_chunks=[])
+
+	flow = InterviewFlowStore.get(interview_id)
+	if flow.greeting_sent:
+		return STSResult(transcription="", ai_response="", audio_chunks=[])
+
+	messages = build_messages_for_opening(
+		models.settings.system_prompt,
+		interview_id,
+	)
+
+	ai_response = generate_ai_response(models, messages)
+	if not ai_response:
+		return STSResult(transcription="", ai_response="", audio_chunks=[])
+
+	audio_chunks = list(synthesize_tts_chunks(models, ai_response))
+	flow.greeting_sent = True
+	append_assistant_turn(interview_id, ai_response)
+
+	return STSResult(
+		transcription="",
+		ai_response=ai_response,
+		audio_chunks=audio_chunks,
+	)

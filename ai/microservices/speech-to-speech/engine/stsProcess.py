@@ -21,6 +21,7 @@ from .notifications import Notifications
 from .queueService import StsQueueService
 from .settings import load_settings
 from .simulation_brief import SimulationBrief, SimulationBriefStore
+from .interview_flow import InterviewFlowStore
 from .verbal_analyzer_client import analyze_transcription, finalize_session
 from .ws_auth import WsSessionClaims, authenticate_websocket, interview_id_allowed
 
@@ -171,6 +172,8 @@ async def _process_stream_and_reply(
 			"response": result.ai_response,
 			"audio_chunks": encoded_chunks,
 		}
+		if result.simulation_complete:
+			payload["simulation_complete"] = True
 		if request_id is not None:
 			payload["request_id"] = request_id
 
@@ -205,6 +208,67 @@ async def _process_stream_and_reply(
 			)
 		except (WebSocketDisconnect, ConnectionClosed):
 			NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending STS warning")
+
+
+async def _process_session_start_and_reply(
+	websocket: WebSocket,
+	send_lock: asyncio.Lock,
+	interview_id: str,
+	request_id: int | None = None,
+) -> None:
+	"""Generate and send the proactive opening greeting for a new session."""
+	try:
+		from .pipeline import generate_opening_greeting
+
+		result = await asyncio.to_thread(
+			generate_opening_greeting,
+			models,
+			interview_id,
+		)
+
+		if not result.ai_response:
+			return
+
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			0,
+			f"AI greeting: {result.ai_response[:100]}...",
+		)
+		encoded_chunks = [base64.b64encode(chunk).decode("ascii") for chunk in result.audio_chunks]
+		payload: dict = {
+			"type": "sts_result",
+			"transcription": "",
+			"response": result.ai_response,
+			"audio_chunks": encoded_chunks,
+		}
+		if request_id is not None:
+			payload["request_id"] = request_id
+
+		await _ws_send_json(websocket, send_lock, payload)
+	except (WebSocketDisconnect, ConnectionClosed):
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			1,
+			"Client disconnected while sending session_start greeting",
+		)
+	except Exception as err:
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			2,
+			f"session_start greeting error: {err}",
+		)
+		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 2, traceback.format_exc().strip())
+		try:
+			await _ws_send_json(
+				websocket,
+				send_lock,
+				{
+					"type": "warning",
+					"text": "Erreur temporaire lors de l'accueil. Vous pouvez commencer a parler.",
+				},
+			)
+		except (WebSocketDisconnect, ConnectionClosed):
+			pass
 
 
 @app.get("/health")
@@ -282,6 +346,8 @@ async def websocket_endpoint(websocket: WebSocket):
 				if payload.get("type") == "session_end":
 					end_interview_id = payload.get("interview_id") or payload.get("stream_id")
 					if isinstance(end_interview_id, str) and end_interview_id.strip():
+						InterviewFlowStore.clear(end_interview_id.strip())
+						SimulationBriefStore.clear(end_interview_id.strip())
 						asyncio.create_task(
 							asyncio.to_thread(finalize_session, end_interview_id.strip()),
 						)
@@ -290,6 +356,37 @@ async def websocket_endpoint(websocket: WebSocket):
 						send_lock,
 						{"type": "session_end_ack", "interview_id": end_interview_id},
 					)
+					continue
+
+				if payload.get("type") == "session_start":
+					start_interview_id = payload.get("interview_id") or payload.get("stream_id")
+					start_request_id = payload.get("request_id")
+					if isinstance(start_interview_id, str):
+						start_interview_id = start_interview_id.strip() or None
+					else:
+						start_interview_id = None
+
+					if not interview_id_allowed(claims, start_interview_id):
+						await _ws_send_json(
+							websocket,
+							send_lock,
+							{"type": "error", "text": "interview_id does not match session token"},
+						)
+						continue
+
+					if start_request_id is not None and not isinstance(start_request_id, int):
+						try:
+							start_request_id = int(start_request_id)
+						except (TypeError, ValueError):
+							start_request_id = None
+
+					if start_interview_id:
+						await _process_session_start_and_reply(
+							websocket,
+							send_lock,
+							start_interview_id,
+							start_request_id,
+						)
 					continue
 
 				if payload.get("type") == "ping":

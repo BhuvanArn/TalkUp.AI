@@ -51,6 +51,15 @@ class STSModels:
 
 
 _ROLE_LABEL_PATTERN = re.compile(r"(?im)(?:^|[\n\t])\s*(system|user|assistant)\s*:\s*")
+_BRACKET_PLACEHOLDER_PATTERN = re.compile(r"\[[^\]]+\]")
+
+
+def _strip_bracket_placeholders(text: str) -> str:
+	"""Remove LLM placeholders like [Prenom du candidat] from spoken output."""
+	cleaned = _BRACKET_PLACEHOLDER_PATTERN.sub("", text)
+	cleaned = re.sub(r"\s{2,}", " ", cleaned)
+	cleaned = re.sub(r"Bonjour\s+!", "Bonjour !", cleaned, flags=re.IGNORECASE)
+	return cleaned.strip()
 
 
 def _sanitize_llm_response(text: str) -> str:
@@ -75,7 +84,7 @@ def _sanitize_llm_response(text: str) -> str:
 
 	cleaned = " ".join(filtered_lines).strip()
 	cleaned = re.sub(r"\s{2,}", " ", cleaned)
-	return cleaned
+	return _strip_bracket_placeholders(cleaned)
 
 
 def _is_valid_vllm_model_dir(model_path: str) -> tuple[bool, str]:
