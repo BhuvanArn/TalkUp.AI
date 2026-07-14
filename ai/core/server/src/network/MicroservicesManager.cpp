@@ -980,12 +980,18 @@ void talkup_network::MicroservicesManager::process_session_start_job(
             if (msg_type == "pong" || msg_type == "simulation_context_ack")
                 continue;
 
+            if (try_dispatch_sts_va_followup(msg_json))
+                continue;
+
             if (!msg_json.contains("request_id"))
                 continue;
 
             const uint64_t response_id = msg_json.value("request_id", static_cast<uint64_t>(0));
-            if (response_id != request_id)
+            if (response_id != request_id) {
+                if (try_dispatch_sts_va_followup(msg_json))
+                    continue;
                 continue;
+            }
 
             if (msg_type == "sts_result") {
                 if (callback)
