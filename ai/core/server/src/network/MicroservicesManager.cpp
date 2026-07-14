@@ -239,6 +239,8 @@ void talkup_network::MicroservicesManager::create_service_worker(
                         job.interview_id,
                         job.context_data,
                         job.context_promise);
+                } else if (job.kind == WebSocketConnection::StsJobKind::SessionStart) {
+                    process_session_start_job(job.data, std::move(job.callback), job.client_session);
                 } else {
                     process_sts_job(job.data, std::move(job.callback), job.client_session);
                 }
@@ -489,6 +491,42 @@ void talkup_network::MicroservicesManager::send_to_sts_microservice(
             it->second.queue_cv.notify_one();
             enqueue_ok = true;
             std::cout << "[MicroservicesManager] Enqueued STS job (queue size pending)" << std::endl;
+        }
+    }
+
+    if (!enqueue_ok && callback) {
+        callback(err_response);
+    }
+}
+
+void talkup_network::MicroservicesManager::send_session_start_to_sts(
+    const nlohmann::json &data,
+    ResponseCallback callback,
+    const std::shared_ptr<WsClientSession> &client_session)
+{
+    nlohmann::json err_response;
+    bool enqueue_ok = false;
+
+    {
+        std::lock_guard<std::mutex> lock(__ws_mutex);
+        auto it = __ws_connections.find("sts");
+        if (it == __ws_connections.end() || !it->second.is_connected) {
+            std::cerr << "[MicroservicesManager] STS connection not available" << std::endl;
+            err_response = {{"error", "STS connection not available"}};
+        } else {
+            {
+                std::lock_guard<std::mutex> qlock(it->second.queue_mutex);
+                WebSocketConnection::StsJob job;
+                job.kind = WebSocketConnection::StsJobKind::SessionStart;
+                job.data = data;
+                job.callback = std::move(callback);
+                if (client_session)
+                    job.client_session = client_session;
+                it->second.job_queue.push(std::move(job));
+            }
+            it->second.queue_cv.notify_one();
+            enqueue_ok = true;
+            std::cout << "[MicroservicesManager] Enqueued STS session_start job" << std::endl;
         }
     }
 
@@ -864,6 +902,115 @@ void talkup_network::MicroservicesManager::process_sts_job(
     }
 }
 
+void talkup_network::MicroservicesManager::process_session_start_job(
+    const nlohmann::json &data,
+    ResponseCallback callback,
+    const std::weak_ptr<WsClientSession> &client_session)
+{
+    try {
+        std::shared_ptr<boost::beast::websocket::stream<boost::beast::tcp_stream>> ws;
+        std::mutex *io_mutex = nullptr;
+
+        {
+            std::lock_guard<std::mutex> lock(__ws_mutex);
+            auto it = __ws_connections.find("sts");
+            if (it == __ws_connections.end() || !it->second.is_connected ||
+                !it->second.ws || !it->second.ws->is_open()) {
+                if (it != __ws_connections.end())
+                    it->second.is_connected = false;
+            } else {
+                ws = it->second.ws;
+                io_mutex = &it->second.io_mutex;
+            }
+        }
+
+        if (!ws || !io_mutex) {
+            if (!reconnect_service_connection("sts")) {
+                if (callback)
+                    callback(nlohmann::json{{"error", "STS connection not available"}});
+                return;
+            }
+            std::lock_guard<std::mutex> lock(__ws_mutex);
+            auto it = __ws_connections.find("sts");
+            if (it == __ws_connections.end() || !it->second.ws) {
+                if (callback)
+                    callback(nlohmann::json{{"error", "STS connection not available"}});
+                return;
+            }
+            ws = it->second.ws;
+            io_mutex = &it->second.io_mutex;
+        }
+
+        std::unique_lock<std::mutex> io_lock(*io_mutex);
+        const uint64_t request_id = ++g_sts_request_id;
+        std::string interview_id;
+        if (data.contains("stream_id") && data["stream_id"].is_string())
+            interview_id = data["stream_id"].get<std::string>();
+        if (data.contains("interview_id") && data["interview_id"].is_string())
+            interview_id = data["interview_id"].get<std::string>();
+
+        nlohmann::json start_json = {
+            {"services", {"STS"}},
+            {"type", "session_start"},
+            {"request_id", request_id},
+            {"timestamp", std::time(nullptr)},
+            {"data", nlohmann::json::object()},
+        };
+        if (!interview_id.empty()) {
+            start_json["interview_id"] = interview_id;
+            start_json["stream_id"] = interview_id;
+        }
+        ws->write(boost::asio::buffer(start_json.dump()));
+        std::cout << "[MicroservicesManager] Sent STS session_start request_id=" << request_id << std::endl;
+
+        const int timeout_ms = 120000;
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
+
+        while (std::chrono::steady_clock::now() < deadline) {
+            const int remaining_ms = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                deadline - std::chrono::steady_clock::now()).count());
+            if (remaining_ms <= 0)
+                break;
+
+            nlohmann::json msg_json;
+            if (!read_sts_json_message(*ws, msg_json, std::min(remaining_ms, 30000)))
+                continue;
+
+            const std::string msg_type = msg_json.value("type", "");
+            if (msg_type == "pong" || msg_type == "simulation_context_ack")
+                continue;
+
+            if (!msg_json.contains("request_id"))
+                continue;
+
+            const uint64_t response_id = msg_json.value("request_id", static_cast<uint64_t>(0));
+            if (response_id != request_id)
+                continue;
+
+            if (msg_type == "sts_result") {
+                if (callback)
+                    callback(msg_json);
+                io_lock.unlock();
+                return;
+            }
+
+            io_lock.unlock();
+            if (callback)
+                callback(msg_json);
+            return;
+        }
+
+        std::cerr << "[MicroservicesManager] session_start read timed out" << std::endl;
+        io_lock.unlock();
+        if (callback)
+            callback(nlohmann::json{{"type", "error"}, {"error", "Read timeout"}});
+    } catch (const std::exception &e) {
+        std::cerr << "[MicroservicesManager] session_start exception: " << e.what() << std::endl;
+        if (callback)
+            callback(nlohmann::json{{"type", "error"}, {"error", std::string("Exception: ") + e.what()}});
+    }
+}
+
 void talkup_network::MicroservicesManager::start_service_worker(const std::string &service_name)
 {
     std::lock_guard<std::mutex> lock(__ws_mutex);
@@ -908,6 +1055,8 @@ void talkup_network::MicroservicesManager::start_service_worker(const std::strin
                         job.interview_id,
                         job.context_data,
                         job.context_promise);
+                } else if (job.kind == WebSocketConnection::StsJobKind::SessionStart) {
+                    process_session_start_job(job.data, std::move(job.callback), job.client_session);
                 } else {
                     process_sts_job(job.data, std::move(job.callback), job.client_session);
                 }

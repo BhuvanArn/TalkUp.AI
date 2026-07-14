@@ -39,6 +39,10 @@ talkup_network::WsManager::WsManager()
         crow::websocket::connection& conn, std::shared_ptr<MicroservicesManager> microservices_manager) {
             handle_session_end(json, conn, microservices_manager);
         };
+    _type_handlers["session_start"] = [this](const nlohmann::json& json,
+        crow::websocket::connection& conn, std::shared_ptr<MicroservicesManager> microservices_manager) {
+            handle_session_start(json, conn, microservices_manager);
+        };
 }
 
 void talkup_network::WsManager::connection_type_manager(nlohmann::json &json, crow::websocket::connection &conn,
@@ -314,6 +318,75 @@ void talkup_network::WsManager::handle_simulation_context(const nlohmann::json& 
         .timestamp = timestamp,
         .data = "simulation context registered"
     }).dump());
+}
+
+void talkup_network::WsManager::handle_session_start(const nlohmann::json& json,
+    crow::websocket::connection& conn, std::shared_ptr<MicroservicesManager> microservices_manager)
+{
+    const std::string key = json.value("key", "");
+    const int64_t timestamp = json.value("timestamp", static_cast<int64_t>(
+        std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count()));
+
+    std::string interview_id = json.value("stream_id", "");
+    if (json.contains("interview_id") && json["interview_id"].is_string())
+        interview_id = json["interview_id"].get<std::string>();
+
+    if (interview_id.empty()) {
+        conn.send_text(set_respond_json_format({
+            .type = "error",
+            .key = key,
+            .stream_id = "",
+            .format = "text",
+            .timestamp = timestamp,
+            .data = "session_start requires stream_id or interview_id"
+        }).dump());
+        return;
+    }
+
+    if (!microservices_manager) {
+        conn.send_text(set_respond_json_format({
+            .type = "error",
+            .key = key,
+            .stream_id = interview_id,
+            .format = "text",
+            .timestamp = timestamp,
+            .data = "microservices manager unavailable"
+        }).dump());
+        return;
+    }
+
+    auto client_session = WsClientSession::bind(conn);
+    microservices_manager->send_session_start_to_sts(json,
+        [this, client_session, key, interview_id](const nlohmann::json& sts_resp) {
+            if (!client_session->is_open())
+                return;
+
+            const std::string sts_type = sts_resp.value("type", "");
+            if (sts_resp.contains("error") || sts_type == "error" || sts_type == "warning") {
+                client_session->send_text(set_respond_json_format({
+                    .type = "error",
+                    .key = key,
+                    .stream_id = interview_id,
+                    .format = "text",
+                    .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count(),
+                    .data = sts_resp.dump()
+                }).dump());
+                return;
+            }
+
+            client_session->send_text(set_respond_json_format({
+                .type = "sts_result",
+                .key = key,
+                .stream_id = interview_id,
+                .format = "audio",
+                .timestamp = std::chrono::duration_cast<std::chrono::seconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count(),
+                .data = sts_resp.dump()
+            }).dump());
+        },
+        client_session);
 }
 
 void talkup_network::WsManager::handle_session_end(const nlohmann::json& json,

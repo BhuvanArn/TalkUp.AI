@@ -100,6 +100,14 @@ namespace talkup_network {
             static void send_session_end_to_sts(const std::string &interview_id);
 
             /**
+             * @brief Request STS to generate the proactive opening greeting.
+             */
+            static void send_session_start_to_sts(
+                const nlohmann::json &data,
+                ResponseCallback callback,
+                const std::shared_ptr<WsClientSession> &client_session = nullptr);
+
+            /**
              * @brief Initialize WebSocket connections to all registered microservices.
              * It's establishes persistent WebSocket connections to each microservice
              * defined in the services list. It handles connection setup, error reporting,
@@ -136,6 +144,7 @@ namespace talkup_network {
                 enum class StsJobKind {
                     StreamChunk,
                     SimulationContext,
+                    SessionStart,
                 };
 
                 struct StsJob {
@@ -203,6 +212,11 @@ namespace talkup_network {
              * @param data The JSON data containing the job information.
              */
             static void process_sts_job(
+                const nlohmann::json &data,
+                ResponseCallback callback,
+                const std::weak_ptr<WsClientSession> &client_session = {});
+
+            static void process_session_start_job(
                 const nlohmann::json &data,
                 ResponseCallback callback,
                 const std::weak_ptr<WsClientSession> &client_session = {});
