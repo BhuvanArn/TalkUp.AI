@@ -180,6 +180,20 @@ describe('auth.guards', () => {
         createPublicRouteGuard('/verify-email')(),
       ).resolves.toBeUndefined();
     });
+
+    it('allows organization-created when not authenticated', async () => {
+      axiosGet.mockResolvedValue({ data: { authenticated: false } });
+      await expect(
+        createPublicRouteGuard('/organization-created')(),
+      ).resolves.toBeUndefined();
+    });
+
+    it('redirects home when already authenticated on organization-created', async () => {
+      await expect(
+        createPublicRouteGuard('/organization-created')(),
+      ).rejects.toThrow('REDIRECT');
+      expect(redirectMock).toHaveBeenCalledWith({ to: '/' });
+    });
   });
 
   describe('role-gated guard (B4)', () => {

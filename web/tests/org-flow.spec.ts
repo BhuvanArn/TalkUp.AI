@@ -55,7 +55,11 @@ test.describe('organization flows', () => {
 
     // Signup now routes to the acknowledgement page (not straight to
     // verify-email). It confirms creation and surfaces the admin username.
-    await expect(page).toHaveURL(/\/organization-created/);
+    // The redirect waits on the org-signup 202 from the real CI backend
+    // (org + admin + OTP creation), which can exceed the 5s default — and the
+    // public-route guard runs an auth-status refresh on the way. Give the
+    // navigation a generous window so a slow round trip doesn't flake.
+    await expect(page).toHaveURL(/\/organization-created/, { timeout: 20000 });
     await expect(
       page.getByRole('heading', { name: /organization created/i }),
     ).toBeVisible();
@@ -63,7 +67,7 @@ test.describe('organization flows', () => {
 
     // The primary CTA hands off to verify-email carrying the admin email.
     await page.getByRole('button', { name: /verify admin email/i }).click();
-    await expect(page).toHaveURL(/\/verify-email/);
+    await expect(page).toHaveURL(/\/verify-email/, { timeout: 20000 });
   });
 
   test('register with a bogus code surfaces the backend error', async ({
