@@ -245,6 +245,18 @@ async def _process_session_start_and_reply(
 		)
 
 		if not result.ai_response:
+			if request_id is not None:
+				await _ws_send_json(
+					websocket,
+					send_lock,
+					{
+						"type": "sts_result",
+						"transcription": "",
+						"response": "",
+						"audio_chunks": [],
+						"request_id": request_id,
+					},
+				)
 			return
 
 		NOTIFIER.send_notification(
