@@ -151,6 +151,61 @@ describe("SimulationContextService", () => {
     });
   });
 
+  describe("appendAssistantTurn", () => {
+    const baseCtx = {
+      interviewId: "int-1",
+      userId: "user-1",
+      systemPrompt: "SYSTEM",
+      history: [] as { role: string; content: string }[],
+    };
+
+    it("appends a single assistant turn, persists with a TTL, and touches heartbeat", async () => {
+      redis.get.mockResolvedValueOnce(JSON.stringify(baseCtx));
+
+      await service.appendAssistantTurn("int-1", "Bonjour et bienvenue");
+
+      expect(redis.set).toHaveBeenCalledWith(
+        SimRedisKeys.context("int-1"),
+        expect.any(String),
+        "EX",
+        expect.any(Number),
+      );
+      const saved = JSON.parse(redis.set.mock.calls[0][1]);
+      expect(saved.history).toEqual([
+        { role: "assistant", content: "Bonjour et bienvenue" },
+      ]);
+      expect(capacity.touchHeartbeat).toHaveBeenCalledWith("int-1", "user-1");
+    });
+
+    it("trims history to the last historyMaxTurns*2 entries", async () => {
+      const longHistory = Array.from({ length: 60 }, (_, i) => ({
+        role: i % 2 === 0 ? "user" : "assistant",
+        content: `m${i}`,
+      }));
+      redis.get.mockResolvedValueOnce(
+        JSON.stringify({ ...baseCtx, history: longHistory }),
+      );
+
+      await service.appendAssistantTurn("int-1", "latest-assistant");
+
+      const saved = JSON.parse(redis.set.mock.calls[0][1]);
+      // historyMaxTurns defaults to 30 -> keep last 60 entries.
+      expect(saved.history.length).toBe(60);
+      expect(saved.history[saved.history.length - 1]).toEqual({
+        role: "assistant",
+        content: "latest-assistant",
+      });
+    });
+
+    it("propagates NotFoundException when no context is stored", async () => {
+      redis.get.mockResolvedValueOnce(null);
+
+      await expect(service.appendAssistantTurn("int-1", "x")).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe("deleteContext", () => {
     it("deletes the context key", async () => {
       await service.deleteContext("int-1");

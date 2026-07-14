@@ -100,6 +100,68 @@ describe('useAudioPlayback', () => {
     expect(result.current.isAiSpeaking).toBe(false);
   });
 
+  it('defers simulationComplete until the closing farewell audio finishes', async () => {
+    const sources: MockAudioBufferSourceNode[] = [];
+    const ctx = new MockAudioContext();
+    ctx.createBufferSource = vi.fn(() => {
+      const s = new MockAudioBufferSourceNode();
+      sources.push(s);
+      return s;
+    });
+    global.AudioContext = vi.fn(() => ctx) as unknown as typeof AudioContext;
+
+    const completePacket = {
+      type: 'sts_result',
+      data: JSON.stringify({
+        type: 'sts_result',
+        transcription: '',
+        response: 'Merci, au revoir.',
+        audio_chunks: ['QUFB'],
+        simulation_complete: true,
+      }),
+    };
+
+    const { result, rerender } = renderHook(
+      ({ message }) => useAudioPlayback({ message }),
+      { initialProps: { message: null as unknown } },
+    );
+
+    await act(async () => {
+      rerender({ message: completePacket as unknown });
+    });
+
+    // While the farewell audio is still playing, completion must NOT be signaled
+    // yet — otherwise the workspace tears down the socket mid-speech.
+    await waitFor(() => expect(result.current.isAiSpeaking).toBe(true));
+    expect(result.current.simulationComplete).toBe(false);
+
+    await act(async () => {
+      sources[sources.length - 1].onended?.();
+    });
+    expect(result.current.isAiSpeaking).toBe(false);
+    expect(result.current.simulationComplete).toBe(true);
+  });
+
+  it('signals simulationComplete immediately when the closing turn has no audio', () => {
+    const noAudioComplete = {
+      type: 'sts_result',
+      data: JSON.stringify({
+        type: 'sts_result',
+        transcription: '',
+        response: '',
+        audio_chunks: [],
+        simulation_complete: true,
+      }),
+    };
+
+    const { result } = renderHook(() =>
+      useAudioPlayback({ message: noAudioComplete as unknown }),
+    );
+
+    expect(result.current.simulationComplete).toBe(true);
+    expect(result.current.isAiSpeaking).toBe(false);
+  });
+
   it('stopPlayback stops sources and clears isAiSpeaking', async () => {
     const sources: MockAudioBufferSourceNode[] = [];
     const ctx = new MockAudioContext();

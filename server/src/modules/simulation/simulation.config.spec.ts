@@ -1,6 +1,9 @@
 import {
+  loadAiInitTimeoutMs,
   loadSimulationConfig,
+  parsePositiveIntEnv,
   resolveAiWsPublicBase,
+  SIM_AI_INIT_TIMEOUT_MS_DEFAULT,
 } from "./simulation.config";
 
 describe("simulation.config", () => {
@@ -8,6 +11,36 @@ describe("simulation.config", () => {
 
   afterEach(() => {
     process.env = { ...ORIGINAL_ENV };
+  });
+
+  describe("parsePositiveIntEnv", () => {
+    it("returns fallback for missing, invalid, zero, or negative values", () => {
+      expect(parsePositiveIntEnv(undefined, 30)).toBe(30);
+      expect(parsePositiveIntEnv("", 30)).toBe(30);
+      expect(parsePositiveIntEnv("abc", 30)).toBe(30);
+      expect(parsePositiveIntEnv("0", 30)).toBe(30);
+      expect(parsePositiveIntEnv("-5", 30)).toBe(30);
+    });
+
+    it("parses valid positive integers", () => {
+      expect(parsePositiveIntEnv("45", 30)).toBe(45);
+      expect(parsePositiveIntEnv("90.9", 30)).toBe(90);
+    });
+  });
+
+  describe("loadAiInitTimeoutMs", () => {
+    it("defaults to 30s when unset or invalid", () => {
+      delete process.env.SIM_AI_INIT_TIMEOUT_MS;
+      expect(loadAiInitTimeoutMs()).toBe(SIM_AI_INIT_TIMEOUT_MS_DEFAULT);
+
+      process.env.SIM_AI_INIT_TIMEOUT_MS = "not-a-number";
+      expect(loadAiInitTimeoutMs()).toBe(SIM_AI_INIT_TIMEOUT_MS_DEFAULT);
+    });
+
+    it("parses a valid override", () => {
+      process.env.SIM_AI_INIT_TIMEOUT_MS = "45000";
+      expect(loadAiInitTimeoutMs()).toBe(45_000);
+    });
   });
 
   describe("loadSimulationConfig", () => {

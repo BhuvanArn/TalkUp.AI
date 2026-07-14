@@ -56,6 +56,7 @@ export function SimulationWorkspace({
   const sendJsonMessageRef = useRef<(message: object) => void>(() => {});
   const readyStateRef = useRef(ReadyState.CONNECTING);
   const interviewIDRef = useRef<string | null>(null);
+  const greetingSentRef = useRef(false);
 
   const handleResumeStream = useCallback(() => {
     if (videoStreamToggleRef.current) {
@@ -101,6 +102,7 @@ export function SimulationWorkspace({
     sendMessage,
     sendJsonMessage,
     sendPing,
+    sendSessionStart,
     lastMessage,
     lastJsonMessage,
     readyState,
@@ -112,9 +114,9 @@ export function SimulationWorkspace({
     onOpen: () => {
       setWsError(null);
       setConnectionAttempts(0);
-      sendPing();
     },
     onClose: (event) => {
+      greetingSentRef.current = false;
       if (event.code !== 1000 && event.code !== 1001) {
         setWsError(
           `Connection closed: ${event.code} - ${event.reason || 'Unknown reason'}`,
@@ -138,6 +140,24 @@ export function SimulationWorkspace({
     readyStateRef.current = readyState;
   }, [sendJsonMessage, readyState]);
 
+  useEffect(() => {
+    greetingSentRef.current = false;
+  }, [interviewID]);
+
+  useEffect(() => {
+    if (
+      !isCallActive ||
+      !interviewID ||
+      readyState !== ReadyState.OPEN ||
+      greetingSentRef.current
+    ) {
+      return;
+    }
+    greetingSentRef.current = true;
+    sendPing();
+    sendSessionStart();
+  }, [isCallActive, interviewID, readyState, sendPing, sendSessionStart]);
+
   const handleAudioPacket = useCallback((packet: WebSocketPacket) => {
     if (readyStateRef.current === ReadyState.OPEN) {
       sendJsonMessageRef.current(packet);
@@ -152,9 +172,11 @@ export function SimulationWorkspace({
 
   const effectiveAvatarMode = avatarModeOverride ?? detectedAvatarMode;
 
-  const { isAiSpeaking, transcript, speechTurn } = useAudioPlayback({
-    message: lastJsonMessage,
-  });
+  const { isAiSpeaking, transcript, speechTurn, simulationComplete } =
+    useAudioPlayback({
+      message: lastJsonMessage,
+      interviewID,
+    });
 
   const handleAvatarFallbackRequest = useCallback((reason: string) => {
     setAvatarModeOverride('fallback');
@@ -195,6 +217,12 @@ export function SimulationWorkspace({
       setTranscriptions((prev) => [...prev, ...turns]);
     }
   }, [transcript]);
+
+  useEffect(() => {
+    if (!simulationComplete || isAiSpeaking) return;
+    toast.success('Entretien terminé. Merci pour votre participation !');
+    void handleStreamToggle(false);
+  }, [simulationComplete, isAiSpeaking, handleStreamToggle]);
 
   useEffect(() => {
     if (!lastJsonMessage || typeof lastJsonMessage !== 'object') return;
