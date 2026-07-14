@@ -13,7 +13,10 @@ function resolveLipsyncDir(): string {
     return path.join(path.dirname(pkgJson), 'modules');
   } catch {
     // Fallback for environments where require.resolve differs at config load time.
-    return path.resolve(pluginDir, '../../node_modules/@met4citizen/talkinghead/modules');
+    return path.resolve(
+      pluginDir,
+      '../../node_modules/@met4citizen/talkinghead/modules',
+    );
   }
 }
 
