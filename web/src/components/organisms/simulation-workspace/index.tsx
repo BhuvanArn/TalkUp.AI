@@ -254,7 +254,9 @@ export function SimulationWorkspace({
     <div className="p-6 h-full">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-text">{title}</h1>
+          {title ? (
+            <h1 className="text-2xl font-bold text-text">{title}</h1>
+          ) : null}
           <p className="text-text-weak">{description}</p>
           {contextLabel ? (
             <p className="mt-2 text-sm text-idle">

@@ -26,7 +26,7 @@ export const routeConfigs: RouteConfig[] = [
   // Protected routes - Applications
   { path: '/applications', requiresAuth: true },
   { path: '/applications/$applicationId/', requiresAuth: true },
-  { path: '/applications/$applicationId/dashboard', requiresAuth: true },
+  { path: '/applications/$applicationId/roadmap', requiresAuth: true },
   { path: '/applications/$applicationId/simulations', requiresAuth: true },
   { path: '/applications/$applicationId/analytics', requiresAuth: true },
 
