@@ -175,11 +175,18 @@ const renderWithProviders = (component: React.ReactElement) => {
 describe('Simulations', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    // The debug panel is gated behind VITE_SHOW_WS_DEBUG; enable it so the
+    // panel-rendering assertions below have something to find.
+    vi.stubEnv('VITE_SHOW_WS_DEBUG', 'true');
     router.history.push('/simulations');
 
     await act(async () => {
       await router.load();
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('renders the main heading correctly', async () => {
