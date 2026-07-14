@@ -75,6 +75,34 @@ export interface JobOfferExtraction {
   team_description?: string | null;
 }
 
+/** One step on the F6 preparation path. */
+export interface RoadmapTopic {
+  title: string;
+  priority: "HIGH" | "MED" | "LOW";
+  rationale: string;
+  gap: boolean;
+}
+
+/**
+ * One forward-looking interview talking point: a real responsibility from the
+ * offer plus the candidate's own angle on it, grounded in their CV skills. Fuels
+ * the "Bring these to your interview" section — distinct from `topics`, which
+ * are gap-driven prep items.
+ */
+export interface RoadmapTalkingPoint {
+  mission: string;
+  angle: string;
+}
+
+/** Shape returned by the roadmap generation prompt (F6 preparation path). */
+export interface RoadmapExtraction {
+  match_score: number;
+  summary: string;
+  topics: RoadmapTopic[];
+  /** Forward-looking talking points; empty when the offer lists no missions. */
+  talking_points: RoadmapTalkingPoint[];
+}
+
 const logger = new Logger("GroqExtraction");
 
 // Lazily built so a missing GROQ_API_KEY does not crash app bootstrap — the

@@ -1,6 +1,6 @@
 import { API_ROUTES } from '../api';
 import axiosInstance from '../axiosInstance';
-import type { Application, ApplicationStatus } from './types';
+import type { Application, ApplicationStatus, Roadmap } from './types';
 
 export async function fetchApplications(): Promise<Application[]> {
   const { data } = await axiosInstance.get<Application[]>(
@@ -44,4 +44,20 @@ export async function updateApplicationInterviewAt(
 
 export async function deleteApplication(applicationId: string): Promise<void> {
   await axiosInstance.delete(`${API_ROUTES.applications}/${applicationId}`);
+}
+
+export async function fetchRoadmap(applicationId: string): Promise<Roadmap> {
+  const { data } = await axiosInstance.get<Roadmap>(
+    `${API_ROUTES.applications}/${applicationId}/roadmap`,
+  );
+  return data;
+}
+
+export async function regenerateRoadmap(
+  applicationId: string,
+): Promise<Roadmap> {
+  const { data } = await axiosInstance.post<Roadmap>(
+    `${API_ROUTES.applications}/${applicationId}/roadmap/regenerate`,
+  );
+  return data;
 }

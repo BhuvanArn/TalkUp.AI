@@ -181,4 +181,67 @@ describe('MembersTable', () => {
     expect(viewButtons[0]).toHaveAttribute('aria-pressed', 'true');
     expect(viewButtons[1]).toHaveAttribute('aria-pressed', 'false');
   });
+
+  it('reports a role change via the per-member select (admin)', () => {
+    const onChangeRole = vi.fn();
+    render(
+      <MembersTable
+        members={members}
+        isAdmin={true}
+        selectedUserId={null}
+        onSelect={vi.fn()}
+        onChangeRole={onChangeRole}
+        onRemove={vi.fn()}
+      />,
+    );
+    // alice (u1) is a plain user; promote her to employee.
+    fireEvent.change(screen.getByLabelText('Role for alice'), {
+      target: { value: 'employee' },
+    });
+    expect(onChangeRole).toHaveBeenCalledWith('u1', 'employee');
+  });
+
+  it('reports a removal via the Remove button (admin)', () => {
+    const onRemove = vi.fn();
+    render(
+      <MembersTable
+        members={members}
+        isAdmin={true}
+        selectedUserId={null}
+        onSelect={vi.fn()}
+        onChangeRole={vi.fn()}
+        onRemove={onRemove}
+      />,
+    );
+    // Two removable rows (alice, bob); the first Remove targets alice (u1).
+    fireEvent.click(screen.getAllByRole('button', { name: /remove/i })[0]);
+    expect(onRemove).toHaveBeenCalledWith('u1');
+  });
+
+  it('offers no role select or Remove action for an admin-role member', () => {
+    const adminMember: OrganizationMember = {
+      user_id: 'a1',
+      username: 'owner',
+      user_role: 'admin',
+      interviewCount: 0,
+      completedCount: 0,
+      avgScore: null,
+      lastActivityAt: null,
+    };
+    render(
+      <MembersTable
+        members={[adminMember]}
+        isAdmin={true}
+        selectedUserId={null}
+        onSelect={vi.fn()}
+        onChangeRole={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+    // Admins can't demote/remove another admin from this table.
+    expect(screen.queryByLabelText('Role for owner')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /remove/i }),
+    ).not.toBeInTheDocument();
+  });
 });

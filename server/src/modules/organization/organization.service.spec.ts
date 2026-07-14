@@ -803,6 +803,70 @@ describe("OrganizationService", () => {
       );
       expect(inviteRepo.save).not.toHaveBeenCalled();
     });
+
+    it("retries the code generation past a collision and saves the next unique code", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      // First candidate collides, second is unique — the loop must not give up.
+      inviteRepo.findOne
+        .mockResolvedValueOnce({ invite_id: "existing" })
+        .mockResolvedValueOnce(null);
+
+      const row = await service.createInvite("org-id", {}, adminUserRow);
+
+      expect(inviteRepo.findOne).toHaveBeenCalledTimes(2);
+      expect(inviteRepo.save).toHaveBeenCalledTimes(1);
+      // The persisted code is the one that passed the uniqueness check.
+      expect(inviteRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ code: row.code }),
+      );
+    });
+
+    it("includes an absolute register URL in the invite email when FRONTEND_URL is set", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      inviteRepo.findOne.mockResolvedValue(null);
+      const prev = process.env.FRONTEND_URL;
+      process.env.FRONTEND_URL = "https://app.example.com/"; // trailing slash trimmed
+      try {
+        const row = await service.createInvite(
+          "org-id",
+          { email: "candidate@example.com" },
+          adminUserRow,
+        );
+
+        expect(eventEmitter.emit).toHaveBeenCalledWith(
+          "organization.invite_created",
+          expect.objectContaining({
+            registerUrl: `https://app.example.com/register?code=${encodeURIComponent(
+              row.code,
+            )}`,
+          }),
+        );
+      } finally {
+        if (prev === undefined) delete process.env.FRONTEND_URL;
+        else process.env.FRONTEND_URL = prev;
+      }
+    });
+
+    it("omits the register URL when FRONTEND_URL is unset", async () => {
+      (userRepo.findOne as jest.Mock).mockResolvedValue(adminUserRow);
+      inviteRepo.findOne.mockResolvedValue(null);
+      const prev = process.env.FRONTEND_URL;
+      delete process.env.FRONTEND_URL;
+      try {
+        await service.createInvite(
+          "org-id",
+          { email: "candidate@example.com" },
+          adminUserRow,
+        );
+
+        expect(eventEmitter.emit).toHaveBeenCalledWith(
+          "organization.invite_created",
+          expect.objectContaining({ registerUrl: undefined }),
+        );
+      } finally {
+        if (prev !== undefined) process.env.FRONTEND_URL = prev;
+      }
+    });
   });
 
   describe("listInvites", () => {

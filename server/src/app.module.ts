@@ -6,6 +6,7 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerModule } from "@nestjs/throttler";
 
+import { throttlerTracker } from "@common/throttler/throttler-tracker";
 import pgConfig from "@config/postgres.config";
 
 import { AuthModule } from "./modules/auth/auth.module";
@@ -35,9 +36,9 @@ import { NotesModule } from "./modules/notes/notes.module";
       {
         ttl: 60000,
         limit: 10,
-        getTracker: (req: Record<string, any>) => {
-          return req.ip ?? req.socket?.remoteAddress ?? "unknown";
-        },
+        // Per-user for authenticated routes, per-IP for the pre-auth surface.
+        // See throttler-tracker.ts for the rationale and guard-ordering note.
+        getTracker: throttlerTracker,
       },
     ]),
     AuthModule,
