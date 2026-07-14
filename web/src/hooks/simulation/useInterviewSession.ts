@@ -129,7 +129,9 @@ export function useInterviewSession({
 
     const restoreSavedSession = async () => {
       const savedInterviewID = localStorage.getItem(STORAGE_KEYS.INTERVIEW_ID);
-      const savedInterviewURL = localStorage.getItem(STORAGE_KEYS.INTERVIEW_URL);
+      const savedInterviewURL = localStorage.getItem(
+        STORAGE_KEYS.INTERVIEW_URL,
+      );
       const wasStreaming =
         localStorage.getItem(STORAGE_KEYS.IS_STREAMING) === 'true';
 
@@ -242,10 +244,15 @@ export function useInterviewSession({
 
       if (streaming) {
         try {
-          const staleInterviewId = localStorage.getItem(STORAGE_KEYS.INTERVIEW_ID);
+          const staleInterviewId = localStorage.getItem(
+            STORAGE_KEYS.INTERVIEW_ID,
+          );
           if (staleInterviewId) {
             onBeforeDisconnect?.();
-            onDisconnect(WEBSOCKET_CLOSE_CODE_NORMAL, 'Replacing stale session');
+            onDisconnect(
+              WEBSOCKET_CLOSE_CODE_NORMAL,
+              'Replacing stale session',
+            );
             try {
               await cancelInterview(staleInterviewId);
             } catch {

@@ -52,11 +52,21 @@ _NAME_ONLY_PATTERNS = (
 )
 
 _EXPERIENCE_KEYWORDS = frozenset({
-	"experience", "experiences", "travaille", "travaille", "poste", "entreprise",
+	"experience", "experiences", "travaille", "poste", "entreprise",
 	"stage", "alternance", "diplome", "formation", "projet", "developpeur",
 	"developpement", "ingenieur", "ans", "annee", "annees", "carriere", "parcours",
 	"competence", "competences", "mission", "missions", "cdi", "cdd",
 })
+
+# Split on any non-letter so keywords are matched as whole words, not
+# substrings. Without this, "ans" would match inside common words like
+# "dans"/"sans" and wrongly flag a trivial reply as an experience intro.
+_WORD_TOKEN_PATTERN = re.compile(r"[^a-zàâäéèêëïîôùûüç]+")
+
+
+def _has_experience_keyword(normalized: str) -> bool:
+	tokens = {tok for tok in _WORD_TOKEN_PATTERN.split(normalized) if tok}
+	return not tokens.isdisjoint(_EXPERIENCE_KEYWORDS)
 
 
 @dataclass
@@ -111,9 +121,7 @@ def _looks_like_name_only(text: str) -> bool:
 		if pattern.match(normalized):
 			return True
 
-	if len(normalized.split()) <= 6 and not any(
-		keyword in normalized for keyword in _EXPERIENCE_KEYWORDS
-	):
+	if len(normalized.split()) <= 6 and not _has_experience_keyword(normalized):
 		return True
 
 	return False
@@ -123,7 +131,7 @@ def _user_has_substantial_intro(text: str) -> bool:
 	normalized = _normalize_text(text)
 	if len(normalized.split()) >= 20:
 		return True
-	return any(keyword in normalized for keyword in _EXPERIENCE_KEYWORDS)
+	return _has_experience_keyword(normalized)
 
 
 def mark_presentation_done(interview_id: str, user_text: str) -> None:

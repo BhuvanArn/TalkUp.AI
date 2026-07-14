@@ -184,8 +184,19 @@ def generate_opening_greeting(
 	if not interview_id:
 		return STSResult(transcription="", ai_response="", audio_chunks=[])
 
+	# A reconnect (or restored session) re-sends session_start while the
+	# interview is already under way. Once the candidate has spoken at least
+	# once, the opening greeting is stale: replaying or regenerating it would
+	# make the recruiter say "welcome, please introduce yourself" mid-interview.
+	# Stay silent in that case and let the normal turn flow resume.
+	if count_user_turns(fetch_session_history(interview_id)) > 0:
+		return STSResult(transcription="", ai_response="", audio_chunks=[])
+
 	flow = InterviewFlowStore.get(interview_id)
 	if flow.greeting_sent:
+		# Greeting already delivered but no user turn yet (e.g. a refresh right
+		# after the welcome): replay the stored opening so the candidate isn't
+		# left in silence, rather than generating a second, different one.
 		stored_greeting = find_stored_opening_greeting(interview_id)
 		if stored_greeting:
 			audio_chunks = list(synthesize_tts_chunks(models, stored_greeting))

@@ -96,6 +96,26 @@ def test_mark_presentation_done() -> None:
 	InterviewFlowStore.clear("int-test")
 
 
+def test_short_reply_does_not_mark_presentation_done() -> None:
+	# Experience keywords are matched as whole words, not substrings, so the
+	# "ans" keyword must NOT fire inside "dans"/"sans" and a trivial reply must
+	# leave the candidate in the PRESENTATION phase.
+	for reply in ("Sans souci.", "J'habite dans le sud.", "Oui bien sur.", "De Nantes."):
+		interview_id = "int-short-" + reply[:5]
+		InterviewFlowStore.clear(interview_id)
+		mark_presentation_done(interview_id, reply)
+		assert (
+			InterviewFlowStore.get(interview_id).presentation_done is False
+		), reply
+		InterviewFlowStore.clear(interview_id)
+
+	# A genuine experience keyword ("ans" as a standalone token) still counts.
+	InterviewFlowStore.clear("int-short-exp")
+	mark_presentation_done("int-short-exp", "J'ai 3 ans d'experience en developpement.")
+	assert InterviewFlowStore.get("int-short-exp").presentation_done is True
+	InterviewFlowStore.clear("int-short-exp")
+
+
 def test_farewell_ack_does_not_revive_cleared_flow() -> None:
 	interview_id = "int-farewell-clear"
 	InterviewFlowStore.clear(interview_id)
