@@ -68,6 +68,16 @@ vi.mock('@/services/ai/http', () => ({
 
 const mockHandleStreamToggle = vi.fn();
 
+const defaultAudioPlaybackReturn = {
+  isAiSpeaking: false,
+  stopPlayback: vi.fn(),
+  error: null,
+  transcript: null,
+  speechTurn: null,
+  setAvatarSpeaking: vi.fn(),
+  replaySpeechTurnDirect: vi.fn(),
+};
+
 vi.mock('@/hooks/simulation', () => ({
   useSimulationWebSocket: vi.fn(() => ({
     sendMessage: vi.fn(),
@@ -79,11 +89,12 @@ vi.mock('@/hooks/simulation', () => ({
     connect: mockConnect,
     disconnect: mockDisconnect,
   })),
-  useAudioPlayback: vi.fn(() => ({
-    isAiSpeaking: false,
-    stopPlayback: vi.fn(),
-    error: null,
-    transcript: null,
+  useAudioPlayback: vi.fn(() => defaultAudioPlaybackReturn),
+  useRecruiterAvatarCapability: vi.fn(() => ({
+    mode: 'fallback',
+    avatarUrl: '/avatars/recruiter-professional.glb',
+    fallbackReason: null,
+    retry3d: vi.fn(),
   })),
   useAudioStreaming: vi.fn(() => ({
     isListening: false,
@@ -195,9 +206,9 @@ describe('Simulations', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders the statistics info box and the verbal analysis panel in sidebar', async () => {
+  it('renders the recruiter info box and the verbal analysis panel in sidebar', async () => {
     renderWithProviders(<RouterProvider router={router} />);
-    expect(await screen.findByText(/Statistics Overview/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Sophie Martin/i)).toBeInTheDocument();
     // The old "Real time advice" info box was replaced by the verbal-analysis
     // panel, which shows its "Analyse verbale" placeholder until the first turn.
     expect(screen.getByText(/Analyse verbale/i)).toBeInTheDocument();
@@ -216,19 +227,12 @@ describe('Simulations', () => {
 
   describe('transcriptions', () => {
     afterEach(() => {
-      vi.mocked(useAudioPlayback).mockReturnValue({
-        isAiSpeaking: false,
-        stopPlayback: vi.fn(),
-        error: null,
-        transcript: null,
-      });
+      vi.mocked(useAudioPlayback).mockReturnValue(defaultAudioPlaybackReturn);
     });
 
     it('renders the user and AI turns from the latest transcript', async () => {
       vi.mocked(useAudioPlayback).mockReturnValue({
-        isAiSpeaking: false,
-        stopPlayback: vi.fn(),
-        error: null,
+        ...defaultAudioPlaybackReturn,
         transcript: {
           transcription: 'I have five years of experience.',
           response: 'Great, tell me about a challenge you faced.',
@@ -260,12 +264,7 @@ describe('Simulations', () => {
     // isAiSpeaking=false / isCallActive=false (vi.clearAllMocks resets call
     // history but not the implementations declared in the vi.mock factory).
     afterEach(() => {
-      vi.mocked(useAudioPlayback).mockReturnValue({
-        isAiSpeaking: false,
-        stopPlayback: vi.fn(),
-        error: null,
-        transcript: null,
-      });
+      vi.mocked(useAudioPlayback).mockReturnValue(defaultAudioPlaybackReturn);
       vi.mocked(useInterviewSession).mockReturnValue({
         isCallActive: false,
         inputUrl: '',
@@ -288,10 +287,8 @@ describe('Simulations', () => {
         handleStreamToggle: mockHandleStreamToggle,
       });
       vi.mocked(useAudioPlayback).mockReturnValue({
+        ...defaultAudioPlaybackReturn,
         isAiSpeaking: true,
-        stopPlayback: vi.fn(),
-        error: null,
-        transcript: null,
       });
 
       renderWithProviders(<RouterProvider router={router} />);

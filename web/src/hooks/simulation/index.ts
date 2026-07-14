@@ -20,10 +20,18 @@ export type {
 export { useAudioPlayback } from './useAudioPlayback';
 export type {
   AiAnswer,
+  AiSpeechTurn,
   AiTranscript,
+  AudioPlaybackMode,
   UseAudioPlaybackProps,
   UseAudioPlaybackReturn,
 } from './useAudioPlayback';
+
+export { useRecruiterAvatarCapability } from './useRecruiterAvatarCapability';
+export type {
+  RecruiterAvatarMode,
+  UseRecruiterAvatarCapabilityReturn,
+} from './useRecruiterAvatarCapability';
 
 export { useVerbalAnalysis } from './useVerbalAnalysis';
 export type {

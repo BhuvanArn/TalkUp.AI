@@ -153,45 +153,63 @@ async def _process_stream_and_reply(
 
 		result = await queue_service.submit(audio_bytes, interview_id=interview_id)
 
-		if not result.transcription:
-			payload: dict = {
-				"type": "error",
-				"text": "Aucune parole detectee dans l'audio. Reessayez.",
+		# Gate on the AI text, not the audio: a valid reply whose TTS yielded
+		# no chunks must still reach the client (transcript/avatar) as an
+		# sts_result rather than a generic error that swallows the text.
+		if result.ai_response:
+			if result.transcription:
+				NOTIFIER.send_notification(
+					EnumMcs.MicroservicesNames.STS, 0, f"User: {result.transcription}",
+				)
+			else:
+				NOTIFIER.send_notification(
+					EnumMcs.MicroservicesNames.STS,
+					1,
+					"Low-quality transcription rejected; asking user to repeat.",
+				)
+			NOTIFIER.send_notification(
+				EnumMcs.MicroservicesNames.STS, 0, f"AI: {result.ai_response[:100]}...",
+			)
+			encoded_chunks = [
+				base64.b64encode(chunk).decode("ascii") for chunk in result.audio_chunks
+			]
+			payload = {
+				"type": "sts_result",
+				"transcription": result.transcription,
+				"response": result.ai_response,
+				"audio_chunks": encoded_chunks,
 			}
 			if request_id is not None:
 				payload["request_id"] = request_id
+
 			await _ws_send_json(websocket, send_lock, payload)
+
+			if interview_id and result.transcription:
+				asyncio.create_task(
+					_send_va_result_followup(
+						websocket,
+						send_lock,
+						interview_id,
+						result.transcription,
+						request_id,
+					),
+				)
 			return
 
-		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, f"User: {result.transcription}")
-		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, f"AI: {result.ai_response[:100]}...")
-		encoded_chunks = [base64.b64encode(chunk).decode("ascii") for chunk in result.audio_chunks]
 		payload = {
-			"type": "sts_result",
-			"transcription": result.transcription,
-			"response": result.ai_response,
-			"audio_chunks": encoded_chunks,
+			"type": "error",
+			"text": (
+				"Je n'ai pas bien entendu votre réponse. "
+				"Pouvez-vous répéter, s'il vous plaît ?"
+			),
 		}
 		if result.simulation_complete:
 			payload["simulation_complete"] = True
 		if request_id is not None:
 			payload["request_id"] = request_id
-
-		# Send audio/transcription immediately. VA runs in the background and
-		# arrives as a separate va_result frame; the C++ proxy forwards it when
-		# the next STS read picks it up. VA failures never block the reply.
 		await _ws_send_json(websocket, send_lock, payload)
+		return
 
-		if interview_id and result.transcription:
-			asyncio.create_task(
-				_send_va_result_followup(
-					websocket,
-					send_lock,
-					interview_id,
-					result.transcription,
-					request_id,
-				),
-			)
 	except (WebSocketDisconnect, ConnectionClosed):
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending STS result")
 	except Exception as tts_err:
