@@ -42,15 +42,27 @@ test.describe('organization flows', () => {
     await expect(page.getByPlaceholder(/organization code/i)).toBeVisible();
   });
 
-  test('org signup form submits and hands off to verify-email', async ({
+  test('org signup lands on the created page then hands off to verify-email', async ({
     page,
   }) => {
     const suffix = Date.now();
+    const orgName = `PW Org ${suffix}`;
     await page.goto('/register-organization');
-    await page.getByPlaceholder(/organization name/i).fill(`PW Org ${suffix}`);
+    await page.getByPlaceholder(/organization name/i).fill(orgName);
     await page.getByPlaceholder(/email/i).fill(`pw_${suffix}@example.com`);
     await page.getByPlaceholder(/password/i).fill('Abcdefg1*');
     await page.getByRole('button', { name: /create organization/i }).click();
+
+    // Signup now routes to the acknowledgement page (not straight to
+    // verify-email). It confirms creation and surfaces the admin username.
+    await expect(page).toHaveURL(/\/organization-created/);
+    await expect(
+      page.getByRole('heading', { name: /organization created/i }),
+    ).toBeVisible();
+    await expect(page.getByText(`${orgName}_admin`)).toBeVisible();
+
+    // The primary CTA hands off to verify-email carrying the admin email.
+    await page.getByRole('button', { name: /verify admin email/i }).click();
     await expect(page).toHaveURL(/\/verify-email/);
   });
 
