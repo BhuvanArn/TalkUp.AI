@@ -41,12 +41,12 @@ function RoadmapShell({
   );
 }
 
-export const Route = createFileRoute('/applications/$applicationId/dashboard')({
-  beforeLoad: createAuthGuard('/applications/$applicationId/dashboard'),
-  component: ApplicationDashboard,
+export const Route = createFileRoute('/applications/$applicationId/roadmap')({
+  beforeLoad: createAuthGuard('/applications/$applicationId/roadmap'),
+  component: ApplicationRoadmap,
 });
 
-function ApplicationDashboard() {
+function ApplicationRoadmap() {
   const { applicationId } = Route.useParams();
   return <RoadmapPage applicationId={applicationId} />;
 }

@@ -1,0 +1,33 @@
+meta {
+  name: update profile
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{host}}/users/me
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "firstName": "Alice",
+    "lastName": "Bee",
+    "bio": "Product designer.",
+    "jobTitle": "Designer",
+    "linkedinUrl": "https://linkedin.com/in/alice",
+    "phone": "+33123456789",
+    "avatarAccentColor": "#2B70C9",
+    "bannerGradient": "linear-gradient(90deg, #2B70C9, #9333EA)",
+    "profileVisibility": "public",
+    "notificationPrefs": {
+      "training": true
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -18,6 +18,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -48,6 +49,9 @@ export class UsersController {
 
   @ApiOkResponse({ description: "Updated profile" })
   @ApiUnauthorizedResponse()
+  @ApiConflictResponse({
+    description: "Phone number already in use by another account",
+  })
   @UseGuards(AccessTokenGuard)
   @UsePipes(new PostValidationPipe())
   @Patch("me")

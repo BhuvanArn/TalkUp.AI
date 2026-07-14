@@ -40,15 +40,15 @@ export const rootNavigationContext: NavigationContext = {
 
 /**
  * Application context navigation
- * Shows pages specific to an application: Dashboard, Simulations, Analytics, Notes
+ * Shows pages specific to an application: Roadmap, Simulations, Analytics, Notes
  */
 export const applicationNavigationContext: NavigationContext = {
   type: 'application',
   items: [
     {
-      to: '/dashboard',
-      label: 'Dashboard',
-      icon: 'dashboard',
+      to: '/roadmap',
+      label: 'Roadmap',
+      icon: 'roadmap',
       showInNav: true,
       order: 0,
     },

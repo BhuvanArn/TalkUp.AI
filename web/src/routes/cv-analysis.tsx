@@ -120,7 +120,7 @@ function CVAnalysisPage() {
   const handleStartCourse = () => {
     if (!createdApplication) return;
     navigate({
-      to: '/applications/$applicationId/dashboard',
+      to: '/applications/$applicationId/roadmap',
       params: { applicationId: createdApplication.applicationId },
     });
   };

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -82,16 +83,89 @@ export class UsersService {
     this.applyProfileDto(profile, dto);
 
     try {
+      // Persist the phone FIRST so a duplicate-number conflict (a normal user
+      // action) aborts before we commit any profile/user changes. These are
+      // three separate writes with no enclosing transaction, so ordering the
+      // most-likely-to-reject write first keeps the common 409 path from
+      // leaving a half-applied profile behind.
+      if (dto.phone !== undefined) {
+        await this.persistPhone(userEntity.user_id, dto.phone);
+      }
       await this.userRepo.save(userEntity);
       await this.profileRepo.save(profile);
       return this.assembleProfileView(userEntity, profile);
     } catch (error) {
+      // A duplicate-phone conflict is a client error (someone else already owns
+      // that number), not a server fault — surface it as a 409 rather than
+      // flattening it into the generic 500 below.
+      if (error instanceof ConflictException) {
+        throw error;
+      }
       this.logger.error(
         `updateProfile failed for ${userEntity.user_id}: ${error}`,
       );
       throw new InternalServerErrorException(
         "Internal server error while updating profile.",
       );
+    }
+  }
+
+  /**
+   * Upsert the caller's phone number into the separate `user_phone_number`
+   * table. The column is `nullable: false, unique: true`, so:
+   *   - an empty/whitespace value means "clear it" → delete the row (we can't
+   *     store an empty string);
+   *   - a changed number resets `is_verified` (the new number is unverified);
+   *   - a number already owned by another user raises Postgres 23505, which we
+   *     translate to a 409 Conflict instead of a 500.
+   *
+   * This does NOT reuse `upsertByUser`: there the unique column is `user_id`, so
+   * a 23505 means the *same* user raced their own insert and the helper
+   * swallows it into an update. Here the unique column is `phone_number`, so a
+   * 23505 means a *different* user owns the number — that must surface as a 409,
+   * not be silently retried. Same shape, opposite conflict semantics.
+   */
+  private async persistPhone(userId: string, phone: string): Promise<void> {
+    const trimmed = phone.trim();
+    const existing = await this.phoneRepo.findOne({
+      where: { user_id: userId },
+    });
+
+    if (trimmed === "") {
+      if (existing) {
+        await this.phoneRepo.delete({ user_id: userId });
+      }
+      return;
+    }
+
+    if (existing && existing.phone_number === trimmed) {
+      return; // unchanged — nothing to write, keep verification status
+    }
+
+    try {
+      if (existing) {
+        await this.phoneRepo.update(
+          { user_id: userId },
+          { phone_number: trimmed, is_verified: false },
+        );
+      } else {
+        const row = this.phoneRepo.create({
+          user_id: userId,
+          phone_number: trimmed,
+          is_verified: false,
+        });
+        await this.phoneRepo.save(row);
+      }
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === "23505"
+      ) {
+        throw new ConflictException(
+          "This phone number is already in use by another account.",
+        );
+      }
+      throw error;
     }
   }
 

@@ -65,7 +65,7 @@ describe('navigation-contexts', () => {
       const labels = applicationNavigationContext.items.map(
         (item) => item.label,
       );
-      expect(labels).toContain('Dashboard');
+      expect(labels).toContain('Roadmap');
       expect(labels).toContain('Simulations');
       expect(labels).toContain('Analytics');
     });
@@ -82,7 +82,7 @@ describe('navigation-contexts', () => {
 
     it('should have correct routes', () => {
       const routes = applicationNavigationContext.items.map((item) => item.to);
-      expect(routes).toContain('/dashboard');
+      expect(routes).toContain('/roadmap');
       expect(routes).toContain('/simulations');
       expect(routes).toContain('/analytics');
     });
