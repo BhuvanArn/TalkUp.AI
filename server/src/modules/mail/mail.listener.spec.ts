@@ -205,6 +205,78 @@ describe("MailListener", () => {
     expect(call.html).toContain("&quot;&gt;");
   });
 
+  describe("organization admin signup mail", () => {
+    const adminPayload = (
+      overrides: Partial<OtpGeneratedEvent> = {},
+    ): OtpGeneratedEvent => ({
+      email: "boss@acme.com",
+      plainOtp: "654321",
+      purpose: OtpPurpose.REGISTER,
+      registrationChannel: "organization",
+      organizationName: "Acme Inc",
+      adminUsername: "Acme Inc_admin",
+      verifyUrl: "https://talkup.example/verify-email?email=boss%40acme.com",
+      ...overrides,
+    });
+
+    it("sends the admin welcome mail (not the invite mail) when adminUsername is set", async () => {
+      await listener.onOtpGenerated(adminPayload());
+
+      expect(mailService.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: "boss@acme.com",
+          subject: "Acme Inc is ready on TalkUp — verify your admin email",
+        }),
+      );
+      // Must not be the member-invite subject.
+      expect(mailService.sendMail).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: "Your TalkUp account — invited by Acme Inc",
+        }),
+      );
+    });
+
+    it("carries the org name, admin username, code, and next steps", async () => {
+      await listener.onOtpGenerated(adminPayload());
+      const call = mailService.sendMail.mock.calls[0][0];
+      expect(call.html).toContain("max-width:600px"); // branded shell
+      expect(call.html).toContain("Acme Inc");
+      expect(call.html).toContain("Acme Inc_admin");
+      expect(call.html).toContain("654321");
+      expect(call.html).toContain("Next steps");
+      expect(call.html).toContain(
+        "https://talkup.example/verify-email?email=boss%40acme.com",
+      );
+      expect(call.text).toContain("654321");
+      expect(call.text).toContain("Acme Inc_admin");
+    });
+
+    it("escapes a malicious admin username", async () => {
+      await listener.onOtpGenerated(
+        adminPayload({ adminUsername: "<script>x</script>_admin" }),
+      );
+      const call = mailService.sendMail.mock.calls[0][0];
+      expect(call.html).not.toContain("<script>x</script>");
+      expect(call.html).toContain("&lt;script&gt;");
+    });
+
+    it("falls back to next-steps copy when verifyUrl is missing", async () => {
+      await listener.onOtpGenerated(adminPayload({ verifyUrl: undefined }));
+      const call = mailService.sendMail.mock.calls[0][0];
+      expect(call.html).toContain("Next steps");
+      expect(call.html).toContain("654321");
+    });
+
+    it("logs an org-admin-specific error when the admin mail fails", async () => {
+      mailService.sendMail.mockRejectedValueOnce(new Error("smtp down"));
+      await listener.onOtpGenerated(adminPayload());
+      expect(Logger.prototype.error).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to dispatch org admin signup email"),
+        expect.any(String),
+      );
+    });
+  });
+
   describe("onOrganizationInviteCreated", () => {
     const invitePayload = (
       overrides: Partial<OrganizationInviteCreatedEvent> = {},
