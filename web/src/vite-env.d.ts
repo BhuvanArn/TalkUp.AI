@@ -3,6 +3,8 @@
 interface ImportMetaEnv {
   /** Public documentation base URL (optional; defaults in app). */
   readonly VITE_DOCUMENTATION_URL?: string;
+  /** Set to 'true' to render the WebSocket debug panel in simulations (dev/debug only; off in prod). */
+  readonly VITE_SHOW_WS_DEBUG?: string;
   /** Same-origin relative path to the recruiter GLB avatar model. */
   readonly VITE_RECRUITER_AVATAR_URL?: string;
   /** Same-origin relative path to the recruiter office room background image. */
