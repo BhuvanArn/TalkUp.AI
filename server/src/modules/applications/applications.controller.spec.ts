@@ -77,6 +77,19 @@ describe("ApplicationsController", () => {
     controller = module.get(ApplicationsController);
   });
 
+  it("guards the LLM-cost create route with the ThrottlerGuard so @Throttle fires", () => {
+    // @Throttle is a no-op without an explicit ThrottlerGuard on the route.
+    // Assert the guard is attached (metadata), not a throttler key string.
+    const guards = Reflect.getMetadata(
+      "__guards__",
+      ApplicationsController.prototype.create,
+    ) as unknown[] | undefined;
+    const names = (guards ?? []).map((g) =>
+      typeof g === "function" ? g.name : g?.constructor?.name,
+    );
+    expect(names).toContain("ThrottlerGuard");
+  });
+
   it("creates an application from a url and maps to camelCase", async () => {
     const dto = await controller.create(mockUser, {
       url: "https://example.com/job",

@@ -94,5 +94,17 @@ describe("UsersController", () => {
         file,
       );
     });
+
+    it("guards the route with the ThrottlerGuard so @Throttle actually fires", () => {
+      // @Throttle is a no-op without an explicit ThrottlerGuard on the route.
+      const guards = Reflect.getMetadata(
+        "__guards__",
+        UsersController.prototype.uploadCV,
+      ) as unknown[] | undefined;
+      const names = (guards ?? []).map((g) =>
+        typeof g === "function" ? g.name : g?.constructor?.name,
+      );
+      expect(names).toContain("ThrottlerGuard");
+    });
   });
 });
