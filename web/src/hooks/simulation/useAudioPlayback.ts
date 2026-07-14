@@ -7,6 +7,7 @@ export interface AiAnswer {
   transcription?: string;
   response?: string;
   audio_chunks?: string[];
+  simulation_complete?: boolean;
 }
 
 export interface AiTranscript {
@@ -18,6 +19,7 @@ export interface AiTranscript {
 
 export interface UseAudioPlaybackProps {
   message: unknown;
+  interviewID?: string | null;
 }
 
 export interface UseAudioPlaybackReturn {
@@ -26,6 +28,8 @@ export interface UseAudioPlaybackReturn {
   error: string | null;
   /** Transcript text from the latest sts_result message, or null. */
   transcript: AiTranscript | null;
+  /** True when the AI has signaled the interview is complete. */
+  simulationComplete: boolean;
 }
 
 function asOuterPacket(
@@ -48,10 +52,12 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 
 export function useAudioPlayback({
   message,
+  interviewID = null,
 }: UseAudioPlaybackProps): UseAudioPlaybackReturn {
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<AiTranscript | null>(null);
+  const [simulationComplete, setSimulationComplete] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
@@ -136,6 +142,12 @@ export function useAudioPlayback({
   );
 
   useEffect(() => {
+    setSimulationComplete(false);
+    setTranscript(null);
+    lastHandledRef.current = null;
+  }, [interviewID]);
+
+  useEffect(() => {
     if (!message || message === lastHandledRef.current) return;
     lastHandledRef.current = message;
 
@@ -166,8 +178,17 @@ export function useAudioPlayback({
       );
     }
 
+    if (answer.simulation_complete) {
+      setSimulationComplete(true);
+    }
+
     const chunks = answer.audio_chunks ?? [];
-    if (chunks.length === 0) return;
+    if (chunks.length === 0) {
+      if (answer.simulation_complete) {
+        setIsAiSpeaking(false);
+      }
+      return;
+    }
 
     void playAnswer(chunks);
   }, [message, playAnswer]);
@@ -190,5 +211,5 @@ export function useAudioPlayback({
     };
   }, []);
 
-  return { isAiSpeaking, stopPlayback, error, transcript };
+  return { isAiSpeaking, stopPlayback, error, transcript, simulationComplete };
 }

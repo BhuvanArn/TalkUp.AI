@@ -15,6 +15,7 @@ import {
   useVerbalAnalysis,
 } from '@/hooks/simulation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { ReadyState } from 'react-use-websocket';
 
 export interface SimulationWorkspaceProps {
@@ -42,6 +43,7 @@ export function SimulationWorkspace({
   const sendJsonMessageRef = useRef<(message: object) => void>(() => {});
   const readyStateRef = useRef(ReadyState.CONNECTING);
   const interviewIDRef = useRef<string | null>(null);
+  const greetingSentRef = useRef(false);
 
   const handleResumeStream = useCallback(() => {
     if (videoStreamToggleRef.current) {
@@ -87,6 +89,7 @@ export function SimulationWorkspace({
     sendMessage,
     sendJsonMessage,
     sendPing,
+    sendSessionStart,
     lastMessage,
     lastJsonMessage,
     readyState,
@@ -98,7 +101,6 @@ export function SimulationWorkspace({
     onOpen: () => {
       setWsError(null);
       setConnectionAttempts(0);
-      sendPing();
     },
     onClose: (event) => {
       if (event.code !== 1000 && event.code !== 1001) {
@@ -124,14 +126,33 @@ export function SimulationWorkspace({
     readyStateRef.current = readyState;
   }, [sendJsonMessage, readyState]);
 
+  useEffect(() => {
+    greetingSentRef.current = false;
+  }, [interviewID]);
+
+  useEffect(() => {
+    if (
+      !isCallActive ||
+      !interviewID ||
+      readyState !== ReadyState.OPEN ||
+      greetingSentRef.current
+    ) {
+      return;
+    }
+    greetingSentRef.current = true;
+    sendPing();
+    sendSessionStart();
+  }, [isCallActive, interviewID, readyState, sendPing, sendSessionStart]);
+
   const handleAudioPacket = useCallback((packet: WebSocketPacket) => {
     if (readyStateRef.current === ReadyState.OPEN) {
       sendJsonMessageRef.current(packet);
     }
   }, []);
 
-  const { isAiSpeaking, transcript } = useAudioPlayback({
+  const { isAiSpeaking, transcript, simulationComplete } = useAudioPlayback({
     message: lastJsonMessage,
+    interviewID,
   });
 
   const { analysis } = useVerbalAnalysis({
@@ -165,6 +186,12 @@ export function SimulationWorkspace({
       setTranscriptions((prev) => [...prev, ...turns]);
     }
   }, [transcript]);
+
+  useEffect(() => {
+    if (!simulationComplete || isAiSpeaking) return;
+    toast.success('Entretien terminé. Merci pour votre participation !');
+    void handleStreamToggle(false);
+  }, [simulationComplete, isAiSpeaking, handleStreamToggle]);
 
   const {
     isListening,
