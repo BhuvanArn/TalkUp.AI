@@ -63,10 +63,31 @@ _EXPERIENCE_KEYWORDS = frozenset({
 # "dans"/"sans" and wrongly flag a trivial reply as an experience intro.
 _WORD_TOKEN_PATTERN = re.compile(r"[^a-zàâäéèêëïîôùûüç]+")
 
+_NAME_LIKE_TOKEN = re.compile(r"^[a-zàâäéèêëïîôùûüç\-']{2,}$", re.IGNORECASE)
+
+# Common French function words and short acknowledgements that are not names.
+_SHORT_REPLY_STOPWORDS = frozenset({
+	"a", "ai", "au", "aux", "avec", "bien", "bonjour", "bonsoir", "ce", "cette",
+	"dans", "de", "des", "du", "en", "et", "habite", "hello", "ici", "il", "je",
+	"la", "le", "les", "mais", "me", "merci", "mon", "non", "nos", "notre", "oui",
+	"par", "pas", "peut", "pour", "pense", "que", "qui", "quoi", "salut", "sans",
+	"se", "si", "son", "sont", "souci", "suis", "sur", "tes", "toi", "ton", "tu",
+	"un", "une", "vos", "votre", "vous",
+})
+
 
 def _has_experience_keyword(normalized: str) -> bool:
 	tokens = {tok for tok in _WORD_TOKEN_PATTERN.split(normalized) if tok}
 	return not tokens.isdisjoint(_EXPERIENCE_KEYWORDS)
+
+
+def _has_name_like_token(normalized: str) -> bool:
+	for token in _WORD_TOKEN_PATTERN.split(normalized):
+		if not token or token in _SHORT_REPLY_STOPWORDS:
+			continue
+		if _NAME_LIKE_TOKEN.match(token):
+			return True
+	return False
 
 
 @dataclass
@@ -121,7 +142,11 @@ def _looks_like_name_only(text: str) -> bool:
 		if pattern.match(normalized):
 			return True
 
-	if len(normalized.split()) <= 6 and not _has_experience_keyword(normalized):
+	if (
+		len(normalized.split()) <= 6
+		and not _has_experience_keyword(normalized)
+		and _has_name_like_token(normalized)
+	):
 		return True
 
 	return False

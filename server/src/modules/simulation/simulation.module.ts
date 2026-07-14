@@ -14,12 +14,13 @@ import { SimulationVerbalAnalysisService } from "./simulation-verbal-analysis.se
 import { SimulationCronService } from "./simulation.cron";
 import { SimulationInternalController } from "./simulation-internal.controller";
 import { InternalApiKeyGuard } from "./guards/internal-api-key.guard";
+import { loadAiInitTimeoutMs } from "./simulation.config";
 
 @Module({
   imports: [
     RedisModule,
     HttpModule.register({
-      timeout: parseInt(process.env.SIM_AI_INIT_TIMEOUT_MS ?? "30000", 10),
+      timeout: loadAiInitTimeoutMs(),
     }),
     TypeOrmModule.forFeature([ai_interview, ai_verbal_analysis]),
   ],

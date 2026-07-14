@@ -30,10 +30,24 @@ def test_count_user_turns() -> None:
 def test_looks_like_name_only() -> None:
 	assert looks_like_name_only("Bonjour, je m'appelle Mathéo.") is True
 	assert looks_like_name_only("Je m'appelle Mathéo") is True
+	assert looks_like_name_only("Mathéo") is True
+	assert looks_like_name_only("Oui bien sur.") is False
+	assert looks_like_name_only("Je pense que oui") is False
+	assert looks_like_name_only("Sans souci.") is False
 	assert looks_like_name_only(
 		"Je suis Mathéo, diplômé en informatique à Nantes, "
 		"je travaille depuis 3 ans en développement web."
 	) is False
+
+
+def test_short_acknowledgement_stays_in_presentation_not_name_only() -> None:
+	instruction = get_phase_instruction(
+		user_turn_count=1,
+		presentation_done=False,
+		latest_user_text="Oui bien sur.",
+	)
+	assert "PRESENTATION" in instruction
+	assert "prenom" not in instruction.lower()
 
 
 def test_presentation_phase_before_experience() -> None:
