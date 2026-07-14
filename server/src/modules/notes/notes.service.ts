@@ -11,6 +11,7 @@ import { Repository, IsNull } from "typeorm";
 
 import { note } from "@entities/note.entity";
 import { ai_interview } from "@entities/aiInterview.entity";
+import { application } from "@entities/application.entity";
 
 import { CreateNoteDto } from "./dto/createNote.dto";
 import { UpdateNoteDto } from "./dto/updateNote.dto";
@@ -26,6 +27,8 @@ export class NotesService {
     private readonly repo: Repository<note>,
     @InjectRepository(ai_interview)
     private readonly interviewRepo: Repository<ai_interview>,
+    @InjectRepository(application)
+    private readonly applicationRepo: Repository<application>,
   ) {}
 
   private toResponse(entity: note): NoteResponseDto {
@@ -33,6 +36,7 @@ export class NotesService {
       note_id: entity.note_id,
       user_id: entity.user_id,
       interview_id: entity.interview_id,
+      application_id: entity.application_id,
       title: entity.title,
       content: entity.content ?? "",
       color: entity.color,
@@ -42,7 +46,15 @@ export class NotesService {
     };
   }
 
-  private async assertOwnedInterview(userId: string, interviewId: string) {
+  /**
+   * Assert the interview belongs to the user and return its application id
+   * (null if the interview isn't tied to an application), so an in-simulation
+   * note can denormalize that application onto itself.
+   */
+  private async assertOwnedInterview(
+    userId: string,
+    interviewId: string,
+  ): Promise<string | null> {
     // user_id is a relation-only property on ai_interview (no plain @Column),
     // so a bare findOne leaves interview.user_id undefined. loadRelationIds
     // hydrates the FK onto that property so the ownership check is meaningful
@@ -54,17 +66,44 @@ export class NotesService {
     if (!interview) throw new NotFoundException("Interview not found.");
     if (interview.user_id !== userId)
       throw new ForbiddenException("Interview does not belong to the user.");
+    return interview.application_id ?? null;
+  }
+
+  private async assertOwnedApplication(userId: string, applicationId: string) {
+    // user_id IS a plain @Column FK on application, so a direct where works.
+    const app = await this.applicationRepo.findOne({
+      where: { application_id: applicationId },
+      loadRelationIds: { relations: ["user_id"] },
+    });
+    if (!app) throw new NotFoundException("Application not found.");
+    if (app.user_id !== userId)
+      throw new ForbiddenException("Application does not belong to the user.");
   }
 
   async create(userId: string, dto: CreateNoteDto): Promise<NoteResponseDto> {
+    // An in-simulation note derives its application from the interview, so an
+    // explicit applicationId alongside interviewId is contradictory.
+    if (dto.interviewId && dto.applicationId) {
+      throw new BadRequestException(
+        "interviewId and applicationId are mutually exclusive.",
+      );
+    }
+
+    let applicationId: string | null = dto.applicationId ?? null;
+
     if (dto.interviewId) {
-      await this.assertOwnedInterview(userId, dto.interviewId);
+      // Denormalize the interview's application onto the note so a later
+      // ?applicationId= filter catches in-simulation notes without a join.
+      applicationId = await this.assertOwnedInterview(userId, dto.interviewId);
+    } else if (dto.applicationId) {
+      await this.assertOwnedApplication(userId, dto.applicationId);
     }
 
     try {
       const entity = this.repo.create({
         user_id: userId,
         interview_id: dto.interviewId ?? null,
+        application_id: applicationId,
         title: dto.title,
         content: dto.content ?? null,
         color: dto.color ?? "blue",
@@ -87,17 +126,26 @@ export class NotesService {
     userId: string,
     query: GetNotesQueryDto,
   ): Promise<NoteResponseDto[]> {
-    if (query.interviewId !== undefined && query.standalone !== undefined) {
+    const filters = [
+      query.interviewId !== undefined,
+      query.applicationId !== undefined,
+      query.standalone !== undefined,
+    ].filter(Boolean).length;
+    if (filters > 1) {
       throw new BadRequestException(
-        "interviewId and standalone are mutually exclusive.",
+        "interviewId, applicationId and standalone are mutually exclusive.",
       );
     }
 
     const where: Record<string, unknown> = { user_id: userId };
     if (query.interviewId !== undefined) {
       where.interview_id = query.interviewId;
+    } else if (query.applicationId !== undefined) {
+      where.application_id = query.applicationId;
     } else if (query.standalone === true) {
+      // A general note has neither an interview nor an application link.
       where.interview_id = IsNull();
+      where.application_id = IsNull();
     }
 
     try {

@@ -6,16 +6,22 @@ import { CreateNoteDto, Note, UpdateNoteDto } from './types';
  * Retrieves the authenticated user's notes.
  * - no params: all notes
  * - { interviewId }: only notes linked to that interview
- * - { standalone: true }: only notes with no interview link
+ * - { applicationId }: only notes for that application (application-scoped and
+ *   in-simulation notes, whose application is denormalized server-side)
+ * - { standalone: true }: only general notes (no interview or application link)
+ * The three filters are mutually exclusive.
  */
 export const getUserNotes = async (params?: {
   interviewId?: string;
+  applicationId?: string;
   standalone?: boolean;
 }): Promise<Note[]> => {
   try {
     let url = API_ROUTES.notes;
     if (params?.interviewId !== undefined) {
       url = `${API_ROUTES.notes}?interviewId=${encodeURIComponent(params.interviewId)}`;
+    } else if (params?.applicationId !== undefined) {
+      url = `${API_ROUTES.notes}?applicationId=${encodeURIComponent(params.applicationId)}`;
     } else if (params?.standalone === true) {
       url = `${API_ROUTES.notes}?standalone=true`;
     }

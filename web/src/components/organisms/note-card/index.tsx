@@ -54,6 +54,7 @@ export const NoteCard = ({
   color,
   lastUpdatedAt,
   isFavorite = false,
+  badge,
   onToggleFavorite,
   onClick,
 }: NoteCardProps) => {
@@ -120,6 +121,29 @@ export const NoteCard = ({
           />
         </Button>
       </div>
+
+      {badge && (
+        <div className="flex flex-wrap items-center gap-2 pl-1">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-body-s font-medium ${
+              badge.tone === 'simulation'
+                ? 'bg-accent-weak text-accent'
+                : 'bg-primary-weak text-primary'
+            }`}
+          >
+            <Icon
+              icon={badge.tone === 'simulation' ? 'schedule' : 'applications'}
+              className="w-3 h-3"
+            />
+            {badge.label}
+          </span>
+          {badge.sublabel && (
+            <span className="text-body-s text-text-weaker truncate">
+              {badge.sublabel}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="bg-white text-text-idle p-3 h-40 rounded-[10px] overflow-hidden relative">
         {isPreviewEmpty ? (

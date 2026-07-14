@@ -49,4 +49,20 @@ describe("GetNotesQueryDto", () => {
     expect(errors).toHaveLength(1);
     expect(errors[0].property).toBe("interviewId");
   });
+
+  it("accepts a valid applicationId uuid", async () => {
+    const dto = plainToInstance(GetNotesQueryDto, {
+      applicationId: "019ac5a6-ada7-7a96-9a38-23819f37ab90",
+    });
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it("rejects a non-uuid applicationId", async () => {
+    const dto = plainToInstance(GetNotesQueryDto, {
+      applicationId: "not-a-uuid",
+    });
+    const errors = await validate(dto);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].property).toBe("applicationId");
+  });
 });

@@ -18,6 +18,14 @@ export class NoteResponseDto {
   })
   interview_id: string | null;
 
+  @ApiProperty({
+    nullable: true,
+    description:
+      "Linked application id. Set for application-scoped notes and (denormalized) for in-simulation notes; null for general notes.",
+    example: null,
+  })
+  application_id: string | null;
+
   @ApiProperty({ example: "Interview prep" })
   title: string;
 

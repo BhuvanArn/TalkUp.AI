@@ -53,4 +53,13 @@ export class CreateNoteDto {
   @IsOptional()
   @IsUUID()
   interviewId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Application this note belongs to (roadmap 'My notes'). Omit for in-simulation notes — the application is derived from the interview — and for general notes.",
+    example: "019ac5a6-ada7-7a96-9a38-23819f37ab90",
+  })
+  @IsOptional()
+  @IsUUID()
+  applicationId?: string;
 }

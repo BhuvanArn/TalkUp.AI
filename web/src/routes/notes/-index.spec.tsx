@@ -2,17 +2,31 @@ import { useNoteCreation } from '@/hooks/notes/useNoteCreation';
 import { useNoteFavorite } from '@/hooks/notes/useNoteFavorite';
 import { useNoteNavigation } from '@/hooks/notes/useNoteNavigation';
 import { useNotesList } from '@/hooks/notes/useNotesList';
+import { useApplications } from '@/services/applications/hooks';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Notes } from './index';
 
+// The page reads an optional ?applicationId scope and renders TanStack Links;
+// stub the router surface so the component can render outside a RouterProvider.
+let mockSearch: { applicationId?: string } = {};
+vi.mock('@tanstack/react-router', () => ({
+  createFileRoute: () => () => ({ useSearch: () => mockSearch }),
+  Link: ({ children, to, ...rest }: any) => (
+    <a href={to} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
 // Mock hooks
 vi.mock('@/hooks/notes/useNotesList');
 vi.mock('@/hooks/notes/useNoteFavorite');
 vi.mock('@/hooks/notes/useNoteNavigation');
 vi.mock('@/hooks/notes/useNoteCreation');
+vi.mock('@/services/applications/hooks');
 
 describe('Notes Route', () => {
   const mockNotes = [
@@ -43,6 +57,9 @@ describe('Notes Route', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearch = {};
+
+    (useApplications as any).mockReturnValue({ data: [] });
 
     (useNotesList as any).mockReturnValue({
       notes: mockNotes,
@@ -144,5 +161,104 @@ describe('Notes Route', () => {
       is_favorite: true,
     });
     expect(mockToggleFavorite).toHaveBeenCalled();
+  });
+
+  describe('note kinds', () => {
+    const typedNotes = [
+      { ...mockNotes[0], note_id: 'g', title: 'General note' },
+      {
+        note_id: 'a',
+        title: 'App note',
+        content: '',
+        color: 'blue',
+        is_favorite: false,
+        application_id: 'app-1',
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      },
+      {
+        note_id: 's',
+        title: 'Sim note',
+        content: '',
+        color: 'green',
+        is_favorite: false,
+        interview_id: 'int-1',
+        application_id: 'app-1',
+        updated_at: new Date().toISOString(),
+        created_at: '2026-07-01T00:00:00.000Z',
+      },
+    ];
+
+    beforeEach(() => {
+      (useNotesList as any).mockReturnValue({
+        notes: typedNotes,
+        isLoading: false,
+        error: null,
+        setError: vi.fn(),
+        addNote: mockAddNote,
+        updateNoteInList: mockUpdateNoteInList,
+        revertNoteInList: mockRevertNoteInList,
+      });
+      (useApplications as any).mockReturnValue({
+        data: [
+          { applicationId: 'app-1', companyName: 'Datadog', jobTitle: 'SRE' },
+        ],
+      });
+    });
+
+    it('labels a simulation note with its provenance and application', () => {
+      render(<Notes />);
+      expect(screen.getByText(/taken during simulation/i)).toBeInTheDocument();
+      // App label + a simulation date from created_at. The exact date format is
+      // locale-dependent (CI vs local), so match the app label + year, not a
+      // pinned format string.
+      expect(
+        screen.getByText(
+          (text) => /SRE at Datadog/.test(text) && /2026/.test(text),
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('filters to a single kind via the chips', async () => {
+      const user = userEvent.setup();
+      render(<Notes />);
+      // All three visible under "All".
+      expect(screen.getByText('General note')).toBeInTheDocument();
+      expect(screen.getByText('App note')).toBeInTheDocument();
+      expect(screen.getByText('Sim note')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Simulation' }));
+      expect(screen.getByText('Sim note')).toBeInTheDocument();
+      expect(screen.queryByText('General note')).not.toBeInTheDocument();
+      expect(screen.queryByText('App note')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('application scope', () => {
+    beforeEach(() => {
+      mockSearch = { applicationId: 'app-1' };
+      (useApplications as any).mockReturnValue({
+        data: [
+          { applicationId: 'app-1', companyName: 'Datadog', jobTitle: 'SRE' },
+        ],
+      });
+    });
+
+    it('shows the scope banner and a link back to all notes', () => {
+      render(<Notes />);
+      expect(screen.getByText(/showing notes for/i)).toBeInTheDocument();
+      expect(screen.getByText('SRE at Datadog')).toBeInTheDocument();
+      expect(
+        screen.getByRole('link', { name: /back to all notes/i }),
+      ).toHaveAttribute('href', '/notes');
+    });
+
+    it('creates a note scoped to the application in scope', async () => {
+      const user = userEvent.setup();
+      mockCreateNewNote.mockResolvedValue({ note_id: 'x' });
+      render(<Notes />);
+      await user.click(screen.getByTitle('Add new note'));
+      expect(mockCreateNewNote).toHaveBeenCalledWith('app-1');
+    });
   });
 });
