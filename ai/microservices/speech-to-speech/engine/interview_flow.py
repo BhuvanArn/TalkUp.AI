@@ -151,13 +151,12 @@ def get_phase_instruction(
 				"(qui il est, sa formation, sa situation actuelle en quelques phrases). "
 				"Ne pose pas encore de questions sur le detail de ses experiences professionnelles."
 			)
-		if user_turn_count <= 2:
-			return (
-				"Phase actuelle : PRESENTATION. Le candidat est en train de se presenter. "
-				"Rebondis sur ce qu'il vient de dire. Si sa presentation est incomplete, "
-				"pose une question de relance douce pour en savoir plus sur lui. "
-				"N'abord pas encore les experiences professionnelles en detail."
-			)
+		return (
+			"Phase actuelle : PRESENTATION. Le candidat est en train de se presenter. "
+			"Rebondis sur ce qu'il vient de dire. Si sa presentation est incomplete, "
+			"pose une question de relance douce pour en savoir plus sur lui. "
+			"N'abord pas encore les experiences professionnelles en detail."
+		)
 
 	if user_turn_count <= 6:
 		return (

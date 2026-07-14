@@ -45,6 +45,14 @@ def test_presentation_phase_before_experience() -> None:
 	assert "PRESENTATION" in instruction
 	assert "experiences professionnelles" in instruction.lower()
 
+	still_presenting = get_phase_instruction(
+		user_turn_count=3,
+		presentation_done=False,
+		latest_user_text="Je suis en master informatique cette annee.",
+	)
+	assert "PRESENTATION" in still_presenting
+	assert "PARCOURS" not in still_presenting
+
 	parcours = get_phase_instruction(
 		user_turn_count=3,
 		presentation_done=True,
