@@ -3,6 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { note } from "@entities/note.entity";
 import { ai_interview } from "@entities/aiInterview.entity";
+import { application } from "@entities/application.entity";
 import { user } from "@entities/user.entity";
 import { AccessTokenGuard } from "@common/guards/accessToken.guard";
 
@@ -10,7 +11,7 @@ import { NotesService } from "./notes.service";
 import { NotesController } from "./notes.controller";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([note, ai_interview, user])],
+  imports: [TypeOrmModule.forFeature([note, ai_interview, application, user])],
   controllers: [NotesController],
   providers: [NotesService, AccessTokenGuard],
   exports: [NotesService],

@@ -124,9 +124,10 @@ describe('ApplicationRoadmap (roadmap page)', () => {
       name: /start simulation/i,
     });
     expect(simLink).toHaveAttribute('href', '/applications/app-1/simulations');
+    // "My notes" deep-links to this application's scoped notes view (#196).
     expect(screen.getByRole('link', { name: /my notes/i })).toHaveAttribute(
       'href',
-      '/notes',
+      '/notes?applicationId=app-1',
     );
   });
 

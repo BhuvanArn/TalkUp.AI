@@ -148,6 +148,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
       </Link>
       <Link
         to="/notes"
+        search={{ applicationId }}
         className="text-button-m border-accent text-accent hover:bg-accent-weak flex items-center gap-2 rounded-2xl border px-8 py-3 transition-colors"
       >
         <NotesIcon size={16} aria-hidden="true" />

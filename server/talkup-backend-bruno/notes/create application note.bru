@@ -1,0 +1,26 @@
+meta {
+  name: create application note
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{host}}/notes
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "Application note",
+    "content": "<p>Follow up on the take-home deadline</p>",
+    "color": "blue",
+    "is_favorite": false,
+    "applicationId": "019ac5a6-ada7-7a96-9a38-23819f37ab90"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

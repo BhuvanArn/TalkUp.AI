@@ -77,6 +77,20 @@ describe('useNotesList', () => {
     expect(result.current.error).toBeNull();
   });
 
+  it('fetches unscoped notes when no applicationId is given', async () => {
+    (getUserNotes as any).mockResolvedValue([]);
+    renderHook(() => useNotesList());
+    await waitFor(() => expect(getUserNotes).toHaveBeenCalled());
+    expect(getUserNotes).toHaveBeenCalledWith(undefined);
+  });
+
+  it('scopes the fetch to an application when applicationId is given', async () => {
+    (getUserNotes as any).mockResolvedValue([]);
+    renderHook(() => useNotesList('app-1'));
+    await waitFor(() => expect(getUserNotes).toHaveBeenCalled());
+    expect(getUserNotes).toHaveBeenCalledWith({ applicationId: 'app-1' });
+  });
+
   it('handles fetch errors', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     (getUserNotes as any).mockRejectedValue(new Error('Fetch failed'));
