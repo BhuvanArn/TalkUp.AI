@@ -18,7 +18,9 @@ import { InternalApiKeyGuard } from "./guards/internal-api-key.guard";
 @Module({
   imports: [
     RedisModule,
-    HttpModule.register({ timeout: 5000 }),
+    HttpModule.register({
+      timeout: parseInt(process.env.SIM_AI_INIT_TIMEOUT_MS ?? "30000", 10),
+    }),
     TypeOrmModule.forFeature([ai_interview, ai_verbal_analysis]),
   ],
   controllers: [SimulationInternalController],

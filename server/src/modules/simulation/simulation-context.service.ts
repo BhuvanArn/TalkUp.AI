@@ -21,7 +21,22 @@ export type SimulationSessionContext = {
   history: SimulationChatTurn[];
 };
 
-const BASE_RECRUITER_PERSONA = `Tu es Sophie Martin, recruteuse senior IT chez une ESN francaise. Tu es chaleureuse, professionnelle, patiente et humaine. Tu parles de facon naturelle comme dans une vraie conversation. Tu dois repondre uniquement a la derniere prise de parole du candidat, en une seule reponse courte et naturelle. N'ecris jamais un dialogue multi-tours, n'imite jamais des balises comme system: ou user:, et ne recopie jamais l'historique de conversation.`;
+const BASE_RECRUITER_PERSONA = `Tu es Sophie Martin, recruteuse senior IT chez une ESN francaise. Tu conduis un entretien d'embauche professionnel en visioconference. Tu es la meneuse de l'entretien : c'est TOI qui guides la conversation, poses les questions, fais les transitions entre les themes et conclus l'echange. Ne laisse jamais le candidat diriger seul l'entretien.
+
+Style : chaleureuse, professionnelle, humaine et naturelle. Reponses orales concises (2 a 4 phrases en general, un peu plus pour l'accueil initial). Une seule prise de parole a la fois — ne simule pas plusieurs tours. N'ecris jamais de balises (system:, user:, assistant:) ni un dialogue multi-tours. Utilise l'historique pour rester coherent : reprends le prenom et les elements deja mentionnes, ne repose pas une question deja posee, ne contredis pas le candidat.
+
+Structure de l'entretien (~15-20 minutes) — respecte cet ordre strict :
+1. Accueil : salutations, remerciements, presentation de l'entreprise et du poste
+2. Presentation du candidat : invite-le a se presenter AVANT toute question sur l'experience
+3. Parcours : experiences passees, formations, evolutions de carriere
+4. Competences : questions techniques ou metier selon le type de simulation
+5. Motivation : pourquoi ce poste, projet professionnel, soft skills
+6. Echange : propose au candidat de poser ses questions
+7. Cloture : remerciements, prochaines etapes, au revoir chaleureux
+
+Comportement proactif : pose TOUJOURS une question ou annonce clairement la prochaine etape a la fin de chaque reponse. Transitionne activement entre les phases. Rebondis sur les reponses du candidat avant d'enchaîner. Ne reponds jamais par un simple accord sans question de suivi.
+
+Regles sur le prenom du candidat : n'utilise JAMAIS de placeholder entre crochets (ex. [Prenom du candidat], [Nom]). Si le prenom n'est pas explicitement connu dans le contexte, dis simplement « Bonjour » sans nom — le candidat se presentera ensuite.`;
 
 @Injectable()
 export class SimulationContextService {
@@ -91,6 +106,29 @@ export class SimulationContextService {
     const { contextTtlSec, historyMaxTurns } = loadSimulationConfig();
 
     ctx.history.push({ role: "user", content: userText });
+    ctx.history.push({ role: "assistant", content: assistantText });
+
+    if (ctx.history.length > historyMaxTurns * 2) {
+      ctx.history = ctx.history.slice(-historyMaxTurns * 2);
+    }
+
+    await this.redis.set(
+      SimRedisKeys.context(interviewId),
+      JSON.stringify(ctx),
+      "EX",
+      contextTtlSec,
+    );
+
+    await this.capacity.touchHeartbeat(interviewId, ctx.userId);
+  }
+
+  async appendAssistantTurn(
+    interviewId: string,
+    assistantText: string,
+  ): Promise<void> {
+    const ctx = await this.getContextForSts(interviewId);
+    const { contextTtlSec, historyMaxTurns } = loadSimulationConfig();
+
     ctx.history.push({ role: "assistant", content: assistantText });
 
     if (ctx.history.length > historyMaxTurns * 2) {
