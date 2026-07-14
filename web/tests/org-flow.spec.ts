@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { buildAdminUsername } from '../src/utils/buildAdminUsername';
+
 /**
  * Org happy-path UI flow (F12/F2 surfaces). Full redemption needs OTP email
  * access, so this spec verifies the UI contract up to each 202 handoff.
@@ -63,7 +65,10 @@ test.describe('organization flows', () => {
     await expect(
       page.getByRole('heading', { name: /organization created/i }),
     ).toBeVisible();
-    await expect(page.getByText(`${orgName}_admin`)).toBeVisible();
+    // The page must show the REAL admin username the backend generates
+    // (strip non-alphanumerics + `admin` suffix), not a `${orgName}_admin`
+    // lookalike — otherwise the user copies a username they can't sign in with.
+    await expect(page.getByText(buildAdminUsername(orgName))).toBeVisible();
 
     // The primary CTA hands off to verify-email carrying the admin email.
     await page.getByRole('button', { name: /verify admin email/i }).click();

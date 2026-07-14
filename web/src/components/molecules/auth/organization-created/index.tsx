@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { buildAdminUsername } from '@/utils/buildAdminUsername';
 import { Link, useNavigate } from '@tanstack/react-router';
 
 type OrganizationCreatedProps = {
@@ -13,7 +14,9 @@ type OrganizationCreatedProps = {
  * directs the user to verify the admin email before they can manage the org.
  * The admin username is derived from the organization name because the
  * signup endpoint returns no body data (202 + verification mail only); the
- * backend builds it as `${organizationName}_admin` (auth.service.ts).
+ * derivation mirrors the backend's `buildAdminUsername` exactly (strip
+ * non-alphanumerics, append an `admin` suffix, clamp to 20 chars) so the
+ * page shows the real, loginable username rather than a lookalike.
  */
 export const OrganizationCreated = ({
   organizationName,
@@ -24,7 +27,9 @@ export const OrganizationCreated = ({
   const orgNameTrimmed = organizationName.trim();
   const emailTrimmed = email.trim();
   const hasContext = orgNameTrimmed.length > 0 && emailTrimmed.length > 0;
-  const adminUsername = orgNameTrimmed ? `${orgNameTrimmed}_admin` : '';
+  const adminUsername = orgNameTrimmed
+    ? buildAdminUsername(orgNameTrimmed)
+    : '';
 
   if (!hasContext) {
     return (

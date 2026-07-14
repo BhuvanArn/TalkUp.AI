@@ -37,10 +37,19 @@ describe('OrganizationCreated', () => {
     ).toBeInTheDocument();
     // org name appears in the intro copy
     expect(screen.getAllByText('Acme').length).toBeGreaterThan(0);
-    // username is derived as `${orgName}_admin`
-    expect(screen.getByText('Acme_admin')).toBeInTheDocument();
+    // username mirrors the backend: strip non-alphanumerics, append `admin`
+    expect(screen.getByText('Acmeadmin')).toBeInTheDocument();
     // email is shown in the details row and repeated in the instructions
     expect(screen.getAllByText('admin@acme.io').length).toBeGreaterThan(0);
+  });
+
+  it('derives the username the way the backend does (drops spaces/punctuation)', () => {
+    render(
+      <OrganizationCreated organizationName="Acme Corp!" email="a@acme.io" />,
+    );
+
+    // Not `Acme Corp!_admin`: the backend strips every non-alphanumeric char.
+    expect(screen.getByText('AcmeCorpadmin')).toBeInTheDocument();
   });
 
   it('trims surrounding whitespace before deriving the username', () => {
@@ -51,7 +60,7 @@ describe('OrganizationCreated', () => {
       />,
     );
 
-    expect(screen.getByText('Globex_admin')).toBeInTheDocument();
+    expect(screen.getByText('Globexadmin')).toBeInTheDocument();
     expect(screen.getAllByText('root@globex.io').length).toBeGreaterThan(0);
   });
 
