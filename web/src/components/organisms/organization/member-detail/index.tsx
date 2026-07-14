@@ -42,9 +42,9 @@ export const MemberDetail = ({
       <button
         type="button"
         aria-label="Close member details"
-        /* literal black — the `black` token is theme-inverted (near-white in
-           dark mode), so it can't be used for a scrim */
-        className="absolute inset-0 bg-[#000000]/60 backdrop-blur-sm"
+        /* `scrim` is the non-inverting overlay token — the `black` token is
+           theme-inverted (near-white in dark mode) and unsafe for a scrim */
+        className="absolute inset-0 bg-scrim/60 backdrop-blur-sm"
         onClick={onClose}
       />
       <div

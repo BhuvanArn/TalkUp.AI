@@ -27,7 +27,7 @@ function VideoAreaControlsBar({
   toggleCamera,
 }: VideoAreaControlsBarProps): React.ReactElement {
   return (
-    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-6 items-center">
+    <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 transform items-center space-x-6">
       <Button
         size="md"
         onClick={toggleSpeaker}

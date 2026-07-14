@@ -78,6 +78,35 @@ const isBlockedIPv6 = (host: string): boolean => {
 };
 
 /**
+ * Canonical form of a job-offer URL, used as the per-user dedup key so the SAME
+ * job maps to ONE application no matter which tracking params the link carried.
+ *
+ * Job-board links (LinkedIn especially) append per-visit query params
+ * (`trackingId`, `refId`, `eBP`, `alternateChannel`, …), so two analyses of the
+ * same posting arrive as different raw URLs and would otherwise create duplicate
+ * training paths. We strip the query string and fragment, lowercase the host,
+ * and drop a trailing slash — keeping only scheme + host + path, which is what
+ * identifies the posting. Falls back to the trimmed input if it won't parse
+ * (the caller still validates fetch-safety separately).
+ */
+export const canonicalizeOfferUrl = (raw: string): string => {
+  try {
+    const u = new URL(raw);
+    u.search = "";
+    u.hash = "";
+    u.hostname = u.hostname.toLowerCase();
+    let out = u.toString();
+    // Normalize a bare trailing slash on the path (…/view/123/ === …/view/123).
+    if (out.endsWith("/") && u.pathname !== "/") {
+      out = out.slice(0, -1);
+    }
+    return out;
+  } catch {
+    return raw.trim();
+  }
+};
+
+/**
  * Returns true when the URL is safe to fetch server-side.
  * Rejects non-http(s) schemes and private/loopback/link-local/reserved targets.
  */

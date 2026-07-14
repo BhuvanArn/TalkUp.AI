@@ -984,6 +984,17 @@ export class AuthService {
   }> {
     const inviteRepo = manager.getRepository(organization_invite);
 
+    // One generic rejection for every unusable-code state on this PUBLIC
+    // /auth/register path. Distinct messages (unknown / revoked / already-used /
+    // expired / email-bound-to-someone-else) would be an error oracle: a
+    // code-holder could probe invite state and confirm an email↔invite binding.
+    // The authenticated org-admin view (listInvites → toInviteRow) still surfaces
+    // the real per-invite status; only the anonymous path is redacted. (#187)
+    const invalidCode = () =>
+      new BadRequestException(
+        "This organization code is invalid or cannot be used",
+      );
+
     const invite = await inviteRepo
       .createQueryBuilder("invite")
       .setLock("pessimistic_write")
@@ -991,11 +1002,11 @@ export class AuthService {
       .getOne();
 
     if (!invite) {
-      throw new BadRequestException("Unknown organization code");
+      throw invalidCode();
     }
 
     if (invite.status === OrganizationInviteStatus.REVOKED) {
-      throw new BadRequestException("This organization code has been revoked");
+      throw invalidCode();
     }
 
     if (invite.status === OrganizationInviteStatus.ACCEPTED) {
@@ -1012,9 +1023,7 @@ export class AuthService {
           alreadyAccepted: true,
         };
       }
-      throw new BadRequestException(
-        "This organization code has already been used",
-      );
+      throw invalidCode();
     }
 
     const isExpired =
@@ -1024,13 +1033,11 @@ export class AuthService {
       // Expired-ness is derived on read (see toInviteRow in
       // organization.service.ts) — persisting the flip here would be
       // rolled back anyway by the throw below aborting this transaction.
-      throw new BadRequestException("This organization code has expired");
+      throw invalidCode();
     }
 
     if (invite.email && invite.email.toLowerCase() !== email.toLowerCase()) {
-      throw new BadRequestException(
-        "This organization code is bound to a different email address",
-      );
+      throw invalidCode();
     }
 
     // No org-existence check needed: the FK is onDelete CASCADE, so a live

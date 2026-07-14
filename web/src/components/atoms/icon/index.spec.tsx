@@ -118,7 +118,7 @@ describe('Icon', () => {
       'minus',
       'check',
       'times',
-      'dashboard',
+      'roadmap',
       'settings',
     ] as const;
 

@@ -607,11 +607,17 @@ describe("AuthService", () => {
       );
     });
 
+    // Every unusable-code state returns the SAME generic message on the public
+    // register path so it can't be used as an invite-state oracle (#187). Each
+    // test still drives a distinct scenario; they all assert the one message.
+    const GENERIC_INVITE_ERROR =
+      "This organization code is invalid or cannot be used";
+
     it("rejects an unknown code without creating a user", async () => {
       const { txUserRepo } = buildTxRepos(null);
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
-        "Unknown organization code",
+        GENERIC_INVITE_ERROR,
       );
       expect(txUserRepo.create).not.toHaveBeenCalled();
     });
@@ -623,7 +629,7 @@ describe("AuthService", () => {
       });
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
-        "This organization code has been revoked",
+        GENERIC_INVITE_ERROR,
       );
     });
 
@@ -634,7 +640,7 @@ describe("AuthService", () => {
       });
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
-        "This organization code has expired",
+        GENERIC_INVITE_ERROR,
       );
       expect(txInviteRepo.save).not.toHaveBeenCalled();
     });
@@ -643,7 +649,7 @@ describe("AuthService", () => {
       buildTxRepos({ ...pendingInvite(), email: "someone.else@example.com" });
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
-        "This organization code is bound to a different email address",
+        GENERIC_INVITE_ERROR,
       );
     });
 
@@ -698,7 +704,7 @@ describe("AuthService", () => {
       });
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
-        "This organization code has already been used",
+        GENERIC_INVITE_ERROR,
       );
     });
   });
