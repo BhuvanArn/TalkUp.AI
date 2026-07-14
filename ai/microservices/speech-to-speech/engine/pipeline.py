@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 import re
-import unicodedata
 
 import numpy as np
 
@@ -18,19 +17,11 @@ from .audio_decode import decode_audio_to_float32
 from .models import STSModels, generate_ai_response, synthesize_tts_chunks
 from .simulation_brief import build_messages_for_turn
 from .session_context import append_session_history
-
-# Canned phrases faster-whisper frequently hallucinates on silence/noise (FR).
-# These are only discarded when the model is also unsure speech was present, so
-# a genuine "merci" or "au revoir" spoken with confidence is preserved.
-_HALLUCINATION_PHRASES: frozenset[str] = frozenset({
-	"merci", "merci a vous", "merci beaucoup", "merci a tous",
-	"merci d'avoir regarde", "merci d'avoir regarde cette video",
-	"sous-titres realises par la communaute d'amara.org",
-	"sous-titres realises par", "sous-titrage realise par",
-	"abonnez-vous", "n'oubliez pas de vous abonner et de liker",
-	"au revoir", "a bientot", "a la prochaine", "a plus",
-	"c'est la fin de la video", "merci d'avoir ecoute",
-})
+from .transcription_validation import (
+	REPEAT_PROMPT,
+	should_drop_segment_text,
+	validate_transcription,
+)
 
 # A segment is treated as noise/hallucination when Whisper is fairly sure there
 # was no speech and the decoding confidence is poor.
@@ -42,13 +33,6 @@ _INITIAL_PROMPT = (
 )
 
 
-def _normalize_for_match(text: str) -> str:
-	decomposed = unicodedata.normalize("NFKD", text).lower().strip()
-	stripped = "".join(c for c in decomposed if not unicodedata.combining(c))
-	cleaned = re.sub(r"[^a-z0-9'\- .]", "", stripped)
-	return cleaned.strip(" .")
-
-
 def _segment_no_speech_prob(segment) -> float:
 	return float(getattr(segment, "no_speech_prob", 0.0) or 0.0)
 
@@ -58,20 +42,22 @@ def _segment_avg_logprob(segment) -> float:
 
 
 def _should_drop_segment(segment) -> bool:
-	cleaned = _normalize_for_match(segment.text)
-	if not cleaned:
-		return True
+	return should_drop_segment_text(
+		segment.text,
+		no_speech_prob=_segment_no_speech_prob(segment),
+		avg_logprob=_segment_avg_logprob(segment),
+		no_speech_prob_max=_NO_SPEECH_PROB_MAX,
+		avg_logprob_min=_AVG_LOGPROB_MIN,
+	)
 
-	no_speech = _segment_no_speech_prob(segment)
-	avg_logprob = _segment_avg_logprob(segment)
 
-	if no_speech >= _NO_SPEECH_PROB_MAX and avg_logprob <= _AVG_LOGPROB_MIN:
-		return True
-
-	if cleaned in _HALLUCINATION_PHRASES and no_speech >= 0.5:
-		return True
-
-	return False
+def _build_repeat_result(models: STSModels) -> STSResult:
+	audio_chunks = list(synthesize_tts_chunks(models, REPEAT_PROMPT))
+	return STSResult(
+		transcription="",
+		ai_response=REPEAT_PROMPT,
+		audio_chunks=audio_chunks,
+	)
 
 
 @dataclass
@@ -126,7 +112,11 @@ def process_sts_request(
 	user_text = re.sub(r"\s+", " ", " ".join(kept)).strip()
 
 	if not user_text or len(user_text) < 2:
-		return STSResult(transcription="", ai_response="", audio_chunks=[])
+		return _build_repeat_result(models)
+
+	is_valid, _reason = validate_transcription(user_text)
+	if not is_valid:
+		return _build_repeat_result(models)
 
 	messages = build_messages_for_turn(
 		models.settings.system_prompt,

@@ -190,4 +190,40 @@ describe('useAudioPlayback', () => {
     await waitFor(() => expect(result.current.isAiSpeaking).toBe(true));
     expect(ctx.createBufferSource).toHaveBeenCalledTimes(1);
   });
+
+  it('delegates audio to the avatar in avatar playback mode', async () => {
+    const { result, rerender } = renderHook(
+      ({ message }) => useAudioPlayback({ message, playbackMode: 'avatar' }),
+      { initialProps: { message: null as unknown } },
+    );
+
+    await act(async () => {
+      rerender({ message: buildPacket(['QUFB']) as unknown });
+    });
+
+    await waitFor(() => expect(result.current.isAiSpeaking).toBe(true));
+    expect(result.current.speechTurn).toEqual({
+      id: 1,
+      response: 'hello there',
+      audioChunks: ['QUFB'],
+    });
+  });
+
+  it('always publishes speechTurn even in direct playback mode', async () => {
+    const { result, rerender } = renderHook(
+      ({ message }) => useAudioPlayback({ message }),
+      { initialProps: { message: null as unknown } },
+    );
+
+    await act(async () => {
+      rerender({ message: buildPacket(['QUFB']) as unknown });
+    });
+
+    await waitFor(() => expect(result.current.isAiSpeaking).toBe(true));
+    expect(result.current.speechTurn).toEqual({
+      id: 1,
+      response: 'hello there',
+      audioChunks: ['QUFB'],
+    });
+  });
 });
