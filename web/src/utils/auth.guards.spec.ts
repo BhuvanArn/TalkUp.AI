@@ -181,18 +181,15 @@ describe('auth.guards', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('allows organization-created when not authenticated', async () => {
-      axiosGet.mockResolvedValue({ data: { authenticated: false } });
+    it('returns early for organization-created (no auth-status call)', async () => {
+      // The org-created ack page is reached right after signup while the user
+      // is still unauthenticated. It must NOT run an auth-status check: the 401
+      // would trip the axios refresh→/login redirect. Kept out of the guard's
+      // allow-list on purpose.
       await expect(
         createPublicRouteGuard('/organization-created')(),
       ).resolves.toBeUndefined();
-    });
-
-    it('redirects home when already authenticated on organization-created', async () => {
-      await expect(
-        createPublicRouteGuard('/organization-created')(),
-      ).rejects.toThrow('REDIRECT');
-      expect(redirectMock).toHaveBeenCalledWith({ to: '/' });
+      expect(axiosGet).not.toHaveBeenCalled();
     });
   });
 
