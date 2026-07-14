@@ -42,10 +42,7 @@ export function loadSimulationConfig(): SimulationConfig {
       process.env.SIM_ESTIMATED_TURN_SEC,
       90,
     ),
-    historyMaxTurns: parsePositiveIntEnv(
-      process.env.SIM_HISTORY_MAX_TURNS,
-      30,
-    ),
+    historyMaxTurns: parsePositiveIntEnv(process.env.SIM_HISTORY_MAX_TURNS, 30),
     contextTtlSec: parsePositiveIntEnv(process.env.SIM_CONTEXT_TTL_SEC, 7200),
     heartbeatIntervalSec: parsePositiveIntEnv(
       process.env.SIM_HEARTBEAT_INTERVAL_SEC,
