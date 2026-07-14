@@ -68,7 +68,7 @@ export function RoadmapSourcesModal({
         type="button"
         aria-label="Dismiss sources"
         onClick={onClose}
-        className="absolute inset-0 h-full w-full bg-[#000000]/40"
+        className="absolute inset-0 h-full w-full bg-scrim/40"
       />
       <div
         role="dialog"
