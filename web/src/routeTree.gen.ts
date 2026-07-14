@@ -16,6 +16,7 @@ import { Route as RegisterOrganizationRouteImport } from './routes/register-orga
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProgressionRouteImport } from './routes/progression'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as OrganizationCreatedRouteImport } from './routes/organization-created'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DiaryRouteImport } from './routes/diary'
@@ -74,6 +75,11 @@ const ProgressionRoute = ProgressionRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationCreatedRoute = OrganizationCreatedRouteImport.update({
+  id: '/organization-created',
+  path: '/organization-created',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/diary': typeof DiaryRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/organization-created': typeof OrganizationCreatedRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
@@ -243,6 +250,7 @@ export interface FileRoutesByTo {
   '/diary': typeof DiaryRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/organization-created': typeof OrganizationCreatedRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/diary': typeof DiaryRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/organization-created': typeof OrganizationCreatedRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/diary'
     | '/forgot-password'
     | '/login'
+    | '/organization-created'
     | '/profile'
     | '/progression'
     | '/register'
@@ -345,6 +355,7 @@ export interface FileRouteTypes {
     | '/diary'
     | '/forgot-password'
     | '/login'
+    | '/organization-created'
     | '/profile'
     | '/progression'
     | '/register'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
     | '/diary'
     | '/forgot-password'
     | '/login'
+    | '/organization-created'
     | '/profile'
     | '/progression'
     | '/register'
@@ -412,6 +424,7 @@ export interface RootRouteChildren {
   DiaryRoute: typeof DiaryRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  OrganizationCreatedRoute: typeof OrganizationCreatedRoute
   ProfileRoute: typeof ProfileRoute
   ProgressionRoute: typeof ProgressionRoute
   RegisterRoute: typeof RegisterRoute
@@ -486,6 +499,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization-created': {
+      id: '/organization-created'
+      path: '/organization-created'
+      fullPath: '/organization-created'
+      preLoaderRoute: typeof OrganizationCreatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -668,6 +688,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiaryRoute: DiaryRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  OrganizationCreatedRoute: OrganizationCreatedRoute,
   ProfileRoute: ProfileRoute,
   ProgressionRoute: ProgressionRoute,
   RegisterRoute: RegisterRoute,

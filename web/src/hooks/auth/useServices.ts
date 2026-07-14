@@ -63,7 +63,11 @@ export const usePostRegister = () => {
   });
 };
 
-/** F12: org signup → OTP verification → lands on /organization. */
+/**
+ * F12: org signup → acknowledgement page → OTP verification → lands on
+ * /organization. The interstitial /organization-created page confirms the org
+ * was created and surfaces the admin username before verification.
+ */
 export const usePostRegisterOrganization = () => {
   const router = useRouter();
 
@@ -86,8 +90,11 @@ export const usePostRegisterOrganization = () => {
     onSuccess: (_data, variables) => {
       toast.success('Check your email for a verification code');
       router.navigate({
-        to: '/verify-email',
-        search: { email: variables.email, redirect: '/organization' },
+        to: '/organization-created',
+        search: {
+          organizationName: variables.organizationName,
+          email: variables.email,
+        },
       });
     },
     onError: (error) => {
