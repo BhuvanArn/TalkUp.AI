@@ -68,7 +68,9 @@ function ApplicationSimulations() {
       <BackToRoadmap applicationId={applicationId} />
       <SimulationWorkspace
         applicationId={applicationId}
-        title="Simulations"
+        // No page title here: arriving from the roadmap already sets the
+        // context, and the interview-context line below identifies the offer.
+        title=""
         description="Practice with the AI recruiter for this job offer."
         contextLabel={contextLabel}
       />
