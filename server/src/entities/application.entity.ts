@@ -14,6 +14,7 @@ import { ApplicationStatus } from "@common/enums/ApplicationStatus";
 import type {
   CvExtraction,
   JobOfferExtraction,
+  RoadmapExtraction,
 } from "../common/utils/groqExtraction";
 
 @Entity()
@@ -49,6 +50,12 @@ export class application {
   // CV that was actually used even if the profile CV changes later.
   @Column({ type: "json", nullable: true })
   cv_details: CvExtraction | null;
+
+  // LLM-generated preparation path (F6). Null until the roadmap is first
+  // requested; cached afterwards and only overwritten by an explicit
+  // regenerate. Column is applied by TypeORM synchronize — no migration.
+  @Column({ type: "json", nullable: true })
+  roadmap: RoadmapExtraction | null;
 
   @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   applied_at: Date;

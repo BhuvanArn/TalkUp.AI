@@ -39,7 +39,7 @@ import { Route as OrganizationInvitesRouteImport } from './routes/organization/i
 import { Route as NotesNoteIdRouteImport } from './routes/notes/$noteId'
 import { Route as ApplicationsApplicationIdIndexRouteImport } from './routes/applications/$applicationId/index'
 import { Route as ApplicationsApplicationIdSimulationsRouteImport } from './routes/applications/$applicationId/simulations'
-import { Route as ApplicationsApplicationIdDashboardRouteImport } from './routes/applications/$applicationId/dashboard'
+import { Route as ApplicationsApplicationIdRoadmapRouteImport } from './routes/applications/$applicationId/roadmap'
 import { Route as ApplicationsApplicationIdAnalyticsRouteImport } from './routes/applications/$applicationId/analytics'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -194,10 +194,10 @@ const ApplicationsApplicationIdSimulationsRoute =
     path: '/applications/$applicationId/simulations',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApplicationsApplicationIdDashboardRoute =
-  ApplicationsApplicationIdDashboardRouteImport.update({
-    id: '/applications/$applicationId/dashboard',
-    path: '/applications/$applicationId/dashboard',
+const ApplicationsApplicationIdRoadmapRoute =
+  ApplicationsApplicationIdRoadmapRouteImport.update({
+    id: '/applications/$applicationId/roadmap',
+    path: '/applications/$applicationId/roadmap',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApplicationsApplicationIdAnalyticsRoute =
@@ -237,7 +237,7 @@ export interface FileRoutesByFullPath {
   '/organization': typeof OrganizationIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/applications/$applicationId/analytics': typeof ApplicationsApplicationIdAnalyticsRoute
-  '/applications/$applicationId/dashboard': typeof ApplicationsApplicationIdDashboardRoute
+  '/applications/$applicationId/roadmap': typeof ApplicationsApplicationIdRoadmapRoute
   '/applications/$applicationId/simulations': typeof ApplicationsApplicationIdSimulationsRoute
   '/applications/$applicationId': typeof ApplicationsApplicationIdIndexRoute
 }
@@ -271,7 +271,7 @@ export interface FileRoutesByTo {
   '/organization': typeof OrganizationIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/applications/$applicationId/analytics': typeof ApplicationsApplicationIdAnalyticsRoute
-  '/applications/$applicationId/dashboard': typeof ApplicationsApplicationIdDashboardRoute
+  '/applications/$applicationId/roadmap': typeof ApplicationsApplicationIdRoadmapRoute
   '/applications/$applicationId/simulations': typeof ApplicationsApplicationIdSimulationsRoute
   '/applications/$applicationId': typeof ApplicationsApplicationIdIndexRoute
 }
@@ -306,7 +306,7 @@ export interface FileRoutesById {
   '/organization/': typeof OrganizationIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/applications/$applicationId/analytics': typeof ApplicationsApplicationIdAnalyticsRoute
-  '/applications/$applicationId/dashboard': typeof ApplicationsApplicationIdDashboardRoute
+  '/applications/$applicationId/roadmap': typeof ApplicationsApplicationIdRoadmapRoute
   '/applications/$applicationId/simulations': typeof ApplicationsApplicationIdSimulationsRoute
   '/applications/$applicationId/': typeof ApplicationsApplicationIdIndexRoute
 }
@@ -342,7 +342,7 @@ export interface FileRouteTypes {
     | '/organization'
     | '/settings'
     | '/applications/$applicationId/analytics'
-    | '/applications/$applicationId/dashboard'
+    | '/applications/$applicationId/roadmap'
     | '/applications/$applicationId/simulations'
     | '/applications/$applicationId'
   fileRoutesByTo: FileRoutesByTo
@@ -376,7 +376,7 @@ export interface FileRouteTypes {
     | '/organization'
     | '/settings'
     | '/applications/$applicationId/analytics'
-    | '/applications/$applicationId/dashboard'
+    | '/applications/$applicationId/roadmap'
     | '/applications/$applicationId/simulations'
     | '/applications/$applicationId'
   id:
@@ -410,7 +410,7 @@ export interface FileRouteTypes {
     | '/organization/'
     | '/settings/'
     | '/applications/$applicationId/analytics'
-    | '/applications/$applicationId/dashboard'
+    | '/applications/$applicationId/roadmap'
     | '/applications/$applicationId/simulations'
     | '/applications/$applicationId/'
   fileRoutesById: FileRoutesById
@@ -445,7 +445,7 @@ export interface RootRouteChildren {
   OrganizationIndexRoute: typeof OrganizationIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
   ApplicationsApplicationIdAnalyticsRoute: typeof ApplicationsApplicationIdAnalyticsRoute
-  ApplicationsApplicationIdDashboardRoute: typeof ApplicationsApplicationIdDashboardRoute
+  ApplicationsApplicationIdRoadmapRoute: typeof ApplicationsApplicationIdRoadmapRoute
   ApplicationsApplicationIdSimulationsRoute: typeof ApplicationsApplicationIdSimulationsRoute
   ApplicationsApplicationIdIndexRoute: typeof ApplicationsApplicationIdIndexRoute
 }
@@ -662,11 +662,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApplicationsApplicationIdSimulationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/applications/$applicationId/dashboard': {
-      id: '/applications/$applicationId/dashboard'
-      path: '/applications/$applicationId/dashboard'
-      fullPath: '/applications/$applicationId/dashboard'
-      preLoaderRoute: typeof ApplicationsApplicationIdDashboardRouteImport
+    '/applications/$applicationId/roadmap': {
+      id: '/applications/$applicationId/roadmap'
+      path: '/applications/$applicationId/roadmap'
+      fullPath: '/applications/$applicationId/roadmap'
+      preLoaderRoute: typeof ApplicationsApplicationIdRoadmapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/applications/$applicationId/analytics': {
@@ -710,8 +710,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsIndexRoute: SettingsIndexRoute,
   ApplicationsApplicationIdAnalyticsRoute:
     ApplicationsApplicationIdAnalyticsRoute,
-  ApplicationsApplicationIdDashboardRoute:
-    ApplicationsApplicationIdDashboardRoute,
+  ApplicationsApplicationIdRoadmapRoute: ApplicationsApplicationIdRoadmapRoute,
   ApplicationsApplicationIdSimulationsRoute:
     ApplicationsApplicationIdSimulationsRoute,
   ApplicationsApplicationIdIndexRoute: ApplicationsApplicationIdIndexRoute,

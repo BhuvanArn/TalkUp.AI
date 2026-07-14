@@ -1,7 +1,11 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+} from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, getMetadataArgsStorage } from "typeorm";
 
 jest.mock("groq-sdk", () => ({
   __esModule: true,
@@ -34,6 +38,26 @@ const validOfferResponse = JSON.stringify({
   job_title: "DevOps Engineer",
   company_name: "Datadog",
   sector: "Tech",
+});
+
+const validRoadmapResponse = JSON.stringify({
+  match_score: 62,
+  summary:
+    "Solid backend profile; close the Kubernetes gap before interviewing.",
+  topics: [
+    {
+      title: "Kubernetes fundamentals",
+      priority: "HIGH",
+      rationale: "Required by the offer, absent from the CV.",
+      gap: true,
+    },
+  ],
+  talking_points: [
+    {
+      mission: "Own the deployment pipeline",
+      angle: "You've run GitHub Actions before, so you'd start there.",
+    },
+  ],
 });
 
 describe("ApplicationsService", () => {
@@ -167,6 +191,30 @@ describe("ApplicationsService", () => {
       );
       expect(row.interview_at).toEqual(new Date("2026-07-15T00:00:00.000Z"));
       expect(applicationRepo.save).toHaveBeenCalledWith(existing);
+    });
+
+    it("dedups on the canonical url, ignoring tracking params, and stores the canonical form", async () => {
+      // No existing row: the create path runs and must persist the canonical url.
+      applicationRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockScrapeLinkedin.mockResolvedValue("linkedin job text");
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validOfferResponse } }],
+      });
+
+      const row = await service.createFromUrl(
+        "u1",
+        "https://www.linkedin.com/jobs/view/123?trackingId=abc&refId=xyz",
+      );
+
+      // Dedup lookup uses the stripped url...
+      expect(applicationRepo.findOne).toHaveBeenCalledWith({
+        where: {
+          user_id: "u1",
+          offer_url: "https://www.linkedin.com/jobs/view/123",
+        },
+      });
+      // ...and the stored row keeps the canonical url so future analyses dedup.
+      expect(row.offer_url).toBe("https://www.linkedin.com/jobs/view/123");
     });
 
     it("leaves the interview date untouched on dedup when none is provided", async () => {
@@ -384,5 +432,407 @@ describe("ApplicationsService", () => {
       expect(result).toBe(row);
       expect(applicationRepo.save).not.toHaveBeenCalled();
     });
+  });
+
+  describe("getRoadmap", () => {
+    const ownedRow = () =>
+      ({
+        application_id: "a1",
+        user_id: "u1",
+        offer_details: { job_title: "SRE", required_skills: ["kubernetes"] },
+        cv_details: { desired_job: "Backend dev", technical_skills: ["node"] },
+        roadmap: null,
+      }) as unknown as application;
+
+    it("returns the cached roadmap without calling Groq", async () => {
+      const row = ownedRow();
+      row.roadmap = {
+        match_score: 80,
+        summary: "cached",
+        topics: [],
+        talking_points: [],
+      };
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result).toEqual({
+        match_score: 80,
+        summary: "cached",
+        topics: [],
+        talking_points: [],
+      });
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("returns an empty roadmap without Groq when offer and cv are both null", async () => {
+      const row = ownedRow();
+      row.offer_details = null;
+      row.cv_details = null;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result).toEqual({
+        match_score: 0,
+        summary: "",
+        topics: [],
+        talking_points: [],
+      });
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("generates, persists and returns the roadmap on first call", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.match_score).toBe(62);
+      expect(result.topics).toHaveLength(1);
+      expect(result.topics[0].priority).toBe("HIGH");
+      expect(row.roadmap).toEqual(result);
+      expect(applicationRepo.save).toHaveBeenCalledWith(row);
+    });
+
+    it("coalesces concurrent cache-miss generations into one Groq call", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      let resolveGroq: (v: unknown) => void = () => {};
+      mockGroqCreate.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveGroq = resolve;
+          }),
+      );
+
+      // Fire three concurrent gets for the same row before the LLM resolves.
+      const p1 = service.getRoadmap("u1", "a1");
+      const p2 = service.getRoadmap("u1", "a1");
+      const p3 = service.getRoadmap("u1", "a1");
+      // Let all three get past `findOwned` and register/await the in-flight
+      // promise before we resolve the single Groq call.
+      await new Promise((resolve) => setImmediate(resolve));
+      resolveGroq({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+      const [r1, r2, r3] = await Promise.all([p1, p2, p3]);
+
+      // One shared generation: a single Groq call and a single save.
+      expect(mockGroqCreate).toHaveBeenCalledTimes(1);
+      expect(applicationRepo.save).toHaveBeenCalledTimes(1);
+      expect(r1).toEqual(r2);
+      expect(r2).toEqual(r3);
+    });
+
+    it("clears the in-flight lock so a later generation runs fresh", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      await service.regenerateRoadmap("u1", "a1");
+      await service.regenerateRoadmap("u1", "a1");
+
+      // Two sequential regenerations = two calls (lock cleared between them).
+      expect(mockGroqCreate).toHaveBeenCalledTimes(2);
+    });
+
+    it("defaults a non-number match_score (e.g. an array) to 0", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                match_score: [50],
+                summary: "s",
+                topics: [],
+              }),
+            },
+          },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      // Number([50]) === 50 would pass Number.isFinite; the typeof guard rejects
+      // it and falls back to 0 instead of trusting a coerced array.
+      expect(result.match_score).toBe(0);
+    });
+
+    it("keeps well-formed talking points from the LLM", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.talking_points).toEqual([
+        {
+          mission: "Own the deployment pipeline",
+          angle: "You've run GitHub Actions before, so you'd start there.",
+        },
+      ]);
+    });
+
+    it("drops talking points the LLM left blank", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                match_score: 50,
+                summary: "s",
+                topics: [],
+                talking_points: [
+                  { mission: "Real mission", angle: "You'd do X." },
+                  { mission: "", angle: "orphan angle" },
+                  { mission: "orphan mission", angle: "" },
+                  "not-an-object",
+                ],
+              }),
+            },
+          },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.talking_points).toEqual([
+        { mission: "Real mission", angle: "You'd do X." },
+      ]);
+    });
+
+    it("defaults talking_points to [] when the LLM omits the field", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                match_score: 50,
+                summary: "s",
+                topics: [],
+              }),
+            },
+          },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.talking_points).toEqual([]);
+    });
+
+    it("sends both the offer and the cv to the LLM prompt", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      await service.getRoadmap("u1", "a1");
+
+      const callArg = mockGroqCreate.mock.calls[0][0] as {
+        messages: { content: string }[];
+      };
+      const prompt = callArg.messages[0].content;
+      expect(prompt).toContain('"required_skills":["kubernetes"]');
+      expect(prompt).toContain('"technical_skills":["node"]');
+    });
+
+    it("instructs the LLM to address the reader in the second person", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      await service.getRoadmap("u1", "a1");
+
+      const callArg = mockGroqCreate.mock.calls[0][0] as {
+        messages: { content: string }[];
+      };
+      const prompt = callArg.messages[0].content;
+      // User-facing copy must be "you"/"your", never "the candidate".
+      expect(prompt).toContain("SECOND PERSON");
+      expect(prompt).toContain('Never write "the candidate"');
+    });
+
+    it("instructs the LLM to build CV-grounded talking points from the offer missions", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      await service.getRoadmap("u1", "a1");
+
+      const callArg = mockGroqCreate.mock.calls[0][0] as {
+        messages: { content: string }[];
+      };
+      const prompt = callArg.messages[0].content;
+      expect(prompt).toContain('"talking_points"');
+      expect(prompt).toContain('the offer\'s "missions"');
+      expect(prompt).toContain(
+        "draw on a concrete skill or experience from YOUR CV",
+      );
+      expect(prompt).toContain('return "talking_points": []');
+    });
+
+    it("clamps an out-of-range match_score into 0-100", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                match_score: 250,
+                summary: "s",
+                topics: [],
+              }),
+            },
+          },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.match_score).toBe(100);
+    });
+
+    it("normalizes a malformed payload (bad score, missing summary and topics)", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          { message: { content: JSON.stringify({ match_score: "high" }) } },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result).toEqual({
+        match_score: 0,
+        summary: "",
+        topics: [],
+        talking_points: [],
+      });
+    });
+
+    it("sanitizes a malformed topic instead of persisting it as-is", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                match_score: 50,
+                summary: "s",
+                topics: [
+                  {
+                    title: 123,
+                    priority: "URGENT",
+                    rationale: null,
+                    gap: "yes",
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      });
+
+      const result = await service.getRoadmap("u1", "a1");
+
+      expect(result.topics).toEqual([
+        { title: "123", priority: "LOW", rationale: "", gap: true },
+      ]);
+      expect(row.roadmap).toEqual(result);
+      expect(applicationRepo.save).toHaveBeenCalledWith(row);
+    });
+
+    it("throws NotFound for an application owned by someone else", async () => {
+      applicationRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(service.getRoadmap("u1", "a1")).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+    });
+
+    it("propagates a Groq failure without persisting a half-written roadmap", async () => {
+      const row = ownedRow();
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: "not json {{" } }],
+      });
+
+      await expect(service.getRoadmap("u1", "a1")).rejects.toBeInstanceOf(
+        InternalServerErrorException,
+      );
+      expect(applicationRepo.save).not.toHaveBeenCalled();
+      expect(row.roadmap).toBeNull();
+    });
+  });
+
+  describe("regenerateRoadmap", () => {
+    it("always calls Groq and overwrites the cached roadmap", async () => {
+      const row = {
+        application_id: "a1",
+        user_id: "u1",
+        offer_details: { job_title: "SRE" },
+        cv_details: null,
+        roadmap: { match_score: 10, summary: "stale", topics: [] },
+      } as unknown as application;
+      applicationRepo.findOne = jest.fn().mockResolvedValue(row);
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validRoadmapResponse } }],
+      });
+
+      const result = await service.regenerateRoadmap("u1", "a1");
+
+      expect(mockGroqCreate).toHaveBeenCalledTimes(1);
+      expect(result.summary).toBe(
+        "Solid backend profile; close the Kubernetes gap before interviewing.",
+      );
+      expect(row.roadmap).toEqual(result);
+      expect(applicationRepo.save).toHaveBeenCalledWith(row);
+    });
+
+    it("throws NotFound for an unknown application", async () => {
+      applicationRepo.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.regenerateRoadmap("u1", "nope"),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("application entity roadmap column", () => {
+  it("registers a nullable json roadmap column on the application entity", () => {
+    const column = getMetadataArgsStorage().columns.find(
+      (col) => col.target === application && col.propertyName === "roadmap",
+    );
+    expect(column).toBeDefined();
+    expect(column?.options.type).toBe("json");
+    expect(column?.options.nullable).toBe(true);
   });
 });

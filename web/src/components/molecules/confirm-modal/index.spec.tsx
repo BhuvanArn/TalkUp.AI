@@ -106,7 +106,7 @@ describe('ConfirmModal', () => {
 
       const backdrop = screen.getByRole('button', { name: 'Close modal' });
       expect(backdrop).toBeInTheDocument();
-      expect(backdrop).toHaveClass('bg-black/50');
+      expect(backdrop).toHaveClass('bg-scrim/50');
     });
   });
 

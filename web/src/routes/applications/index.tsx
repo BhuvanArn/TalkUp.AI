@@ -41,7 +41,7 @@ function ApplicationsPage() {
 
   const openTraining = (applicationId: string) => {
     navigate({
-      to: '/applications/$applicationId/dashboard',
+      to: '/applications/$applicationId/roadmap',
       params: { applicationId },
     });
   };

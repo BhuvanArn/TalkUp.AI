@@ -46,3 +46,33 @@ export interface Application {
   interviewAt: string | null;
   updatedAt: string;
 }
+
+export interface RoadmapTopic {
+  title: string;
+  priority: 'HIGH' | 'MED' | 'LOW';
+  rationale: string;
+  gap: boolean;
+}
+
+/**
+ * A forward-looking interview talking point: a responsibility from the offer
+ * plus your CV-grounded angle on it. Fuels the "Bring these to your interview"
+ * section — distinct from the gap-driven `topics`.
+ */
+export interface RoadmapTalkingPoint {
+  mission: string;
+  angle: string;
+}
+
+/**
+ * Mirror of the server GetRoadmapDto (F6 preparation path). Keys stay
+ * snake_case exactly as the LLM extraction produces them, like
+ * OfferDetails/CvDetails above.
+ */
+export interface Roadmap {
+  match_score: number;
+  summary: string;
+  topics: RoadmapTopic[];
+  /** Empty when the offer lists no missions, or for pre-existing cached roadmaps. */
+  talking_points: RoadmapTalkingPoint[];
+}

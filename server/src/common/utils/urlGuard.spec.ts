@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { isSafeFetchUrl, safeAxiosGet } from "./urlGuard";
+import { canonicalizeOfferUrl, isSafeFetchUrl, safeAxiosGet } from "./urlGuard";
 
 jest.mock("axios");
 const mockedGet = axios.get as jest.MockedFunction<typeof axios.get>;
@@ -148,5 +148,35 @@ describe("safeAxiosGet", () => {
     ).rejects.toThrow(/Too many redirects/);
     // initial + 2 redirect hops = 3 fetches
     expect(mockedGet).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("canonicalizeOfferUrl", () => {
+  it("strips tracking query params and the fragment", () => {
+    expect(
+      canonicalizeOfferUrl(
+        "https://www.linkedin.com/jobs/view/4410194083/?trackingId=abc&refId=xyz&eBP=Cw#section",
+      ),
+    ).toBe("https://www.linkedin.com/jobs/view/4410194083");
+  });
+
+  it("maps the same posting with different params to one key", () => {
+    const a = canonicalizeOfferUrl(
+      "https://www.linkedin.com/jobs/view/999?trackingId=aaa",
+    );
+    const b = canonicalizeOfferUrl(
+      "https://www.linkedin.com/jobs/view/999?trackingId=bbb&refId=z",
+    );
+    expect(a).toBe(b);
+  });
+
+  it("lowercases the host and drops a trailing slash", () => {
+    expect(canonicalizeOfferUrl("https://Example.COM/job/42/")).toBe(
+      "https://example.com/job/42",
+    );
+  });
+
+  it("returns the trimmed input when it does not parse", () => {
+    expect(canonicalizeOfferUrl("  not a url  ")).toBe("not a url");
   });
 });
