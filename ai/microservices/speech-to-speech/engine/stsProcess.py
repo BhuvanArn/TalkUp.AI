@@ -179,6 +179,8 @@ async def _process_stream_and_reply(
 				"response": result.ai_response,
 				"audio_chunks": encoded_chunks,
 			}
+			if result.simulation_complete:
+				payload["simulation_complete"] = True
 			if request_id is not None:
 				payload["request_id"] = request_id
 
