@@ -94,3 +94,25 @@ def test_mark_presentation_done() -> None:
 	)
 	assert InterviewFlowStore.get("int-test").presentation_done is True
 	InterviewFlowStore.clear("int-test")
+
+
+def test_farewell_ack_does_not_revive_cleared_flow() -> None:
+	interview_id = "int-farewell-clear"
+	InterviewFlowStore.clear(interview_id)
+	flow = InterviewFlowStore.get(interview_id)
+	flow.farewell_sent = True
+	flow.presentation_done = True
+
+	farewell_sent = flow.farewell_sent
+	InterviewFlowStore.clear(interview_id)
+
+	if not farewell_sent:
+		mark_presentation_done(
+			interview_id,
+			"Je suis Mathéo, développeur .NET avec 4 ans d'expérience en React et C#.",
+		)
+
+	revived = InterviewFlowStore.get(interview_id)
+	assert revived.presentation_done is False
+	assert revived.farewell_sent is False
+	InterviewFlowStore.clear(interview_id)

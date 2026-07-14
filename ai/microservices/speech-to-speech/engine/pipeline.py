@@ -158,7 +158,7 @@ def process_sts_request(
 		elif user_turn_count >= CLOSING_TURN_THRESHOLD and flow:
 			flow.farewell_sent = True
 
-		if flow:
+		if flow and not farewell_sent:
 			mark_presentation_done(interview_id, user_text)
 
 		append_session_history(interview_id, user_text, ai_response)
