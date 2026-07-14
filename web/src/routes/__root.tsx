@@ -15,6 +15,7 @@ const PUBLIC_SHELL_PATHS = new Set<string>([
   '/login',
   '/register',
   '/register-organization',
+  '/organization-created',
   '/forgot-password',
   '/reset-password',
   '/verify-email',
