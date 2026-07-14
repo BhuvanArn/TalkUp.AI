@@ -232,6 +232,35 @@ describe('Notes Route', () => {
       expect(screen.queryByText('General note')).not.toBeInTheDocument();
       expect(screen.queryByText('App note')).not.toBeInTheDocument();
     });
+
+    it('narrows to application-only notes via the Application chip', async () => {
+      const user = userEvent.setup();
+      render(<Notes />);
+
+      await user.click(screen.getByRole('button', { name: 'Application' }));
+      expect(screen.getByText('App note')).toBeInTheDocument();
+      // The sim note carries application_id too, but its interview_id makes it a
+      // simulation kind — it must not leak into the Application filter.
+      expect(screen.queryByText('Sim note')).not.toBeInTheDocument();
+      expect(screen.queryByText('General note')).not.toBeInTheDocument();
+    });
+
+    it('shows the empty state when a General chip matches nothing', async () => {
+      const user = userEvent.setup();
+      (useNotesList as any).mockReturnValue({
+        notes: typedNotes.filter((n) => n.note_id !== 'g'),
+        isLoading: false,
+        error: null,
+        setError: vi.fn(),
+        addNote: mockAddNote,
+        updateNoteInList: mockUpdateNoteInList,
+        revertNoteInList: mockRevertNoteInList,
+      });
+      render(<Notes />);
+
+      await user.click(screen.getByRole('button', { name: 'General' }));
+      expect(screen.getByText(/no notes of this kind/i)).toBeInTheDocument();
+    });
   });
 
   describe('application scope', () => {
@@ -259,6 +288,21 @@ describe('Notes Route', () => {
       render(<Notes />);
       await user.click(screen.getByTitle('Add new note'));
       expect(mockCreateNewNote).toHaveBeenCalledWith('app-1');
+    });
+
+    it('hides the General chip in application scope (it can never match)', () => {
+      render(<Notes />);
+      // A scoped fetch only returns this application's application- and
+      // simulation-notes, so a General chip would always yield the empty state.
+      expect(
+        screen.queryByRole('button', { name: 'General' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Application' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Simulation' }),
+      ).toBeInTheDocument();
     });
   });
 });

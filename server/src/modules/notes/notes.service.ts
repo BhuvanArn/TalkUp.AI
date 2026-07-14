@@ -70,10 +70,11 @@ export class NotesService {
   }
 
   private async assertOwnedApplication(userId: string, applicationId: string) {
-    // user_id IS a plain @Column FK on application, so a direct where works.
+    // user_id is a plain @Column on application (the relation is `user`), so a
+    // bare findOne already hydrates it — no loadRelationIds needed, matching how
+    // applications.service.ts reads ownership.
     const app = await this.applicationRepo.findOne({
       where: { application_id: applicationId },
-      loadRelationIds: { relations: ["user_id"] },
     });
     if (!app) throw new NotFoundException("Application not found.");
     if (app.user_id !== userId)

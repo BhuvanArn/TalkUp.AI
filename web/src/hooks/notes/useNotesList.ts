@@ -23,6 +23,10 @@ export const useNotesList = (applicationId?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Guard against out-of-order responses when applicationId changes while a
+    // fetch is in flight (scoped <-> unscoped on the same mounted route): only
+    // the latest effect run may commit its result.
+    let ignore = false;
     const fetchNotes = async () => {
       try {
         setIsLoading(true);
@@ -30,17 +34,22 @@ export const useNotesList = (applicationId?: string) => {
         const fetchedNotes = await getUserNotes(
           applicationId ? { applicationId } : undefined,
         );
+        if (ignore) return;
         const sortedNotes = sortNotes(fetchedNotes);
         setNotes(sortedNotes);
       } catch (err) {
+        if (ignore) return;
         console.error('Error fetching notes:', err);
         setError('Failed to load notes. Please try again.');
       } finally {
-        setIsLoading(false);
+        if (!ignore) setIsLoading(false);
       }
     };
 
     fetchNotes();
+    return () => {
+      ignore = true;
+    };
   }, [applicationId]);
 
   const addNote = (note: Note) => {

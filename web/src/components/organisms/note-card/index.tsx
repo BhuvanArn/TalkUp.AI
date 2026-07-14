@@ -134,6 +134,7 @@ export const NoteCard = ({
             <Icon
               icon={badge.tone === 'simulation' ? 'schedule' : 'applications'}
               className="w-3 h-3"
+              aria-hidden="true"
             />
             {badge.label}
           </span>

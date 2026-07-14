@@ -76,6 +76,13 @@ export function Notes() {
 
   const [filter, setFilter] = useState<KindFilter>('all');
 
+  // In an application-scoped view the fetch only ever returns that
+  // application's application- and simulation-notes, so a "General" chip could
+  // never match — drop it to avoid a filter that always yields the empty state.
+  const filters = applicationId
+    ? FILTERS.filter((f) => f.key !== 'general')
+    : FILTERS;
+
   const { toggleFavorite } = useNoteFavorite();
   const { navigateToNote } = useNoteNavigation();
   const { createNewNote } = useNoteCreation();
@@ -162,7 +169,7 @@ export function Notes() {
               to="/notes"
               className="text-button-m text-accent hover:text-accent-hover inline-flex items-center gap-1"
             >
-              <Icon icon="arrow-left" className="w-4 h-4" />
+              <Icon icon="arrow-left" className="w-4 h-4" aria-hidden="true" />
               Back to all notes
             </Link>
           </div>
@@ -175,7 +182,7 @@ export function Notes() {
         {/* Kind filter. Application scope is applied server-side; these chips
             narrow the fetched set by note kind (client-side). */}
         <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => {
+          {filters.map((f) => {
             const active = filter === f.key;
             return (
               <button

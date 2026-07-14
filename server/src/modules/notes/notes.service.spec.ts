@@ -153,7 +153,6 @@ describe("NotesService", () => {
       });
       expect(applicationRepo.findOne).toHaveBeenCalledWith({
         where: { application_id: "app-1" },
-        loadRelationIds: { relations: ["user_id"] },
       });
       expect(interviewRepo.findOne).not.toHaveBeenCalled();
       expect(result.application_id).toBe("app-1");
