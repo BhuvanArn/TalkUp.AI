@@ -18,6 +18,8 @@ import { SimulationContextService } from "../simulation/simulation-context.servi
 import { SimulationPromotionService } from "../simulation/simulation-promotion.service";
 import { SimulationVerbalAnalysisService } from "../simulation/simulation-verbal-analysis.service";
 import { ApplicationsService } from "../applications/applications.service";
+import { AgendaService } from "../agenda/agenda.service";
+import { NotesService } from "../notes/notes.service";
 import { ChatRole } from "./dto/chat.dto";
 
 const mockGroqCreate = jest.fn();
@@ -49,6 +51,8 @@ describe("AiService", () => {
   let mockContext: any;
   let mockVerbalAnalysis: any;
   let mockApplicationsService: any;
+  let mockAgendaService: any;
+  let mockNotesService: any;
 
   beforeEach(async () => {
     mockGroqCreate.mockReset();
@@ -106,6 +110,15 @@ describe("AiService", () => {
 
     mockApplicationsService = {
       ensureCvSnapshot: jest.fn(),
+      getRoadmap: jest.fn(),
+    };
+
+    mockAgendaService = {
+      listForRange: jest.fn(),
+    };
+
+    mockNotesService = {
+      findAll: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -127,6 +140,8 @@ describe("AiService", () => {
           useValue: mockVerbalAnalysis,
         },
         { provide: ApplicationsService, useValue: mockApplicationsService },
+        { provide: AgendaService, useValue: mockAgendaService },
+        { provide: NotesService, useValue: mockNotesService },
       ],
     }).compile();
 
@@ -736,13 +751,16 @@ describe("AiService", () => {
         choices: [{ message: { content: "  Use the STAR method.  " } }],
       });
 
-      const res = await service.chat({
-        message: "How do I answer behavioral questions?",
-        history: [
-          { role: ChatRole.USER, content: "hi" },
-          { role: ChatRole.ASSISTANT, content: "hello" },
-        ],
-      });
+      const res = await service.chat(
+        {
+          message: "How do I answer behavioral questions?",
+          history: [
+            { role: ChatRole.USER, content: "hi" },
+            { role: ChatRole.ASSISTANT, content: "hello" },
+          ],
+        },
+        "user-1",
+      );
 
       expect(res).toEqual({ reply: "Use the STAR method." });
 
@@ -761,7 +779,7 @@ describe("AiService", () => {
         choices: [{ message: { content: "Sure!" } }],
       });
 
-      const res = await service.chat({ message: "help" });
+      const res = await service.chat({ message: "help" }, "user-1");
 
       expect(res).toEqual({ reply: "Sure!" });
       expect(mockGroqCreate.mock.calls[0][0].messages).toHaveLength(2);
@@ -770,7 +788,7 @@ describe("AiService", () => {
     it("throws InternalServerErrorException when the LLM call fails", async () => {
       mockGroqCreate.mockRejectedValueOnce(new Error("provider down"));
 
-      await expect(service.chat({ message: "help" })).rejects.toThrow(
+      await expect(service.chat({ message: "help" }, "user-1")).rejects.toThrow(
         InternalServerErrorException,
       );
     });
@@ -780,9 +798,121 @@ describe("AiService", () => {
         choices: [{ message: { content: "   " } }],
       });
 
-      await expect(service.chat({ message: "help" })).rejects.toThrow(
+      await expect(service.chat({ message: "help" }, "user-1")).rejects.toThrow(
         InternalServerErrorException,
       );
+    });
+
+    describe("context grounding", () => {
+      const systemOf = () =>
+        mockGroqCreate.mock.calls[0][0].messages[0].content;
+
+      it("injects roadmap context resolved from an owned application", async () => {
+        mockApplicationsService.ensureCvSnapshot.mockResolvedValue({
+          company_name: "Datadog",
+          job_title: "SRE",
+        });
+        mockApplicationsService.getRoadmap.mockResolvedValue({
+          match_score: 72,
+          summary: "Solid fit",
+          topics: [
+            {
+              title: "Kubernetes",
+              priority: "HIGH",
+              rationale: "gap",
+              gap: true,
+            },
+          ],
+          talking_points: [{ mission: "on-call", angle: "ran pager duty" }],
+        });
+        mockGroqCreate.mockResolvedValueOnce({
+          choices: [{ message: { content: "ok" } }],
+        });
+
+        await service.chat(
+          {
+            message: "why this topic?",
+            context: { surface: "roadmap", applicationId: "app-1" } as any,
+          },
+          "user-1",
+        );
+
+        expect(mockApplicationsService.getRoadmap).toHaveBeenCalledWith(
+          "user-1",
+          "app-1",
+        );
+        expect(systemOf()).toContain("Current page context");
+        expect(systemOf()).toContain("Kubernetes");
+        expect(systemOf()).toContain("72/100");
+      });
+
+      it("injects the user's upcoming agenda events", async () => {
+        mockAgendaService.listForRange.mockResolvedValue([
+          {
+            title: "Datadog interview",
+            start_at: new Date("2026-08-01T09:00:00.000Z"),
+            location: "Zoom",
+          },
+        ]);
+        mockGroqCreate.mockResolvedValueOnce({
+          choices: [{ message: { content: "ok" } }],
+        });
+
+        await service.chat(
+          {
+            message: "when is my next interview?",
+            context: { surface: "agenda" } as any,
+          },
+          "user-1",
+        );
+
+        expect(mockAgendaService.listForRange).toHaveBeenCalled();
+        expect(systemOf()).toContain("Datadog interview");
+      });
+
+      it("degrades to no context (still replies) when resolution throws", async () => {
+        // A foreign/missing application makes the owner-guarded loader throw;
+        // the chat must still answer, just without grounding.
+        mockApplicationsService.ensureCvSnapshot.mockRejectedValue(
+          new Error("not found"),
+        );
+        mockGroqCreate.mockResolvedValueOnce({
+          choices: [{ message: { content: "generic reply" } }],
+        });
+
+        const res = await service.chat(
+          {
+            message: "hi",
+            context: { surface: "roadmap", applicationId: "foreign" } as any,
+          },
+          "user-1",
+        );
+
+        expect(res).toEqual({ reply: "generic reply" });
+        expect(systemOf()).not.toContain("Current page context");
+      });
+
+      it("scopes notes context to the application when applicationId is given", async () => {
+        mockNotesService.findAll.mockResolvedValue([
+          { title: "Prep", content: "<p>Ask about on-call</p>" },
+        ]);
+        mockGroqCreate.mockResolvedValueOnce({
+          choices: [{ message: { content: "ok" } }],
+        });
+
+        await service.chat(
+          {
+            message: "what did I note?",
+            context: { surface: "notes", applicationId: "app-1" } as any,
+          },
+          "user-1",
+        );
+
+        expect(mockNotesService.findAll).toHaveBeenCalledWith("user-1", {
+          applicationId: "app-1",
+        });
+        expect(systemOf()).toContain("Ask about on-call");
+      });
     });
   });
 

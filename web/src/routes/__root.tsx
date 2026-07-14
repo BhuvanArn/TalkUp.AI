@@ -1,3 +1,4 @@
+import { ChatWidget } from '@/components/organisms/chatbot/ChatWidget';
 import LandingNav from '@/components/organisms/landing-nav';
 import Sidebar from '@/components/organisms/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,6 +66,9 @@ const RootComponent = () => {
         <main className="overflow-auto w-full bg-white">
           <Outlet />
         </main>
+        {/* App-wide assistant: floats on every authenticated page and grounds
+            its answers in the current route's data (#197). */}
+        <ChatWidget />
         <TanStackRouterDevtools position="top-right" />
       </div>
     </NavigationProvider>

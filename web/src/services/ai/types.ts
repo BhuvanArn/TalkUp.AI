@@ -90,12 +90,28 @@ export interface ChatHistoryItem {
   content: string;
 }
 
+/** The page a chat was opened from. Drives server-side context grounding. */
+export type ChatSurface = 'roadmap' | 'simulation' | 'agenda' | 'notes' | 'cv';
+
+/**
+ * The current page's context — identifiers only. The server resolves the actual
+ * data from these ids under the caller's ownership; the client never sends a
+ * data blob.
+ */
+export interface ChatContext {
+  surface: ChatSurface;
+  applicationId?: string;
+  interviewId?: string;
+}
+
 /** Payload sent to the chatbot endpoint. */
 export interface ChatRequest {
   /** The user's message. */
   message: string;
   /** Prior conversation turns, oldest first, excluding the current message. */
   history?: ChatHistoryItem[];
+  /** The current page's surface + owned id(s), for grounded answers. */
+  context?: ChatContext;
 }
 
 /** Response returned by the chatbot endpoint. */

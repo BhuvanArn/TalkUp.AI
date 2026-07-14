@@ -16,13 +16,14 @@ describe('navigation-contexts', () => {
     });
 
     it('should contain all expected navigation items', () => {
-      expect(rootNavigationContext.items).toHaveLength(4);
+      expect(rootNavigationContext.items).toHaveLength(5);
 
       const labels = rootNavigationContext.items.map((item) => item.label);
       expect(labels).toContain('Applications');
       expect(labels).toContain('CV Analysis');
       expect(labels).toContain('Agenda');
       expect(labels).toContain('Notes');
+      expect(labels).toContain('Assistant');
     });
 
     it('should have all items visible in navigation', () => {
@@ -37,6 +38,7 @@ describe('navigation-contexts', () => {
       expect(routes).toContain('/cv-analysis');
       expect(routes).toContain('/agenda');
       expect(routes).toContain('/notes');
+      expect(routes).toContain('/ai-chat');
     });
 
     it('should have icons for all items', () => {

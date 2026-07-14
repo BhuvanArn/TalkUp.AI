@@ -23,6 +23,7 @@ import {
 } from "@nestjs/swagger";
 
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { AccessTokenGuard } from "@common/guards/accessToken.guard";
@@ -68,9 +69,16 @@ export class AiController {
     description: "The assistant is unavailable.",
   })
   @UsePipes(new PostValidationPipe())
+  // Class-level AccessTokenGuard runs first (sets req.userId); ThrottlerGuard
+  // then enforces the per-user budget on this LLM-cost endpoint.
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Post("chat")
-  async chat(@Body() chatDto: ChatDto): Promise<ChatResponseDto> {
-    return this.aiService.chat(chatDto);
+  async chat(
+    @Body() chatDto: ChatDto,
+    @UserId() userId: string,
+  ): Promise<ChatResponseDto> {
+    return this.aiService.chat(chatDto, userId);
   }
 
   @ApiCreatedResponse({
