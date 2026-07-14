@@ -16,7 +16,12 @@ from dataclasses import dataclass
 from .audio_decode import decode_audio_to_float32
 from .models import STSModels, generate_ai_response, synthesize_tts_chunks
 from .simulation_brief import build_messages_for_turn, build_messages_for_opening
-from .session_context import append_session_history, append_assistant_turn, fetch_session_history
+from .session_context import (
+	append_session_history,
+	append_assistant_turn,
+	fetch_session_history,
+	find_stored_opening_greeting,
+)
 from .interview_flow import (
 	InterviewFlowStore,
 	CLOSING_TURN_THRESHOLD,
@@ -181,7 +186,15 @@ def generate_opening_greeting(
 
 	flow = InterviewFlowStore.get(interview_id)
 	if flow.greeting_sent:
-		return STSResult(transcription="", ai_response="", audio_chunks=[])
+		stored_greeting = find_stored_opening_greeting(interview_id)
+		if stored_greeting:
+			audio_chunks = list(synthesize_tts_chunks(models, stored_greeting))
+			return STSResult(
+				transcription="",
+				ai_response=stored_greeting,
+				audio_chunks=audio_chunks,
+			)
+		flow.greeting_sent = False
 
 	messages = build_messages_for_opening(
 		models.settings.system_prompt,

@@ -149,6 +149,15 @@ def fetch_session_history(interview_id: str) -> list[dict[str, str]]:
 	return []
 
 
+def find_stored_opening_greeting(interview_id: str) -> str | None:
+	for turn in fetch_session_history(interview_id):
+		if turn.get("role") == "assistant" and isinstance(turn.get("content"), str):
+			content = turn["content"].strip()
+			if content:
+				return content
+	return None
+
+
 def build_messages_from_nest_session(
 	default_system_prompt: str,
 	session: dict[str, Any],

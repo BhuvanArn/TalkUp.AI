@@ -116,6 +116,7 @@ export function SimulationWorkspace({
       setConnectionAttempts(0);
     },
     onClose: (event) => {
+      greetingSentRef.current = false;
       if (event.code !== 1000 && event.code !== 1001) {
         setWsError(
           `Connection closed: ${event.code} - ${event.reason || 'Unknown reason'}`,
