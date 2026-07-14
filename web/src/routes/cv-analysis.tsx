@@ -113,10 +113,16 @@ function CVAnalysisPage() {
   };
 
   /**
-   * Navigates the user to their generated training path.
+   * Navigates to the application's roadmap page (F6 preparation path).
+   * onStartCourse only renders once createdApplication is set; the guard is
+   * for type narrowing.
    */
   const handleStartCourse = () => {
-    navigate({ to: '/progression' });
+    if (!createdApplication) return;
+    navigate({
+      to: '/applications/$applicationId/dashboard',
+      params: { applicationId: createdApplication.applicationId },
+    });
   };
 
   return (

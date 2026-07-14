@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { PasswordField } from '@/components/molecules/auth/password-field';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostLogin } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
@@ -107,14 +108,13 @@ export const LoginForm = () => {
         >
           {(field) => (
             <div className="flex flex-col gap-2">
-              <InputMolecule
+              <PasswordField
                 id="password"
-                inputType="base"
-                type="password"
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
                 placeholder="Please type your password"
+                autoComplete="current-password"
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">

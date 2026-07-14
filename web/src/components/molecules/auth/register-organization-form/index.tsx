@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { PasswordField } from '@/components/molecules/auth/password-field';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostRegisterOrganization } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
@@ -125,14 +126,14 @@ export const RegisterOrganizationForm = () => {
         >
           {(field) => (
             <div className="flex flex-col gap-2">
-              <InputMolecule
+              <PasswordField
                 id="password"
-                inputType="base"
-                type="password"
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
                 placeholder="Create a secure password"
+                autoComplete="new-password"
+                showStrength
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">

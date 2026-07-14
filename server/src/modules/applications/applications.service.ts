@@ -13,6 +13,9 @@ import { ApplicationStatus } from "@common/enums/ApplicationStatus";
 import {
   JobOfferExtraction,
   MAX_LLM_INPUT_CHARS,
+  RoadmapExtraction,
+  RoadmapTalkingPoint,
+  RoadmapTopic,
   extractWithGroq,
   isCvExtractionEmpty,
 } from "../../common/utils/groqExtraction";
@@ -20,11 +23,24 @@ import {
   scrapeLinkedin,
   scrapeAxios,
 } from "../../common/utils/JobOfferExtraction";
-import { isSafeFetchUrl } from "../../common/utils/urlGuard";
+import {
+  canonicalizeOfferUrl,
+  isSafeFetchUrl,
+} from "../../common/utils/urlGuard";
 
 @Injectable()
 export class ApplicationsService {
   private readonly logger = new Logger(ApplicationsService.name);
+
+  // In-flight generation lock, keyed by application id. Concurrent cache-miss
+  // requests for the SAME row would each read `roadmap: null` and fire their own
+  // Groq call (N requests → N calls, last-write-wins). We coalesce them onto one
+  // shared promise so a row is generated exactly once at a time. Process-local
+  // (single instance); a multi-instance deploy would need a DB row lock instead.
+  private readonly inFlightRoadmaps = new Map<
+    string,
+    Promise<RoadmapExtraction>
+  >();
 
   constructor(
     @InjectRepository(application)
@@ -50,6 +66,11 @@ export class ApplicationsService {
       throw new BadRequestException("This URL target is not allowed.");
     }
 
+    // Dedup + store on the canonical url so re-analysing the same posting
+    // doesn't create a duplicate training path (see canonicalizeOfferUrl for
+    // what it strips and why).
+    const canonicalUrl = canonicalizeOfferUrl(url);
+
     // Per-user dedup: a repeated submission of the same job URL (double-submit,
     // or a retry after a request that actually succeeded) reuses the existing
     // application instead of creating a duplicate card. Checked before scraping
@@ -58,7 +79,7 @@ export class ApplicationsService {
     // the CV right before this call — returning the row untouched would show a
     // stale snapshot and drop the date the user just set.
     const existing = await this.applicationRepo.findOne({
-      where: { user_id: userId, offer_url: url },
+      where: { user_id: userId, offer_url: canonicalUrl },
     });
     if (existing) {
       existing.cv_details = await this.buildCvSnapshot(userId);
@@ -91,7 +112,7 @@ export class ApplicationsService {
       company_name: data.company_name ?? null,
       job_title: data.job_title ?? null,
       status: ApplicationStatus.SENT,
-      offer_url: url,
+      offer_url: canonicalUrl,
       interview_at: interviewAt ? new Date(interviewAt) : null,
       offer_details: {
         job_title: data.job_title ?? null,
@@ -200,6 +221,166 @@ export class ApplicationsService {
   async remove(userId: string, applicationId: string): Promise<void> {
     const row = await this.findOwned(userId, applicationId);
     await this.applicationRepo.remove(row);
+  }
+
+  /**
+   * Lazily builds the F6 preparation roadmap. Cached on the row after the
+   * first generation; both-null offer/cv short-circuits to an empty roadmap
+   * so we never spend an LLM call on nothing.
+   */
+  async getRoadmap(
+    userId: string,
+    applicationId: string,
+  ): Promise<RoadmapExtraction> {
+    const row = await this.findOwned(userId, applicationId);
+    if (row.roadmap) return row.roadmap;
+    if (!row.offer_details && !row.cv_details) return this.emptyRoadmap();
+    return this.generateOnce(row);
+  }
+
+  /**
+   * Owner-guarded forced rebuild: always re-runs the LLM and overwrites the
+   * cached roadmap. Throttled at the controller (LLM-cost endpoint).
+   */
+  async regenerateRoadmap(
+    userId: string,
+    applicationId: string,
+  ): Promise<RoadmapExtraction> {
+    const row = await this.findOwned(userId, applicationId);
+    return this.generateOnce(row);
+  }
+
+  /**
+   * Coalesces concurrent generations for one application onto a single Groq
+   * call: the first caller registers an in-flight promise, later callers await
+   * it instead of firing their own. Cleared in `finally` so the next request
+   * (e.g. a regenerate) can start fresh.
+   */
+  private generateOnce(row: application): Promise<RoadmapExtraction> {
+    const existing = this.inFlightRoadmaps.get(row.application_id);
+    if (existing) return existing;
+
+    const promise = this.generateAndSaveRoadmap(row).finally(() => {
+      this.inFlightRoadmaps.delete(row.application_id);
+    });
+    this.inFlightRoadmaps.set(row.application_id, promise);
+    return promise;
+  }
+
+  /** Valid-but-empty roadmap; fresh object each time so callers cannot share state. */
+  private emptyRoadmap(): RoadmapExtraction {
+    return { match_score: 0, summary: "", topics: [], talking_points: [] };
+  }
+
+  private async generateAndSaveRoadmap(
+    row: application,
+  ): Promise<RoadmapExtraction> {
+    const raw = await extractWithGroq<RoadmapExtraction>(
+      this.buildRoadmapPrompt(row.offer_details, row.cv_details),
+    );
+    row.roadmap = this.normalizeRoadmap(raw);
+    await this.applicationRepo.save(row);
+    this.logger.log(`Roadmap generated for application ${row.application_id}`);
+    return row.roadmap;
+  }
+
+  /** Defensive shape-fixing on LLM output: clamp the score, default the rest. */
+  private normalizeRoadmap(raw: RoadmapExtraction): RoadmapExtraction {
+    // typeof check first: Number([50]) === 50 would slip a non-number past
+    // Number.isFinite, so only coerce values that are already numbers.
+    const score =
+      typeof raw.match_score === "number" ? raw.match_score : Number.NaN;
+    return {
+      match_score: Number.isFinite(score)
+        ? Math.min(100, Math.max(0, Math.round(score)))
+        : 0,
+      summary: typeof raw.summary === "string" ? raw.summary : "",
+      topics: Array.isArray(raw.topics)
+        ? (raw.topics as unknown[])
+            .filter(
+              (topic): topic is Record<string, unknown> =>
+                typeof topic === "object" && topic !== null,
+            )
+            .map((topic) => this.normalizeRoadmapTopic(topic))
+        : [],
+      talking_points: Array.isArray(raw.talking_points)
+        ? (raw.talking_points as unknown[])
+            .filter(
+              (tp): tp is Record<string, unknown> =>
+                typeof tp === "object" && tp !== null,
+            )
+            .map((tp) => this.normalizeTalkingPoint(tp))
+            // Drop entries the LLM left blank so the section only shows real ones.
+            .filter((tp) => tp.mission !== "" && tp.angle !== "")
+        : [],
+    };
+  }
+
+  /** Defensive shape-fixing on a single LLM-provided topic entry. */
+  private normalizeRoadmapTopic(t: Record<string, unknown>): RoadmapTopic {
+    return {
+      title: String(t?.title ?? ""),
+      rationale: String(t?.rationale ?? ""),
+      priority:
+        t?.priority === "HIGH" || t?.priority === "MED" || t?.priority === "LOW"
+          ? t.priority
+          : "LOW",
+      gap: Boolean(t?.gap),
+    };
+  }
+
+  /** Defensive shape-fixing on a single LLM-provided talking point. */
+  private normalizeTalkingPoint(
+    t: Record<string, unknown>,
+  ): RoadmapTalkingPoint {
+    return {
+      mission: String(t?.mission ?? "").trim(),
+      angle: String(t?.angle ?? "").trim(),
+    };
+  }
+
+  /** Strict-JSON roadmap prompt, same style as buildOfferPrompt below. */
+  private buildRoadmapPrompt(
+    offer: application["offer_details"],
+    cv: application["cv_details"],
+  ): string {
+    return `You are a career-preparation coach speaking DIRECTLY to the candidate, who is the reader. Compare the JOB OFFER and the reader's CV below and return ONLY a valid JSON object (no markdown, no backticks, no comments) with exactly this structure:
+      {
+        "match_score": 0,
+        "summary": "string",
+        "topics": [
+          {
+            "title": "string",
+            "priority": "HIGH",
+            "rationale": "string",
+            "gap": true
+          }
+        ],
+        "talking_points": [
+          {
+            "mission": "string",
+            "angle": "string"
+          }
+        ]
+      }
+
+      Rules:
+      - Always return valid JSON, even if the offer or the CV is missing or incomplete
+      - Voice: address the reader in the SECOND PERSON ("you", "your") in every "summary", "rationale" and "angle". Never write "the candidate", "the candidate's CV", "the applicant", or any third-person reference to the reader — say "you" and "your CV" instead.
+      - "match_score" is an integer from 0 to 100 estimating how well your CV matches the offer; use 0 when there is not enough data
+      - "summary" is one short sentence describing your readiness for this offer (e.g. "You're well-prepared for this role, with a few areas to sharpen.")
+      - "topics" is the ordered preparation plan (most important first, 3 to 8 items); each topic is one subject to revise or practice before the interview
+      - "rationale" is one short sentence, addressed to you, explaining why this topic matters (e.g. "The offer requires GraphQL, which your CV doesn't mention yet.")
+      - "priority" is exactly one of "HIGH", "MED", "LOW": "HIGH" for topics the offer requires and your CV lacks, "MED" for topics to strengthen, "LOW" for topics to refresh
+      - "gap" is true when the offer requires the topic and your CV shows no evidence of it
+      - "talking_points" are forward-looking interview talking points drawn from the offer's "missions" (the responsibilities you would take on if hired), most important first, 3 to 5 items. For each, "mission" restates one responsibility from the offer, and "angle" is ONE short sentence, addressed to you, on how you would approach or assess that responsibility — and it MUST explicitly draw on a concrete skill or experience from YOUR CV (e.g. mission "Maintain legacy C services", angle "You've stabilised code with characterization tests before, so you'd start by mapping the C modules and adding tests around them."). Do NOT invent missions the offer does not mention. If the offer lists no missions (or there is no offer), return "talking_points": []
+      - If one input is null, build the plan from the other; if both are null, return {"match_score": 0, "summary": "", "topics": [], "talking_points": []}
+
+      JOB OFFER:
+      ${JSON.stringify(offer)}
+
+      YOUR CV:
+      ${JSON.stringify(cv)}`;
   }
 
   // 404 (not 403) when the row exists but belongs to someone else: do not leak

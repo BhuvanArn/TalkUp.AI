@@ -127,6 +127,22 @@ describe('validators', () => {
         expect(result.success).toBe(true);
       }
     });
+
+    it('should reject a password whose only symbol is not in the allowlist', () => {
+      // `_` and space are non-alphanumeric but NOT in PASSWORD_SYMBOL_REGEX,
+      // so a password relying on them as its "symbol" must be rejected. This
+      // pins agreement between the gate and the advisory strength meter, which
+      // share PASSWORD_SYMBOL_REGEX — neither treats `_` as a symbol.
+      for (const pw of ['Password1_', 'Password1 ']) {
+        const result = passwordSchema.safeParse(pw);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.errors[0]?.message).toBe(
+            'Password must contain at least one symbol',
+          );
+        }
+      }
+    });
   });
 
   describe('loginPasswordSchema', () => {

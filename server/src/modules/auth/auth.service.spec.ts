@@ -607,11 +607,17 @@ describe("AuthService", () => {
       );
     });
 
+    // Every unusable-code state returns the SAME generic message on the public
+    // register path so it can't be used as an invite-state oracle (#187). Each
+    // test still drives a distinct scenario; they all assert the one message.
+    const GENERIC_INVITE_ERROR =
+      "This organization code is invalid or cannot be used";
+
     it("rejects an unknown code without creating a user", async () => {
       const { txUserRepo } = buildTxRepos(null);
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
-        "Unknown organization code",
+        GENERIC_INVITE_ERROR,
       );
       expect(txUserRepo.create).not.toHaveBeenCalled();
     });
@@ -623,7 +629,7 @@ describe("AuthService", () => {
       });
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
-        "This organization code has been revoked",
+        GENERIC_INVITE_ERROR,
       );
     });
 
@@ -634,7 +640,7 @@ describe("AuthService", () => {
       });
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
-        "This organization code has expired",
+        GENERIC_INVITE_ERROR,
       );
       expect(txInviteRepo.save).not.toHaveBeenCalled();
     });
@@ -643,7 +649,7 @@ describe("AuthService", () => {
       buildTxRepos({ ...pendingInvite(), email: "someone.else@example.com" });
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
-        "This organization code is bound to a different email address",
+        GENERIC_INVITE_ERROR,
       );
     });
 
@@ -698,7 +704,7 @@ describe("AuthService", () => {
       });
 
       await expect(service.register(dtoWithCode)).rejects.toThrow(
-        "This organization code has already been used",
+        GENERIC_INVITE_ERROR,
       );
     });
   });
@@ -730,7 +736,7 @@ describe("AuthService", () => {
         .mockResolvedValue({ ...mockUser, status: UserStatus.PENDING });
 
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email is not verified"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
   });
@@ -769,23 +775,23 @@ describe("AuthService", () => {
     const email = "test@example.com";
     const password = "password123";
 
-    it("throws when email entity missing", async () => {
+    it("throws generic message when email entity missing", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email not found"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
 
-    it("throws when password or user entity missing", async () => {
+    it("throws generic message when password or user entity missing", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(null);
       mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email not found"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
 
-    it("throws when password does not match", async () => {
+    it("throws generic message when password does not match", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(mockPassword);
       mockUserRepo.findOne = jest
@@ -793,7 +799,7 @@ describe("AuthService", () => {
         .mockResolvedValue({ ...mockUser, status: UserStatus.ACTIVE });
       mockedBcrypt.compare.mockResolvedValue(false as never);
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Invalid password"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
   });
@@ -1073,26 +1079,46 @@ describe("AuthService", () => {
       ).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
     });
 
-    it("throws when email not found", async () => {
+    it("returns silently without sending when email not found (enumeration defense)", async () => {
       mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
       mockedBcrypt.compare.mockResolvedValue(true as never);
 
       await expect(
         service.resendOtp("missing@example.com", OtpPurpose.REGISTER),
-      ).rejects.toThrow(BadRequestException);
+      ).resolves.toBeUndefined();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      // Timing defense: the dummy bcrypt compare must run on the miss path so a
+      // refactor can't silently drop it.
+      expect(mockedBcrypt.compare).toHaveBeenCalled();
     });
 
-    it("throws when REGISTER resend is requested for an already active account", async () => {
+    it("returns silently without sending when the email row has no user (enumeration defense)", async () => {
+      mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockedBcrypt.compare.mockResolvedValue(true as never);
+
+      await expect(
+        service.resendOtp("orphan@example.com", OtpPurpose.REGISTER),
+      ).resolves.toBeUndefined();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      expect(mockedBcrypt.compare).toHaveBeenCalled();
+    });
+
+    it("returns silently without sending when REGISTER resend targets an already active account (enumeration defense)", async () => {
       mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserRepo.findOne = jest
         .fn()
         .mockResolvedValue({ ...mockUser, status: UserStatus.ACTIVE });
+      mockedBcrypt.compare.mockResolvedValue(true as never);
 
       await expect(
         service.resendOtp("test@example.com", OtpPurpose.REGISTER),
-      ).rejects.toThrow(ConflictException);
+      ).resolves.toBeUndefined();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      expect(mockedBcrypt.compare).toHaveBeenCalled();
     });
 
     it("emits event when resend succeeds", async () => {
@@ -1410,7 +1436,7 @@ describe("AuthService", () => {
       );
       expect(registerSpy).toHaveBeenCalledWith(
         {
-          username: "Acme School_admin",
+          username: "AcmeSchooladmin",
           email: dto.email,
           password: dto.password,
           organization_id: "new-org-id",

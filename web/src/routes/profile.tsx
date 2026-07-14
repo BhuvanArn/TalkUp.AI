@@ -9,7 +9,8 @@ import { GeneralSettings } from '@/components/organisms/profile-settings/General
 import { NotifSettings } from '@/components/organisms/profile-settings/NotifSettings';
 import { OrganizationSettings } from '@/components/organisms/profile-settings/OrganizationSettings';
 import {
-  type AccountSession,
+  // TODO(sessions-api): re-import `type AccountSession` when the mock
+  // "Devices & sessions" state below is re-enabled.
   SecuritySettings,
 } from '@/components/organisms/profile-settings/SecuritySettings';
 import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
@@ -154,32 +155,35 @@ function profileToSnapshot(p: UserProfile): ProfileSnapshot {
   };
 }
 
-const DEFAULT_SESSIONS: AccountSession[] = [
-  {
-    id: 'session-current',
-    deviceLabel: 'Chrome on Windows 11',
-    location: 'Paris, France',
-    lastActive: 'Active now',
-    isCurrent: true,
-    kind: 'desktop',
-  },
-  {
-    id: 'session-mobile',
-    deviceLabel: 'Safari on iOS',
-    location: 'Lyon, France',
-    lastActive: '2 days ago',
-    isCurrent: false,
-    kind: 'mobile',
-  },
-  {
-    id: 'session-work',
-    deviceLabel: 'Firefox on macOS',
-    location: 'Remote',
-    lastActive: '1 week ago',
-    isCurrent: false,
-    kind: 'desktop',
-  },
-];
+// TODO(sessions-api #193): mock "Devices & sessions" data — hidden until the
+// real sessions API lands. Kept for the future wiring; do NOT surface in the
+// demo. Tracking: EpitechPromo2027/G-EIP-600-NAN-6-1-eip-tugdual.de-reviers#193
+// const DEFAULT_SESSIONS: AccountSession[] = [
+//   {
+//     id: 'session-current',
+//     deviceLabel: 'Chrome on Windows 11',
+//     location: 'Paris, France',
+//     lastActive: 'Active now',
+//     isCurrent: true,
+//     kind: 'desktop',
+//   },
+//   {
+//     id: 'session-mobile',
+//     deviceLabel: 'Safari on iOS',
+//     location: 'Lyon, France',
+//     lastActive: '2 days ago',
+//     isCurrent: false,
+//     kind: 'mobile',
+//   },
+//   {
+//     id: 'session-work',
+//     deviceLabel: 'Firefox on macOS',
+//     location: 'Remote',
+//     lastActive: '1 week ago',
+//     isCurrent: false,
+//     kind: 'desktop',
+//   },
+// ];
 
 const BASE_TABS: { key: Tab; label: string }[] = [
   { key: 'general', label: 'General' },
@@ -229,7 +233,8 @@ function Profile() {
   const [notifs, setNotifs] = useState<NotifSetting[]>(() =>
     DEFAULT_NOTIFS.map((n) => ({ ...n })),
   );
-  const [sessions, setSessions] = useState<AccountSession[]>(DEFAULT_SESSIONS);
+  // TODO(sessions-api): session state for the hidden "Devices & sessions" UI.
+  // const [sessions, setSessions] = useState<AccountSession[]>(DEFAULT_SESSIONS);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [ctaAttentionTick, setCtaAttentionTick] = useState(0);
@@ -506,11 +511,12 @@ function Profile() {
       prev.map((n) => (n.id === id ? { ...n, enabled: !n.enabled } : n)),
     );
 
-  const revokeSession = (sessionId: string) =>
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-
-  const logoutEverywhere = () =>
-    setSessions((prev) => prev.filter((s) => s.isCurrent));
+  // TODO(sessions-api): revoke/logout handlers for the hidden sessions UI.
+  // const revokeSession = (sessionId: string) =>
+  //   setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+  //
+  // const logoutEverywhere = () =>
+  //   setSessions((prev) => prev.filter((s) => s.isCurrent));
 
   const cycleBanner = () => {
     const idx = BANNER_PRESETS.findIndex((b) => b.value === bannerGradient);
@@ -851,11 +857,15 @@ function Profile() {
                 )}
                 {activeTab === 'security' && (
                   <SecuritySettings
-                    sessions={sessions}
-                    onRevokeSession={revokeSession}
+                    // TODO(sessions-api): re-enable the mock props below once the
+                    // real sessions / data-export APIs exist. Omitting them hides
+                    // the "Devices & sessions" and "Your data" sections.
+                    // sessions={sessions}
+                    // onRevokeSession={revokeSession}
+                    // onLogoutEverywhere={logoutEverywhere}
+                    // onRequestDataExport={() => {}}
                     emailOnNewDevice={emailOnNewDevice}
                     onEmailOnNewDeviceChange={setEmailOnNewDevice}
-                    onLogoutEverywhere={logoutEverywhere}
                     onChangePassword={() => {
                       const email = profileQuery.data?.email?.trim();
                       if (!email) {
@@ -865,7 +875,6 @@ function Profile() {
                       setSaveError(null);
                       passwordResetRequestMutation.mutate(email);
                     }}
-                    onRequestDataExport={() => {}}
                     onDeleteAccount={() => deleteAccountMutation.mutate()}
                   />
                 )}

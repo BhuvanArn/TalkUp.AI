@@ -44,7 +44,11 @@ export const routeConfigs: RouteConfig[] = [
   // Protected routes - Agenda
   { path: '/agenda', requiresAuth: true },
 
-  // Protected routes - Organization (F12/F13/F14) — org-manager only
+  // Protected routes - Organization (F12/F13/F14) — org-manager only.
+  // The plain `user` role is intentionally excluded from these management pages:
+  // a member sees their org affiliation through the profile Organization tab
+  // (GET /organization, which supports the USER role and omits the member list),
+  // not through this admin/employee surface. (#187)
   { path: '/organization', requiresAuth: true, roles: ['admin', 'employee'] },
   { path: '/organization/', requiresAuth: true, roles: ['admin', 'employee'] },
   {

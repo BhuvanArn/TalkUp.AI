@@ -80,6 +80,7 @@ export const ApplicationCard = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const menuContainerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -95,22 +96,39 @@ export const ApplicationCard = ({
     setIsMenuOpen(false);
   };
 
-  // Close the menu on an outside click or Escape so it behaves like a real
+  // Close the menu on an outside press or Escape so it behaves like a real
   // popover instead of lingering until the trigger is clicked again.
+  //
+  // Dismiss on `pointerdown` (one event across mouse/touch/pen) and decide
+  // inside-vs-outside with `composedPath()` — the full pressed-element chain,
+  // captured before any re-render — guarding BOTH the trigger and the menu.
+  // The trigger's own `onClick` toggles the menu, so a press on it must never
+  // be treated as "outside": doing so would close on pointerdown and reopen on
+  // click, and the CI-slow ordering of that toggle-vs-click race is exactly
+  // what left a menuitem unclickable (issue #189). Excluding the trigger keeps
+  // the toggle authoritative; excluding the menu keeps item presses from
+  // dismissing the popover before their click lands.
   useEffect(() => {
     if (!isMenuOpen) return;
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!menuContainerRef.current?.contains(event.target as Node)) {
-        closeMenu();
+    const handlePointerDown = (event: PointerEvent) => {
+      const path = event.composedPath();
+      const trigger = triggerRef.current;
+      const menu = menuContainerRef.current;
+      if (
+        (trigger && path.includes(trigger)) ||
+        (menu && path.includes(menu))
+      ) {
+        return;
       }
+      closeMenu();
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeMenu();
     };
-    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isMenuOpen]);
@@ -154,6 +172,7 @@ export const ApplicationCard = ({
 
         <div className="relative" ref={menuContainerRef}>
           <button
+            ref={triggerRef}
             type="button"
             aria-label="Application actions"
             aria-haspopup="menu"

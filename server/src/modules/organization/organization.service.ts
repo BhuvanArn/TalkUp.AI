@@ -27,6 +27,7 @@ import { user, user_email } from "@entities/user.entity";
 import { organization_invite } from "@entities/organizationInvite.entity";
 import { ai_interview } from "@entities/aiInterview.entity";
 
+import { buildAdminUsername } from "@common/utils/buildAdminUsername";
 import { generateSecurePassword } from "@common/utils/generateSecurePassword";
 import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 import { getUserOrganizationId } from "@common/utils/organizationUser.util";
@@ -165,7 +166,7 @@ export class OrganizationService {
     const initialAdminPassword = generateSecurePassword();
 
     const createUserDto: CreateUserDto = {
-      username: `${savedOrganization.organization_name}_admin`,
+      username: buildAdminUsername(savedOrganization.organization_name),
       email: `${CreateOrganizationDto.OrganizationEmail}`,
       password: initialAdminPassword,
       user_role: OrganizationUserRole.ADMIN,
