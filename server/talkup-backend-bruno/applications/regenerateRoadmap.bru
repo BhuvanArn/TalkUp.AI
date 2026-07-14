@@ -1,0 +1,22 @@
+meta {
+  name: regenerateRoadmap
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{host}}/applications/{{applicationId}}/roadmap/regenerate
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Force-regenerates and re-caches the preparation roadmap (rate-limited:
+  5 requests / 60s per user). Same response shape as GET .../roadmap,
+  including the "talking_points" array (mission + CV-grounded angle).
+}
