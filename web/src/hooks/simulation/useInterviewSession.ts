@@ -5,6 +5,7 @@ import {
   heartbeatInterview,
   updateInterview,
 } from '@/services/ai/http';
+import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -24,6 +25,25 @@ function clearInterviewStorage(): void {
   localStorage.removeItem(STORAGE_KEYS.INTERVIEW_ID);
   localStorage.removeItem(STORAGE_KEYS.INTERVIEW_URL);
   localStorage.removeItem(STORAGE_KEYS.IS_STREAMING);
+}
+
+function isTerminalSessionRestoreError(error: unknown): boolean {
+  if (error instanceof Error) {
+    if (error.message === 'Simulation session ended before start') {
+      return true;
+    }
+    if (
+      error.message === 'Queue wait aborted' ||
+      error.message === 'Queue wait timed out'
+    ) {
+      return false;
+    }
+  }
+
+  return (
+    axios.isAxiosError(error) &&
+    (error.response?.status === 404 || error.response?.status === 403)
+  );
 }
 
 /**
@@ -80,20 +100,27 @@ async function waitForReadyEntrypoint(
       throw new Error('Queue wait aborted');
     }
 
-    const session = await getInterviewSession(interviewId);
-    if (session.sessionStatus === 'ready' && session.entrypoint) {
-      return session.entrypoint;
-    }
-    if (session.sessionStatus === 'ended') {
-      throw new Error('Simulation session ended before start');
-    }
+    try {
+      const session = await getInterviewSession(interviewId);
+      if (session.sessionStatus === 'ready' && session.entrypoint) {
+        return session.entrypoint;
+      }
+      if (session.sessionStatus === 'ended') {
+        throw new Error('Simulation session ended before start');
+      }
 
-    // Surface the fresh position/wait so the queue banner counts down instead
-    // of showing the stale value captured at enqueue time.
-    onProgress?.({
-      queuePosition: session.queuePosition,
-      estimatedWaitSec: session.estimatedWaitSec,
-    });
+      // Surface the fresh position/wait so the queue banner counts down instead
+      // of showing the stale value captured at enqueue time.
+      onProgress?.({
+        queuePosition: session.queuePosition,
+        estimatedWaitSec: session.estimatedWaitSec,
+      });
+    } catch (error) {
+      if (isTerminalSessionRestoreError(error)) {
+        throw error;
+      }
+      console.warn('Transient queue poll failure, retrying:', error);
+    }
 
     await new Promise((resolve) => setTimeout(resolve, QUEUE_POLL_INTERVAL_MS));
   }
@@ -169,8 +196,9 @@ export function useInterviewSession({
           setQueuePosition(0);
           localStorage.setItem(STORAGE_KEYS.INTERVIEW_URL, entrypoint);
           setInputUrl(entrypoint);
-          setIsCallActive(true);
+          setInterviewID(savedInterviewID);
           onConnect(entrypoint);
+          setIsCallActive(true);
           toast.success('Simulation reprise');
           return;
         }
@@ -185,8 +213,8 @@ export function useInterviewSession({
         localStorage.setItem(STORAGE_KEYS.INTERVIEW_URL, entrypoint);
         setInputUrl(entrypoint);
         setInterviewID(savedInterviewID);
-        setIsCallActive(true);
         onConnect(entrypoint);
+        setIsCallActive(true);
 
         if (wasStreaming && onResumeStream) {
           setTimeout(() => {
@@ -197,15 +225,30 @@ export function useInterviewSession({
         toast.success('Simulation reprise');
       } catch (error) {
         console.warn('Failed to restore simulation session:', error);
-        try {
-          await cancelInterview(savedInterviewID);
-        } catch {
-          /* ignore cleanup errors */
+
+        if (isTerminalSessionRestoreError(error)) {
+          try {
+            await cancelInterview(savedInterviewID);
+          } catch {
+            /* ignore cleanup errors */
+          }
+          clearInterviewStorage();
+          toast.error(
+            'La session précédente a expiré. Vous pouvez démarrer un nouvel entretien.',
+          );
+          return;
         }
-        clearInterviewStorage();
+
         toast.error(
-          'La session précédente a expiré. Vous pouvez démarrer un nouvel entretien.',
+          'Impossible de reprendre la simulation pour le moment. Rechargez la page pour réessayer.',
         );
+        toast.dismiss('sim-queue');
+        setIsCallActive(false);
+        setIsQueued(false);
+        setQueuePosition(0);
+        setEstimatedWaitSec(undefined);
+        setInterviewID(null);
+        setInputUrl('');
       }
     };
 
