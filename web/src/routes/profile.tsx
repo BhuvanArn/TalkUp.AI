@@ -288,6 +288,7 @@ function Profile() {
         bio,
         linkedinUrl,
         jobTitle,
+        phone: phoneNumber,
         profilePicture,
         avatarAccentColor: avatarColor,
         bannerGradient,
