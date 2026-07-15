@@ -41,6 +41,32 @@ describe('auth.guards', () => {
     emitAuthMock.mockImplementation(() => undefined);
   });
 
+  describe('checkAuthStatus anonymousAllowed', () => {
+    it('sends an unchanged request when the flag is not set', async () => {
+      await checkAuthStatus();
+      expect(axiosGet).toHaveBeenCalledWith('/v1/api/auth/status');
+    });
+
+    it('opts the request out of refresh escalation when set', async () => {
+      await checkAuthStatus({ anonymousAllowed: true });
+      expect(axiosGet).toHaveBeenCalledWith('/v1/api/auth/status', {
+        anonymousAllowed: true,
+      });
+    });
+
+    it('never sends the flag for guards, which must keep bouncing to login', async () => {
+      getRouteConfigMock.mockReturnValue({ requiresAuth: true });
+      // Authed guards redirect by design; the assertion is about the request shape.
+      await createAuthGuard('/dashboard')();
+      await createAuthRedirectGuard('/applications')().catch(() => undefined);
+      await createPublicRouteGuard('/login')().catch(() => undefined);
+      expect(axiosGet).toHaveBeenCalledTimes(3);
+      for (const call of axiosGet.mock.calls) {
+        expect(call[1]?.anonymousAllowed).toBeUndefined();
+      }
+    });
+  });
+
   describe('createAuthGuard', () => {
     it('returns when route does not require auth', async () => {
       getRouteConfigMock.mockReturnValue({ requiresAuth: false });

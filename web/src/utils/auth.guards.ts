@@ -23,10 +23,23 @@ const ANONYMOUS: AuthStatus = {
 /**
  * Validates authentication with the backend (HTTP-only cookie) and returns
  * the caller's org role/id (B4). Anonymous → all-null AuthStatus.
+ *
+ * `anonymousAllowed` keeps a 401 from escalating to a refresh-then-redirect in the
+ * axios interceptor. Guards leave it off: they run on known paths, where a bounce to
+ * /login is the intended outcome. Callers that merely *render* for anonymous visitors
+ * (the 404 page) set it, so a logged-out visitor gets ANONYMOUS instead of /login.
  */
-export const checkAuthStatus = async (): Promise<AuthStatus> => {
+export const checkAuthStatus = async ({
+  anonymousAllowed,
+}: { anonymousAllowed?: boolean } = {}): Promise<AuthStatus> => {
   try {
-    const response = await axiosInstance.get('/v1/api/auth/status');
+    // Omit the config argument entirely when unset so existing callers send an
+    // unchanged request (axios turns an explicit `undefined` into `{}`).
+    const response = anonymousAllowed
+      ? await axiosInstance.get('/v1/api/auth/status', {
+          anonymousAllowed: true,
+        })
+      : await axiosInstance.get('/v1/api/auth/status');
 
     // Backend returns { authenticated: true } with 200 status when authenticated
     const isAuth = response.data?.authenticated === true;
