@@ -35,6 +35,13 @@ export const rootNavigationContext: NavigationContext = {
       showInNav: true,
       order: 3,
     },
+    {
+      to: '/ai-chat',
+      label: 'Assistant',
+      icon: 'chat',
+      showInNav: true,
+      order: 4,
+    },
   ],
 };
 

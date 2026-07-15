@@ -27,8 +27,15 @@ import { GetInterviewsQueryDto } from "./dto/getInterviewsQuery.dto";
 import { CreateAiTranscriptsDto } from "./dto/createAiTranscripts.dto";
 import { CreateAiInterviewResponseDto } from "./dto/createAiInterviewResponse.dto";
 import { InterviewSessionDto } from "./dto/interviewSession.dto";
-import { ChatDto } from "./dto/chat.dto";
+import { ChatDto, ChatSurface, ChatContextDto } from "./dto/chat.dto";
 import { ChatResponseDto } from "./dto/chatResponse.dto";
+import {
+  formatRoadmapContext,
+  formatSimulationContext,
+  formatAgendaContext,
+  formatNotesContext,
+  wrapContextForPrompt,
+} from "./chat-context";
 
 import { SimulationCapacityService } from "../simulation/simulation-capacity.service";
 import { SimulationContextService } from "../simulation/simulation-context.service";
@@ -37,6 +44,8 @@ import { SimulationVerbalAnalysisService } from "../simulation/simulation-verbal
 import { loadSimulationConfig } from "../simulation/simulation.config";
 import { ApplicationsService } from "../applications/applications.service";
 import { buildSimulationContextFromApplication } from "../simulation/simulation-application-context";
+import { AgendaService } from "../agenda/agenda.service";
+import { NotesService } from "../notes/notes.service";
 
 const CHATBOT_SYSTEM_PROMPT =
   "You are TalkUp AI, a friendly interview-preparation coach embedded in the " +
@@ -73,6 +82,8 @@ export class AiService {
     private readonly promotion: SimulationPromotionService,
     private readonly verbalAnalysis: SimulationVerbalAnalysisService,
     private readonly applicationsService: ApplicationsService,
+    private readonly agendaService: AgendaService,
+    private readonly notesService: NotesService,
   ) {
     this.logger = new Logger(AiService.name);
   }
@@ -81,9 +92,18 @@ export class AiService {
     return this.capacity.getSnapshot();
   }
 
-  async chat(dto: ChatDto): Promise<ChatResponseDto> {
+  async chat(dto: ChatDto, userId: string): Promise<ChatResponseDto> {
+    // Resolve the current page's data from the caller's OWNED ids and inject it
+    // as grounding context. Never trust a client-supplied context blob (#154).
+    const contextBlock = dto.context
+      ? await this.resolveChatContext(dto.context, userId)
+      : null;
+
+    const systemPrompt =
+      CHATBOT_SYSTEM_PROMPT + wrapContextForPrompt(contextBlock);
+
     const messages: Groq.Chat.Completions.ChatCompletionMessageParam[] = [
-      { role: "system", content: CHATBOT_SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       ...(dto.history ?? []).map((turn) => ({
         role: turn.role,
         content: turn.content,
@@ -115,6 +135,131 @@ export class AiService {
         "The assistant is unavailable right now. Please try again.",
       );
     }
+  }
+
+  /**
+   * Resolve a compact grounding block for the current page from the caller's
+   * OWNED ids. Each branch loads via an owner-guarded service (throws on a
+   * foreign/missing id), so a client can only ground on its own data. A
+   * resolution failure degrades to no context rather than failing the whole
+   * chat — the assistant just answers without page grounding.
+   */
+  private async resolveChatContext(
+    context: ChatContextDto,
+    userId: string,
+  ): Promise<string | null> {
+    try {
+      switch (context.surface) {
+        case ChatSurface.ROADMAP: {
+          if (!context.applicationId) return null;
+          const app = await this.applicationsService.ensureCvSnapshot(
+            userId,
+            context.applicationId,
+          );
+          const roadmap = await this.applicationsService.getRoadmap(
+            userId,
+            context.applicationId,
+          );
+          return formatRoadmapContext(app, roadmap);
+        }
+
+        case ChatSurface.CV: {
+          if (!context.applicationId) return null;
+          // Same owned application data the roadmap grounds on, minus the path —
+          // useful before a roadmap exists (the CV-analysis surface).
+          const app = await this.applicationsService.ensureCvSnapshot(
+            userId,
+            context.applicationId,
+          );
+          return buildSimulationContextFromApplication(app) || null;
+        }
+
+        case ChatSurface.SIMULATION: {
+          const interviewId =
+            context.interviewId ??
+            (context.applicationId
+              ? await this.latestInterviewIdForApplication(
+                  userId,
+                  context.applicationId,
+                )
+              : null);
+          if (!interviewId) return null;
+
+          const interview = await this.getInterviewById(
+            interviewId,
+            userId,
+            true,
+          );
+          const analysis = await this.verbalAnalysis
+            .getForInterview(interviewId, userId)
+            .catch(() => null);
+          const app = context.applicationId
+            ? await this.applicationsService
+                .ensureCvSnapshot(userId, context.applicationId)
+                .catch(() => null)
+            : null;
+          return formatSimulationContext(
+            app,
+            interview,
+            interview.transcripts,
+            analysis?.overall_score ?? null,
+          );
+        }
+
+        case ChatSurface.AGENDA: {
+          // Upcoming events over the next 30 days.
+          const from = new Date();
+          const to = new Date(from.getTime() + 30 * 24 * 60 * 60 * 1000);
+          const events = await this.agendaService.listForRange(
+            userId,
+            from,
+            to,
+          );
+          return formatAgendaContext(events);
+        }
+
+        case ChatSurface.NOTES: {
+          // Most specific wins: one open note grounds on itself, an
+          // application-scoped list on that application, otherwise all notes.
+          if (context.noteId) {
+            const note = await this.notesService.findOne(
+              userId,
+              context.noteId,
+            );
+            return formatNotesContext([note], "note");
+          }
+          const notes = context.applicationId
+            ? await this.notesService.findAll(userId, {
+                applicationId: context.applicationId,
+              })
+            : await this.notesService.findAll(userId, {});
+          return formatNotesContext(
+            notes,
+            context.applicationId ? "application" : "all",
+          );
+        }
+
+        default:
+          return null;
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Chat context resolution failed for surface ${context.surface} (user ${userId}): ${(error as Error).message}`,
+      );
+      return null;
+    }
+  }
+
+  /** Most recent interview the user ran for an application, or null. */
+  private async latestInterviewIdForApplication(
+    userId: string,
+    applicationId: string,
+  ): Promise<string | null> {
+    const interview = await this.aiInterviewRepository.findOne({
+      where: { user_id: userId, application_id: applicationId },
+      order: { created_at: "DESC" },
+    });
+    return interview?.interview_id ?? null;
   }
 
   async createInterview(

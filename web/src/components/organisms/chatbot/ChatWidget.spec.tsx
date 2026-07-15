@@ -1,3 +1,4 @@
+import { useChatContext } from '@/hooks/ui/useChatContext';
 import { sendChatMessage } from '@/services/ai/http';
 import {
   act,
@@ -14,11 +15,21 @@ vi.mock('@/services/ai/http', () => ({
   sendChatMessage: vi.fn(),
 }));
 
+// The widget derives page context from the router; stub the hook so it can
+// render outside a RouterProvider and so we can assert what it forwards.
+vi.mock('@/hooks/ui/useChatContext', () => ({
+  useChatContext: vi.fn(() => undefined),
+}));
+
 const mockedSendChatMessage = vi.mocked(sendChatMessage);
+const mockedUseChatContext = vi.mocked(useChatContext);
 
 describe('ChatWidget', () => {
   afterEach(() => {
     vi.clearAllMocks();
+    // clearAllMocks resets call history but not implementations set via
+    // mockReturnValue — restore the default so a context test doesn't leak.
+    mockedUseChatContext.mockReturnValue(undefined);
   });
 
   const openChat = () => {
@@ -97,6 +108,31 @@ describe('ChatWidget', () => {
     expect(mockedSendChatMessage).toHaveBeenCalledWith({
       message: 'Hello there',
       history: [],
+    });
+  });
+
+  it('forwards the current page context to the API', async () => {
+    mockedUseChatContext.mockReturnValue({
+      surface: 'roadmap',
+      applicationId: 'app-1',
+    });
+    mockedSendChatMessage.mockResolvedValueOnce({ reply: 'Prioritise K8s.' });
+
+    render(<ChatWidget />);
+    openChat();
+
+    const input = screen.getByLabelText('Chat message input');
+    fireEvent.change(input, { target: { value: 'what should I focus on?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+
+    await waitFor(() =>
+      expect(screen.getByText('Prioritise K8s.')).toBeInTheDocument(),
+    );
+
+    expect(mockedSendChatMessage).toHaveBeenCalledWith({
+      message: 'what should I focus on?',
+      history: [],
+      context: { surface: 'roadmap', applicationId: 'app-1' },
     });
   });
 
