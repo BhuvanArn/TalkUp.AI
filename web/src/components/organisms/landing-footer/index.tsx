@@ -27,7 +27,7 @@ const COLUMNS: {
     title: 'Legal',
     items: [
       { label: 'Terms', href: '#' },
-      { label: 'Privacy', href: '#' },
+      { label: 'Privacy', href: '/privacy' },
       { label: 'Cookies', href: '#' },
     ],
   },
