@@ -44,8 +44,9 @@ const RootComponent = () => {
   // The flag is scoped to 404s so every other route keeps sharing the plain cache key
   // with the rest of the app (the sidebar's OrgViewFlip) instead of fetching twice.
   // The authed 404 does still pay one extra fetch — it holds the anonymous key while the
-  // sidebar it renders holds the plain one. Left as-is: dropping the flag once authed
-  // would re-run this query through the redirect-on-401 path we are avoiding here.
+  // sidebar it renders holds the plain one. Left as-is: the flag keys the cache entry, so
+  // deriving it from this query's own result would flip the key once auth resolved and
+  // re-fetch under the plain key anyway, rather than saving the request.
   //
   // `isLoading`, not `isPending`: pending stays true while a fetch is *paused* (offline),
   // where the query function never runs, so the wait below would never end.
