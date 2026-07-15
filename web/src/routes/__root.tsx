@@ -12,6 +12,7 @@ import { useState } from 'react';
 
 const PUBLIC_SHELL_PATHS = new Set<string>([
   '/',
+  '/privacy',
   '/login',
   '/register',
   '/register-organization',

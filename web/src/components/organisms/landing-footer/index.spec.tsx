@@ -27,6 +27,12 @@ describe('LandingFooter', () => {
     expect(screen.getByText('Legal')).toBeInTheDocument();
   });
 
+  it('renders internal /privacy link via router Link', () => {
+    render(<LandingFooter />);
+    const privacy = screen.getByRole('link', { name: 'Privacy' });
+    expect(privacy).toHaveAttribute('href', '/privacy');
+  });
+
   it('renders internal /about link via router Link', () => {
     render(<LandingFooter />);
     const about = screen.getByRole('link', { name: 'About' });
