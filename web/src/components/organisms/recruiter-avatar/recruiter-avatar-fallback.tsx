@@ -1,10 +1,8 @@
-import {
-  RECRUITER_DISPLAY_NAME,
-  RECRUITER_DISPLAY_ROLE,
-} from '@/config/recruiter-avatar';
+import type { RecruiterPersona } from '@/config/personas';
 import { cn } from '@/utils/cn';
 
 interface RecruiterAvatarFallbackProps {
+  persona: RecruiterPersona;
   isAiSpeaking: boolean;
   isAwaitingAiResponse: boolean;
   fallbackReason?: string | null;
@@ -16,6 +14,7 @@ interface RecruiterAvatarFallbackProps {
  * Uses the existing interviewer photo asset.
  */
 export function RecruiterAvatarFallback({
+  persona,
   isAiSpeaking,
   isAwaitingAiResponse,
   fallbackReason,
@@ -25,15 +24,13 @@ export function RecruiterAvatarFallback({
     <div className={cn('relative h-full w-full', className)}>
       <img
         src="/interviewer.jpg"
-        alt={`${RECRUITER_DISPLAY_NAME}, ${RECRUITER_DISPLAY_ROLE}`}
+        alt={`${persona.name}, ${persona.role}`}
         className="h-full w-full object-cover"
       />
 
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-4 pt-10">
-        <p className="text-sm font-semibold text-white">
-          {RECRUITER_DISPLAY_NAME}
-        </p>
-        <p className="text-xs text-white/80">{RECRUITER_DISPLAY_ROLE}</p>
+        <p className="text-sm font-semibold text-white">{persona.name}</p>
+        <p className="text-xs text-white/80">{persona.role}</p>
       </div>
 
       {isAiSpeaking ? (

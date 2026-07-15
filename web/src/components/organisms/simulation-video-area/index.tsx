@@ -1,6 +1,7 @@
 import { Icon } from '@/components/atoms/icon';
 import VideoAreaControlsBar from '@/components/molecules/video-area-controls-bar';
 import RecruiterAvatarPanel from '@/components/organisms/recruiter-avatar';
+import { DEFAULT_PERSONA, type RecruiterPersona } from '@/config/personas';
 import type { AiSpeechTurn } from '@/hooks/simulation/useAudioPlayback';
 import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
 import { cn } from '@/utils/cn';
@@ -12,6 +13,7 @@ import { useStreamControls } from '../../../hooks/streams/useStreamControls';
 import { useVideoStream } from '../../../hooks/streams/useVideoStream';
 
 interface SimulationVideoAreaProps {
+  persona?: RecruiterPersona;
   isAiSpeaking?: boolean;
   isAwaitingAiResponse?: boolean;
   speechTurn?: AiSpeechTurn | null;
@@ -29,6 +31,7 @@ interface SimulationVideoAreaProps {
  * @returns The SimulationVideoArea component.
  */
 const SimulationVideoArea = ({
+  persona = DEFAULT_PERSONA,
   isAiSpeaking = false,
   isAwaitingAiResponse = false,
   speechTurn = null,
@@ -140,6 +143,7 @@ const SimulationVideoArea = ({
         >
           <RecruiterAvatarPanel
             active={isStreaming}
+            persona={persona}
             isAiSpeaking={isAiSpeaking}
             isAwaitingAiResponse={isAwaitingAiResponse}
             speechTurn={speechTurn}

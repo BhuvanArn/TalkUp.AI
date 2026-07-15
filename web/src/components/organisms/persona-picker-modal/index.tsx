@@ -56,11 +56,12 @@ const DIFFICULTY_META: Record<
  */
 export function PersonaPickerModal({
   isOpen,
+  initialHighlight = DEFAULT_PERSONA,
   onSelect,
   onDismiss,
 }: PersonaPickerModalProps) {
   const [highlighted, setHighlighted] =
-    useState<RecruiterPersona>(DEFAULT_PERSONA);
+    useState<RecruiterPersona>(initialHighlight);
   const dialogRef = useFocusTrap<HTMLDivElement>(isOpen);
   const radioRefs = useRef<Record<string, HTMLDivElement | null>>({});
 

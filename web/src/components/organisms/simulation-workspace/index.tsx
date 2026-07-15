@@ -1,16 +1,18 @@
 import InfoBox from '@/components/molecules/info-box';
 import NotesEditor from '@/components/molecules/notes-editor/notes-editor';
 import SimulationQueueBanner from '@/components/molecules/simulation-queue-banner';
+import { PersonaPickerModal } from '@/components/organisms/persona-picker-modal';
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
 import SimulationVideoArea from '@/components/organisms/simulation-video-area';
 import VerbalAnalysisPanel from '@/components/organisms/verbal-analysis-panel';
 import { WebSocketDebugPanel } from '@/components/organisms/websocket-debug-panel';
 import {
-  RECRUITER_DISPLAY_NAME,
-  RECRUITER_DISPLAY_ROLE,
-  clearAvatarFallbackForced,
-} from '@/config/recruiter-avatar';
+  DEFAULT_PERSONA,
+  type RecruiterPersona,
+  getPersonaById,
+} from '@/config/personas';
+import { clearAvatarFallbackForced } from '@/config/recruiter-avatar';
 import {
   WebSocketPacket,
   useAudioPlayback,
@@ -21,6 +23,7 @@ import {
   useVerbalAnalysis,
 } from '@/hooks/simulation';
 import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
+import usePersonaStore from '@/stores/usePersonaStore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ReadyState } from 'react-use-websocket';
@@ -39,6 +42,26 @@ export function SimulationWorkspace({
   description = 'Practice interview scenarios in a safe environment.',
   contextLabel,
 }: SimulationWorkspaceProps) {
+  const selectedPersonaId = usePersonaStore((state) => state.selectedPersonaId);
+  const setPersona = usePersonaStore((state) => state.setPersona);
+  const [isPickerOpen, setIsPickerOpen] = useState(selectedPersonaId === null);
+  const persona = getPersonaById(selectedPersonaId);
+
+  const handlePersonaSelect = useCallback(
+    (chosen: RecruiterPersona) => {
+      setPersona(chosen.id);
+      setIsPickerOpen(false);
+    },
+    [setPersona],
+  );
+
+  // Dismiss keeps today's behaviour: fall back to the default and persist it so
+  // the modal does not nag on the next mount.
+  const handlePersonaDismiss = useCallback(() => {
+    setPersona(DEFAULT_PERSONA.id);
+    setIsPickerOpen(false);
+  }, [setPersona]);
+
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [wsError, setWsError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
@@ -306,6 +329,7 @@ export function SimulationWorkspace({
       <div className="grid grid-cols-[1fr_20rem] gap-6">
         <div>
           <SimulationVideoArea
+            persona={persona}
             isAiSpeaking={isAiSpeaking}
             isAwaitingAiResponse={isAwaitingAiResponse}
             speechTurn={speechTurn}
@@ -347,15 +371,32 @@ export function SimulationWorkspace({
           )}
 
           <InfoBox
-            title={RECRUITER_DISPLAY_NAME}
-            text={`${RECRUITER_DISPLAY_ROLE}. ${avatarStatusText}`}
+            title={persona.name}
+            text={`${persona.role}. ${avatarStatusText}`}
             icon="members"
           />
+          {!isCallActive && (
+            <button
+              type="button"
+              onClick={() => setIsPickerOpen(true)}
+              className="text-button-m text-text-weak hover:text-text transition-colors"
+            >
+              Change recruiter
+            </button>
+          )}
 
           <VerbalAnalysisPanel analysis={analysis} />
         </div>
       </div>
       <NotesEditor interviewID={interviewID} />
+
+      <PersonaPickerModal
+        key={persona.id}
+        isOpen={isPickerOpen}
+        initialHighlight={persona}
+        onSelect={handlePersonaSelect}
+        onDismiss={handlePersonaDismiss}
+      />
     </div>
   );
 }
