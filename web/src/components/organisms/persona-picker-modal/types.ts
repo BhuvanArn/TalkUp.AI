@@ -14,4 +14,11 @@ export interface PersonaPickerModalProps {
   onSelect: (persona: RecruiterPersona) => void;
   /** Esc, scrim click, close button, or Skip. Caller falls back to DEFAULT_PERSONA. */
   onDismiss: () => void;
+  /**
+   * Optional back-navigation affordance rendered in the footer, left of Skip.
+   * The modal stays a controlled component: it only calls `onNavigate`, it
+   * never imports the router itself. Omit when there is nowhere to go back
+   * to (e.g. the standalone /simulations page has no roadmap).
+   */
+  backTo?: { label: string; onNavigate: () => void };
 }

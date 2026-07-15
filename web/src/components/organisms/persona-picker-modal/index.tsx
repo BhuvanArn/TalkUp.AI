@@ -59,6 +59,7 @@ export function PersonaPickerModal({
   initialHighlight = DEFAULT_PERSONA,
   onSelect,
   onDismiss,
+  backTo,
 }: PersonaPickerModalProps) {
   const [highlighted, setHighlighted] =
     useState<RecruiterPersona>(initialHighlight);
@@ -236,14 +237,27 @@ export function PersonaPickerModal({
         </div>
 
         <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            variant="text"
-            color="neutral"
-            onClick={onDismiss}
-            className="font-display"
-          >
-            Skip — use Sophie
-          </Button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
+            {backTo ? (
+              <Button
+                variant="text"
+                color="neutral"
+                onClick={backTo.onNavigate}
+                className="font-display"
+              >
+                <Icon icon="arrow-left" className="h-4 w-4" />
+                {backTo.label}
+              </Button>
+            ) : null}
+            <Button
+              variant="text"
+              color="neutral"
+              onClick={onDismiss}
+              className="font-display"
+            >
+              Skip — use Sophie
+            </Button>
+          </div>
           <Button
             variant="contained"
             color="accent"

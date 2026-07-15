@@ -121,4 +121,25 @@ describe('PersonaPickerModal', () => {
     renderModal();
     expect(document.body.style.overflow).toBe('hidden');
   });
+
+  // #195 regression: on /applications/:id/simulations the modal's scrim
+  // covers the route's own "Back to roadmap" link, so the modal must offer
+  // its own back control instead when the caller provides one.
+  it('renders no back control when backTo is omitted', () => {
+    renderModal();
+    expect(
+      screen.queryByRole('link', { name: /back/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /back/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders the back control and fires onNavigate when backTo is given', () => {
+    const onNavigate = vi.fn();
+    renderModal({ backTo: { label: 'Back to roadmap', onNavigate } });
+    const back = screen.getByRole('button', { name: /back to roadmap/i });
+    fireEvent.click(back);
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+  });
 });

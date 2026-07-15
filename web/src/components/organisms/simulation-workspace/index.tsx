@@ -34,6 +34,12 @@ export interface SimulationWorkspaceProps {
   title?: string;
   description?: string;
   contextLabel?: string;
+  /**
+   * Passed through to the persona picker modal's optional back control (#195).
+   * Left undefined on the standalone /simulations page, which has nowhere to
+   * navigate back to.
+   */
+  backTo?: { label: string; onNavigate: () => void };
 }
 
 export function SimulationWorkspace({
@@ -41,6 +47,7 @@ export function SimulationWorkspace({
   title = 'Simulations',
   description = 'Practice interview scenarios in a safe environment.',
   contextLabel,
+  backTo,
 }: SimulationWorkspaceProps) {
   const selectedPersonaId = usePersonaStore((state) => state.selectedPersonaId);
   const setPersona = usePersonaStore((state) => state.setPersona);
@@ -396,6 +403,7 @@ export function SimulationWorkspace({
         initialHighlight={persona}
         onSelect={handlePersonaSelect}
         onDismiss={handlePersonaDismiss}
+        backTo={backTo}
       />
     </div>
   );
