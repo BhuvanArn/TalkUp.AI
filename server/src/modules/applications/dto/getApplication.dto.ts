@@ -26,14 +26,35 @@ export class OfferDetailsDto {
   team_description: string | null;
 }
 
+@ApiSchema({ name: "CvExperience" })
+export class CvExperienceDto {
+  @ApiProperty({ nullable: true, type: String }) company: string | null;
+  @ApiProperty({ nullable: true, type: String }) title: string | null;
+  @ApiProperty({ nullable: true, type: String }) description: string | null;
+  @ApiProperty({ nullable: true, type: String }) duration: string | null;
+}
+
+@ApiSchema({ name: "CvEducation" })
+export class CvEducationDto {
+  @ApiProperty({ nullable: true, type: String }) degree: string | null;
+  @ApiProperty({ nullable: true, type: String }) school_name: string | null;
+  @ApiProperty({ nullable: true, type: String }) duration: string | null;
+}
+
+@ApiSchema({ name: "CvLanguage" })
+export class CvLanguageDto {
+  @ApiProperty({ nullable: true, type: String }) language: string | null;
+  @ApiProperty({ nullable: true, type: String }) level: string | null;
+}
+
 @ApiSchema({ name: "CvDetails" })
 export class CvDetailsDto {
   @ApiProperty({ nullable: true, type: String }) desired_job: string | null;
   @ApiProperty({ nullable: true, type: String }) resume: string | null;
-  @ApiProperty({ type: [Object] }) experiences: unknown[];
-  @ApiProperty({ type: [Object] }) education: unknown[];
+  @ApiProperty({ type: [CvExperienceDto] }) experiences: CvExperienceDto[];
+  @ApiProperty({ type: [CvEducationDto] }) education: CvEducationDto[];
   @ApiProperty({ type: [String] }) technical_skills: string[];
-  @ApiProperty({ type: [Object] }) languages: unknown[];
+  @ApiProperty({ type: [CvLanguageDto] }) languages: CvLanguageDto[];
 }
 
 @ApiSchema({ name: "Application" })

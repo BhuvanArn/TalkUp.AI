@@ -11,7 +11,7 @@ import {
   createRootRoute,
   createRouter,
 } from '@tanstack/react-router';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RoadmapPage } from './roadmap';
@@ -43,7 +43,14 @@ const application = {
   status: 'sent' as const,
   offerUrl: 'https://example.com/job',
   offerDetails: null,
-  cvDetails: null,
+  cvDetails: {
+    desired_job: 'Reliability Engineer',
+    resume: 'Infra-focused.',
+    experiences: [],
+    education: [],
+    technical_skills: ['Kubernetes'],
+    languages: [],
+  },
   appliedAt: '2026-07-09T00:00:00.000Z',
   interviewAt: null,
   updatedAt: '2026-07-09T00:00:00.000Z',
@@ -302,5 +309,35 @@ describe('ApplicationRoadmap (roadmap page)', () => {
       'aria-labelledby',
       'roadmap-tab-talking',
     );
+  });
+
+  it('shows the Sources button when the application is loaded', async () => {
+    renderWithProviders(<RouterProvider router={router} />);
+    expect(
+      await screen.findByRole('button', { name: /^sources$/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('opens the sources modal on click', async () => {
+    renderWithProviders(<RouterProvider router={router} />);
+    fireEvent.click(await screen.findByRole('button', { name: /^sources$/i }));
+    const dialog = await screen.findByRole('dialog');
+    // The page <h1> ALSO renders "SRE at Datadog"; scope to the dialog so the
+    // query is unambiguous.
+    expect(within(dialog).getByText('SRE at Datadog')).toBeInTheDocument();
+  });
+
+  it('hides the Sources button when the application is not in cache', async () => {
+    vi.mocked(useApplications).mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useApplications>);
+    renderWithProviders(<RouterProvider router={router} />);
+    // Wait for the roadmap heading to settle, then assert the button is absent.
+    await screen.findByRole('heading', {
+      name: /SRE at Datadog|preparation path/i,
+    });
+    expect(
+      screen.queryByRole('button', { name: /^sources$/i }),
+    ).not.toBeInTheDocument();
   });
 });
