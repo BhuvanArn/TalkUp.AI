@@ -115,10 +115,15 @@ export class AgendaService {
   async listForRange(user_id: string, from: Date, to: Date) {
     try {
       return await this.repo.find({
-        // An event overlaps the window when it starts before the end of it and
-        // has not already finished. `end_at` is nullable, and SQL comparisons
-        // against NULL are never true — so open-ended events need their own
-        // branch, otherwise they would silently drop out of every range.
+        // A timed event overlaps the window when it starts before the window
+        // ends and has not already finished.
+        //
+        // `end_at` is nullable, and every SQL comparison against NULL is NULL
+        // (never true), so such rows can't satisfy the timed branch and need
+        // their own — without it they drop out of every range silently. An
+        // event with no end is a point in time at `start_at` (the calendar
+        // renders it that way, see web useCalendarStore `end: … : start_at`),
+        // so it belongs to the window when it *starts* inside it.
         where: [
           {
             user_id,

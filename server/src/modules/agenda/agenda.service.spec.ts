@@ -219,7 +219,7 @@ describe("AgendaService", () => {
       expect(result).toEqual([mockEvent]);
     });
 
-    it("matches open-ended events, scoped to the caller", async () => {
+    it("matches end-less point events, scoped to the caller", async () => {
       const from = new Date("2025-01-01T00:00:00.000Z");
       const to = new Date("2025-01-08T00:00:00.000Z");
       (mockRepo.find as jest.Mock).mockResolvedValue([]);
@@ -228,7 +228,8 @@ describe("AgendaService", () => {
 
       // `end_at` is nullable and `NULL >= from` is never true in SQL, so an
       // event with no end time needs its own branch or it silently vanishes
-      // from every range.
+      // from every range. It is a point at `start_at`, so that branch matches
+      // on the start falling inside the window.
       const where = (mockRepo.find as jest.Mock).mock.calls[0][0].where;
       expect(Array.isArray(where)).toBe(true);
       expect(where).toHaveLength(2);
