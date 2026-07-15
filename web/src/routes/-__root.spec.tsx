@@ -22,7 +22,8 @@ vi.mock('@tanstack/react-router-devtools', () => ({
 }));
 
 vi.mock('@/hooks/auth/useServices', () => ({
-  useAuthStatus: () => useAuthStatusMock(),
+  // Forward args: the not-found branch depends on which variant the root asks for.
+  useAuthStatus: (options?: unknown) => useAuthStatusMock(options),
 }));
 
 vi.mock('@/components/organisms/sidebar', () => ({
@@ -65,14 +66,14 @@ const nestedNotFoundState = {
 describe('RootComponent not-found shell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useAuthStatusMock.mockReturnValue({ data: undefined, isLoading: true });
+    useAuthStatusMock.mockReturnValue({ data: undefined, isPending: true });
   });
 
   it('hides the sidebar for an anonymous visitor', () => {
     routerStateMock.mockReturnValue(notFoundState);
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: false },
-      isLoading: false,
+      isPending: false,
     });
     render(<RootComponent />);
     expect(screen.getByTestId('not-found')).toHaveTextContent('anon');
@@ -83,25 +84,52 @@ describe('RootComponent not-found shell', () => {
     routerStateMock.mockReturnValue(nestedNotFoundState);
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: false },
-      isLoading: false,
+      isPending: false,
     });
     render(<RootComponent />);
     expect(screen.getByTestId('not-found')).toBeInTheDocument();
     expect(screen.queryByTestId('outlet')).not.toBeInTheDocument();
   });
 
-  it('hides the sidebar while auth status is still loading', () => {
+  // Committing to a variant while auth is unresolved would show an authed user the
+  // anonymous page, then jump them into the sidebar layout once it settles.
+  it('renders neither variant while auth status is still pending', () => {
     routerStateMock.mockReturnValue(notFoundState);
-    useAuthStatusMock.mockReturnValue({ data: undefined, isLoading: true });
+    useAuthStatusMock.mockReturnValue({ data: undefined, isPending: true });
     render(<RootComponent />);
     expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('not-found')).not.toBeInTheDocument();
+  });
+
+  // The root must ask for the anonymous variant ONLY on a 404: elsewhere it shares
+  // the plain cache key with the sidebar instead of fetching /auth/status twice.
+  it('requests the anonymous auth variant only on a not-found match', () => {
+    routerStateMock.mockReturnValue(notFoundState);
+    useAuthStatusMock.mockReturnValue({
+      data: { isAuthenticated: false },
+      isPending: false,
+    });
+    render(<RootComponent />);
+    expect(useAuthStatusMock).toHaveBeenCalledWith({ anonymousAllowed: true });
+
+    vi.clearAllMocks();
+    routerStateMock.mockReturnValue({
+      matches: [{ status: 'success' }],
+      location: { pathname: '/applications' },
+    });
+    useAuthStatusMock.mockReturnValue({
+      data: { isAuthenticated: true },
+      isPending: false,
+    });
+    render(<RootComponent />);
+    expect(useAuthStatusMock).toHaveBeenCalledWith({ anonymousAllowed: false });
   });
 
   it('shows the sidebar for an authed user', () => {
     routerStateMock.mockReturnValue(notFoundState);
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: true },
-      isLoading: false,
+      isPending: false,
     });
     render(<RootComponent />);
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
@@ -115,7 +143,7 @@ describe('RootComponent not-found shell', () => {
     });
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: true },
-      isLoading: false,
+      isPending: false,
     });
     render(<RootComponent />);
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
@@ -130,7 +158,7 @@ describe('RootComponent not-found shell', () => {
     });
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: false },
-      isLoading: false,
+      isPending: false,
     });
     render(<RootComponent />);
     expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();

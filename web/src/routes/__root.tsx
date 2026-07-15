@@ -42,7 +42,7 @@ const RootComponent = () => {
   // so without this an anonymous visitor lands on /login instead of this page.
   // Only on a 404: elsewhere this shares the plain cache key with the rest of the app
   // (the sidebar's OrgViewFlip), rather than fetching /auth/status a second time.
-  const { data: authStatus } = useAuthStatus({
+  const { data: authStatus, isPending: authPending } = useAuthStatus({
     anonymousAllowed: isNotFoundMatch,
   });
   const { isAuthenticated } = useAuth();
@@ -51,6 +51,13 @@ const RootComponent = () => {
 
   if (isNotFoundMatch) {
     const isAuthed = authStatus?.isAuthenticated ?? false;
+
+    // Navigating into a 404 swaps this query's cache key, so `data` is briefly
+    // undefined. Hold the shell until it settles: picking a variant here would show
+    // an authed user the anonymous page, then jump them into the sidebar layout.
+    if (authPending) {
+      return <div className="min-h-screen w-full bg-background" />;
+    }
 
     if (!isAuthed) {
       return (
