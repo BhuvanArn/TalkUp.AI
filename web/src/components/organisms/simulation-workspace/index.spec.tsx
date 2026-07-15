@@ -124,4 +124,23 @@ describe('SimulationWorkspace persona picker', () => {
       screen.queryByRole('button', { name: /change recruiter/i }),
     ).not.toBeInTheDocument();
   });
+
+  // Regression for the picker/store desync: useInterviewSession's finally
+  // block calls clearPersona() when an interview ends ("Leaving it set would
+  // silently skip the picker on the next visit"), but the workspace stayed
+  // mounted throughout that call. If isPickerOpen is only ever seeded from a
+  // useState initializer, this reset is invisible to the UI: the store goes
+  // back to null, persona quietly resolves to the default via
+  // getPersonaById(null), and the modal never reappears to let the user
+  // re-choose. The picker's open state must be derived from the store, not
+  // snapshotted once at mount.
+  it('reopens the picker when the store is cleared while mounted', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    act(() => usePersonaStore.getState().clearPersona());
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
 });

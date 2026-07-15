@@ -51,13 +51,20 @@ export function SimulationWorkspace({
 }: SimulationWorkspaceProps) {
   const selectedPersonaId = usePersonaStore((state) => state.selectedPersonaId);
   const setPersona = usePersonaStore((state) => state.setPersona);
-  const [isPickerOpen, setIsPickerOpen] = useState(selectedPersonaId === null);
+  // Explicit "Change recruiter" clicks reopen the picker even though a
+  // persona is already selected. This is intentionally NOT the sole source
+  // of truth: it is OR-ed with `selectedPersonaId === null` below so the
+  // picker also reopens whenever the store is cleared out from under a
+  // mounted workspace (useInterviewSession.clearPersona() on hang-up), not
+  // just at mount time. See simulation-workspace/index.spec.tsx.
+  const [wantsPickerOpen, setWantsPickerOpen] = useState(false);
+  const isPickerOpen = selectedPersonaId === null || wantsPickerOpen;
   const persona = getPersonaById(selectedPersonaId);
 
   const handlePersonaSelect = useCallback(
     (chosen: RecruiterPersona) => {
       setPersona(chosen.id);
-      setIsPickerOpen(false);
+      setWantsPickerOpen(false);
     },
     [setPersona],
   );
@@ -66,7 +73,7 @@ export function SimulationWorkspace({
   // the modal does not nag on the next mount.
   const handlePersonaDismiss = useCallback(() => {
     setPersona(DEFAULT_PERSONA.id);
-    setIsPickerOpen(false);
+    setWantsPickerOpen(false);
   }, [setPersona]);
 
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
@@ -385,7 +392,7 @@ export function SimulationWorkspace({
           {!isCallActive && (
             <button
               type="button"
-              onClick={() => setIsPickerOpen(true)}
+              onClick={() => setWantsPickerOpen(true)}
               className="text-button-m text-text-weak hover:text-text transition-colors"
             >
               Change recruiter
