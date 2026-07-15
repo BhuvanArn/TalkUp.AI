@@ -9,13 +9,15 @@ import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { routeTree } from './routeTree.gen';
-import notFoundRoute from './routes/-not-found';
+import NotFoundPage from './routes/-not-found';
 
 const queryClient = new QueryClient();
 
 const router = createRouter({
   routeTree,
-  defaultNotFoundComponent: notFoundRoute,
+  // The router passes its own not-found props, which NotFoundPage doesn't take.
+  // Auth-aware shell selection moves to __root.tsx.
+  defaultNotFoundComponent: () => <NotFoundPage />,
 });
 
 const rootElement = document.getElementById('root')!;
