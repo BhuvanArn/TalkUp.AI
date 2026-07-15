@@ -63,8 +63,15 @@ export function PersonaPickerModal({
 }: PersonaPickerModalProps) {
   const [highlighted, setHighlighted] =
     useState<RecruiterPersona>(initialHighlight);
-  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen);
   const radioRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  // Open focus on the chosen persona, not the leading close button: the cast is
+  // what the dialog is asking about, and it is the roving radiogroup's entry
+  // point. Resolved through a getter because the card refs are only populated
+  // once children have mounted, after this line runs. Falls back to the first
+  // focusable child when the card is absent.
+  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, {
+    getInitialFocus: () => radioRefs.current[highlighted.id] ?? null,
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -88,15 +95,18 @@ export function PersonaPickerModal({
 
   if (!isOpen) return null;
 
+  const select = (persona: RecruiterPersona) => {
+    setHighlighted(persona);
+    // Roving tabindex: keyboard focus follows the checked radio.
+    radioRefs.current[persona.id]?.focus();
+  };
+
   const move = (delta: number) => {
     const index = PERSONAS.findIndex(
       (persona) => persona.id === highlighted.id,
     );
     const next = (index + delta + PERSONAS.length) % PERSONAS.length;
-    const persona = PERSONAS[next];
-    setHighlighted(persona);
-    // Roving tabindex: keyboard focus follows the checked radio.
-    radioRefs.current[persona.id]?.focus();
+    select(PERSONAS[next]);
   };
 
   const handleKeyDown = (event: ReactKeyboardEvent) => {
@@ -106,6 +116,12 @@ export function PersonaPickerModal({
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
       event.preventDefault();
       move(-1);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      select(PERSONAS[0]);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      select(PERSONAS[PERSONAS.length - 1]);
     } else if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       onSelect(highlighted);

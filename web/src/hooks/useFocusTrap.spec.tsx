@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { useFocusTrap } from './useFocusTrap';
@@ -73,5 +73,47 @@ describe('useFocusTrap', () => {
 
     fireEvent.click(screen.getByText('close'));
     expect(trigger).toHaveFocus();
+  });
+
+  it('focuses the getInitialFocus target instead of the first focusable child', () => {
+    function InitialFocusHarness() {
+      const targetRef = useRef<HTMLElement | null>(null);
+      const ref = useFocusTrap<HTMLDivElement>(true, {
+        getInitialFocus: () => targetRef.current,
+      });
+      return (
+        <div ref={ref}>
+          <button type="button">first</button>
+          <button
+            type="button"
+            ref={(element) => {
+              targetRef.current = element;
+            }}
+          >
+            preferred
+          </button>
+        </div>
+      );
+    }
+
+    render(<InitialFocusHarness />);
+    expect(screen.getByText('preferred')).toHaveFocus();
+  });
+
+  it('falls back to the first focusable child when getInitialFocus returns null', () => {
+    function EmptyTargetHarness() {
+      const ref = useFocusTrap<HTMLDivElement>(true, {
+        getInitialFocus: () => null,
+      });
+      return (
+        <div ref={ref}>
+          <button type="button">first</button>
+          <button type="button">last</button>
+        </div>
+      );
+    }
+
+    render(<EmptyTargetHarness />);
+    expect(screen.getByText('first')).toHaveFocus();
   });
 });

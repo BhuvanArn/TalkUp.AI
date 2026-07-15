@@ -21,12 +21,15 @@ function getFocusable(container: HTMLElement): HTMLElement[] {
  * The codebase has no focus-trap library and no other hand-rolled trap, so this
  * is the shared primitive: attach the returned ref to a dialog container.
  *
- * - Moves focus to the first focusable child on activate.
+ * - Moves focus into the container on activate: `getInitialFocus()` when given,
+ *   otherwise the first focusable child.
  * - Cycles Tab / Shift+Tab within the container.
  * - Restores focus to the previously focused element on deactivate.
  *
  * Roving selection *within* a radiogroup is the consumer's job — this hook only
- * owns the Tab boundary.
+ * owns the Tab boundary. Pass `getInitialFocus` when the first focusable child
+ * is not where the user should land (e.g. a leading close button). It is a
+ * getter, not a ref, so it resolves after children have mounted.
  *
  * @example
  * ```tsx
@@ -34,9 +37,16 @@ function getFocusable(container: HTMLElement): HTMLElement[] {
  * return isOpen ? <div ref={dialogRef} role="dialog">…</div> : null;
  * ```
  */
-export function useFocusTrap<T extends HTMLElement>(isActive: boolean) {
+export function useFocusTrap<T extends HTMLElement>(
+  isActive: boolean,
+  options?: { getInitialFocus?: () => HTMLElement | null },
+) {
   const containerRef = useRef<T | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  // Read through a ref so a caller's inline arrow does not re-run the effect
+  // (and re-steal focus) on every render.
+  const getInitialFocusRef = useRef(options?.getInitialFocus);
+  getInitialFocusRef.current = options?.getInitialFocus;
 
   useEffect(() => {
     if (!isActive) return;
@@ -46,7 +56,7 @@ export function useFocusTrap<T extends HTMLElement>(isActive: boolean) {
     const container = containerRef.current;
     if (container) {
       const focusable = getFocusable(container);
-      (focusable[0] ?? container).focus();
+      (getInitialFocusRef.current?.() ?? focusable[0] ?? container).focus();
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {

@@ -142,4 +142,31 @@ describe('PersonaPickerModal', () => {
     fireEvent.click(back);
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
+
+  // The radios are <div role="radio">, so the browser supplies no built-in
+  // radiogroup keying: every key the WAI-ARIA pattern mandates is ours to wire.
+  it('jumps to the first persona on Home', () => {
+    renderModal({ initialHighlight: PERSONAS[3] });
+    fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'Home' });
+    const radios = screen.getAllByRole('radio');
+    expect(radios[0]).toHaveAttribute('aria-checked', 'true');
+    expect(radios[0]).toHaveFocus();
+  });
+
+  it('jumps to the last persona on End', () => {
+    renderModal({ initialHighlight: PERSONAS[0] });
+    fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'End' });
+    const radios = screen.getAllByRole('radio');
+    expect(radios[radios.length - 1]).toHaveAttribute('aria-checked', 'true');
+    expect(radios[radios.length - 1]).toHaveFocus();
+  });
+
+  // Without an explicit initial focus target the trap lands on the first
+  // focusable child, which is the header's X button — the dialog would open
+  // focused on "leave" rather than on the cast it is asking about.
+  it('opens focus on the highlighted persona, not the close button', () => {
+    renderModal({ initialHighlight: PERSONAS[2] });
+    const radios = screen.getAllByRole('radio');
+    expect(radios[2]).toHaveFocus();
+  });
 });
