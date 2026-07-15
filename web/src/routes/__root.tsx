@@ -2,6 +2,7 @@ import LandingNav from '@/components/organisms/landing-nav';
 import Sidebar from '@/components/organisms/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavigationProvider } from '@/contexts/NavigationContext';
+import { useAuthStatus } from '@/hooks/auth/useServices';
 import {
   Outlet,
   createRootRoute,
@@ -9,6 +10,8 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useState } from 'react';
+
+import NotFoundPage from './-not-found';
 
 const PUBLIC_SHELL_PATHS = new Set<string>([
   '/',
@@ -27,9 +30,46 @@ const RootComponent = () => {
   const pathname = useRouterState({
     select: (s) => s.resolvedLocation?.pathname ?? s.location.pathname,
   });
+  // A 404 matches no path, so PUBLIC_SHELL_PATHS can't classify it — ask the
+  // router directly. Verified against @tanstack/router-core Matches.d.ts:49,72.
+  const isNotFoundMatch = useRouterState({
+    select: (s) =>
+      s.matches.some((m) => m.status === 'notFound' || m.globalNotFound),
+  });
+  // 404s run no route guard, so AuthContext never populates — read the query.
+  const { data: authStatus } = useAuthStatus();
   const { isAuthenticated } = useAuth();
   const usePublicShell = PUBLIC_SHELL_PATHS.has(pathname);
   const usePublicNav = PUBLIC_NAV_PATHS.has(pathname) && !isAuthenticated;
+
+  if (isNotFoundMatch) {
+    const isAuthed = authStatus?.isAuthenticated ?? false;
+
+    if (!isAuthed) {
+      return (
+        <NavigationProvider>
+          <div className="min-h-screen w-full bg-background text-text">
+            <NotFoundPage isAuthenticated={false} />
+            <TanStackRouterDevtools position="top-right" />
+          </div>
+        </NavigationProvider>
+      );
+    }
+
+    return (
+      <NavigationProvider>
+        <div
+          className={`grid h-screen w-full transition-all duration-300 ease-in-out ${isCollapsed ? 'grid-cols-[64px_1fr]' : 'grid-cols-[256px_1fr]'}`}
+        >
+          <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+          <main className="overflow-auto w-full bg-background">
+            <NotFoundPage isAuthenticated />
+          </main>
+          <TanStackRouterDevtools position="top-right" />
+        </div>
+      </NavigationProvider>
+    );
+  }
 
   if (usePublicShell) {
     return (
