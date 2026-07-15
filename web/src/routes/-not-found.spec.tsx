@@ -18,15 +18,18 @@ describe('NotFoundPage', () => {
   it('shows the heading and copy', () => {
     render(<NotFoundPage isAuthenticated={false} />);
     expect(
-      screen.getByRole('heading', { name: /page not found/i, level: 2 }),
+      screen.getByRole('heading', { name: /page not found/i, level: 1 }),
     ).toBeInTheDocument();
   });
 
-  // The anonymous variant renders <Logo>, which owns the page's only h1.
-  it('leaves the single h1 to the logo when anonymous', () => {
-    render(<NotFoundPage isAuthenticated={false} />);
-    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-  });
+  // The sidebar's h1 is gone when it is collapsed, so the page owns its own.
+  it.each([false, true])(
+    'keeps exactly one h1 when isAuthenticated=%s',
+    (isAuthenticated) => {
+      render(<NotFoundPage isAuthenticated={isAuthenticated} />);
+      expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    },
+  );
 
   it('sends an anonymous visitor home and to login', () => {
     render(<NotFoundPage isAuthenticated={false} />);

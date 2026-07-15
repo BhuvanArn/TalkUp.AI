@@ -23,7 +23,7 @@ const NotFoundPage = ({ isAuthenticated = false }: NotFoundPageProps) => {
           className="mb-10"
           data-testid="not-found-logo"
         >
-          <Logo variant="line" color="primary" />
+          <Logo variant="no-text" color="primary" />
         </Link>
       )}
 
@@ -36,11 +36,12 @@ const NotFoundPage = ({ isAuthenticated = false }: NotFoundPageProps) => {
         />
       </div>
 
-      <p className="text-h5 text-text-weakest mb-2">404</p>
-      {/* h2, not h1: the anonymous variant's <Logo> already renders the page's h1. */}
-      <h2 className="text-h2 text-text-idle font-semibold mb-2 text-center">
+      <p className="text-h5 text-text-weaker mb-2">404</p>
+      {/* The page's only h1. The logo above uses `no-text` so it renders no
+          competing heading, and the sidebar's h1 disappears when collapsed. */}
+      <h1 className="text-h2 text-text-idle mb-2 text-center">
         Page not found
-      </h2>
+      </h1>
       <p className="text-body-m text-text-weaker mb-8 text-center max-w-md">
         This page doesn&apos;t exist, or it moved somewhere else. Check the
         address, or head back to familiar ground.
