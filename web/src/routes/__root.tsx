@@ -40,7 +40,11 @@ const RootComponent = () => {
   // `anonymousAllowed` stops a logged-out 401 from escalating to refresh-then-redirect:
   // the interceptor's no-redirect list is keyed on pathname and a 404 URL is never on it,
   // so without this an anonymous visitor lands on /login instead of this page.
-  const { data: authStatus } = useAuthStatus({ anonymousAllowed: true });
+  // Only on a 404: elsewhere this shares the plain cache key with the rest of the app
+  // (the sidebar's OrgViewFlip), rather than fetching /auth/status a second time.
+  const { data: authStatus } = useAuthStatus({
+    anonymousAllowed: isNotFoundMatch,
+  });
   const { isAuthenticated } = useAuth();
   const usePublicShell = PUBLIC_SHELL_PATHS.has(pathname);
   const usePublicNav = PUBLIC_NAV_PATHS.has(pathname) && !isAuthenticated;
