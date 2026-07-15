@@ -255,7 +255,7 @@ export function PersonaPickerModal({
               onClick={onDismiss}
               className="font-display"
             >
-              Skip — use Sophie
+              Skip — use {DEFAULT_PERSONA.name.split(' ')[0]}
             </Button>
           </div>
           <Button
