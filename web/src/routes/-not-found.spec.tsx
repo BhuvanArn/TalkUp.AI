@@ -18,8 +18,14 @@ describe('NotFoundPage', () => {
   it('shows the heading and copy', () => {
     render(<NotFoundPage isAuthenticated={false} />);
     expect(
-      screen.getByRole('heading', { name: /page not found/i }),
+      screen.getByRole('heading', { name: /page not found/i, level: 2 }),
     ).toBeInTheDocument();
+  });
+
+  // The anonymous variant renders <Logo>, which owns the page's only h1.
+  it('leaves the single h1 to the logo when anonymous', () => {
+    render(<NotFoundPage isAuthenticated={false} />);
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
   it('sends an anonymous visitor home and to login', () => {

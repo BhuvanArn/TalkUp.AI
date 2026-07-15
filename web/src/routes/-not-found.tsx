@@ -15,7 +15,7 @@ const NotFoundPage = ({ isAuthenticated = false }: NotFoundPageProps) => {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[60vh] py-16 px-4">
+    <div className="flex h-full min-h-screen flex-col items-center justify-center py-16 px-4">
       {!isAuthenticated && (
         <Link
           to="/"
@@ -37,9 +37,10 @@ const NotFoundPage = ({ isAuthenticated = false }: NotFoundPageProps) => {
       </div>
 
       <p className="text-h5 text-text-weakest mb-2">404</p>
-      <h1 className="text-h2 text-text-idle font-semibold mb-2 text-center">
+      {/* h2, not h1: the anonymous variant's <Logo> already renders the page's h1. */}
+      <h2 className="text-h2 text-text-idle font-semibold mb-2 text-center">
         Page not found
-      </h1>
+      </h2>
       <p className="text-body-m text-text-weaker mb-8 text-center max-w-md">
         This page doesn&apos;t exist, or it moved somewhere else. Check the
         address, or head back to familiar ground.
