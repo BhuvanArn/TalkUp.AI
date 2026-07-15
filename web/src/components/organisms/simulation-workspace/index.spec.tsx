@@ -1,4 +1,5 @@
 import { PERSONAS } from '@/config/personas';
+import * as simulationHooks from '@/hooks/simulation';
 import usePersonaStore from '@/stores/usePersonaStore';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SimulationWorkspace } from './index';
 
 vi.mock('@/hooks/simulation', () => ({
-  useInterviewSession: () => ({
+  useInterviewSession: vi.fn(() => ({
     isCallActive: false,
     isQueued: false,
     queuePosition: 0,
@@ -14,7 +15,7 @@ vi.mock('@/hooks/simulation', () => ({
     inputUrl: '',
     interviewID: null,
     handleStreamToggle: vi.fn(),
-  }),
+  })),
   useSimulationWebSocket: () => ({
     sendMessage: vi.fn(),
     sendJsonMessage: vi.fn(),
@@ -91,5 +92,36 @@ describe('SimulationWorkspace persona picker', () => {
       (radio) => radio.getAttribute('aria-checked') === 'true',
     );
     expect(marcRadio).toHaveAccessibleName(new RegExp(marc.name));
+  });
+
+  // Regression guard: the "Change recruiter" button is gated on !isCallActive,
+  // NOT isAwaitingAiResponse. These are distinct states: isCallActive is the
+  // session-wide interview status (should hide during live call), while
+  // isAwaitingAiResponse flips true/false on every conversational turn (would
+  // cause the button to flicker visibly if used as the gate). A future refactor
+  // might conflate them; this test locks the distinction in place.
+  it('shows Change recruiter when idle (isCallActive: false)', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+    expect(
+      screen.getByRole('button', { name: /change recruiter/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('hides Change recruiter when call is active (isCallActive: true)', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    vi.mocked(simulationHooks.useInterviewSession).mockReturnValueOnce({
+      isCallActive: true,
+      isQueued: false,
+      queuePosition: 0,
+      estimatedWaitSec: undefined,
+      inputUrl: '',
+      interviewID: null,
+      handleStreamToggle: vi.fn(),
+    });
+    render(<SimulationWorkspace />);
+    expect(
+      screen.queryByRole('button', { name: /change recruiter/i }),
+    ).not.toBeInTheDocument();
   });
 });
