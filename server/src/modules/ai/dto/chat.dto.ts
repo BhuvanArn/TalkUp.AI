@@ -60,6 +60,14 @@ export class ChatContextDto {
   @IsOptional()
   @IsUUID()
   interviewId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "The single note the page is about (the note detail view). Grounds on that note alone rather than the whole list.",
+  })
+  @IsOptional()
+  @IsUUID()
+  noteId?: string;
 }
 
 @ApiSchema({

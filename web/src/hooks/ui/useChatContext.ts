@@ -32,16 +32,19 @@ export const useChatContext = (): ChatContext | undefined => {
     return { surface: 'agenda' };
   }
 
+  // /notes/<id> — the detail view grounds on that one note. Checked before the
+  // list route, whose scope comes from a search param instead.
+  const noteMatch = pathname.match(/^\/notes\/([^/]+)/);
+  if (noteMatch) {
+    return { surface: 'notes', noteId: noteMatch[1] };
+  }
+
   if (pathname.startsWith('/notes')) {
     const applicationId =
       typeof search.applicationId === 'string'
         ? search.applicationId
         : undefined;
     return { surface: 'notes', ...(applicationId ? { applicationId } : {}) };
-  }
-
-  if (pathname.startsWith('/cv-analysis')) {
-    return { surface: 'cv' };
   }
 
   return undefined;

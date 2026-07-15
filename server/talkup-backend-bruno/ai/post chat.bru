@@ -38,3 +38,21 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+docs {
+  Chat with the assistant, optionally grounded in the page the user is on.
+
+  `context` carries **identifiers only** — the server loads the matching rows
+  under the caller's ownership, so a client can never ground on data it does
+  not own, nor inject a free-text context blob.
+
+  | surface | id to send | grounds on |
+  |---|---|---|
+  | `roadmap` | `applicationId` | the application's preparation roadmap |
+  | `cv` | `applicationId` | the application's CV + job offer |
+  | `simulation` | `interviewId` (or `applicationId` for the latest) | the session's score, feedback and transcript |
+  | `agenda` | — | the user's events over the next 30 days |
+  | `notes` | `noteId` for one open note, `applicationId` to scope a list, or neither for all | the note body, or the list's titles + previews |
+
+  Omit `context` entirely for a generic, ungrounded chat.
+}

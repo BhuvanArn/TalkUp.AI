@@ -55,11 +55,27 @@ describe('useChatContext', () => {
     });
   });
 
-  it('maps the cv-analysis route to a cv surface', () => {
-    mockRouter('/cv-analysis');
+  it('maps an open note to a notes surface carrying that note id', () => {
+    mockRouter('/notes/note-abc');
     expect(renderHook(() => useChatContext()).result.current).toEqual({
-      surface: 'cv',
+      surface: 'notes',
+      noteId: 'note-abc',
     });
+  });
+
+  it('grounds an open note on the note, not the list scope', () => {
+    // The detail route must win over the list's applicationId search param,
+    // otherwise the assistant answers about every note but the open one.
+    mockRouter('/notes/note-abc', { applicationId: 'app-9' });
+    expect(renderHook(() => useChatContext()).result.current).toEqual({
+      surface: 'notes',
+      noteId: 'note-abc',
+    });
+  });
+
+  it('returns undefined on cv-analysis (no owned id to ground on)', () => {
+    mockRouter('/cv-analysis');
+    expect(renderHook(() => useChatContext()).result.current).toBeUndefined();
   });
 
   it('returns undefined on a route with no grounding surface', () => {

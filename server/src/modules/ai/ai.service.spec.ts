@@ -119,6 +119,7 @@ describe("AiService", () => {
 
     mockNotesService = {
       findAll: jest.fn(),
+      findOne: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -866,8 +867,41 @@ describe("AiService", () => {
           "user-1",
         );
 
-        expect(mockAgendaService.listForRange).toHaveBeenCalled();
+        // Pin the caller's id: the whole feature rests on grounding only ever
+        // touching the authenticated user's own rows.
+        expect(mockAgendaService.listForRange).toHaveBeenCalledWith(
+          "user-1",
+          expect.any(Date),
+          expect.any(Date),
+        );
         expect(systemOf()).toContain("Datadog interview");
+      });
+
+      it("grounds an open note on that note alone", async () => {
+        mockNotesService.findOne.mockResolvedValue({
+          title: "Datadog prep",
+          content: "<p>Ask about the on-call rotation</p>",
+        });
+        mockGroqCreate.mockResolvedValueOnce({
+          choices: [{ message: { content: "ok" } }],
+        });
+
+        await service.chat(
+          {
+            message: "summarise this note",
+            context: { surface: "notes", noteId: "note-abc" } as any,
+          },
+          "user-1",
+        );
+
+        expect(mockNotesService.findOne).toHaveBeenCalledWith(
+          "user-1",
+          "note-abc",
+        );
+        // The open note must win over the list path, or the assistant answers
+        // about every note except the one on screen.
+        expect(mockNotesService.findAll).not.toHaveBeenCalled();
+        expect(systemOf()).toContain("Ask about the on-call rotation");
       });
 
       it("degrades to no context (still replies) when resolution throws", async () => {

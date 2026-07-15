@@ -113,16 +113,32 @@ const stripHtml = (html: string | null | undefined): string =>
     .replace(/\s+/g, " ")
     .trim();
 
-/** Notes block: the notes in view (titles + short previews). */
+/**
+ * Notes block. A single open note ("note" scope) is grounded in full — the user
+ * is looking straight at it and will ask about its body. A list is grounded as
+ * titles + short previews, since it only needs to support "which note said…".
+ */
 export const formatNotesContext = (
   notes: { title: string; content?: string | null }[],
-  scope: "application" | "all",
+  scope: "note" | "application" | "all",
 ): string => {
   if (!notes.length) {
+    if (scope === "note") return "The note is empty.";
     return scope === "application"
       ? "The user has no notes for this application yet."
       : "The user has no notes yet.";
   }
+
+  if (scope === "note") {
+    const [note] = notes;
+    const body = stripHtml(note.content);
+    return truncate(
+      `The user is reading the note "${note.title}".${
+        body ? `\n\nIts content:\n${body}` : "\n\nIt has no content yet."
+      }`,
+    );
+  }
+
   const lines = [
     scope === "application"
       ? "The user's notes for this application:"

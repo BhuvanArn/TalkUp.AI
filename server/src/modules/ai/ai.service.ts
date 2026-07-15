@@ -219,6 +219,15 @@ export class AiService {
         }
 
         case ChatSurface.NOTES: {
+          // Most specific wins: one open note grounds on itself, an
+          // application-scoped list on that application, otherwise all notes.
+          if (context.noteId) {
+            const note = await this.notesService.findOne(
+              userId,
+              context.noteId,
+            );
+            return formatNotesContext([note], "note");
+          }
           const notes = context.applicationId
             ? await this.notesService.findAll(userId, {
                 applicationId: context.applicationId,

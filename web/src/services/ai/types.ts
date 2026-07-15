@@ -102,6 +102,7 @@ export interface ChatContext {
   surface: ChatSurface;
   applicationId?: string;
   interviewId?: string;
+  noteId?: string;
 }
 
 /** Payload sent to the chatbot endpoint. */
