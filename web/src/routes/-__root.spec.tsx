@@ -66,14 +66,14 @@ const nestedNotFoundState = {
 describe('RootComponent not-found shell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useAuthStatusMock.mockReturnValue({ data: undefined, isPending: true });
+    useAuthStatusMock.mockReturnValue({ data: undefined, isLoading: true });
   });
 
   it('hides the sidebar for an anonymous visitor', () => {
     routerStateMock.mockReturnValue(notFoundState);
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: false },
-      isPending: false,
+      isLoading: false,
     });
     render(<RootComponent />);
     expect(screen.getByTestId('not-found')).toHaveTextContent('anon');
@@ -84,7 +84,7 @@ describe('RootComponent not-found shell', () => {
     routerStateMock.mockReturnValue(nestedNotFoundState);
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: false },
-      isPending: false,
+      isLoading: false,
     });
     render(<RootComponent />);
     expect(screen.getByTestId('not-found')).toBeInTheDocument();
@@ -93,12 +93,32 @@ describe('RootComponent not-found shell', () => {
 
   // Committing to a variant while auth is unresolved would show an authed user the
   // anonymous page, then jump them into the sidebar layout once it settles.
-  it('renders neither variant while auth status is still pending', () => {
+  it('renders neither variant while the auth request is in flight', () => {
     routerStateMock.mockReturnValue(notFoundState);
-    useAuthStatusMock.mockReturnValue({ data: undefined, isPending: true });
+    useAuthStatusMock.mockReturnValue({ data: undefined, isLoading: true });
     render(<RootComponent />);
     expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();
     expect(screen.queryByTestId('not-found')).not.toBeInTheDocument();
+    expect(screen.getByTestId('not-found-pending')).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+  });
+
+  // Offline, the query pauses: `isPending` stays true forever and the fetch never runs,
+  // so waiting on it would leave a permanently blank page. `isLoading` is false while
+  // paused, so we fall through and show the anonymous page instead of hanging.
+  it('shows the anonymous page rather than hanging when the query is paused', () => {
+    routerStateMock.mockReturnValue(notFoundState);
+    useAuthStatusMock.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isPending: true,
+      isPaused: true,
+    });
+    render(<RootComponent />);
+    expect(screen.queryByTestId('not-found-pending')).not.toBeInTheDocument();
+    expect(screen.getByTestId('not-found')).toHaveTextContent('anon');
   });
 
   // The root must ask for the anonymous variant ONLY on a 404: elsewhere it shares
@@ -107,7 +127,7 @@ describe('RootComponent not-found shell', () => {
     routerStateMock.mockReturnValue(notFoundState);
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: false },
-      isPending: false,
+      isLoading: false,
     });
     render(<RootComponent />);
     expect(useAuthStatusMock).toHaveBeenCalledWith({ anonymousAllowed: true });
@@ -119,7 +139,7 @@ describe('RootComponent not-found shell', () => {
     });
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: true },
-      isPending: false,
+      isLoading: false,
     });
     render(<RootComponent />);
     expect(useAuthStatusMock).toHaveBeenCalledWith({ anonymousAllowed: false });
@@ -129,7 +149,7 @@ describe('RootComponent not-found shell', () => {
     routerStateMock.mockReturnValue(notFoundState);
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: true },
-      isPending: false,
+      isLoading: false,
     });
     render(<RootComponent />);
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
@@ -143,7 +163,7 @@ describe('RootComponent not-found shell', () => {
     });
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: true },
-      isPending: false,
+      isLoading: false,
     });
     render(<RootComponent />);
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
@@ -158,7 +178,7 @@ describe('RootComponent not-found shell', () => {
     });
     useAuthStatusMock.mockReturnValue({
       data: { isAuthenticated: false },
-      isPending: false,
+      isLoading: false,
     });
     render(<RootComponent />);
     expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();

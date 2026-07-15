@@ -42,7 +42,9 @@ const RootComponent = () => {
   // so without this an anonymous visitor lands on /login instead of this page.
   // Only on a 404: elsewhere this shares the plain cache key with the rest of the app
   // (the sidebar's OrgViewFlip), rather than fetching /auth/status a second time.
-  const { data: authStatus, isPending: authPending } = useAuthStatus({
+  // `isLoading`, not `isPending`: pending stays true while a fetch is *paused* (offline),
+  // where the query function never runs, so the wait below would never end.
+  const { data: authStatus, isLoading: authLoading } = useAuthStatus({
     anonymousAllowed: isNotFoundMatch,
   });
   const { isAuthenticated } = useAuth();
@@ -53,10 +55,21 @@ const RootComponent = () => {
     const isAuthed = authStatus?.isAuthenticated ?? false;
 
     // Navigating into a 404 swaps this query's cache key, so `data` is briefly
-    // undefined. Hold the shell until it settles: picking a variant here would show
-    // an authed user the anonymous page, then jump them into the sidebar layout.
-    if (authPending) {
-      return <div className="min-h-screen w-full bg-background" />;
+    // undefined. Every part of this page differs by auth state (logo, CTAs, sidebar),
+    // so there is nothing neutral to show: committing to a variant here would send an
+    // authed user to the anonymous page and then jump them into the sidebar layout.
+    // Only a real in-flight fetch waits — an offline/paused query falls through and
+    // renders the anonymous variant rather than hanging on a blank page.
+    if (authLoading) {
+      return (
+        <div
+          className="min-h-screen w-full bg-background"
+          role="status"
+          aria-busy="true"
+          aria-label="Loading"
+          data-testid="not-found-pending"
+        />
+      );
     }
 
     if (!isAuthed) {
