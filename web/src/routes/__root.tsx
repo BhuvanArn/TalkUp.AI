@@ -40,8 +40,13 @@ const RootComponent = () => {
   // `anonymousAllowed` stops a logged-out 401 from escalating to refresh-then-redirect:
   // the interceptor's no-redirect list is keyed on pathname and a 404 URL is never on it,
   // so without this an anonymous visitor lands on /login instead of this page.
-  // Only on a 404: elsewhere this shares the plain cache key with the rest of the app
-  // (the sidebar's OrgViewFlip), rather than fetching /auth/status a second time.
+  //
+  // The flag is scoped to 404s so every other route keeps sharing the plain cache key
+  // with the rest of the app (the sidebar's OrgViewFlip) instead of fetching twice.
+  // The authed 404 does still pay one extra fetch — it holds the anonymous key while the
+  // sidebar it renders holds the plain one. Left as-is: dropping the flag once authed
+  // would re-run this query through the redirect-on-401 path we are avoiding here.
+  //
   // `isLoading`, not `isPending`: pending stays true while a fetch is *paused* (offline),
   // where the query function never runs, so the wait below would never end.
   const { data: authStatus, isLoading: authLoading } = useAuthStatus({
