@@ -1,10 +1,10 @@
+import { CheckboxInput } from '@/components/atoms/checkbox-input';
 import { useCreateApplication } from '@/services/applications/hooks';
 import type { Application } from '@/services/applications/types';
 import { uploadMyCV } from '@/services/users/http';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { extractErrorMessage } from '@/utils/error';
 import { isAllowedJobUrl } from '@/utils/validators';
-import { CheckboxInput } from '@/components/atoms/checkbox-input';
 import { createFileRoute } from '@tanstack/react-router';
 import axios from 'axios';
 import { useState } from 'react';
