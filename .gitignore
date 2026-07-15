@@ -27,3 +27,6 @@ ai/microservices/**/llm/
 
 # superpowers brainstorm companion artifacts
 .superpowers/
+
+# playwright mcp scratch (console logs, page snapshots, ad-hoc screenshots)
+.playwright-mcp/
