@@ -49,8 +49,16 @@ vi.mock('./-not-found', () => ({
 
 const RootComponent = (Route as any).options.component;
 
+// The shape the router actually produces for an unmatched URL: the root match
+// stays `success` and carries globalNotFound. A nested `notFound()` throw is the
+// `status: 'notFound'` shape instead — both must route to the 404 shell.
 const notFoundState = {
-  matches: [{ status: 'notFound' }],
+  matches: [{ status: 'success', globalNotFound: true }],
+  location: { pathname: '/zzz' },
+};
+
+const nestedNotFoundState = {
+  matches: [{ status: 'success' }, { status: 'notFound' }],
   location: { pathname: '/zzz' },
 };
 
@@ -69,6 +77,17 @@ describe('RootComponent not-found shell', () => {
     render(<RootComponent />);
     expect(screen.getByTestId('not-found')).toHaveTextContent('anon');
     expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();
+  });
+
+  it('renders the 404 shell for a nested notFound() throw', () => {
+    routerStateMock.mockReturnValue(nestedNotFoundState);
+    useAuthStatusMock.mockReturnValue({
+      data: { isAuthenticated: false },
+      isLoading: false,
+    });
+    render(<RootComponent />);
+    expect(screen.getByTestId('not-found')).toBeInTheDocument();
+    expect(screen.queryByTestId('outlet')).not.toBeInTheDocument();
   });
 
   it('hides the sidebar while auth status is still loading', () => {
