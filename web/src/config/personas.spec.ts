@@ -33,12 +33,18 @@ describe('personas', () => {
   // The speech-to-speech pipeline is strict turn-taking: VAD only trims silence
   // (ai/microservices/speech-to-speech/engine/pipeline.py:99-102), there is no
   // barge-in. Copy promising interruption would describe behaviour the system
-  // cannot produce.
+  // cannot produce. systemPrompt is checked too: it is French, unconsumed by
+  // the web app today, but it is exactly what a future task will feed to the
+  // LLM, and the field most likely to gain "coupe la parole" when someone
+  // tunes Marc's difficulty.
   it('never claims a persona interrupts the candidate', () => {
-    const forbidden =
+    const forbiddenEnglish =
       /interrupt|cut you off|cuts you off|talk over|talks over|rush/i;
+    const forbiddenFrench =
+      /coupe la parole|couper la parole|interromp|presse|bouscul/i;
     for (const persona of PERSONAS) {
-      expect(persona.description).not.toMatch(forbidden);
+      expect(persona.description).not.toMatch(forbiddenEnglish);
+      expect(persona.systemPrompt).not.toMatch(forbiddenFrench);
     }
   });
 });
