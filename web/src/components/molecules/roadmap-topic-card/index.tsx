@@ -27,6 +27,8 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
   const rationaleRef = useRef<HTMLParagraphElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const articleRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const [isTruncated, setIsTruncated] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -37,6 +39,19 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
       !!el && el.scrollHeight > el.clientHeight + 1;
     setIsTruncated(clamped(rationaleRef.current) || clamped(titleRef.current));
   }, [topic.title, topic.rationale]);
+
+  // The card goes `inert` while the popover is open, which drops focus to
+  // <body>. Hand it to the panel on open and take it back on close so keyboard
+  // users stay on this card.
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (isOpen) {
+      panelRef.current?.focus();
+    } else if (wasOpen.current && document.activeElement === document.body) {
+      articleRef.current?.focus();
+    }
+    wasOpen.current = isOpen;
+  }, [isOpen]);
 
   // Close the popover on outside-click or Escape.
   useEffect(() => {
@@ -68,11 +83,16 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
   return (
     <div ref={rootRef} className="relative w-full">
       <article
+        ref={articleRef}
         className={`bg-surface-raised border-border flex w-full flex-col gap-2 rounded-2xl border p-4 ${
           isTruncated
             ? 'hover:border-accent cursor-pointer transition-colors'
             : ''
-        }`}
+        } ${isOpen ? 'invisible' : ''}`}
+        aria-hidden={isOpen}
+        // While the popover is open the card is `invisible` (kept in flow so
+        // the timeline row does not reflow), so it must not be focusable.
+        inert={isOpen ? true : undefined}
         onClick={isTruncated ? () => setIsOpen((v) => !v) : undefined}
         role={isTruncated ? 'button' : undefined}
         tabIndex={isTruncated ? 0 : undefined}
@@ -117,9 +137,11 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
       {isOpen && (
         <div
           id={panelId}
+          ref={panelRef}
+          tabIndex={-1}
           role="region"
           aria-label={`${topic.title} details`}
-          className="bg-surface-raised border-border absolute top-0 left-0 z-30 flex w-[min(20rem,80vw)] flex-col gap-2 rounded-2xl border p-4 shadow-lg"
+          className="bg-surface-raised border-border absolute top-0 left-0 z-30 flex w-[min(20rem,80vw)] min-w-full flex-col gap-2 rounded-2xl border p-4 shadow-lg"
         >
           <div className="flex items-center justify-between gap-2">
             <p className="text-label-s text-text-weaker">Step {step}</p>
