@@ -69,12 +69,18 @@ export function SimulationWorkspace({
     [setPersona],
   );
 
-  // Dismiss keeps today's behaviour: fall back to the default and persist it so
-  // the modal does not nag on the next mount.
+  // Dismiss means two different things depending on why the picker is open.
+  // First entry (nothing chosen): fall back to the default and persist it, so
+  // the modal does not nag on the next mount — today's shipped behaviour.
+  // Reopened via "Change recruiter": the user already has a pick, so dismiss
+  // means *cancel*. Writing the default here would silently downgrade a chosen
+  // Marc Bernard back to Sophie on an Esc.
   const handlePersonaDismiss = useCallback(() => {
-    setPersona(DEFAULT_PERSONA.id);
+    if (selectedPersonaId === null) {
+      setPersona(DEFAULT_PERSONA.id);
+    }
     setWantsPickerOpen(false);
-  }, [setPersona]);
+  }, [selectedPersonaId, setPersona]);
 
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [wsError, setWsError] = useState<string | null>(null);
@@ -405,7 +411,6 @@ export function SimulationWorkspace({
       <NotesEditor interviewID={interviewID} />
 
       <PersonaPickerModal
-        key={persona.id}
         isOpen={isPickerOpen}
         initialHighlight={persona}
         onSelect={handlePersonaSelect}

@@ -1,4 +1,4 @@
-import { PERSONAS } from '@/config/personas';
+import { DEFAULT_PERSONA, PERSONAS } from '@/config/personas';
 import * as simulationHooks from '@/hooks/simulation';
 import usePersonaStore from '@/stores/usePersonaStore';
 import { act, fireEvent, render, screen } from '@testing-library/react';
@@ -142,5 +142,49 @@ describe('SimulationWorkspace persona picker', () => {
     act(() => usePersonaStore.getState().clearPersona());
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  // Dismiss is overloaded: on first entry it means "use the default", but once
+  // a persona is committed, reopening via "Change recruiter" and backing out
+  // means *cancel*. Writing the default on that path silently downgraded a
+  // chosen Marc Bernard to Sophie Martin.
+  it('keeps the committed persona when a reopened picker is dismissed', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+
+    fireEvent.click(screen.getByRole('button', { name: /change recruiter/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(usePersonaStore.getState().selectedPersonaId).toBe('marc-bernard');
+    expect(screen.getByText(/Marc Bernard/)).toBeInTheDocument();
+  });
+
+  it('still commits the default when the first-entry picker is dismissed', () => {
+    render(<SimulationWorkspace />);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(usePersonaStore.getState().selectedPersonaId).toBe(
+      DEFAULT_PERSONA.id,
+    );
+  });
+
+  // The modal is hidden, not unmounted, so a stale highlight survives a close.
+  it('re-seeds the highlight to the committed persona on reopen', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+
+    fireEvent.click(screen.getByRole('button', { name: /change recruiter/i }));
+    fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'Home' });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: /change recruiter/i }));
+
+    const checked = screen
+      .getAllByRole('radio')
+      .find((radio) => radio.getAttribute('aria-checked') === 'true');
+    expect(checked).toHaveTextContent('Marc Bernard');
   });
 });

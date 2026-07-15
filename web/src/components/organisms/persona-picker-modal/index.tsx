@@ -73,6 +73,18 @@ export function PersonaPickerModal({
     getInitialFocus: () => radioRefs.current[highlighted.id] ?? null,
   });
 
+  // `isOpen: false` hides the modal without unmounting it, so `highlighted`
+  // survives a close and would reopen showing whatever was last arrowed to —
+  // contradicting the committed persona, one Enter away from starting the wrong
+  // recruiter. Re-seed on every closed -> open transition; the caller's `key`
+  // cannot do this, because it is derived from an id that does not change when
+  // a dismiss keeps the current pick.
+  const wasOpenRef = useRef(isOpen);
+  useEffect(() => {
+    if (isOpen && !wasOpenRef.current) setHighlighted(initialHighlight);
+    wasOpenRef.current = isOpen;
+  }, [isOpen, initialHighlight]);
+
   useEffect(() => {
     if (!isOpen) return;
     const handleEscape = (event: KeyboardEvent) => {
