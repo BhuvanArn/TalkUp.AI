@@ -31,7 +31,9 @@ const SECTIONS: LegalSection[] = [
   },
   {
     title: '3. Personal data we collect',
-    paragraphs: ['Depending on how you use TalkUp, we may process the following categories of data:'],
+    paragraphs: [
+      'Depending on how you use TalkUp, we may process the following categories of data:',
+    ],
     list: [
       'Account information: name, email address, password hash, and profile details you choose to provide.',
       'Career data: CV or résumé files, parsed CV content, job applications, target roles, notes, and interview preparation history.',
