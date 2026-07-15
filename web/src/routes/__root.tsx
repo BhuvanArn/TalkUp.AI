@@ -67,8 +67,10 @@ const RootComponent = () => {
           <Outlet />
         </main>
         {/* App-wide assistant: floats on every authenticated page and grounds
-            its answers in the current route's data (#197). */}
-        <ChatWidget />
+            its answers in the current route's data (#197). Gated on auth — the
+            app shell also backs the not-found page, which an anonymous visitor
+            can reach; chatting there would 401 and bounce them to /login. */}
+        {isAuthenticated && <ChatWidget />}
         <TanStackRouterDevtools position="top-right" />
       </div>
     </NavigationProvider>

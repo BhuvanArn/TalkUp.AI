@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { IsNull, Repository } from "typeorm";
 import {
   InternalServerErrorException,
   NotFoundException,
@@ -217,6 +217,28 @@ describe("AgendaService", () => {
 
       expect(mockRepo.find).toHaveBeenCalled();
       expect(result).toEqual([mockEvent]);
+    });
+
+    it("matches open-ended events, scoped to the caller", async () => {
+      const from = new Date("2025-01-01T00:00:00.000Z");
+      const to = new Date("2025-01-08T00:00:00.000Z");
+      (mockRepo.find as jest.Mock).mockResolvedValue([]);
+
+      await service.listForRange("user-1", from, to);
+
+      // `end_at` is nullable and `NULL >= from` is never true in SQL, so an
+      // event with no end time needs its own branch or it silently vanishes
+      // from every range.
+      const where = (mockRepo.find as jest.Mock).mock.calls[0][0].where;
+      expect(Array.isArray(where)).toBe(true);
+      expect(where).toHaveLength(2);
+      expect(where[1]).toMatchObject({
+        user_id: "user-1",
+        end_at: IsNull(),
+      });
+      expect(
+        where.every((w: { user_id: string }) => w.user_id === "user-1"),
+      ).toBe(true);
     });
 
     it("should log and throw on error", async () => {

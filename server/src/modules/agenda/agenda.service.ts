@@ -6,7 +6,13 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, LessThanOrEqual, MoreThanOrEqual } from "typeorm";
+import {
+  Repository,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Between,
+  IsNull,
+} from "typeorm";
 
 import { CreateEventDto } from "./dto/createEvent.dto";
 import { UpdateEventDto } from "./dto/updateEvent.dto";
@@ -109,11 +115,22 @@ export class AgendaService {
   async listForRange(user_id: string, from: Date, to: Date) {
     try {
       return await this.repo.find({
-        where: {
-          user_id,
-          start_at: LessThanOrEqual(to),
-          end_at: MoreThanOrEqual(from),
-        },
+        // An event overlaps the window when it starts before the end of it and
+        // has not already finished. `end_at` is nullable, and SQL comparisons
+        // against NULL are never true — so open-ended events need their own
+        // branch, otherwise they would silently drop out of every range.
+        where: [
+          {
+            user_id,
+            start_at: LessThanOrEqual(to),
+            end_at: MoreThanOrEqual(from),
+          },
+          {
+            user_id,
+            start_at: Between(from, to),
+            end_at: IsNull(),
+          },
+        ],
         order: { start_at: "ASC" },
       });
     } catch (error) {

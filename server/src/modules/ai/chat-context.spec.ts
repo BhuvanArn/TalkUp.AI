@@ -1,3 +1,5 @@
+import type { RoadmapExtraction } from "@common/utils/groqExtraction";
+
 import {
   formatRoadmapContext,
   formatSimulationContext,
@@ -87,17 +89,50 @@ describe("chat-context formatters", () => {
         /no notes for this application/i,
       );
       expect(formatNotesContext([], "all")).toMatch(/no notes yet/i);
+      expect(formatNotesContext([], "note")).toMatch(/note is empty/i);
+    });
+
+    it("grounds a single open note on its full body, not a preview", () => {
+      const body = "z".repeat(600);
+      const out = formatNotesContext(
+        [{ title: "Datadog prep", content: `<p>${body}</p>` }],
+        "note",
+      );
+
+      expect(out).toContain("Datadog prep");
+      // The list scope truncates each note at 200 chars; the open note must not.
+      expect(out).toContain(body);
+      expect(out).not.toContain("<p>");
     });
   });
 
   describe("truncation + wrapping", () => {
-    it("caps a huge block at the max length", () => {
-      const many = Array.from({ length: 500 }, (_, i) => ({
-        title: `Note ${i}`,
-        content: "x".repeat(100),
-      }));
-      const out = formatNotesContext(many, "all");
+    it("caps a block that overruns the max length and marks it truncated", () => {
+      // The roadmap block is unbounded in topic count, so it is the surface
+      // that can actually overrun the cap — notes are pre-sliced to 20 short
+      // previews and never get near it.
+      const roadmap = {
+        match_score: 70,
+        summary: "s",
+        topics: Array.from({ length: 200 }, (_, i) => ({
+          priority: "high",
+          gap: false,
+          title: `Topic ${i}`,
+          rationale: "y".repeat(100),
+        })),
+        talking_points: [],
+      } as unknown as RoadmapExtraction;
+
+      const out = formatRoadmapContext({ job_title: "Dev" }, roadmap);
+
       expect(out.length).toBeLessThanOrEqual(MAX_CHAT_CONTEXT_CHARS + 20);
+      expect(out).toContain("…(truncated)");
+    });
+
+    it("leaves a block under the cap untouched", () => {
+      const out = formatNotesContext([{ title: "N", content: "short" }], "all");
+
+      expect(out).not.toContain("…(truncated)");
     });
 
     it("wraps a block under a context heading and returns '' for null", () => {
