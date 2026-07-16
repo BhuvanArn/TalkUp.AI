@@ -86,6 +86,15 @@ namespace talkup_network {
             void handle_stream_chunk(const nlohmann::json& json, crow::websocket::connection& conn,
                 std::shared_ptr<MicroservicesManager> microservices_manager);
 
+            void handle_simulation_context(const nlohmann::json& json, crow::websocket::connection& conn,
+                std::shared_ptr<MicroservicesManager> microservices_manager);
+
+            void handle_session_end(const nlohmann::json& json, crow::websocket::connection& conn,
+                std::shared_ptr<MicroservicesManager> microservices_manager);
+
+            void handle_session_start(const nlohmann::json& json, crow::websocket::connection& conn,
+                std::shared_ptr<MicroservicesManager> microservices_manager);
+
         private:
             std::unordered_map<std::string, std::function<void(const nlohmann::json&,
                 crow::websocket::connection&, std::shared_ptr<MicroservicesManager>)>> _type_handlers;

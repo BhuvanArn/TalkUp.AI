@@ -30,6 +30,7 @@ except Exception:
 
 from .enumMcs import EnumMcs
 from .notifications import Notifications
+from .openrouter import generate_openrouter_response
 from .settings import STSSettings
 
 NOTIFIER = Notifications()
@@ -50,6 +51,15 @@ class STSModels:
 
 
 _ROLE_LABEL_PATTERN = re.compile(r"(?im)(?:^|[\n\t])\s*(system|user|assistant)\s*:\s*")
+_BRACKET_PLACEHOLDER_PATTERN = re.compile(r"\[[^\]]+\]")
+
+
+def _strip_bracket_placeholders(text: str) -> str:
+	"""Remove LLM placeholders like [Prenom du candidat] from spoken output."""
+	cleaned = _BRACKET_PLACEHOLDER_PATTERN.sub("", text)
+	cleaned = re.sub(r"\s{2,}", " ", cleaned)
+	cleaned = re.sub(r"Bonjour\s+!", "Bonjour !", cleaned, flags=re.IGNORECASE)
+	return cleaned.strip()
 
 
 def _sanitize_llm_response(text: str) -> str:
@@ -74,7 +84,7 @@ def _sanitize_llm_response(text: str) -> str:
 
 	cleaned = " ".join(filtered_lines).strip()
 	cleaned = re.sub(r"\s{2,}", " ", cleaned)
-	return cleaned
+	return _strip_bracket_placeholders(cleaned)
 
 
 def _is_valid_vllm_model_dir(model_path: str) -> tuple[bool, str]:
@@ -136,10 +146,13 @@ def _load_whisper_model(model_path: str) -> WhisperModel:
 	Loads the Whisper model from the specified path.
 	Tries multiple device and compute type combinations to find a compatible configuration.
 	"""
+	# Prefer the GPU: int8_float16 fits comfortably on a 4 GB card and is far
+	# faster and more accurate than CPU int8. float16 is the next best when
+	# memory allows, and CPU int8 is the last-resort fallback.
 	attempts = [
-		("cpu", "int8"),
 		("cuda", "int8_float16"),
 		("cuda", "float16"),
+		("cpu", "int8"),
 	]
 	last_error = None
 
@@ -284,13 +297,28 @@ def load_models(settings: STSSettings) -> STSModels:
 	hf_tokenizer = None
 	llm_backend = "none"
 
-	if settings.llm_backend in {"auto", "vllm"}:
+	if settings.llm_backend == "openrouter":
+		if settings.openrouter_api_key:
+			llm_backend = "openrouter"
+			NOTIFIER.send_notification(
+				EnumMcs.MicroservicesNames.STS,
+				0,
+				f"LLM: ACTIVE (OpenRouter model={settings.openrouter_model})",
+			)
+		else:
+			NOTIFIER.send_notification(
+				EnumMcs.MicroservicesNames.STS,
+				1,
+				"LLM_BACKEND=openrouter but OPENROUTER_API_KEY is missing",
+			)
+
+	if llm_backend == "none" and settings.llm_backend in {"auto", "vllm"}:
 		llm_engine, llm_sampling_params, llm_backend = _init_vllm(settings)
 
 	if llm_backend == "none" and settings.llm_backend in {"auto", "hf"}:
 		hf_model, hf_tokenizer, llm_backend = _init_hf_offload(settings)
 
-	if llm_backend == "none":
+	if llm_backend == "none" and settings.llm_backend != "openrouter":
 		NOTIFIER.send_notification(
 			EnumMcs.MicroservicesNames.STS,
 			1,
@@ -303,11 +331,13 @@ def load_models(settings: STSSettings) -> STSModels:
 
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "============================================================")
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "All models loaded successfully!")
-	if llm_backend == "vllm":
+	if llm_backend == "openrouter":
+		pass  # already logged
+	elif llm_backend == "vllm":
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "LLM: ACTIVE (vLLM)")
 	elif llm_backend == "hf":
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "LLM: ACTIVE (Transformers offload)")
-	else:
+	elif llm_backend == "none":
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 2, "LLM: DISABLED (fallback mode)")
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "STT: ACTIVE")
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "TTS: ACTIVE")
@@ -328,6 +358,19 @@ def generate_ai_response(models: STSModels, messages: list[dict[str, str]]) -> s
 	"""
 	Generates an AI response based on the provided messages and models.
 	"""
+	if models.llm_backend == "openrouter":
+		try:
+			text = generate_openrouter_response(
+				messages,
+				api_key=models.settings.openrouter_api_key,
+				model=models.settings.openrouter_model,
+				max_tokens=models.settings.llm_max_new_tokens,
+				base_url=models.settings.openrouter_base_url,
+			)
+			return _sanitize_llm_response(text)
+		except Exception:
+			return "Je rencontre une indisponibilite temporaire du modele de reponse. Peux-tu reformuler ta phrase ?"
+
 	if models.llm_backend == "vllm" and models.vllm_engine is not None and models.vllm_sampling_params is not None:
 		response = models.vllm_engine.chat(messages=messages, sampling_params=models.vllm_sampling_params)
 		return _sanitize_llm_response(response.outputs[0].text)

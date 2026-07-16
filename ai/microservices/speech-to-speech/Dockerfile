@@ -1,7 +1,9 @@
 FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
 
 WORKDIR /app
-ENV PYTHONPATH=/app:$PYTHONPATH
+ENV PYTHONPATH=/app:$PYTHONPATH \
+    PIP_DEFAULT_TIMEOUT=120 \
+    PIP_RETRIES=5
 
 RUN apt-get update && apt-get install -y \
     python3.11 python3.11-dev python3-pip git espeak-ng wget ffmpeg \

@@ -1,0 +1,20 @@
+meta {
+  name: uploadCV
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/users/uploadCV
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  file: @file()
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

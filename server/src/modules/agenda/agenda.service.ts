@@ -6,7 +6,13 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, LessThanOrEqual, MoreThanOrEqual } from "typeorm";
+import {
+  Repository,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Between,
+  IsNull,
+} from "typeorm";
 
 import { CreateEventDto } from "./dto/createEvent.dto";
 import { UpdateEventDto } from "./dto/updateEvent.dto";
@@ -109,11 +115,27 @@ export class AgendaService {
   async listForRange(user_id: string, from: Date, to: Date) {
     try {
       return await this.repo.find({
-        where: {
-          user_id,
-          start_at: LessThanOrEqual(to),
-          end_at: MoreThanOrEqual(from),
-        },
+        // A timed event overlaps the window when it starts before the window
+        // ends and has not already finished.
+        //
+        // `end_at` is nullable, and every SQL comparison against NULL is NULL
+        // (never true), so such rows can't satisfy the timed branch and need
+        // their own — without it they drop out of every range silently. An
+        // event with no end is a point in time at `start_at` (the calendar
+        // renders it that way, see web useCalendarStore `end: … : start_at`),
+        // so it belongs to the window when it *starts* inside it.
+        where: [
+          {
+            user_id,
+            start_at: LessThanOrEqual(to),
+            end_at: MoreThanOrEqual(from),
+          },
+          {
+            user_id,
+            start_at: Between(from, to),
+            end_at: IsNull(),
+          },
+        ],
         order: { start_at: "ASC" },
       });
     } catch (error) {

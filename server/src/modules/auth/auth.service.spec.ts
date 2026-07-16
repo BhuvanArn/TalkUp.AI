@@ -1,7 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { JwtService } from "@nestjs/jwt";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, QueryFailedError, Repository } from "typeorm";
 import {
   BadRequestException,
   ConflictException,
@@ -22,6 +22,8 @@ import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 
 import { Otp } from "@entities/otp.entity";
 import { user, user_password, user_email } from "@entities/user.entity";
+import { organization_invite } from "@entities/organizationInvite.entity";
+import { OrganizationInviteStatus } from "@common/enums/OrganizationInviteStatus";
 
 import { ITokenStorage } from "@common/interfaces/token-storage";
 
@@ -39,7 +41,7 @@ describe("AuthService", () => {
   let mockUserPasswordRepo: Partial<Repository<user_password>>;
   let mockOtpRepo: Partial<Repository<Otp>>;
   let mockJwtService: Partial<JwtService>;
-  let mockDataSource: { transaction: jest.Mock };
+  let mockDataSource: { transaction: jest.Mock; getRepository: jest.Mock };
   let mockEventEmitter: { emit: jest.Mock };
   let mockTokenStorage: {
     blacklistToken: jest.Mock;
@@ -128,6 +130,7 @@ describe("AuthService", () => {
 
     mockDataSource = {
       transaction: jest.fn(),
+      getRepository: jest.fn(),
     };
 
     mockTokenStorage = {
@@ -328,6 +331,56 @@ describe("AuthService", () => {
       );
     });
 
+    it("should reject trusted provisioning when the email belongs to an existing pending account", async () => {
+      const existingUser = { ...mockUser, status: UserStatus.PENDING };
+      const txUserRepo = {
+        create: jest.fn(),
+        save: jest.fn(),
+        findOne: jest.fn(),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(existingUser),
+        }),
+      };
+      const txUserPasswordRepo = {
+        create: jest.fn(),
+        save: jest.fn(),
+        findOne: jest.fn(),
+      };
+      const txUserEmailRepo = {
+        findOne: jest.fn().mockResolvedValue({ user_id: existingUser.user_id }),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) return txUserRepo;
+            if (entity === user_password) return txUserPasswordRepo;
+            if (entity === user_email) return txUserEmailRepo;
+            return null;
+          },
+        }),
+      );
+
+      await expect(
+        service.register(
+          {
+            ...createUserDto,
+            organization_id: "org-uuid",
+            user_role: OrganizationUserRole.EMPLOYEE,
+          },
+          true,
+        ),
+      ).rejects.toThrow(ConflictException);
+
+      // The foreign account is never mutated.
+      expect(txUserRepo.save).not.toHaveBeenCalled();
+      expect(txUserPasswordRepo.save).not.toHaveBeenCalled();
+    });
+
     it("should enrich OTP event when trusted register includes organization invite context", async () => {
       const txUserRepo = {
         create: jest
@@ -451,6 +504,211 @@ describe("AuthService", () => {
     });
   });
 
+  describe("register with organizationCode (F2)", () => {
+    const dtoWithCode: CreateUserDto = {
+      username: "candidate",
+      email: "candidate@example.com",
+      password: "password123",
+      organizationCode: "ABCDEFGHJKLM",
+    };
+
+    const pendingInvite = () => ({
+      invite_id: "invite-id",
+      code: "ABCDEFGHJKLM",
+      organization_id: "org-id",
+      email: null,
+      role: OrganizationUserRole.USER,
+      status: OrganizationInviteStatus.PENDING,
+      expires_at: new Date(Date.now() + 86400000),
+      accepted_by: null,
+      accepted_at: null,
+    });
+
+    // Builds the same tx repos as the plain register tests + an invite repo.
+    const buildTxRepos = (invite: any) => {
+      const savedUser = { ...mockUser, status: UserStatus.PENDING };
+      const txUserRepo = {
+        create: jest.fn().mockReturnValue(savedUser),
+        save: jest.fn().mockResolvedValue(savedUser),
+        findOne: jest.fn(),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest
+            .fn()
+            .mockResolvedValue({ ...mockUser, status: UserStatus.PENDING }),
+        }),
+      };
+      const txUserPasswordRepo = {
+        create: jest.fn().mockReturnValue(mockPassword),
+        save: jest.fn().mockResolvedValue(mockPassword),
+        findOne: jest.fn(),
+      };
+      const txUserEmailRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockReturnValue(mockEmail),
+        save: jest.fn().mockResolvedValue(mockEmail),
+      };
+      const txOtpRepo = {
+        create: jest.fn().mockReturnValue(mockOtp),
+        save: jest.fn().mockResolvedValue(mockOtp),
+        delete: jest.fn().mockResolvedValue({ affected: 1 }),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(null),
+        }),
+      };
+      const txInviteRepo = {
+        save: jest.fn(async (v: any) => v),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(invite),
+        }),
+      };
+      mockDataSource.transaction.mockImplementation(async (cb: any) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === user) return txUserRepo;
+            if (entity === user_password) return txUserPasswordRepo;
+            if (entity === user_email) return txUserEmailRepo;
+            if (entity === Otp) return txOtpRepo;
+            if (entity === organization_invite) return txInviteRepo;
+            return null;
+          },
+        }),
+      );
+      return { txUserRepo, txUserEmailRepo, txInviteRepo };
+    };
+
+    beforeEach(() => {
+      mockedBcrypt.hash.mockResolvedValue("otp-hash" as never);
+    });
+
+    it("links the new user to the invite org and marks the invite accepted", async () => {
+      const { txUserRepo, txInviteRepo } = buildTxRepos(pendingInvite());
+
+      await service.register(dtoWithCode);
+
+      expect(txUserRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organization_id: { organization_id: "org-id" },
+          user_role: OrganizationUserRole.USER,
+        }),
+      );
+      expect(txInviteRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: OrganizationInviteStatus.ACCEPTED,
+          accepted_by: mockUser.user_id,
+        }),
+      );
+    });
+
+    // Every unusable-code state returns the SAME generic message on the public
+    // register path so it can't be used as an invite-state oracle (#187). Each
+    // test still drives a distinct scenario; they all assert the one message.
+    const GENERIC_INVITE_ERROR =
+      "This organization code is invalid or cannot be used";
+
+    it("rejects an unknown code without creating a user", async () => {
+      const { txUserRepo } = buildTxRepos(null);
+
+      await expect(service.register(dtoWithCode)).rejects.toThrow(
+        GENERIC_INVITE_ERROR,
+      );
+      expect(txUserRepo.create).not.toHaveBeenCalled();
+    });
+
+    it("rejects a revoked code", async () => {
+      buildTxRepos({
+        ...pendingInvite(),
+        status: OrganizationInviteStatus.REVOKED,
+      });
+
+      await expect(service.register(dtoWithCode)).rejects.toThrow(
+        GENERIC_INVITE_ERROR,
+      );
+    });
+
+    it("rejects a pending code past its expiry", async () => {
+      const { txInviteRepo } = buildTxRepos({
+        ...pendingInvite(),
+        expires_at: new Date(Date.now() - 1000),
+      });
+
+      await expect(service.register(dtoWithCode)).rejects.toThrow(
+        GENERIC_INVITE_ERROR,
+      );
+      expect(txInviteRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("rejects an email-bound code used with another email", async () => {
+      buildTxRepos({ ...pendingInvite(), email: "someone.else@example.com" });
+
+      await expect(service.register(dtoWithCode)).rejects.toThrow(
+        GENERIC_INVITE_ERROR,
+      );
+    });
+
+    it("accepts an email-bound code case-insensitively", async () => {
+      const { txInviteRepo } = buildTxRepos({
+        ...pendingInvite(),
+        email: "CANDIDATE@example.com".toLowerCase(),
+      });
+
+      await service.register({
+        ...dtoWithCode,
+        email: "Candidate@Example.COM",
+      });
+
+      expect(txInviteRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: OrganizationInviteStatus.ACCEPTED }),
+      );
+    });
+
+    it("allows the same pending user to re-register with an already-accepted code", async () => {
+      const accepted = {
+        ...pendingInvite(),
+        status: OrganizationInviteStatus.ACCEPTED,
+        accepted_by: mockUser.user_id,
+      };
+      const { txUserRepo, txUserEmailRepo, txInviteRepo } =
+        buildTxRepos(accepted);
+      // register's email lookup: existing pending account for this email
+      txUserEmailRepo.findOne.mockResolvedValue({
+        ...mockEmail,
+        user_id: mockUser.user_id,
+      });
+
+      await service.register(dtoWithCode);
+
+      // invite already accepted by this user: no second save flipping status
+      expect(txInviteRepo.save).not.toHaveBeenCalled();
+      // existing-user linkage still applied in the else-branch
+      expect(txUserRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organization_id: { organization_id: "org-id" },
+          user_role: OrganizationUserRole.USER,
+        }),
+      );
+    });
+
+    it("rejects an accepted code for a different email", async () => {
+      buildTxRepos({
+        ...pendingInvite(),
+        status: OrganizationInviteStatus.ACCEPTED,
+        accepted_by: "someone-else-id",
+      });
+
+      await expect(service.register(dtoWithCode)).rejects.toThrow(
+        GENERIC_INVITE_ERROR,
+      );
+    });
+  });
+
   describe("validateUser", () => {
     const email = "test@example.com";
     const password = "password123";
@@ -478,7 +736,7 @@ describe("AuthService", () => {
         .mockResolvedValue({ ...mockUser, status: UserStatus.PENDING });
 
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email is not verified"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
   });
@@ -517,23 +775,23 @@ describe("AuthService", () => {
     const email = "test@example.com";
     const password = "password123";
 
-    it("throws when email entity missing", async () => {
+    it("throws generic message when email entity missing", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email not found"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
 
-    it("throws when password or user entity missing", async () => {
+    it("throws generic message when password or user entity missing", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(null);
       mockUserRepo.findOne = jest.fn().mockResolvedValue(mockUser);
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Email not found"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
 
-    it("throws when password does not match", async () => {
+    it("throws generic message when password does not match", async () => {
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserPasswordRepo.findOne = jest.fn().mockResolvedValue(mockPassword);
       mockUserRepo.findOne = jest
@@ -541,7 +799,7 @@ describe("AuthService", () => {
         .mockResolvedValue({ ...mockUser, status: UserStatus.ACTIVE });
       mockedBcrypt.compare.mockResolvedValue(false as never);
       await expect(service.validateUser(email, password)).rejects.toThrow(
-        new UnauthorizedException("Invalid password"),
+        new UnauthorizedException("Invalid email or password"),
       );
     });
   });
@@ -821,26 +1079,46 @@ describe("AuthService", () => {
       ).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
     });
 
-    it("throws when email not found", async () => {
+    it("returns silently without sending when email not found (enumeration defense)", async () => {
       mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(null);
       mockedBcrypt.compare.mockResolvedValue(true as never);
 
       await expect(
         service.resendOtp("missing@example.com", OtpPurpose.REGISTER),
-      ).rejects.toThrow(BadRequestException);
+      ).resolves.toBeUndefined();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      // Timing defense: the dummy bcrypt compare must run on the miss path so a
+      // refactor can't silently drop it.
+      expect(mockedBcrypt.compare).toHaveBeenCalled();
     });
 
-    it("throws when REGISTER resend is requested for an already active account", async () => {
+    it("returns silently without sending when the email row has no user (enumeration defense)", async () => {
+      mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
+      mockUserRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockedBcrypt.compare.mockResolvedValue(true as never);
+
+      await expect(
+        service.resendOtp("orphan@example.com", OtpPurpose.REGISTER),
+      ).resolves.toBeUndefined();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      expect(mockedBcrypt.compare).toHaveBeenCalled();
+    });
+
+    it("returns silently without sending when REGISTER resend targets an already active account (enumeration defense)", async () => {
       mockOtpRepo.findOne = jest.fn().mockResolvedValue(null);
       mockUserEmailRepo.findOne = jest.fn().mockResolvedValue(mockEmail);
       mockUserRepo.findOne = jest
         .fn()
         .mockResolvedValue({ ...mockUser, status: UserStatus.ACTIVE });
+      mockedBcrypt.compare.mockResolvedValue(true as never);
 
       await expect(
         service.resendOtp("test@example.com", OtpPurpose.REGISTER),
-      ).rejects.toThrow(ConflictException);
+      ).resolves.toBeUndefined();
+      expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+      expect(mockedBcrypt.compare).toHaveBeenCalled();
     });
 
     it("emits event when resend succeeds", async () => {
@@ -1116,6 +1394,138 @@ describe("AuthService", () => {
         "test-user-id",
       );
       expect(mockTokenStorage.blacklistToken).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("signUpOrganization (F12)", () => {
+    const dto = {
+      organizationName: "Acme School",
+      email: "admin@acme.example",
+      password: "Abcdefg1*",
+    };
+
+    let orgRepo: {
+      findOne: jest.Mock;
+      create: jest.Mock;
+      save: jest.Mock;
+      remove: jest.Mock;
+    };
+
+    beforeEach(() => {
+      orgRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn((v) => v),
+        save: jest.fn().mockResolvedValue({
+          organization_id: "new-org-id",
+          organization_name: dto.organizationName,
+        }),
+        remove: jest.fn().mockResolvedValue(undefined),
+      };
+      mockDataSource.getRepository.mockReturnValue(orgRepo);
+    });
+
+    it("creates the org then registers a trusted admin with org-admin mail context", async () => {
+      const registerSpy = jest
+        .spyOn(service, "register")
+        .mockResolvedValue(undefined);
+
+      await service.signUpOrganization(dto);
+
+      expect(orgRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ organization_name: "Acme School" }),
+      );
+      // The org name + admin username are passed so the mail listener sends the
+      // org-admin welcome email instead of the generic OTP / member-invite mail.
+      expect(registerSpy).toHaveBeenCalledWith(
+        {
+          username: "AcmeSchooladmin",
+          email: dto.email,
+          password: dto.password,
+          organization_id: "new-org-id",
+          user_role: OrganizationUserRole.ADMIN,
+        },
+        true,
+        {
+          organizationName: "Acme School",
+          adminUsername: "AcmeSchooladmin",
+        },
+      );
+    });
+
+    it("409s on duplicate organization name", async () => {
+      orgRepo.findOne.mockResolvedValue({ organization_id: "existing" });
+
+      await expect(service.signUpOrganization(dto)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(orgRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("removes the created org when register fails", async () => {
+      jest
+        .spyOn(service, "register")
+        .mockRejectedValue(new ConflictException("email exists"));
+
+      await expect(service.signUpOrganization(dto)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(orgRepo.remove).toHaveBeenCalled();
+    });
+
+    it("409s when a concurrent insert wins the unique-name race (23505)", async () => {
+      // Pre-check passes (findOne null) but the insert hits the unique index.
+      const uniqueViolation = new QueryFailedError("insert", [], {
+        code: "23505",
+      } as unknown as Error);
+      orgRepo.save.mockRejectedValue(uniqueViolation);
+      const registerSpy = jest.spyOn(service, "register");
+
+      await expect(service.signUpOrganization(dto)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(registerSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getAuthStatusPayload", () => {
+    it("returns role and organizationId for an org member", async () => {
+      (mockUserRepo.findOne as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        user_role: OrganizationUserRole.ADMIN,
+        organization_id: { organization_id: "org-id" },
+      });
+
+      await expect(
+        service.getAuthStatusPayload("test-user-id"),
+      ).resolves.toEqual({
+        authenticated: true,
+        role: OrganizationUserRole.ADMIN,
+        organizationId: "org-id",
+      });
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: { user_id: "test-user-id" },
+        relations: ["organization_id"],
+      });
+    });
+
+    it("returns null organizationId for unaffiliated users", async () => {
+      (mockUserRepo.findOne as jest.Mock).mockResolvedValue(mockUser);
+
+      await expect(
+        service.getAuthStatusPayload("test-user-id"),
+      ).resolves.toEqual({
+        authenticated: true,
+        role: OrganizationUserRole.NONE,
+        organizationId: null,
+      });
+    });
+
+    it("throws Unauthorized when the user row is gone", async () => {
+      (mockUserRepo.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.getAuthStatusPayload("test-user-id"),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

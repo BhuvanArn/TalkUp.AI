@@ -7,6 +7,7 @@ export interface AiAnswer {
   transcription?: string;
   response?: string;
   audio_chunks?: string[];
+  simulation_complete?: boolean;
 }
 
 export interface AiTranscript {
@@ -16,8 +17,20 @@ export interface AiTranscript {
   response: string;
 }
 
+/** A single AI speech turn ready for avatar playback or direct audio output. */
+export interface AiSpeechTurn {
+  id: number;
+  response: string;
+  audioChunks: string[];
+}
+
+export type AudioPlaybackMode = 'direct' | 'avatar';
+
 export interface UseAudioPlaybackProps {
   message: unknown;
+  interviewID?: string | null;
+  /** When `avatar`, audio is exposed via `speechTurn` for the 3D avatar to play. */
+  playbackMode?: AudioPlaybackMode;
 }
 
 export interface UseAudioPlaybackReturn {
@@ -26,6 +39,14 @@ export interface UseAudioPlaybackReturn {
   error: string | null;
   /** Transcript text from the latest sts_result message, or null. */
   transcript: AiTranscript | null;
+  /** True when the AI has signaled the interview is complete. */
+  simulationComplete: boolean;
+  /** Latest decoded AI speech turn for avatar playback (avatar mode only). */
+  speechTurn: AiSpeechTurn | null;
+  /** Called by the avatar when it starts or stops speaking (avatar mode only). */
+  setAvatarSpeaking: (speaking: boolean) => void;
+  /** Replays a speech turn through direct Web Audio (fallback recovery). */
+  replaySpeechTurnDirect: (turn: AiSpeechTurn) => void;
 }
 
 function asOuterPacket(
@@ -48,21 +69,37 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 
 export function useAudioPlayback({
   message,
+  interviewID = null,
+  playbackMode = 'direct',
 }: UseAudioPlaybackProps): UseAudioPlaybackReturn {
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<AiTranscript | null>(null);
+  const [simulationComplete, setSimulationComplete] = useState(false);
+  const [speechTurn, setSpeechTurn] = useState<AiSpeechTurn | null>(null);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
   const lastHandledRef = useRef<unknown>(null);
   const playGenRef = useRef(0);
+  const speechTurnIdRef = useRef(0);
+  const playbackModeRef = useRef(playbackMode);
+
+  useEffect(() => {
+    playbackModeRef.current = playbackMode;
+  }, [playbackMode]);
+
+  const setAvatarSpeaking = useCallback((speaking: boolean) => {
+    if (playbackModeRef.current === 'avatar') {
+      setIsAiSpeaking(speaking);
+    }
+  }, []);
 
   const getAudioContext = useCallback((): AudioContext => {
     if (!audioContextRef.current) {
       const ctx = new AudioContext();
       ctx.onstatechange = () => {
-        if (ctx.state !== 'running') {
+        if (playbackModeRef.current === 'direct' && ctx.state !== 'running') {
           setIsAiSpeaking(false);
         }
       };
@@ -81,11 +118,16 @@ export function useAudioPlayback({
       }
     }
     activeSourcesRef.current = [];
-    setIsAiSpeaking(false);
-  }, []);
+
+    if (playbackModeRef.current === 'avatar') {
+      setAvatarSpeaking(false);
+    } else {
+      setIsAiSpeaking(false);
+    }
+  }, [setAvatarSpeaking]);
 
   const playAnswer = useCallback(
-    async (chunks: string[]) => {
+    async (chunks: string[], completeAfterPlayback = false) => {
       const generation = ++playGenRef.current;
       const audioContext = getAudioContext();
       if (audioContext.state === 'suspended') {
@@ -106,6 +148,11 @@ export function useAudioPlayback({
 
       if (buffers.length === 0) {
         stopPlayback();
+        // Nothing decodable to play, so complete now rather than waiting for an
+        // onended that will never fire.
+        if (completeAfterPlayback) {
+          setSimulationComplete(true);
+        }
         return;
       }
 
@@ -126,6 +173,11 @@ export function useAudioPlayback({
           source.onended = () => {
             activeSourcesRef.current = [];
             setIsAiSpeaking(false);
+            // Only signal completion once the farewell audio has finished
+            // playing, so the workspace doesn't tear down the socket mid-speech.
+            if (completeAfterPlayback) {
+              setSimulationComplete(true);
+            }
           };
         }
         scheduled.push(source);
@@ -134,6 +186,26 @@ export function useAudioPlayback({
     },
     [getAudioContext, stopPlayback],
   );
+
+  const publishSpeechTurn = useCallback(
+    (response: string, chunks: string[]) => {
+      if (chunks.length === 0) return;
+      speechTurnIdRef.current += 1;
+      setSpeechTurn({
+        id: speechTurnIdRef.current,
+        response,
+        audioChunks: chunks,
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    setSimulationComplete(false);
+    setTranscript(null);
+    setSpeechTurn(null);
+    lastHandledRef.current = null;
+  }, [interviewID]);
 
   useEffect(() => {
     if (!message || message === lastHandledRef.current) return;
@@ -167,10 +239,45 @@ export function useAudioPlayback({
     }
 
     const chunks = answer.audio_chunks ?? [];
-    if (chunks.length === 0) return;
+    if (chunks.length === 0) {
+      // No audio: the interview (if complete) can end right away.
+      if (answer.simulation_complete) {
+        setIsAiSpeaking(false);
+        setSimulationComplete(true);
+      }
+      return;
+    }
 
-    void playAnswer(chunks);
-  }, [message, playAnswer]);
+    publishSpeechTurn(answer.response ?? '', chunks);
+
+    // Always play Piper audio directly — the 3D avatar handles visuals only.
+    // When this is the closing turn, defer the completion signal until the
+    // farewell audio finishes so the workspace doesn't cut it off mid-speech.
+    void playAnswer(chunks, answer.simulation_complete === true);
+  }, [message, playAnswer, publishSpeechTurn]);
+
+  const replaySpeechTurnDirect = useCallback(
+    (turn: AiSpeechTurn) => {
+      if (turn.audioChunks.length === 0) return;
+      void playAnswer(turn.audioChunks);
+    },
+    [playAnswer],
+  );
+
+  useEffect(() => {
+    if (playbackMode === 'avatar') {
+      ++playGenRef.current;
+      for (const source of activeSourcesRef.current) {
+        try {
+          source.onended = null;
+          source.stop();
+        } catch {
+          // already stopped
+        }
+      }
+      activeSourcesRef.current = [];
+    }
+  }, [playbackMode]);
 
   useEffect(() => {
     return () => {
@@ -190,5 +297,14 @@ export function useAudioPlayback({
     };
   }, []);
 
-  return { isAiSpeaking, stopPlayback, error, transcript };
+  return {
+    isAiSpeaking,
+    stopPlayback,
+    error,
+    transcript,
+    simulationComplete,
+    speechTurn,
+    setAvatarSpeaking,
+    replaySpeechTurnDirect,
+  };
 }

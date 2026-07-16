@@ -1,5 +1,8 @@
 import { Icon } from '@/components/atoms/icon';
 import VideoAreaControlsBar from '@/components/molecules/video-area-controls-bar';
+import RecruiterAvatarPanel from '@/components/organisms/recruiter-avatar';
+import type { AiSpeechTurn } from '@/hooks/simulation/useAudioPlayback';
+import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
 import { cn } from '@/utils/cn';
 import { formatDurationISO, formatTime } from '@/utils/time';
 import { useEffect, useRef, useState } from 'react';
@@ -10,6 +13,12 @@ import { useVideoStream } from '../../../hooks/streams/useVideoStream';
 
 interface SimulationVideoAreaProps {
   isAiSpeaking?: boolean;
+  isAwaitingAiResponse?: boolean;
+  speechTurn?: AiSpeechTurn | null;
+  avatarUrl?: string;
+  avatarMode?: RecruiterAvatarMode;
+  avatarFallbackReason?: string | null;
+  onAvatarFallbackRequest?: (reason: string) => void;
   onStreamToggle?: (streaming: boolean) => void;
   onStreamChange?: (stream: MediaStream | null) => void;
   onToggleRef?: (toggleFn: (() => void) | null) => void;
@@ -21,6 +30,12 @@ interface SimulationVideoAreaProps {
  */
 const SimulationVideoArea = ({
   isAiSpeaking = false,
+  isAwaitingAiResponse = false,
+  speechTurn = null,
+  avatarUrl = '/avatars/recruiter-professional.glb',
+  avatarMode = 'fallback',
+  avatarFallbackReason = null,
+  onAvatarFallbackRequest,
   onStreamToggle,
   onStreamChange,
   onToggleRef,
@@ -110,36 +125,35 @@ const SimulationVideoArea = ({
     }
   }, [isStreaming, isSpeakerActive, videoRef]);
 
+  const handleAvatarFallbackRequest = (reason: string) => {
+    onAvatarFallbackRequest?.(reason);
+  };
+
   return (
     <div className="relative w-full aspect-video bg-video-off rounded-lg overflow-hidden">
       {isStreaming && (
         <div
           className={cn(
-            'absolute inset-0 rounded-lg transition-all',
+            'absolute inset-0 z-0 h-full w-full rounded-lg transition-all',
             isAiSpeaking ? 'ring-4 ring-inset ring-accent' : '',
           )}
         >
-          <img
-            src="/interviewer.jpg"
-            alt="Interviewer"
-            className="w-full h-full object-cover"
+          <RecruiterAvatarPanel
+            active={isStreaming}
+            isAiSpeaking={isAiSpeaking}
+            isAwaitingAiResponse={isAwaitingAiResponse}
+            speechTurn={speechTurn}
+            avatarUrl={avatarUrl}
+            avatarMode={avatarMode}
+            capabilityFallbackReason={avatarFallbackReason}
+            onFallbackRequest={handleAvatarFallbackRequest}
           />
-          {isAiSpeaking && (
-            <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded bg-surface/70 px-3 py-1 text-sm font-semibold text-text">
-              <span className="flex gap-0.5" aria-hidden="true">
-                <span className="h-3 w-1 animate-pulse rounded-full bg-accent" />
-                <span className="h-3 w-1 animate-pulse rounded-full bg-accent [animation-delay:150ms]" />
-                <span className="h-3 w-1 animate-pulse rounded-full bg-accent [animation-delay:300ms]" />
-              </span>
-              Speaking…
-            </div>
-          )}
         </div>
       )}
 
       <div
         className={cn(
-          'absolute top-4 right-4 w-1/4 aspect-video rounded-lg overflow-hidden ring-2 ring-white',
+          'absolute top-4 right-4 z-20 w-1/4 aspect-video rounded-lg overflow-hidden ring-2 ring-white',
           isSpeaking ? 'ring-4 ring-blue-500' : '',
         )}
       >
@@ -169,7 +183,7 @@ const SimulationVideoArea = ({
 
       {isStreaming && (
         <time
-          className="absolute top-4 left-4 text-white text-sm font-semibold bg-gray-800/50 px-3 py-1 rounded"
+          className="absolute top-4 left-4 z-20 rounded bg-gray-800/50 px-3 py-1 text-sm font-semibold text-white"
           dateTime={formatDurationISO(elapsedTime)}
         >
           {formatTime(elapsedTime)}

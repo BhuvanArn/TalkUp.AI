@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   emailSchema,
+  isAllowedJobUrl,
   loginPasswordSchema,
   otpCodeSchema,
   passwordSchema,
@@ -124,6 +125,22 @@ describe('validators', () => {
       for (const char of specialChars) {
         const result = passwordSchema.safeParse(`Password1${char}`);
         expect(result.success).toBe(true);
+      }
+    });
+
+    it('should reject a password whose only symbol is not in the allowlist', () => {
+      // `_` and space are non-alphanumeric but NOT in PASSWORD_SYMBOL_REGEX,
+      // so a password relying on them as its "symbol" must be rejected. This
+      // pins agreement between the gate and the advisory strength meter, which
+      // share PASSWORD_SYMBOL_REGEX — neither treats `_` as a symbol.
+      for (const pw of ['Password1_', 'Password1 ']) {
+        const result = passwordSchema.safeParse(pw);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.errors[0]?.message).toBe(
+            'Password must contain at least one symbol',
+          );
+        }
       }
     });
   });
@@ -275,6 +292,38 @@ describe('validators', () => {
       expect(otpCodeSchema.safeParse('12345').success).toBe(false);
       expect(otpCodeSchema.safeParse('1234567').success).toBe(false);
       expect(otpCodeSchema.safeParse('12a456').success).toBe(false);
+    });
+  });
+
+  describe('isAllowedJobUrl', () => {
+    it('accepts a well-formed https URL', () => {
+      expect(isAllowedJobUrl('https://www.linkedin.com/jobs/view/123')).toBe(
+        true,
+      );
+    });
+
+    it('trims surrounding whitespace before validating', () => {
+      expect(isAllowedJobUrl('  https://example.com/job  ')).toBe(true);
+    });
+
+    it('rejects an empty or whitespace-only string', () => {
+      expect(isAllowedJobUrl('')).toBe(false);
+      expect(isAllowedJobUrl('   ')).toBe(false);
+    });
+
+    it('rejects plain http (only https is allowed)', () => {
+      expect(isAllowedJobUrl('http://example.com/job')).toBe(false);
+    });
+
+    it('rejects non-http(s) protocols that widen the SSRF surface', () => {
+      expect(isAllowedJobUrl('file:///etc/passwd')).toBe(false);
+      expect(isAllowedJobUrl('ftp://example.com')).toBe(false);
+      expect(isAllowedJobUrl('javascript:alert(1)')).toBe(false);
+    });
+
+    it('rejects a value that is not a parseable URL', () => {
+      expect(isAllowedJobUrl('not a url')).toBe(false);
+      expect(isAllowedJobUrl('httpsexample.com')).toBe(false);
     });
   });
 });

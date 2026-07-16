@@ -6,6 +6,12 @@ afterEach(() => {
   cleanup();
 });
 
+// JSDOM does not implement Element.prototype.scrollIntoView. Components that
+// auto-scroll (e.g. the chat message list) call it on mount, so stub it.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 // JSDOM does not implement HTMLMediaElement.prototype.play which causes a noisy
 // "Not implemented" warning during tests. Stub it to a no-op Promise so tests
 // that call play() do not print the warning.

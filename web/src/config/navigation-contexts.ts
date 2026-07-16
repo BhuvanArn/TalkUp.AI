@@ -16,7 +16,7 @@ export const rootNavigationContext: NavigationContext = {
     },
     {
       to: '/cv-analysis',
-      label: 'Curriculum Vitae',
+      label: 'CV Analysis',
       icon: 'cv',
       showInNav: true,
       order: 2,
@@ -35,20 +35,27 @@ export const rootNavigationContext: NavigationContext = {
       showInNav: true,
       order: 3,
     },
+    {
+      to: '/ai-chat',
+      label: 'Assistant',
+      icon: 'chat',
+      showInNav: true,
+      order: 4,
+    },
   ],
 };
 
 /**
  * Application context navigation
- * Shows pages specific to an application: Dashboard, Simulations, Analytics, Notes
+ * Shows pages specific to an application: Roadmap, Simulations, Analytics, Notes
  */
 export const applicationNavigationContext: NavigationContext = {
   type: 'application',
   items: [
     {
-      to: '/dashboard',
-      label: 'Dashboard',
-      icon: 'dashboard',
+      to: '/roadmap',
+      label: 'Roadmap',
+      icon: 'roadmap',
       showInNav: true,
       order: 0,
     },
@@ -147,6 +154,38 @@ export const settingsNavigationContext: NavigationContext = {
 };
 
 /**
+ * Organization navigation context
+ * Shows the org-management area for admins/employees: Members, Invites, Settings
+ */
+export const organizationNavigationContext: NavigationContext = {
+  type: 'organization',
+  items: [
+    {
+      to: '/organization/members',
+      label: 'Members',
+      icon: 'members',
+      showInNav: true,
+      order: 1,
+    },
+    {
+      to: '/organization/invites',
+      label: 'Invites',
+      icon: 'invites',
+      showInNav: true,
+      order: 2,
+    },
+    {
+      to: '/organization/settings',
+      label: 'Settings',
+      icon: 'settings',
+      showInNav: true,
+      order: 3,
+    },
+  ],
+  parentContext: 'root',
+};
+
+/**
  * Map of all navigation contexts
  */
 export const navigationContexts: Record<string, NavigationContext> = {
@@ -154,4 +193,5 @@ export const navigationContexts: Record<string, NavigationContext> = {
   application: applicationNavigationContext,
   public: publicNavigationContext,
   settings: settingsNavigationContext,
+  organization: organizationNavigationContext,
 };

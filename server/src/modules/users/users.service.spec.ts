@@ -1,6 +1,12 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { InternalServerErrorException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+} from "@nestjs/common";
+
+import { QueryFailedError } from "typeorm";
 
 import { ProfileVisibility } from "@common/enums/ProfileVisibility";
 import { UserStatus } from "@common/enums/UserStatus";
@@ -10,25 +16,76 @@ import {
   user_phone_number,
   user_profile,
 } from "@entities/user.entity";
+import { user_cv } from "@entities/userCV.entity";
 
 import { UsersService } from "./users.service";
+import {
+  CV_LOW_QUALITY_MESSAGE,
+  CV_UNREADABLE_PDF_MESSAGE,
+} from "../../common/utils/groqExtraction";
+
+const mockPdfParse = jest.fn();
+// Lazy wrappers: the service now imports these at module-load time, so the mock
+// factory must not touch the `mock*` consts until call time (avoids TDZ).
+// The service consumes this package as a CommonJS callable (`const pdfParse =
+// require(...)`), so the mock's module export must itself BE the function.
+jest.mock(
+  "pdf-parse-debugging-disabled",
+  () =>
+    (...args: unknown[]) =>
+      mockPdfParse(...args),
+);
+
+jest.mock("groq-sdk", () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    chat: {
+      completions: { create: (...args: unknown[]) => mockGroqCreate(...args) },
+    },
+  })),
+}));
+
+const mockGroqCreate = jest.fn();
+
+const USER_ID = "uid-1";
+const pdfFile = () => ({ buffer: Buffer.from("fake pdf content") });
+const SAMPLE_CV_TEXT =
+  "John Doe - Software Engineer with 5 years of experience in TypeScript, React and Node.js at Acme Corp.";
+
+const validCvGroqResponse = JSON.stringify({
+  desired_job: "Software Engineer",
+  resume: "Experienced developer",
+  experiences: [
+    {
+      company: "Acme",
+      title: "Dev",
+      description: "stuff",
+      duration: "2020-2022",
+    },
+  ],
+  education: [{ degree: "BSc", school_name: "MIT", duration: "2016-2020" }],
+  technical_skills: ["TypeScript", "Node.js"],
+  languages: [{ language: "English", level: "C2" }],
+});
 
 describe("UsersService", () => {
   let service: UsersService;
-  let userRepo: {
-    save: jest.Mock;
-    delete: jest.Mock;
-  };
-  let profileRepo: {
+
+  let userRepo: { save: jest.Mock; delete: jest.Mock };
+  let profileRepo: { findOne: jest.Mock; create: jest.Mock; save: jest.Mock };
+  let emailRepo: { findOne: jest.Mock };
+  let phoneRepo: {
     findOne: jest.Mock;
     create: jest.Mock;
     save: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
   };
-  let emailRepo: {
+  let cvRepo: {
     findOne: jest.Mock;
-  };
-  let phoneRepo: {
-    findOne: jest.Mock;
+    create: jest.Mock;
+    save: jest.Mock;
+    update: jest.Mock;
   };
 
   const baseUser = {
@@ -76,11 +133,19 @@ describe("UsersService", () => {
       create: jest.fn((p: Partial<user_profile>) => p as user_profile),
       save: jest.fn((p: user_profile) => Promise.resolve(p)),
     };
-    emailRepo = {
-      findOne: jest.fn(),
-    };
+    emailRepo = { findOne: jest.fn() };
     phoneRepo = {
       findOne: jest.fn(),
+      create: jest.fn((p) => p),
+      save: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
+    cvRepo = {
+      findOne: jest.fn(),
+      create: jest.fn((cv) => cv),
+      save: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -89,14 +154,15 @@ describe("UsersService", () => {
         { provide: getRepositoryToken(user), useValue: userRepo },
         { provide: getRepositoryToken(user_profile), useValue: profileRepo },
         { provide: getRepositoryToken(user_email), useValue: emailRepo },
-        {
-          provide: getRepositoryToken(user_phone_number),
-          useValue: phoneRepo,
-        },
+        { provide: getRepositoryToken(user_phone_number), useValue: phoneRepo },
+        { provide: getRepositoryToken(user_cv), useValue: cvRepo },
       ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
+
+    mockPdfParse.mockReset();
+    mockGroqCreate.mockReset();
   });
 
   it("should be defined", () => {
@@ -123,9 +189,7 @@ describe("UsersService", () => {
       emailRepo.findOne.mockResolvedValue(emailRow);
       phoneRepo.findOne.mockResolvedValue(null);
 
-      const v = await service.updateProfile(baseUser, {
-        firstName: "Zed",
-      });
+      const v = await service.updateProfile(baseUser, { firstName: "Zed" });
       expect(profileRepo.create).toHaveBeenCalled();
       expect(profileRepo.save).toHaveBeenCalled();
       expect(v.firstName).toBe("Zed");
@@ -136,9 +200,7 @@ describe("UsersService", () => {
       emailRepo.findOne.mockResolvedValue(emailRow);
       phoneRepo.findOne.mockResolvedValue(null);
 
-      const v = await service.updateProfile(baseUser, {
-        firstName: "Zed",
-      });
+      const v = await service.updateProfile(baseUser, { firstName: "Zed" });
       expect(userRepo.save).toHaveBeenCalled();
       expect(profileRepo.save).toHaveBeenCalled();
       expect(v.firstName).toBe("Zed");
@@ -165,6 +227,163 @@ describe("UsersService", () => {
         service.updateProfile(baseUser, { bio: "x" }),
       ).rejects.toThrow(InternalServerErrorException);
     });
+
+    it("does not touch the phone table when phone is absent", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+
+      await service.updateProfile(baseUser, { firstName: "Zed" });
+
+      expect(phoneRepo.save).not.toHaveBeenCalled();
+      expect(phoneRepo.update).not.toHaveBeenCalled();
+      expect(phoneRepo.delete).not.toHaveBeenCalled();
+    });
+
+    it("inserts a phone number when none exists and reflects it in the view", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      // First findOne (persistPhone) → none; second (assembleProfileView) → new row.
+      phoneRepo.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ phone_number: "+33123456789" });
+
+      const v = await service.updateProfile(baseUser, {
+        phone: "+33123456789",
+      });
+
+      expect(phoneRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: baseUser.user_id,
+          phone_number: "+33123456789",
+          is_verified: false,
+        }),
+      );
+      expect(phoneRepo.save).toHaveBeenCalled();
+      expect(v.phone).toBe("+33123456789");
+    });
+
+    it("trims the phone number before persisting", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+
+      await service.updateProfile(baseUser, { phone: "  +33123456789  " });
+
+      expect(phoneRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ phone_number: "+33123456789" }),
+      );
+    });
+
+    it("updates a changed phone number and resets verification", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue({
+        user_id: baseUser.user_id,
+        phone_number: "+33000000000",
+        is_verified: true,
+      });
+
+      await service.updateProfile(baseUser, { phone: "+33123456789" });
+
+      expect(phoneRepo.update).toHaveBeenCalledWith(
+        { user_id: baseUser.user_id },
+        { phone_number: "+33123456789", is_verified: false },
+      );
+      expect(phoneRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("is a no-op when the phone number is unchanged (keeps verification)", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue({
+        user_id: baseUser.user_id,
+        phone_number: "+33123456789",
+        is_verified: true,
+      });
+
+      await service.updateProfile(baseUser, { phone: "+33123456789" });
+
+      expect(phoneRepo.update).not.toHaveBeenCalled();
+      expect(phoneRepo.save).not.toHaveBeenCalled();
+      expect(phoneRepo.delete).not.toHaveBeenCalled();
+    });
+
+    it("deletes the phone row when cleared with an empty string", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue({
+        user_id: baseUser.user_id,
+        phone_number: "+33123456789",
+        is_verified: false,
+      });
+
+      await service.updateProfile(baseUser, { phone: "" });
+
+      expect(phoneRepo.delete).toHaveBeenCalledWith({
+        user_id: baseUser.user_id,
+      });
+      expect(phoneRepo.update).not.toHaveBeenCalled();
+    });
+
+    it("does not delete when clearing an already-absent phone", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+
+      await service.updateProfile(baseUser, { phone: "   " });
+
+      expect(phoneRepo.delete).not.toHaveBeenCalled();
+    });
+
+    it("raises 409 Conflict when the phone number belongs to another account", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+      const uniqueViolation = new QueryFailedError("insert", [], new Error());
+      (
+        uniqueViolation as unknown as { driverError: { code: string } }
+      ).driverError = { code: "23505" };
+      phoneRepo.save.mockRejectedValueOnce(uniqueViolation);
+
+      await expect(
+        service.updateProfile(baseUser, { phone: "+33123456789" }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it("does not commit profile changes when the phone conflicts (409)", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+      const uniqueViolation = new QueryFailedError("insert", [], new Error());
+      (
+        uniqueViolation as unknown as { driverError: { code: string } }
+      ).driverError = { code: "23505" };
+      phoneRepo.save.mockRejectedValueOnce(uniqueViolation);
+
+      await expect(
+        service.updateProfile(baseUser, {
+          firstName: "Zed",
+          phone: "+33123456789",
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      // Phone is persisted first, so its conflict aborts before the profile /
+      // user rows are ever written — no half-applied save leaks out.
+      expect(profileRepo.save).not.toHaveBeenCalled();
+      expect(userRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("wraps non-unique phone errors as a 500", async () => {
+      profileRepo.findOne.mockResolvedValue({ ...baseProfile });
+      emailRepo.findOne.mockResolvedValue(emailRow);
+      phoneRepo.findOne.mockResolvedValue(null);
+      phoneRepo.save.mockRejectedValueOnce(new Error("db down"));
+
+      await expect(
+        service.updateProfile(baseUser, { phone: "+33123456789" }),
+      ).rejects.toThrow(InternalServerErrorException);
+    });
   });
 
   describe("deleteAccount", () => {
@@ -180,6 +399,180 @@ describe("UsersService", () => {
       userRepo.delete.mockResolvedValue({ affected: 0 });
       await expect(service.deleteAccount(baseUser)).rejects.toThrow(
         "User not found.",
+      );
+    });
+  });
+
+  // ─── uploadCV ───────────────────────────────────────────────────────────────
+
+  describe("uploadCV", () => {
+    it("throws BadRequest when no file is provided", async () => {
+      await expect(service.uploadCV(USER_ID, undefined)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it("throws BadRequest when the PDF text is empty", async () => {
+      mockPdfParse.mockResolvedValue({ text: "" });
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        CV_UNREADABLE_PDF_MESSAGE,
+      );
+    });
+
+    it("throws BadRequest when the PDF text is too short to analyze", async () => {
+      mockPdfParse.mockResolvedValue({ text: "cv" });
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        CV_UNREADABLE_PDF_MESSAGE,
+      );
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+    });
+
+    it("throws InternalServerError on an empty AI response", async () => {
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: null } }],
+      });
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it("throws InternalServerError on invalid JSON", async () => {
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: "not valid json }{" } }],
+      });
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+
+    it("creates a new CV and returns the created message", async () => {
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.uploadCV(USER_ID, pdfFile());
+
+      expect(cvRepo.findOne).toHaveBeenCalledWith({
+        where: { user_id: USER_ID },
+      });
+      expect(cvRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ desired_job: "Software Engineer" }),
+      );
+      expect(cvRepo.save).toHaveBeenCalled();
+      expect(result).toEqual({ message: "CV uploaded successfully" });
+    });
+
+    it("updates an existing CV and returns the updated message", async () => {
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue({ user_id: USER_ID });
+
+      const result = await service.uploadCV(USER_ID, pdfFile());
+
+      expect(cvRepo.update).toHaveBeenCalledWith(
+        { user_id: USER_ID },
+        expect.objectContaining({ desired_job: "Software Engineer" }),
+      );
+      expect(result).toEqual({ message: "CV updated successfully" });
+    });
+
+    it("falls back to update when a concurrent insert wins the unique race", async () => {
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      // No row at findOne time, but the concurrent upload's insert lands first,
+      // so our save hits the user_id unique violation (Postgres 23505).
+      cvRepo.findOne.mockResolvedValue(null);
+      const uniqueViolation = new QueryFailedError("insert", [], new Error());
+      (
+        uniqueViolation as unknown as { driverError: { code: string } }
+      ).driverError = { code: "23505" };
+      cvRepo.save.mockRejectedValueOnce(uniqueViolation);
+
+      const result = await service.uploadCV(USER_ID, pdfFile());
+
+      expect(cvRepo.update).toHaveBeenCalledWith(
+        { user_id: USER_ID },
+        expect.objectContaining({ desired_job: "Software Engineer" }),
+      );
+      expect(result).toEqual({ message: "CV updated successfully" });
+    });
+
+    it("rethrows non-unique-violation save errors", async () => {
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+      cvRepo.save.mockRejectedValueOnce(new Error("db down"));
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        "db down",
+      );
+    });
+
+    it("strips markdown fences before parsing JSON", async () => {
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
+      mockGroqCreate.mockResolvedValue({
+        choices: [
+          { message: { content: "```json\n" + validCvGroqResponse + "\n```" } },
+        ],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.uploadCV(USER_ID, pdfFile());
+
+      expect(result).toEqual({ message: "CV uploaded successfully" });
+    });
+
+    it("throws BadRequest when Groq returns an empty extraction", async () => {
+      mockPdfParse.mockResolvedValue({ text: SAMPLE_CV_TEXT });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: "{}" } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        CV_LOW_QUALITY_MESSAGE,
+      );
+      expect(cvRepo.save).not.toHaveBeenCalled();
+      expect(cvRepo.create).not.toHaveBeenCalled();
+    });
+
+    it("truncates the CV text before sending it to the LLM", async () => {
+      mockPdfParse.mockResolvedValue({ text: "a".repeat(20000) });
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validCvGroqResponse } }],
+      });
+      cvRepo.findOne.mockResolvedValue(null);
+
+      await service.uploadCV(USER_ID, pdfFile());
+
+      const promptSent = mockGroqCreate.mock.calls[0][0].messages[0].content;
+      expect(promptSent).toContain("a".repeat(8000));
+      expect(promptSent).not.toContain("a".repeat(8001));
+      expect(promptSent.length).toBeLessThan(12000);
+    });
+
+    it("returns a 400 when the buffer is not a parseable PDF", async () => {
+      // The upload filter accepts by extension / generic mimetype, so a non-PDF
+      // buffer can reach the service and make pdfParse throw; that must surface
+      // as a clean BadRequest, not an unhandled 500.
+      mockPdfParse.mockRejectedValue(new Error("Invalid PDF structure"));
+
+      await expect(service.uploadCV(USER_ID, pdfFile())).rejects.toThrow(
+        "The file is not a valid PDF or could not be parsed.",
       );
     });
   });

@@ -84,6 +84,17 @@ Type format can be `audio`, `video`, `image` or `text` depending on the stream c
 ```
 
 ---
+
+## 4.5 Simulation context — company and job offer
+
+Before audio `stream_chunk` messages, send `simulation_context` so the STS LLM receives company/job context in its system prompt.
+
+**Order:** WebSocket open → `simulation_context` → `simulation_context_ack` → `stream_chunk`.
+
+See the French protocol document for the full JSON schema (`company`, `jobOffer`, `additionalInfo`, `language`, `interviewType`).
+
+---
+
 ## 5. Advanced Level — AI Server ↔ Microservices
 The protocol is designed to evolve into a modular architecture where the AI Server delegates tasks to Python microservices.
 

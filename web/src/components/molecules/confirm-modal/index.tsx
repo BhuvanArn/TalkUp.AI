@@ -92,7 +92,7 @@ export const ConfirmModal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <button
         type="button"
-        className="absolute inset-0 bg-black/50 transition-opacity"
+        className="absolute inset-0 bg-scrim/50 transition-opacity"
         onClick={onCancel}
         aria-label="Close modal"
       />

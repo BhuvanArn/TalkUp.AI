@@ -106,6 +106,32 @@ describe('routes.config', () => {
     });
   });
 
+  describe('organization sub-routes (RBAC)', () => {
+    const orgPaths = [
+      '/organization',
+      '/organization/',
+      '/organization/members',
+      '/organization/invites',
+      '/organization/settings',
+    ];
+
+    it('gates every organization route to admin/employee only', () => {
+      orgPaths.forEach((path) => {
+        const config = getRouteConfig(path);
+        expect(config).toBeDefined();
+        expect(config?.requiresAuth).toBe(true);
+        expect(config?.roles).toEqual(['admin', 'employee']);
+      });
+    });
+
+    it('never exposes an organization route to the user role', () => {
+      orgPaths.forEach((path) => {
+        const config = getRouteConfig(path);
+        expect(config?.roles).not.toContain('user');
+      });
+    });
+  });
+
   describe('route configuration consistency', () => {
     it('ensures no route is both public and protected', () => {
       routeConfigs.forEach((config) => {

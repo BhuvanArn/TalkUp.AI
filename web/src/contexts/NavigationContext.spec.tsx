@@ -401,6 +401,39 @@ describe('NavigationContext', () => {
       });
     });
 
+    it('should return "organization" for /organization routes', () => {
+      const organizationRoutes = [
+        '/organization',
+        '/organization/members',
+        '/organization/invites',
+        '/organization/settings',
+      ];
+
+      organizationRoutes.forEach((route) => {
+        (useRouterState as Mock).mockReturnValue(route);
+
+        const { result } = renderHook(() => useNavigation(), {
+          wrapper: ({ children }) => (
+            <NavigationProvider>{children}</NavigationProvider>
+          ),
+        });
+
+        expect(result.current.contextType).toBe('organization');
+      });
+    });
+
+    it('keeps /organization/settings in the organization context, not settings', () => {
+      (useRouterState as Mock).mockReturnValue('/organization/settings');
+
+      const { result } = renderHook(() => useNavigation(), {
+        wrapper: ({ children }) => (
+          <NavigationProvider>{children}</NavigationProvider>
+        ),
+      });
+
+      expect(result.current.contextType).toBe('organization');
+    });
+
     it('should return "application" for /applications/:id routes', () => {
       const applicationRoutes = [
         '/applications/123',

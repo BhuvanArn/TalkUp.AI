@@ -42,6 +42,7 @@ describe("UsersController", () => {
       getProfile: jest.fn().mockResolvedValue(profile),
       updateProfile: jest.fn().mockResolvedValue(profile),
       deleteAccount: jest.fn().mockResolvedValue(undefined),
+      uploadCV: jest.fn().mockResolvedValue(undefined),
     };
 
     const moduleBuilder = Test.createTestingModule({
@@ -81,6 +82,29 @@ describe("UsersController", () => {
     it("delegates to deleteAccount", async () => {
       await expect(controller.deleteMe(mockUser)).resolves.toBeUndefined();
       expect(mockUsersService.deleteAccount).toHaveBeenCalledWith(mockUser);
+    });
+  });
+
+  describe("uploadCV", () => {
+    it("delegates to uploadCV with the user id and file", async () => {
+      const file = { buffer: Buffer.from("pdf") } as never;
+      await controller.uploadCV(mockUser, file);
+      expect(mockUsersService.uploadCV).toHaveBeenCalledWith(
+        mockUser.user_id,
+        file,
+      );
+    });
+
+    it("guards the route with the ThrottlerGuard so @Throttle actually fires", () => {
+      // @Throttle is a no-op without an explicit ThrottlerGuard on the route.
+      const guards = Reflect.getMetadata(
+        "__guards__",
+        UsersController.prototype.uploadCV,
+      ) as unknown[] | undefined;
+      const names = (guards ?? []).map((g) =>
+        typeof g === "function" ? g.name : g?.constructor?.name,
+      );
+      expect(names).toContain("ThrottlerGuard");
     });
   });
 });

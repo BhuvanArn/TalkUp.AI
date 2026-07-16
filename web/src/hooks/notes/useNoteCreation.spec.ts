@@ -39,7 +39,12 @@ describe('useNoteCreation', () => {
 
     let note: any;
     await act(async () => {
-      note = await result.current.createNewNote('My Note', 'Content', 'red');
+      note = await result.current.createNewNote(
+        undefined,
+        'My Note',
+        'Content',
+        'red',
+      );
     });
 
     expect(createNote).toHaveBeenCalledWith({
@@ -49,6 +54,23 @@ describe('useNoteCreation', () => {
     });
     expect(note).toEqual(mockNote);
     expect(result.current.isCreating).toBe(false);
+  });
+
+  it('scopes a new note to an application when applicationId is given', async () => {
+    (createNote as any).mockResolvedValue({ note_id: 'n1' });
+
+    const { result } = renderHook(() => useNoteCreation());
+
+    await act(async () => {
+      await result.current.createNewNote('app-1');
+    });
+
+    expect(createNote).toHaveBeenCalledWith({
+      title: 'Untitled Note',
+      content: '',
+      color: 'blue',
+      applicationId: 'app-1',
+    });
   });
 
   it('handles creation errors', async () => {

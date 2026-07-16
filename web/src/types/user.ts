@@ -9,4 +9,7 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
+  /** Org role from GET /auth/status: admin | employee | user | none (B4). */
+  role?: string | null;
+  organizationId?: string | null;
 }
