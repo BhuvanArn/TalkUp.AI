@@ -25,6 +25,7 @@ export interface UpdateProfileBody {
   bio?: string;
   jobTitle?: string;
   linkedinUrl?: string;
+  phone?: string;
   avatarAccentColor?: string;
   bannerGradient?: string;
   profileVisibility?: ProfileVisibility;

@@ -5,6 +5,7 @@ import {
   IsStrongPassword,
   IsOptional,
   IsString,
+  Matches,
 } from "class-validator";
 
 @ApiSchema({
@@ -12,11 +13,15 @@ import {
   description: "Request to populate of the CreateUserDto schema",
 })
 export class CreateUserDto {
-  @Length(1, 50)
+  @Length(3, 20)
+  @Matches(/^[a-zA-Z0-9]+$/, {
+    message: "username must contain only letters and numbers",
+  })
   @ApiProperty({
-    description: "The user's name",
-    maxLength: 50,
-    minLength: 1,
+    description:
+      "The user's name. 3–20 characters, letters and numbers only (no spaces or symbols).",
+    maxLength: 20,
+    minLength: 3,
     example: "AdminSys819",
   })
   username: string;
@@ -64,4 +69,15 @@ export class CreateUserDto {
     example: "user",
   })
   user_role?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(4, 32)
+  @ApiProperty({
+    required: false,
+    description:
+      "Organization invite code (F2). When present, the new account is linked to the invite's organization with the invite's role.",
+    example: "ABCDEFGHJKLM",
+  })
+  organizationCode?: string;
 }

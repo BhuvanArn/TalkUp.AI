@@ -1,10 +1,33 @@
 import { useAuth } from '@/contexts/AuthContext';
 import AuthService from '@/services/auth/http';
-import { useMutation } from '@tanstack/react-query';
+import { type AuthStatus, checkAuthStatus } from '@/utils/auth.guards';
+import { extractErrorMessage } from '@/utils/error';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 
 const authService = new AuthService();
+
+/**
+ * Role/org for UI gating (B4). Guards fetch their own copy; this one is for rendering.
+ *
+ * Set `anonymousAllowed` when the caller renders for logged-out visitors, so a 401 resolves
+ * to ANONYMOUS instead of bouncing the browser to /login. See `checkAuthStatus`.
+ */
+export const useAuthStatus = ({
+  anonymousAllowed,
+}: { anonymousAllowed?: boolean } = {}) => {
+  return useQuery<AuthStatus>({
+    // Distinct key per variant. Sharing one key would let whichever observer fetches
+    // first decide the flag for every other caller (mount-order dependent), leaking
+    // the anonymous no-refresh behaviour onto guarded pages.
+    queryKey: anonymousAllowed
+      ? ['auth', 'status', 'anonymous']
+      : ['auth', 'status'],
+    queryFn: () => checkAuthStatus({ anonymousAllowed }),
+    staleTime: 60 * 1000,
+  });
+};
 
 /**
  * Custom hook for user registration functionality.
@@ -24,12 +47,19 @@ export const usePostRegister = () => {
       username,
       email,
       password,
+      organizationCode,
     }: {
       username: string;
       email: string;
       password: string;
+      organizationCode?: string;
     }) => {
-      return await authService.postRegister(username, email, password);
+      return await authService.postRegister(
+        username,
+        email,
+        password,
+        organizationCode,
+      );
     },
     onSuccess: (_data, variables) => {
       toast.success('Check your email for a verification code');
@@ -46,11 +76,58 @@ export const usePostRegister = () => {
 };
 
 /**
+ * F12: org signup → acknowledgement page → OTP verification → lands on
+ * /organization. The interstitial /organization-created page confirms the org
+ * was created and surfaces the admin username before verification.
+ */
+export const usePostRegisterOrganization = () => {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: async ({
+      organizationName,
+      email,
+      password,
+    }: {
+      organizationName: string;
+      email: string;
+      password: string;
+    }) => {
+      return await authService.postRegisterOrganization(
+        organizationName,
+        email,
+        password,
+      );
+    },
+    onSuccess: (_data, variables) => {
+      toast.success('Check your email for a verification code');
+      router.navigate({
+        to: '/organization-created',
+        search: {
+          organizationName: variables.organizationName,
+          email: variables.email,
+        },
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        extractErrorMessage(
+          error,
+          'Organization signup failed. Please try again.',
+        ),
+      );
+      console.error('Error during organization signup:', error);
+    },
+  });
+};
+
+/**
  * Confirms email with OTP; server sets HttpOnly cookies on success.
  */
 export const usePostVerifyEmail = () => {
   const { login } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
@@ -67,6 +144,9 @@ export const usePostVerifyEmail = () => {
     },
     onSuccess: (data) => {
       login();
+      // Fresh session on this tab — drop any leftover cache (incl. role/org)
+      // from a prior account so stale cross-account state can't render.
+      queryClient.clear();
       toast.success('Email verified');
       router.navigate({ to: data.redirectTo });
     },
@@ -140,6 +220,7 @@ export const usePasswordResetComplete = () => {
 export const usePostLogin = () => {
   const { login } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
@@ -153,6 +234,9 @@ export const usePostLogin = () => {
     },
     onSuccess: () => {
       login();
+      // Discard any cache left over from a previous session on this tab (incl.
+      // role/org) so the newly signed-in account fetches its own data fresh.
+      queryClient.clear();
       toast.success('Login successful');
 
       const search = new URLSearchParams(window.location.search);
@@ -178,6 +262,7 @@ export const usePostLogin = () => {
 export const usePostLogout = () => {
   const { logout } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
@@ -185,11 +270,16 @@ export const usePostLogout = () => {
     },
     onSuccess: () => {
       logout();
+      // Drop every cached query so the next account to sign in on this tab never
+      // sees the previous user's data (profile, role/org, applications, etc.).
+      queryClient.clear();
       toast.success('Logout successful');
       router.navigate({ to: '/login' });
     },
     onError: (error) => {
+      // Even if the server call fails we still log out locally — clear too.
       logout();
+      queryClient.clear();
       toast.error('Logout failed');
       console.error('Error during logout:', error);
       router.navigate({ to: '/login' });

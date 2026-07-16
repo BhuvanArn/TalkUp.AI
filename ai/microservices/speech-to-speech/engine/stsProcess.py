@@ -20,6 +20,10 @@ from .models import STSModels, load_models
 from .notifications import Notifications
 from .queueService import StsQueueService
 from .settings import load_settings
+from .simulation_brief import SimulationBrief, SimulationBriefStore
+from .interview_flow import InterviewFlowStore
+from .verbal_analyzer_client import analyze_transcription, finalize_session
+from .ws_auth import WsSessionClaims, authenticate_websocket, interview_id_allowed
 
 app = FastAPI(title="TalkUp STS Service")
 
@@ -37,11 +41,95 @@ async def _ws_send_json(websocket: WebSocket, send_lock: asyncio.Lock, payload: 
 		await websocket.send_text(json.dumps(payload))
 
 
+async def _handle_simulation_context(
+	websocket: WebSocket,
+	send_lock: asyncio.Lock,
+	payload: dict,
+) -> None:
+	interview_id = payload.get("interview_id") or payload.get("stream_id")
+	context_data = payload.get("data")
+
+	if not isinstance(interview_id, str) or not interview_id.strip():
+		await _ws_send_json(
+			websocket,
+			send_lock,
+			{"type": "error", "text": "simulation_context requires interview_id"},
+		)
+		return
+
+	if not isinstance(context_data, dict):
+		await _ws_send_json(
+			websocket,
+			send_lock,
+			{
+				"type": "error",
+				"text": "simulation_context requires data object",
+				"interview_id": interview_id,
+			},
+		)
+		return
+
+	brief = SimulationBrief.from_payload(context_data)
+	SimulationBriefStore.register(interview_id.strip(), brief)
+
+	ack: dict = {
+		"type": "simulation_context_ack",
+		"interview_id": interview_id.strip(),
+		"status": "registered",
+	}
+	request_id = payload.get("request_id")
+	if request_id is not None:
+		ack["request_id"] = request_id
+
+	await _ws_send_json(websocket, send_lock, ack)
+
+
+async def _send_va_result_followup(
+	websocket: WebSocket,
+	send_lock: asyncio.Lock,
+	interview_id: str,
+	transcription: str,
+	request_id: int | None,
+) -> None:
+	"""Run VA off the STS reply path; failures are logged and never propagated."""
+	try:
+		va_payload = await asyncio.to_thread(
+			analyze_transcription,
+			interview_id,
+			transcription,
+			request_id,
+		)
+		if va_payload is None:
+			return
+
+		va_message: dict = {
+			"type": "va_result",
+			"interview_id": interview_id,
+			"data": va_payload,
+		}
+		if request_id is not None:
+			va_message["request_id"] = request_id
+		await _ws_send_json(websocket, send_lock, va_message)
+	except (WebSocketDisconnect, ConnectionClosed):
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			1,
+			"Client disconnected before VA follow-up could be sent",
+		)
+	except Exception as err:
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			1,
+			f"VA follow-up failed for interview {interview_id}: {err}",
+		)
+
+
 async def _process_stream_and_reply(
 	websocket: WebSocket,
 	send_lock: asyncio.Lock,
 	audio_bytes: bytes,
 	request_id: int | None = None,
+	interview_id: str | None = None,
 ) -> None:
 	"""Process one utterance and reply (responses stay in FIFO order per connection)."""
 	try:
@@ -63,30 +151,67 @@ async def _process_stream_and_reply(
 				)
 			return
 
-		result = await queue_service.submit(audio_bytes)
+		result = await queue_service.submit(audio_bytes, interview_id=interview_id)
 
-		if not result.transcription:
-			payload: dict = {
-				"type": "error",
-				"text": "Aucune parole detectee dans l'audio. Reessayez.",
+		# Gate on the AI text, not the audio: a valid reply whose TTS yielded
+		# no chunks must still reach the client (transcript/avatar) as an
+		# sts_result rather than a generic error that swallows the text.
+		if result.ai_response:
+			if result.transcription:
+				NOTIFIER.send_notification(
+					EnumMcs.MicroservicesNames.STS, 0, f"User: {result.transcription}",
+				)
+			else:
+				NOTIFIER.send_notification(
+					EnumMcs.MicroservicesNames.STS,
+					1,
+					"Low-quality transcription rejected; asking user to repeat.",
+				)
+			NOTIFIER.send_notification(
+				EnumMcs.MicroservicesNames.STS, 0, f"AI: {result.ai_response[:100]}...",
+			)
+			encoded_chunks = [
+				base64.b64encode(chunk).decode("ascii") for chunk in result.audio_chunks
+			]
+			payload = {
+				"type": "sts_result",
+				"transcription": result.transcription,
+				"response": result.ai_response,
+				"audio_chunks": encoded_chunks,
 			}
+			if result.simulation_complete:
+				payload["simulation_complete"] = True
 			if request_id is not None:
 				payload["request_id"] = request_id
+
 			await _ws_send_json(websocket, send_lock, payload)
+
+			if interview_id and result.transcription:
+				asyncio.create_task(
+					_send_va_result_followup(
+						websocket,
+						send_lock,
+						interview_id,
+						result.transcription,
+						request_id,
+					),
+				)
 			return
 
-		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, f"User: {result.transcription}")
-		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, f"AI: {result.ai_response[:100]}...")
-		encoded_chunks = [base64.b64encode(chunk).decode("ascii") for chunk in result.audio_chunks]
 		payload = {
-			"type": "sts_result",
-			"transcription": result.transcription,
-			"response": result.ai_response,
-			"audio_chunks": encoded_chunks,
+			"type": "error",
+			"text": (
+				"Je n'ai pas bien entendu votre réponse. "
+				"Pouvez-vous répéter, s'il vous plaît ?"
+			),
 		}
+		if result.simulation_complete:
+			payload["simulation_complete"] = True
 		if request_id is not None:
 			payload["request_id"] = request_id
 		await _ws_send_json(websocket, send_lock, payload)
+		return
+
 	except (WebSocketDisconnect, ConnectionClosed):
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending STS result")
 	except Exception as tts_err:
@@ -103,6 +228,79 @@ async def _process_stream_and_reply(
 			)
 		except (WebSocketDisconnect, ConnectionClosed):
 			NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected while sending STS warning")
+
+
+async def _process_session_start_and_reply(
+	websocket: WebSocket,
+	send_lock: asyncio.Lock,
+	interview_id: str,
+	request_id: int | None = None,
+) -> None:
+	"""Generate and send the proactive opening greeting for a new session."""
+	try:
+		from .pipeline import generate_opening_greeting
+
+		result = await asyncio.to_thread(
+			generate_opening_greeting,
+			models,
+			interview_id,
+		)
+
+		if not result.ai_response:
+			if request_id is not None:
+				await _ws_send_json(
+					websocket,
+					send_lock,
+					{
+						"type": "sts_result",
+						"transcription": "",
+						"response": "",
+						"audio_chunks": [],
+						"request_id": request_id,
+					},
+				)
+			return
+
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			0,
+			f"AI greeting: {result.ai_response[:100]}...",
+		)
+		encoded_chunks = [base64.b64encode(chunk).decode("ascii") for chunk in result.audio_chunks]
+		payload: dict = {
+			"type": "sts_result",
+			"transcription": "",
+			"response": result.ai_response,
+			"audio_chunks": encoded_chunks,
+		}
+		if request_id is not None:
+			payload["request_id"] = request_id
+
+		await _ws_send_json(websocket, send_lock, payload)
+	except (WebSocketDisconnect, ConnectionClosed):
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			1,
+			"Client disconnected while sending session_start greeting",
+		)
+	except Exception as err:
+		NOTIFIER.send_notification(
+			EnumMcs.MicroservicesNames.STS,
+			2,
+			f"session_start greeting error: {err}",
+		)
+		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 2, traceback.format_exc().strip())
+		try:
+			await _ws_send_json(
+				websocket,
+				send_lock,
+				{
+					"type": "warning",
+					"text": "Erreur temporaire lors de l'accueil. Vous pouvez commencer a parler.",
+				},
+			)
+		except (WebSocketDisconnect, ConnectionClosed):
+			pass
 
 
 @app.get("/health")
@@ -130,10 +328,15 @@ async def websocket_endpoint(websocket: WebSocket):
 	Handles WebSocket connections for the STS service. Receives audio data, processes it through the pipeline,
 	and sends back transcriptions, AI responses, and synthesized audio chunks.
 	"""
+	claims: WsSessionClaims | None = None
+	should_continue, claims = await authenticate_websocket(websocket)
+	if not should_continue:
+		return
+
 	await websocket.accept()
 	NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 0, "Client connected to the STS service")
 	send_lock = asyncio.Lock()
-	audio_queue: asyncio.Queue[tuple[int | None, bytes] | None] = asyncio.Queue()
+	audio_queue: asyncio.Queue[tuple[int | None, str | None, bytes] | None] = asyncio.Queue()
 
 	async def audio_worker() -> None:
 		while True:
@@ -141,8 +344,14 @@ async def websocket_endpoint(websocket: WebSocket):
 			try:
 				if item is None:
 					return
-				request_id, audio_bytes = item
-				await _process_stream_and_reply(websocket, send_lock, audio_bytes, request_id)
+				request_id, interview_id, audio_bytes = item
+				await _process_stream_and_reply(
+					websocket,
+					send_lock,
+					audio_bytes,
+					request_id,
+					interview_id,
+				)
 			finally:
 				audio_queue.task_done()
 
@@ -157,12 +366,59 @@ async def websocket_endpoint(websocket: WebSocket):
 				return
 			audio_bytes = b""
 			request_id: int | None = None
+			interview_id: str | None = None
 
 			if message.get("type") == "websocket.receive" and message.get("text") is not None:
 				try:
 					payload = json.loads(message["text"])
 				except Exception:
 					await _ws_send_json(websocket, send_lock, {"type": "error", "text": "Invalid JSON payload"})
+					continue
+
+				if payload.get("type") == "session_end":
+					end_interview_id = payload.get("interview_id") or payload.get("stream_id")
+					if isinstance(end_interview_id, str) and end_interview_id.strip():
+						InterviewFlowStore.clear(end_interview_id.strip())
+						SimulationBriefStore.clear(end_interview_id.strip())
+						asyncio.create_task(
+							asyncio.to_thread(finalize_session, end_interview_id.strip()),
+						)
+					await _ws_send_json(
+						websocket,
+						send_lock,
+						{"type": "session_end_ack", "interview_id": end_interview_id},
+					)
+					continue
+
+				if payload.get("type") == "session_start":
+					start_interview_id = payload.get("interview_id") or payload.get("stream_id")
+					start_request_id = payload.get("request_id")
+					if isinstance(start_interview_id, str):
+						start_interview_id = start_interview_id.strip() or None
+					else:
+						start_interview_id = None
+
+					if not interview_id_allowed(claims, start_interview_id):
+						await _ws_send_json(
+							websocket,
+							send_lock,
+							{"type": "error", "text": "interview_id does not match session token"},
+						)
+						continue
+
+					if start_request_id is not None and not isinstance(start_request_id, int):
+						try:
+							start_request_id = int(start_request_id)
+						except (TypeError, ValueError):
+							start_request_id = None
+
+					if start_interview_id:
+						await _process_session_start_and_reply(
+							websocket,
+							send_lock,
+							start_interview_id,
+							start_request_id,
+						)
 					continue
 
 				if payload.get("type") == "ping":
@@ -177,8 +433,26 @@ async def websocket_endpoint(websocket: WebSocket):
 					)
 					continue
 
+				if payload.get("type") == "simulation_context":
+					await _handle_simulation_context(websocket, send_lock, payload)
+					continue
+
 				if payload.get("type") == "stream_chunk":
 					request_id = payload.get("request_id")
+					interview_id = payload.get("interview_id")
+					if isinstance(interview_id, str):
+						interview_id = interview_id.strip() or None
+					else:
+						interview_id = None
+
+					if not interview_id_allowed(claims, interview_id):
+						await _ws_send_json(
+							websocket,
+							send_lock,
+							{"type": "error", "text": "interview_id does not match session token"},
+						)
+						continue
+
 					if request_id is not None and not isinstance(request_id, int):
 						try:
 							request_id = int(request_id)
@@ -217,7 +491,7 @@ async def websocket_endpoint(websocket: WebSocket):
 			if not audio_bytes:
 				continue
 
-			await audio_queue.put((request_id, audio_bytes))
+			await audio_queue.put((request_id, interview_id, audio_bytes))
 
 	except WebSocketDisconnect:
 		NOTIFIER.send_notification(EnumMcs.MicroservicesNames.STS, 1, "Client disconnected")

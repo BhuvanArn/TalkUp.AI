@@ -18,9 +18,12 @@ import {
   ApiOkResponse,
   ApiExtraModels,
   ApiNotFoundResponse,
+  ApiOperation,
+  ApiInternalServerErrorResponse,
 } from "@nestjs/swagger";
 
 import { UsePipes } from "@nestjs/common/decorators/core/use-pipes.decorator";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 
 import { PostValidationPipe } from "@common/pipes/PostValidationPipe";
 import { AccessTokenGuard } from "@common/guards/accessToken.guard";
@@ -32,6 +35,10 @@ import { CreateAiInterviewDto } from "./dto/createAiInterview.dto";
 import { PutAiInterviewDto } from "./dto/putAiInterview.dto";
 import { GetInterviewsQueryDto } from "./dto/getInterviewsQuery.dto";
 import { CreateAiTranscriptsDto } from "./dto/createAiTranscripts.dto";
+import { CreateAiInterviewResponseDto } from "./dto/createAiInterviewResponse.dto";
+import { InterviewSessionDto } from "./dto/interviewSession.dto";
+import { ChatDto } from "./dto/chat.dto";
+import { ChatResponseDto } from "./dto/chatResponse.dto";
 
 @ApiTags("AI")
 @Controller("ai")
@@ -39,9 +46,44 @@ import { CreateAiTranscriptsDto } from "./dto/createAiTranscripts.dto";
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
+  @ApiOkResponse({ description: "Current simulation capacity snapshot." })
+  @Get("capacity")
+  async getCapacity() {
+    return this.aiService.getCapacity();
+  }
+
+  @ApiOperation({
+    summary: "Send a message to the TalkUp AI chatbot and get a reply.",
+  })
+  @ApiOkResponse({
+    description: "The assistant's reply to the message.",
+    type: ChatResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Badly formatted parameter.",
+  })
+  @ApiUnprocessableEntityResponse({
+    description: "Missing parameter in request.",
+  })
+  @ApiInternalServerErrorResponse({
+    description: "The assistant is unavailable.",
+  })
+  @UsePipes(new PostValidationPipe())
+  // Class-level AccessTokenGuard runs first (sets req.userId); ThrottlerGuard
+  // then enforces the per-user budget on this LLM-cost endpoint.
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @Post("chat")
+  async chat(
+    @Body() chatDto: ChatDto,
+    @UserId() userId: string,
+  ): Promise<ChatResponseDto> {
+    return this.aiService.chat(chatDto, userId);
+  }
+
   @ApiCreatedResponse({
-    description: "The AI interview has been successfully created.",
-    type: CreateAiInterviewDto,
+    description: "The AI interview has been successfully created or queued.",
+    type: CreateAiInterviewResponseDto,
   })
   @ApiBadRequestResponse({
     description: "Badly formatted parameter.",
@@ -91,6 +133,32 @@ export class AiController {
   }
 
   @ApiOkResponse({
+    description: "Live simulation session state (queue position, entrypoint).",
+    type: InterviewSessionDto,
+  })
+  @Get("interviews/:id/session")
+  async getInterviewSession(@Param("id") id: string, @UserId() userId: string) {
+    return this.aiService.getInterviewSession(id, userId);
+  }
+
+  @ApiOkResponse({ description: "Interview cancelled and slot released." })
+  @Post("interviews/:id/cancel")
+  async cancelInterview(@Param("id") id: string, @UserId() userId: string) {
+    return this.aiService.cancelInterview(id, userId);
+  }
+
+  @ApiOkResponse({
+    description: "Refresh Redis slot heartbeat for an active simulation.",
+  })
+  @ApiConflictResponse({
+    description: "Interview is not in an active simulation state.",
+  })
+  @Post("interviews/:id/heartbeat")
+  async heartbeatSimulation(@Param("id") id: string, @UserId() userId: string) {
+    return this.aiService.heartbeatSimulation(id, userId);
+  }
+
+  @ApiOkResponse({
     description: "The AI interview has been successfully edited.",
     type: PutAiInterviewDto,
   })
@@ -114,6 +182,17 @@ export class AiController {
     @UserId() userId: string,
   ) {
     return this.aiService.editAiInterview(id, editAiInterviewDto, userId);
+  }
+
+  @ApiOkResponse({
+    description: "Verbal analysis report for the interview.",
+  })
+  @ApiNotFoundResponse({
+    description: "Verbal analysis not found.",
+  })
+  @Get("interviews/:id/verbal-analysis")
+  async getVerbalAnalysis(@Param("id") id: string, @UserId() userId: string) {
+    return this.aiService.getVerbalAnalysis(id, userId);
   }
 
   @ApiCreatedResponse({

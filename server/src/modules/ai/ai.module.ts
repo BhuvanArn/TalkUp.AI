@@ -10,9 +10,17 @@ import { ai_transcript } from "@entities/aiTranscript.entity";
 
 import { AiController } from "./ai.controller";
 import { AiService } from "./ai.service";
+import { SimulationModule } from "../simulation/simulation.module";
+import { ApplicationsModule } from "../applications/applications.module";
+import { AgendaModule } from "../agenda/agenda.module";
+import { NotesModule } from "../notes/notes.module";
 
 @Module({
   imports: [
+    SimulationModule,
+    ApplicationsModule,
+    AgendaModule,
+    NotesModule,
     TypeOrmModule.forFeature([ai_interview, ai_transcript, user]),
     HttpModule.register({
       timeout: 5000,

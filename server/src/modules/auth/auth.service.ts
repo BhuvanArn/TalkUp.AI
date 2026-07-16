@@ -1,5 +1,10 @@
 import { randomInt, randomUUID } from "crypto";
-import { DataSource, Repository } from "typeorm";
+import {
+  DataSource,
+  EntityManager,
+  QueryFailedError,
+  Repository,
+} from "typeorm";
 
 import {
   BadRequestException,
@@ -19,17 +24,22 @@ import { CreateUserDto } from "./dto/createUser.dto";
 import { VerifyEmailDto } from "./dto/verifyEmail.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
+import { RegisterOrganizationDto } from "./dto/registerOrganization.dto";
 
+import { buildAdminUsername } from "@common/utils/buildAdminUsername";
 import { OtpPurpose } from "@common/enums/OtpPurpose";
 import { UserStatus } from "@common/enums/UserStatus";
 import { Otp } from "@entities/otp.entity";
 import { user, user_password, user_email } from "@entities/user.entity";
+import { organization_invite } from "@entities/organizationInvite.entity";
+import { OrganizationInviteStatus } from "@common/enums/OrganizationInviteStatus";
 
 import { OtpGeneratedEvent } from "./events/otp-generated.event";
 import { hashPassword } from "@common/utils/passwordHasher";
 import { OrganizationUserRole } from "@common/enums/organizationUserRole";
 import { Organization } from "@entities/organization.entity";
 import { ITokenStorage } from "@common/interfaces/token-storage";
+import { getUserOrganizationId } from "@common/utils/organizationUser.util";
 import {
   ACCESS_TOKEN_EXPIRY,
   REFRESH_TOKEN_EXPIRY,
@@ -51,9 +61,21 @@ const OTP_EXPIRATION_MINUTES = 15;
 const MAX_OTP_ATTEMPTS = 5;
 const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 const DUMMY_OTP_HASH = bcrypt.hashSync("000000", 10);
+// Precomputed bcrypt hash used to keep login timing constant on the
+// email-not-found / missing-row paths (see validateUser).
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync("dummy-password", 10);
 const PASSWORD_RESET_AUTHORIZED_PURPOSE = "PASSWORD_RESET_AUTHORIZED";
 const GENERIC_RESET_VERIFY_ERROR = "Invalid or expired verification code";
+// Single generic login failure message. Distinct messages for
+// email-not-found / wrong-password / unverified leak which accounts exist.
+const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password";
 const PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS = 120;
+// Floor every resendOtp response to the same duration so the hit path (bcrypt
+// hash + DB write + emit) is not timing-distinguishable from the silent miss
+// paths (which skip the write). Set at/above the real send cost, matching the
+// password-reset envelope. Without this floor, response latency still leaks
+// which addresses exist even though status/body no longer do.
+const OTP_RESEND_MIN_RESPONSE_MS = 120;
 
 @Injectable()
 export class AuthService {
@@ -75,12 +97,15 @@ export class AuthService {
    * @param trusted - When false (default), public signup ignores `organization_id`
    * and `user_role`, creating a standalone user with role `none`. When true, used by
    * organization bootstrap / member creation with full DTO semantics.
-   * @param inviteEmailContext - When an org creates the user, pass its display name for the invite email.
+   * @param inviteEmailContext - When an org creates the user, pass its display
+   * name for the org email. Pass `adminUsername` only for the self-serve org
+   * admin signup (F12) so the mail listener sends the org-admin welcome email
+   * (org name + username + code) rather than the member-invite email.
    */
   async register(
     createUserDto: CreateUserDto,
     trusted = false,
-    inviteEmailContext?: { organizationName: string },
+    inviteEmailContext?: { organizationName: string; adminUsername?: string },
   ): Promise<void> {
     let otpEvent: OtpGeneratedEvent | null = null;
 
@@ -98,6 +123,22 @@ export class AuthService {
           const userEmailRepo = manager.getRepository(user_email);
           const otpRepo = manager.getRepository(Otp);
 
+          // F2: invite redemption is resolved INSIDE the transaction so that
+          // validation, user link, and invite acceptance commit atomically —
+          // a failed registration must not consume the code.
+          const redemption =
+            !trusted && createUserDto.organizationCode
+              ? await this.resolveInviteRedemption(
+                  manager,
+                  createUserDto.organizationCode,
+                  createUserDto.email,
+                )
+              : null;
+          const effectiveOrgId = redemption?.organizationId ?? organizationId;
+          const effectiveRole = redemption?.role ?? userRole;
+
+          let registeredUserId: string;
+
           const emailEntity = await userEmailRepo.findOne({
             where: { email: createUserDto.email },
           });
@@ -106,12 +147,13 @@ export class AuthService {
             const newUser = userRepo.create({
               username: createUserDto.username,
               status: UserStatus.PENDING,
-              organization_id: organizationId
-                ? ({ organization_id: organizationId } as Organization)
+              organization_id: effectiveOrgId
+                ? ({ organization_id: effectiveOrgId } as Organization)
                 : null,
-              user_role: userRole,
+              user_role: effectiveRole,
             });
             const savedUser = await userRepo.save(newUser);
+            registeredUserId = savedUser.user_id;
 
             await userPasswordRepo.save(
               userPasswordRepo.create({
@@ -146,9 +188,29 @@ export class AuthService {
               );
             }
 
+            // Trusted provisioning (org member creation) must never mutate a
+            // pre-existing account: silently overwriting its password/username
+            // and dropping the intended org/role would corrupt a foreign
+            // account and produce a phantom member. Reject so the admin invites
+            // the existing account instead.
+            if (trusted) {
+              throw new ConflictException(
+                "An account with this email already exists",
+              );
+            }
+
             existingUser.username = createUserDto.username;
             existingUser.status = UserStatus.PENDING;
+
+            if (redemption) {
+              existingUser.organization_id = {
+                organization_id: redemption.organizationId,
+              } as Organization;
+              existingUser.user_role = redemption.role;
+            }
+
             await userRepo.save(existingUser);
+            registeredUserId = existingUser.user_id;
 
             const existingPassword = await userPasswordRepo.findOne({
               where: { user_id: existingUser.user_id },
@@ -166,6 +228,14 @@ export class AuthService {
               existingPassword.password = hashedPassword;
               await userPasswordRepo.save(existingPassword);
             }
+          }
+
+          if (redemption && !redemption.alreadyAccepted) {
+            const inviteRepo = manager.getRepository(organization_invite);
+            redemption.invite.status = OrganizationInviteStatus.ACCEPTED;
+            redemption.invite.accepted_by = registeredUserId;
+            redemption.invite.accepted_at = new Date();
+            await inviteRepo.save(redemption.invite);
           }
 
           const existingOtp = await otpRepo
@@ -230,6 +300,71 @@ export class AuthService {
           inviteEmailContext,
         }),
       );
+    }
+  }
+
+  /**
+   * F12: public self-serve org signup — creates the organization and its first
+   * admin in one step, then rides the standard OTP email-verification.
+   * Returns void (202); tokens only come from verifyEmail().
+   *
+   * NOT named registerOrganization: that name is the secret-gated ops
+   * provisioning method on OrganizationService.
+   */
+  async signUpOrganization(dto: RegisterOrganizationDto): Promise<void> {
+    const orgRepo = this.dataSource.getRepository(Organization);
+
+    const nameExists = await orgRepo.findOne({
+      where: { organization_name: dto.organizationName },
+    });
+    if (nameExists) {
+      throw new ConflictException(
+        "An organization with this name already exists",
+      );
+    }
+
+    let savedOrganization: Organization;
+    try {
+      savedOrganization = await orgRepo.save(
+        orgRepo.create({ organization_name: dto.organizationName }),
+      );
+    } catch (error) {
+      // Unique-constraint violation: a concurrent signup won the race between
+      // the pre-check above and this insert (Postgres error code 23505).
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === "23505"
+      ) {
+        throw new ConflictException(
+          "An organization with this name already exists",
+        );
+      }
+      throw error;
+    }
+
+    const adminUsername = buildAdminUsername(dto.organizationName);
+
+    try {
+      await this.register(
+        {
+          username: adminUsername,
+          email: dto.email,
+          password: dto.password,
+          organization_id: savedOrganization.organization_id,
+          user_role: OrganizationUserRole.ADMIN,
+        },
+        true,
+        // Passing adminUsername selects the org-admin welcome email (org name +
+        // username + code + next steps) over the generic OTP / member-invite mail.
+        {
+          organizationName: savedOrganization.organization_name,
+          adminUsername,
+        },
+      );
+    } catch (error) {
+      // No orphan org when the admin account can't be created (e.g. email taken).
+      await orgRepo.remove(savedOrganization).catch(() => undefined);
+      throw error;
     }
   }
 
@@ -348,6 +483,7 @@ export class AuthService {
   }
 
   async resendOtp(email: string, purpose: OtpPurpose): Promise<void> {
+    const startedAt = Date.now();
     const existingOtp = await this.otpRepository.findOne({
       where: { email, purpose },
     });
@@ -369,10 +505,21 @@ export class AuthService {
       where: { email },
     });
 
-    // Perform dummy hash comparison to prevent timing attacks
+    // Enumeration defense: a resend for an address we can't (or won't) mail —
+    // unknown email, orphan email row, or an already-verified account — returns
+    // the SAME silent success as a real resend. Throwing distinct errors here
+    // (404/409) would let an attacker probe which addresses exist and which are
+    // already verified. Mirrors passwordResetRequest. The dummy hash keeps the
+    // bcrypt cost on par with the real path, and the OTP_RESEND_MIN_RESPONSE_MS
+    // floor below masks the DB write the real send performs but these paths skip
+    // — otherwise response timing alone would still leak which addresses exist.
     if (!emailEntity) {
       await bcrypt.compare("000000", DUMMY_OTP_HASH);
-      throw new BadRequestException("Email not found");
+      await this.applyMinimumResetRequestDuration(
+        startedAt,
+        OTP_RESEND_MIN_RESPONSE_MS,
+      );
+      return;
     }
 
     const userEntity = await this.userRepository.findOne({
@@ -381,14 +528,23 @@ export class AuthService {
 
     if (!userEntity) {
       await bcrypt.compare("000000", DUMMY_OTP_HASH);
-      throw new BadRequestException("Email not found");
+      await this.applyMinimumResetRequestDuration(
+        startedAt,
+        OTP_RESEND_MIN_RESPONSE_MS,
+      );
+      return;
     }
 
     if (
       purpose === OtpPurpose.REGISTER &&
       userEntity.status === UserStatus.ACTIVE
     ) {
-      throw new ConflictException("Account is already active");
+      await bcrypt.compare("000000", DUMMY_OTP_HASH);
+      await this.applyMinimumResetRequestDuration(
+        startedAt,
+        OTP_RESEND_MIN_RESPONSE_MS,
+      );
+      return;
     }
 
     const plainOtp = this.generateOtpCode();
@@ -431,6 +587,16 @@ export class AuthService {
     }
 
     this.eventEmitter.emit("auth.otp_generated", event);
+
+    // Floor the real send to the same duration as the silent miss paths above,
+    // so a shorter/longer response can't reveal whether a mail was actually
+    // dispatched. Emit is fire-and-forget, so this only bounds the send path's
+    // own DB/hash work, keeping it indistinguishable from the skipped-write
+    // paths.
+    await this.applyMinimumResetRequestDuration(
+      startedAt,
+      OTP_RESEND_MIN_RESPONSE_MS,
+    );
   }
 
   async passwordResetRequest(
@@ -600,12 +766,18 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<user> {
+    // Every failure branch below returns the SAME generic message. Distinct
+    // messages ("email not found" vs "invalid password" vs "not verified")
+    // are an account-enumeration leak: they let an attacker probe which emails
+    // exist and which are unverified. Compare a password on the miss paths too
+    // (dummy hash) so response timing doesn't leak the same information.
     const emailEntity = await this.userEmailRepository.findOne({
       where: { email },
     });
 
     if (!emailEntity) {
-      throw new UnauthorizedException("Email not found");
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     const passwordEntity = await this.userPasswordRepository.findOne({
@@ -617,16 +789,18 @@ export class AuthService {
     });
 
     if (!passwordEntity || !userEntity) {
-      throw new UnauthorizedException("Email not found");
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     if (userEntity.status !== UserStatus.ACTIVE) {
-      throw new UnauthorizedException("Email is not verified");
+      await bcrypt.compare(password, passwordEntity.password);
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     const match = await bcrypt.compare(password, passwordEntity.password);
     if (!match) {
-      throw new UnauthorizedException("Invalid password");
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     return userEntity;
@@ -640,6 +814,31 @@ export class AuthService {
     return this.userRepository.findOne({
       where: { user_id: userId },
     });
+  }
+
+  /**
+   * B4: payload for GET /auth/status. The guard only attaches the bare user row;
+   * the org relation must be loaded explicitly to expose organizationId.
+   */
+  async getAuthStatusPayload(userId: string): Promise<{
+    authenticated: true;
+    role: string;
+    organizationId: string | null;
+  }> {
+    const u = await this.userRepository.findOne({
+      where: { user_id: userId },
+      relations: ["organization_id"],
+    });
+
+    if (!u) {
+      throw new UnauthorizedException("User not found");
+    }
+
+    return {
+      authenticated: true,
+      role: u.user_role,
+      organizationId: getUserOrganizationId(u),
+    };
   }
 
   /**
@@ -760,7 +959,7 @@ export class AuthService {
     event: OtpGeneratedEvent,
     options: {
       organizationId?: string;
-      inviteEmailContext?: { organizationName: string };
+      inviteEmailContext?: { organizationName: string; adminUsername?: string };
     },
   ): OtpGeneratedEvent {
     if (
@@ -774,7 +973,94 @@ export class AuthService {
       ...event,
       registrationChannel: "organization",
       organizationName: options.inviteEmailContext.organizationName,
+      // Present only for the self-serve admin signup — it selects the org-admin
+      // welcome email over the member-invite email in the mail listener.
+      adminUsername: options.inviteEmailContext.adminUsername,
       verifyUrl: this.buildVerifyEmailUrl(event.email),
+    };
+  }
+
+  /**
+   * F2: validates + locks an invite row for redemption. Runs inside the register
+   * transaction (see callsite) so acceptance is atomic with user creation.
+   * `alreadyAccepted` covers the pending-user re-register case: the same account
+   * retrying registration with its own consumed code is a no-op, not an error.
+   */
+  private async resolveInviteRedemption(
+    manager: EntityManager,
+    code: string,
+    email: string,
+  ): Promise<{
+    invite: organization_invite;
+    organizationId: string;
+    role: string;
+    alreadyAccepted: boolean;
+  }> {
+    const inviteRepo = manager.getRepository(organization_invite);
+
+    // One generic rejection for every unusable-code state on this PUBLIC
+    // /auth/register path. Distinct messages (unknown / revoked / already-used /
+    // expired / email-bound-to-someone-else) would be an error oracle: a
+    // code-holder could probe invite state and confirm an email↔invite binding.
+    // The authenticated org-admin view (listInvites → toInviteRow) still surfaces
+    // the real per-invite status; only the anonymous path is redacted. (#187)
+    const invalidCode = () =>
+      new BadRequestException(
+        "This organization code is invalid or cannot be used",
+      );
+
+    const invite = await inviteRepo
+      .createQueryBuilder("invite")
+      .setLock("pessimistic_write")
+      .where("invite.code = :code", { code })
+      .getOne();
+
+    if (!invite) {
+      throw invalidCode();
+    }
+
+    if (invite.status === OrganizationInviteStatus.REVOKED) {
+      throw invalidCode();
+    }
+
+    if (invite.status === OrganizationInviteStatus.ACCEPTED) {
+      // Idempotent path: same pending account re-registering with its own code.
+      const emailRepo = manager.getRepository(user_email);
+      const emailEntity = await emailRepo.findOne({
+        where: { email },
+      });
+      if (emailEntity && emailEntity.user_id === invite.accepted_by) {
+        return {
+          invite,
+          organizationId: invite.organization_id,
+          role: invite.role,
+          alreadyAccepted: true,
+        };
+      }
+      throw invalidCode();
+    }
+
+    const isExpired =
+      invite.status === OrganizationInviteStatus.EXPIRED ||
+      invite.expires_at.getTime() < Date.now();
+    if (isExpired) {
+      // Expired-ness is derived on read (see toInviteRow in
+      // organization.service.ts) — persisting the flip here would be
+      // rolled back anyway by the throw below aborting this transaction.
+      throw invalidCode();
+    }
+
+    if (invite.email && invite.email.toLowerCase() !== email.toLowerCase()) {
+      throw invalidCode();
+    }
+
+    // No org-existence check needed: the FK is onDelete CASCADE, so a live
+    // invite row implies a live organization.
+    return {
+      invite,
+      organizationId: invite.organization_id,
+      role: invite.role,
+      alreadyAccepted: false,
     };
   }
 
@@ -815,9 +1101,10 @@ export class AuthService {
 
   private async applyMinimumResetRequestDuration(
     startedAt: number,
+    minMs: number = PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS,
   ): Promise<void> {
     const elapsed = Date.now() - startedAt;
-    const remaining = PASSWORD_RESET_REQUEST_MIN_RESPONSE_MS - elapsed;
+    const remaining = minMs - elapsed;
 
     if (remaining > 0) {
       await new Promise((resolve) => setTimeout(resolve, remaining));

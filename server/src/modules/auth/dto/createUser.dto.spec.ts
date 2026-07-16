@@ -1,4 +1,5 @@
 import { validate } from "class-validator";
+import { plainToInstance } from "class-transformer";
 import { CreateUserDto } from "./createUser.dto";
 
 describe("CreateUserDto", () => {
@@ -20,20 +21,12 @@ describe("CreateUserDto", () => {
 
     it("should pass validation with various valid usernames", async () => {
       const validUsernames = [
-        "A",
+        "abc",
         "AdminSys819",
         "user123",
         "TestUser",
-        "a".repeat(50),
-        "UserWith Spaces",
-        "User-With-Dashes",
-        "User_With_Underscores",
-        "User.With.Dots",
-        "User@Email",
+        "a".repeat(20),
         "UserWith123Numbers",
-        "SpecialChars!@#$%",
-        "José",
-        "用户名",
       ];
 
       for (const username of validUsernames) {
@@ -337,7 +330,7 @@ describe("CreateUserDto", () => {
 
   describe("Edge cases", () => {
     it("should handle minimum valid lengths", async () => {
-      dto.username = "A";
+      dto.username = "abc";
       dto.email = "a@b.co";
       dto.password = "A1@bcdef";
 
@@ -346,7 +339,7 @@ describe("CreateUserDto", () => {
     });
 
     it("should handle maximum valid lengths", async () => {
-      dto.username = "a".repeat(50);
+      dto.username = "a".repeat(20);
       dto.email = "user@example.com";
       dto.password = "A1@" + "b".repeat(46);
 
@@ -354,8 +347,8 @@ describe("CreateUserDto", () => {
       expect(errors).toHaveLength(0);
     });
 
-    it("should validate usernames with special characters", async () => {
-      const specialUsernames = [
+    it("should reject usernames with spaces, symbols, or unicode", async () => {
+      const invalidUsernames = [
         "User@Domain",
         "User.Name",
         "User-Name",
@@ -364,16 +357,19 @@ describe("CreateUserDto", () => {
         "User123!@#",
         "José María",
         "用户123",
+        "ab", // too short (2 chars)
+        "a".repeat(21), // too long
       ];
 
-      for (const username of specialUsernames) {
+      for (const username of invalidUsernames) {
         const testDto = new CreateUserDto();
         testDto.username = username;
         testDto.email = "test@example.com";
         testDto.password = "ValidPass123!";
 
         const errors = await validate(testDto);
-        expect(errors).toHaveLength(0);
+        expect(errors.length).toBeGreaterThan(0);
+        expect(errors.some((e) => e.property === "username")).toBe(true);
       }
     });
 
@@ -398,6 +394,30 @@ describe("CreateUserDto", () => {
         const errors = await validate(testDto);
         expect(errors).toHaveLength(0);
       }
+    });
+  });
+
+  describe("organizationCode (F2)", () => {
+    it("accepts an optional organizationCode string", async () => {
+      const dto = plainToInstance(CreateUserDto, {
+        username: "candidate",
+        email: "candidate@example.com",
+        password: "Abcdefg1*",
+        organizationCode: "ABCDEFGHJKLM",
+      });
+      const errors = await validate(dto);
+      expect(errors).toHaveLength(0);
+    });
+
+    it("rejects a non-string organizationCode", async () => {
+      const dto = plainToInstance(CreateUserDto, {
+        username: "candidate",
+        email: "candidate@example.com",
+        password: "Abcdefg1*",
+        organizationCode: 12345,
+      });
+      const errors = await validate(dto);
+      expect(errors.some((e) => e.property === "organizationCode")).toBe(true);
     });
   });
 });

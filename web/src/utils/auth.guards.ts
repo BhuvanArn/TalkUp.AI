@@ -8,15 +8,38 @@ export interface AuthGuardContext {
   isAuthenticated: boolean;
 }
 
+export interface AuthStatus {
+  isAuthenticated: boolean;
+  role: string | null;
+  organizationId: string | null;
+}
+
+const ANONYMOUS: AuthStatus = {
+  isAuthenticated: false,
+  role: null,
+  organizationId: null,
+};
+
 /**
- * Validates authentication by checking with the backend.
- * The backend will verify the HTTP-only cookie.
+ * Validates authentication with the backend (HTTP-only cookie) and returns
+ * the caller's org role/id (B4). Anonymous → all-null AuthStatus.
  *
- * @returns `true` if authenticated (200 status), `false` otherwise (401 status or error)
+ * `anonymousAllowed` keeps a 401 from escalating to a refresh-then-redirect in the
+ * axios interceptor. Guards leave it off: they run on known paths, where a bounce to
+ * /login is the intended outcome. Callers that merely *render* for anonymous visitors
+ * (the 404 page) set it, so a logged-out visitor gets ANONYMOUS instead of /login.
  */
-const checkAuthStatus = async (): Promise<boolean> => {
+export const checkAuthStatus = async ({
+  anonymousAllowed,
+}: { anonymousAllowed?: boolean } = {}): Promise<AuthStatus> => {
   try {
-    const response = await axiosInstance.get('/v1/api/auth/status');
+    // Omit the config argument entirely when unset so existing callers send an
+    // unchanged request (axios turns an explicit `undefined` into `{}`).
+    const response = anonymousAllowed
+      ? await axiosInstance.get('/v1/api/auth/status', {
+          anonymousAllowed: true,
+        })
+      : await axiosInstance.get('/v1/api/auth/status');
 
     // Backend returns { authenticated: true } with 200 status when authenticated
     const isAuth = response.data?.authenticated === true;
@@ -26,7 +49,15 @@ const checkAuthStatus = async (): Promise<boolean> => {
       console.error('Auth emitter failed:', error);
     }
 
-    return isAuth;
+    if (!isAuth) return ANONYMOUS;
+    return {
+      isAuthenticated: true,
+      role: typeof response.data?.role === 'string' ? response.data.role : null,
+      organizationId:
+        typeof response.data?.organizationId === 'string'
+          ? response.data.organizationId
+          : null,
+    };
   } catch (error) {
     // 401 = anonymous visitor; not an error worth logging.
     const isUnauthorized =
@@ -39,7 +70,7 @@ const checkAuthStatus = async (): Promise<boolean> => {
     } catch (emitError) {
       console.error('Auth emitter failed:', emitError);
     }
-    return false;
+    return ANONYMOUS;
   }
 };
 
@@ -48,11 +79,13 @@ const checkAuthStatus = async (): Promise<boolean> => {
  *
  * The returned async function checks if the route requires authentication.
  * If authentication is required, it verifies authentication status with the backend.
- * If not authenticated, it redirects to the login page.
+ * If not authenticated, it redirects to the login page. When the route config
+ * lists `roles`, the caller's org role must match one of them (requireRole
+ * behavior from the design's B4 plumbing), otherwise it redirects home.
  *
  * @param routePath - The path of the route to guard.
  * @returns An async function that enforces authentication for the specified route.
- * @throws Redirects to the login page if authentication fails.
+ * @throws Redirects to the login page if authentication fails, or to '/' on role mismatch.
  */
 export const createAuthGuard = (routePath: string) => {
   return async () => {
@@ -62,15 +95,19 @@ export const createAuthGuard = (routePath: string) => {
       return;
     }
 
-    const isAuthenticated = await checkAuthStatus();
+    const status = await checkAuthStatus();
 
-    if (!isAuthenticated) {
+    if (!status.isAuthenticated) {
       throw redirect({
         to: '/login',
         search: {
           redirect: routePath,
         },
       });
+    }
+
+    if (config.roles && !config.roles.includes(status.role ?? '')) {
+      throw redirect({ to: '/' });
     }
   };
 };
@@ -84,7 +121,7 @@ export const createAuthGuard = (routePath: string) => {
  */
 export const createAuthRedirectGuard = (target: string) => {
   return async () => {
-    const isAuthenticated = await checkAuthStatus();
+    const { isAuthenticated } = await checkAuthStatus();
 
     if (isAuthenticated) {
       throw redirect({ to: target });
@@ -107,12 +144,13 @@ export const createPublicRouteGuard = (routePath: string) => {
     if (
       routePath !== '/login' &&
       routePath !== '/register' &&
+      routePath !== '/register-organization' &&
       routePath !== '/verify-email'
     ) {
       return;
     }
 
-    const isAuthenticated = await checkAuthStatus();
+    const { isAuthenticated } = await checkAuthStatus();
 
     if (isAuthenticated) {
       throw redirect({

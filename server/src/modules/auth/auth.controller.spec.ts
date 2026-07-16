@@ -7,6 +7,7 @@ import { applyMockAccessTokenGuard } from "../../test/utils/mock-guards";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { CreateUserDto } from "./dto/createUser.dto";
+import { RegisterOrganizationDto } from "./dto/registerOrganization.dto";
 import { LoginDto } from "./dto/login.dto";
 import { PasswordResetRequestDto } from "./dto/passwordResetRequest.dto";
 import { PasswordResetVerifyDto } from "./dto/passwordResetVerify.dto";
@@ -41,6 +42,7 @@ describe("AuthController", () => {
   beforeEach(async () => {
     mockAuthService = {
       register: jest.fn(),
+      signUpOrganization: jest.fn(),
       verifyEmail: jest.fn(),
       resendOtp: jest.fn(),
       validateUser: jest.fn(),
@@ -51,6 +53,7 @@ describe("AuthController", () => {
       passwordUpdate: jest.fn(),
       refreshTokens: jest.fn(),
       logout: jest.fn(),
+      getAuthStatusPayload: jest.fn(),
     };
 
     const moduleBuilder = Test.createTestingModule({
@@ -119,6 +122,41 @@ describe("AuthController", () => {
       );
 
       expect(mockAuthService.register).toHaveBeenCalledWith(createUserDto);
+    });
+  });
+
+  describe("signUpOrganization", () => {
+    const dto: RegisterOrganizationDto = {
+      organizationName: "Acme School",
+      email: "admin@acme.example",
+      password: "Abcdefg1*",
+    };
+
+    it("should register the organization and return the sent message", async () => {
+      mockAuthService.signUpOrganization = jest
+        .fn()
+        .mockResolvedValue(undefined);
+
+      const result = await controller.signUpOrganization(dto);
+
+      expect(result).toEqual({ message: "Verification email sent" });
+      expect(mockAuthService.signUpOrganization).toHaveBeenCalledWith(dto);
+      expect(mockAuthService.signUpOrganization).toHaveBeenCalledTimes(1);
+    });
+
+    it("should propagate ConflictException from the service", async () => {
+      const conflictError = new ConflictException(
+        "An organization with this name already exists",
+      );
+      mockAuthService.signUpOrganization = jest
+        .fn()
+        .mockRejectedValue(conflictError);
+
+      await expect(controller.signUpOrganization(dto)).rejects.toThrow(
+        conflictError,
+      );
+
+      expect(mockAuthService.signUpOrganization).toHaveBeenCalledWith(dto);
     });
   });
 
@@ -203,7 +241,9 @@ describe("AuthController", () => {
     });
 
     it("should throw UnauthorizedException when email not found", async () => {
-      const unauthorizedError = new UnauthorizedException("Email not found");
+      const unauthorizedError = new UnauthorizedException(
+        "Invalid email or password",
+      );
       mockAuthService.validateUser = jest
         .fn()
         .mockRejectedValue(unauthorizedError);
@@ -223,7 +263,7 @@ describe("AuthController", () => {
 
     it("should throw UnauthorizedException when password is invalid", async () => {
       const invalidPasswordError = new UnauthorizedException(
-        "Invalid password",
+        "Invalid email or password",
       );
       mockAuthService.validateUser = jest
         .fn()
@@ -366,15 +406,33 @@ describe("AuthController", () => {
   });
 
   describe("getAuthStatus", () => {
-    it("should return authenticated: true when guard passes", async () => {
-      const result = await controller.getAuthStatus();
+    it("should return authenticated payload with role and organizationId when guard passes", async () => {
+      mockAuthService.getAuthStatusPayload = jest.fn().mockResolvedValue({
+        authenticated: true,
+        role: "admin",
+        organizationId: "org-id",
+      });
 
-      expect(result).toEqual({ authenticated: true });
+      const result = await controller.getAuthStatus("test-user-id");
+
+      expect(result).toEqual({
+        authenticated: true,
+        role: "admin",
+        organizationId: "org-id",
+      });
+      expect(mockAuthService.getAuthStatusPayload).toHaveBeenCalledWith(
+        "test-user-id",
+      );
     });
 
-    it("should throw UnauthorizedException when guard fails (simulated)", async () => {
-      const result = await controller.getAuthStatus();
-      expect(result).toEqual({ authenticated: true });
+    it("propagates UnauthorizedException from the service", async () => {
+      mockAuthService.getAuthStatusPayload = jest
+        .fn()
+        .mockRejectedValue(new UnauthorizedException("User not found"));
+
+      await expect(controller.getAuthStatus("test-user-id")).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 

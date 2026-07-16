@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  checkAuthStatus,
   createAuthGuard,
   createAuthRedirectGuard,
   createPublicRouteGuard,
@@ -38,6 +39,32 @@ describe('auth.guards', () => {
     vi.clearAllMocks();
     axiosGet.mockResolvedValue({ data: { authenticated: true } });
     emitAuthMock.mockImplementation(() => undefined);
+  });
+
+  describe('checkAuthStatus anonymousAllowed', () => {
+    it('sends an unchanged request when the flag is not set', async () => {
+      await checkAuthStatus();
+      expect(axiosGet).toHaveBeenCalledWith('/v1/api/auth/status');
+    });
+
+    it('opts the request out of refresh escalation when set', async () => {
+      await checkAuthStatus({ anonymousAllowed: true });
+      expect(axiosGet).toHaveBeenCalledWith('/v1/api/auth/status', {
+        anonymousAllowed: true,
+      });
+    });
+
+    it('never sends the flag for guards, which must keep bouncing to login', async () => {
+      getRouteConfigMock.mockReturnValue({ requiresAuth: true });
+      // Authed guards redirect by design; the assertion is about the request shape.
+      await createAuthGuard('/dashboard')();
+      await createAuthRedirectGuard('/applications')().catch(() => undefined);
+      await createPublicRouteGuard('/login')().catch(() => undefined);
+      expect(axiosGet).toHaveBeenCalledTimes(3);
+      for (const call of axiosGet.mock.calls) {
+        expect(call[1]?.anonymousAllowed).toBeUndefined();
+      }
+    });
   });
 
   describe('createAuthGuard', () => {
@@ -178,6 +205,76 @@ describe('auth.guards', () => {
       await expect(
         createPublicRouteGuard('/verify-email')(),
       ).resolves.toBeUndefined();
+    });
+
+    it('returns early for organization-created (no auth-status call)', async () => {
+      // The org-created ack page is reached right after signup while the user
+      // is still unauthenticated. It must NOT run an auth-status check: the 401
+      // would trip the axios refresh→/login redirect. Kept out of the guard's
+      // allow-list on purpose.
+      await expect(
+        createPublicRouteGuard('/organization-created')(),
+      ).resolves.toBeUndefined();
+      expect(axiosGet).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('role-gated guard (B4)', () => {
+    it('lets an admin through /organization', async () => {
+      getRouteConfigMock.mockReturnValue({
+        requiresAuth: true,
+        roles: ['admin', 'employee'],
+      });
+      axiosGet.mockResolvedValue({
+        data: { authenticated: true, role: 'admin', organizationId: 'o1' },
+      });
+
+      const guard = createAuthGuard('/organization');
+      await expect(guard()).resolves.toBeUndefined();
+    });
+
+    it('redirects a user-role member away from /organization', async () => {
+      getRouteConfigMock.mockReturnValue({
+        requiresAuth: true,
+        roles: ['admin', 'employee'],
+      });
+      axiosGet.mockResolvedValue({
+        data: { authenticated: true, role: 'user', organizationId: 'o1' },
+      });
+
+      const guard = createAuthGuard('/organization');
+      await expect(guard()).rejects.toBeDefined();
+      expect(redirectMock).toHaveBeenCalledWith({ to: '/' });
+    });
+
+    it('still redirects anonymous visitors to login', async () => {
+      getRouteConfigMock.mockReturnValue({
+        requiresAuth: true,
+        roles: ['admin', 'employee'],
+      });
+      axiosGet.mockRejectedValue({
+        isAxiosError: true,
+        response: { status: 401 },
+      });
+
+      const guard = createAuthGuard('/organization');
+      await expect(guard()).rejects.toBeDefined();
+      expect(redirectMock).toHaveBeenCalledWith({
+        to: '/login',
+        search: { redirect: '/organization' },
+      });
+    });
+
+    it('exposes role fields from checkAuthStatus', async () => {
+      axiosGet.mockResolvedValue({
+        data: { authenticated: true, role: 'employee', organizationId: 'o1' },
+      });
+
+      await expect(checkAuthStatus()).resolves.toEqual({
+        isAuthenticated: true,
+        role: 'employee',
+        organizationId: 'o1',
+      });
     });
   });
 });

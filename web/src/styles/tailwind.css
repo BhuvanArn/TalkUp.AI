@@ -4,6 +4,7 @@
 
 @source inline('{text,fill}-{primary,accent}');
 @source inline('{,hover:,active:}{bg,border,text}-{primary,accent,black,white,error,danger,warning,success,neutral,note-card,video-off}{,-hover,-active,-weak,-weaker}');
+@source inline('bg-scrim/{40,50,60}');
 @source inline('{bg,border}-surface-sidebar{,-hover,-active}');
 @source inline('text-{idle,active,hover,weak,weaker,weakest}');
 
@@ -47,6 +48,11 @@
   --color-note-card-hover: #dfe0e9;
 
   --color-video-off: #000;
+
+  /* Modal/dialog scrim (backdrop overlay). Non-inverting: stays literal
+     black in both themes, unlike the theme-flipping `black` token — use
+     `bg-scrim/<alpha>` for overlays so raising opacity always darkens. */
+  --color-scrim: #000000;
 
   --color-text-accent: #f0effb;
   --color-accent: #2b70c9;
@@ -150,6 +156,7 @@
 
   --color-background: #121212;
   --color-surface: #1e1e1e;
+  --color-surface-hover: #2a2a2a;
   --color-surface-raised: #2a2a2a;
   --color-surface-raised-hover: #3a3a3a;
 
@@ -217,6 +224,79 @@
 
   --color-icon: #909098;
   --color-icon-hover: #e8e8e8;
+}
+
+/*
+ * Organization-view palette override.
+ *
+ * The org-management area swaps ONLY the cool-blue brand color for emerald, so
+ * switching views is unmistakable without repainting the whole UI. We remap
+ * just the brand tokens — accent, primary, and the text link — on a
+ * `data-view="organization"` scope on the document root (set by
+ * NavigationProvider, the same mechanism as `.dark`). Surfaces, page
+ * backgrounds and neutral tints are deliberately left untouched: only what was
+ * blue turns green (logo/title, active nav, links, primary buttons). Both
+ * themes covered by the accent/primary values flipping under `.dark`.
+ */
+:root[data-view='organization'] {
+  --color-accent: #1d9e75;
+  --color-accent-hover: #178a63;
+  --color-accent-active: #0f6b4c;
+  --color-accent-weak: #e6f6f0;
+  --color-accent-weaker: #f0faf6;
+
+  --color-primary: #0f6b4c;
+  --color-primary-hover: #0c5a40;
+  --color-primary-active: #094833;
+  --color-primary-weak: #d0ebde;
+  --color-primary-weaker: #e8f5ee;
+
+  --color-text-link: #1d9e75;
+}
+
+:root.dark[data-view='organization'] {
+  --color-accent: #2fc48f;
+  --color-accent-hover: #40d49f;
+  --color-accent-active: #50e4af;
+  --color-accent-weak: #123a2c;
+  --color-accent-weaker: #0d2a1f;
+
+  --color-primary: #2fc48f;
+  --color-primary-hover: #40d49f;
+  --color-primary-active: #50e4af;
+  --color-primary-weak: #124a34;
+  --color-primary-weaker: #0d2a1f;
+
+  --color-text-link: #2fc48f;
+}
+
+@layer base {
+  /* Tailwind v4 Preflight resets buttons to `cursor: default`. Restore a
+     pointer cursor on every enabled interactive control app-wide so no
+     individual component has to remember `cursor-pointer` — and show
+     `not-allowed` when disabled. Covers native buttons, role="button",
+     links styled as actions, selects, and clickable inputs. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  label[for],
+  select:not(:disabled),
+  summary,
+  input[type='button']:not(:disabled),
+  input[type='submit']:not(:disabled),
+  input[type='reset']:not(:disabled),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
+  input[type='file']:not(:disabled),
+  input[type='color']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role='button'][aria-disabled='true'],
+  select:disabled,
+  input:disabled {
+    cursor: not-allowed;
+  }
 }
 
 @layer utilities {
@@ -330,5 +410,35 @@
     font-size: var(--font-size-body-s);
     font-weight: 400;
     line-height: 1.5;
+  }
+
+  /* TalkUp brand gradient — accent → success. Single source of truth for the
+     chatbot widget surfaces (FAB, header, send button, user bubble). */
+  .bg-brand-gradient {
+    background-image: linear-gradient(
+      to bottom right,
+      var(--color-accent),
+      var(--color-success)
+    );
+  }
+}
+
+/* Roadmap scroll-hint chevron: a small rightward nudge that repeats, cueing the
+   user that the timeline scrolls horizontally. Referenced via the arbitrary
+   `animate-[scroll-nudge_...]` utility on the chevron. */
+@keyframes scroll-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+
+/* Respect users who ask for less motion: hold the chevron still. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[scroll-nudge_1\.2s_ease-in-out_infinite\] {
+    animation: none;
   }
 }

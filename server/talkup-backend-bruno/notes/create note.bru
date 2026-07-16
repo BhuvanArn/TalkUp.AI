@@ -1,0 +1,25 @@
+meta {
+  name: create note
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/notes
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "Interview prep",
+    "content": "<p>Ask about the team structure</p>",
+    "color": "blue",
+    "is_favorite": false
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 export interface WebSocketPacket {
@@ -28,6 +28,7 @@ export interface UseSimulationWebSocketReturn {
   sendMessage: (message: string) => void;
   sendJsonMessage: (message: object) => void;
   sendPing: (payload?: unknown) => void;
+  sendSessionStart: () => void;
   lastMessage: MessageEvent | null;
   lastJsonMessage: unknown;
   getWebSocket: () => ReturnType<
@@ -105,6 +106,8 @@ export function useSimulationWebSocket(
   } = props;
 
   const [socketUrl, setSocketUrl] = useState<string | null>(null);
+  const interviewIDRef = useRef(interviewID);
+  interviewIDRef.current = interviewID;
 
   const {
     sendMessage,
@@ -144,7 +147,7 @@ export function useSimulationWebSocket(
 
     const pingMessage: WebSocketPacket = {
       key: import.meta.env.VITE_WEBSOCKET_KEY,
-      stream_id: interviewID ?? 'unknown',
+      stream_id: interviewIDRef.current ?? 'unknown',
       format: '',
       data: '',
       type: 'ping',
@@ -152,7 +155,21 @@ export function useSimulationWebSocket(
     };
 
     sendJsonMessage(pingMessage);
-  }, [readyState, sendJsonMessage, interviewID]);
+  }, [readyState, sendJsonMessage]);
+
+  const sendSessionStart = useCallback(() => {
+    if (readyState !== ReadyState.OPEN || !interviewIDRef.current) return;
+
+    sendJsonMessage({
+      type: 'session_start',
+      key: import.meta.env.VITE_WEBSOCKET_KEY,
+      interview_id: interviewIDRef.current,
+      stream_id: interviewIDRef.current,
+      format: 'text',
+      data: '{}',
+      timestamp: Date.now(),
+    });
+  }, [readyState, sendJsonMessage]);
 
   return {
     isConnected: readyState === ReadyState.OPEN,
@@ -163,6 +180,7 @@ export function useSimulationWebSocket(
     sendMessage,
     sendJsonMessage,
     sendPing,
+    sendSessionStart,
     lastMessage,
     lastJsonMessage,
     getWebSocket,

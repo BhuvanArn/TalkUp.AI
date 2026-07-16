@@ -2,8 +2,12 @@ import { API_ROUTES } from '../api';
 import axiosInstance from '../axiosInstance';
 import {
   AiInterviewResponse,
+  ChatRequest,
+  ChatResponse,
   CreateAiInterviewDto,
+  InterviewSessionResponse,
   UpdateAiInterviewDto,
+  VerbalAnalysisResponse,
 } from './types';
 
 /**
@@ -50,6 +54,49 @@ export const createInterview = async (
  * const dto: UpdateAiInterviewDto = { status: 'completed', score: 85, feedback: 'Great performance' };
  * await updateInterview('abc123', dto);
  */
+export const getInterviewSession = async (
+  interviewId: string,
+): Promise<InterviewSessionResponse> => {
+  const response = await axiosInstance.get<InterviewSessionResponse>(
+    `${API_ROUTES.ai}/interviews/${interviewId}/session`,
+  );
+  return response.data;
+};
+
+export const cancelInterview = async (interviewId: string): Promise<void> => {
+  await axiosInstance.post(`${API_ROUTES.ai}/interviews/${interviewId}/cancel`);
+};
+
+export const heartbeatInterview = async (
+  interviewId: string,
+): Promise<void> => {
+  await axiosInstance.post(
+    `${API_ROUTES.ai}/interviews/${interviewId}/heartbeat`,
+  );
+};
+
+/**
+ * Send a message to the TalkUp AI chatbot and return its reply.
+ *
+ * @param request - The message and optional prior conversation history.
+ * @returns A Promise resolving to the assistant's reply.
+ * @throws Rethrows any network or server error after logging it.
+ */
+export const sendChatMessage = async (
+  request: ChatRequest,
+): Promise<ChatResponse> => {
+  try {
+    const response = await axiosInstance.post<ChatResponse>(
+      `${API_ROUTES.ai}/chat`,
+      request,
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error sending chat message:', error);
+    throw error;
+  }
+};
+
 export const updateInterview = async (
   interviewId: string,
   dto: UpdateAiInterviewDto,
@@ -60,4 +107,13 @@ export const updateInterview = async (
     console.error('Error updating AI interview:', error);
     throw error;
   }
+};
+
+export const getVerbalAnalysis = async (
+  interviewId: string,
+): Promise<VerbalAnalysisResponse> => {
+  const response = await axiosInstance.get<VerbalAnalysisResponse>(
+    `${API_ROUTES.ai}/interviews/${interviewId}/verbal-analysis`,
+  );
+  return response.data;
 };

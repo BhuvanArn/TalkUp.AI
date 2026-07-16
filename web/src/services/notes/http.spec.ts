@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createNote,
@@ -8,138 +8,98 @@ import {
   updateNote,
 } from './http';
 
+const getMock = vi.hoisted(() => vi.fn());
+const postMock = vi.hoisted(() => vi.fn());
+const putMock = vi.hoisted(() => vi.fn());
+const deleteMock = vi.hoisted(() => vi.fn());
+
+vi.mock('@/services/axiosInstance', () => ({
+  default: {
+    get: getMock,
+    post: postMock,
+    put: putMock,
+    delete: deleteMock,
+  },
+}));
+
+const sampleNote = {
+  note_id: '1',
+  user_id: 'u1',
+  interview_id: null,
+  title: 'Note 1',
+  content: '<p>hi</p>',
+  color: 'blue',
+  is_favorite: false,
+  created_at: '2026-01-01T00:00:00.000Z',
+  updated_at: '2026-01-01T00:00:00.000Z',
+};
+
 describe('notesService', () => {
-  const STORAGE_KEY = 'talkup_mock_notes';
-
   beforeEach(() => {
-    localStorage.clear();
-    vi.useFakeTimers();
+    getMock.mockReset();
+    postMock.mockReset();
+    putMock.mockReset();
+    deleteMock.mockReset();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
+  it('getUserNotes with no params GETs the base url', async () => {
+    getMock.mockResolvedValue({ data: [sampleNote] });
+    const notes = await getUserNotes();
+    expect(getMock).toHaveBeenCalledWith('/v1/api/notes');
+    expect(notes).toEqual([sampleNote]);
   });
 
-  it('creates a new note', async () => {
-    const promise = createNote({
-      title: 'New Note',
-      content: 'Content',
-      color: 'blue',
+  it('getUserNotes with interviewId appends the query param', async () => {
+    getMock.mockResolvedValue({ data: [] });
+    await getUserNotes({ interviewId: 'int-1' });
+    expect(getMock).toHaveBeenCalledWith('/v1/api/notes?interviewId=int-1');
+  });
+
+  it('getUserNotes with standalone appends standalone=true', async () => {
+    getMock.mockResolvedValue({ data: [] });
+    await getUserNotes({ standalone: true });
+    expect(getMock).toHaveBeenCalledWith('/v1/api/notes?standalone=true');
+  });
+
+  it('getUserNotes with standalone=false does NOT append the standalone param', async () => {
+    getMock.mockResolvedValue({ data: [] });
+    await getUserNotes({ standalone: false });
+    expect(getMock).toHaveBeenCalledWith('/v1/api/notes');
+  });
+
+  it('getNoteById GETs by id', async () => {
+    getMock.mockResolvedValue({ data: sampleNote });
+    const note = await getNoteById('1');
+    expect(getMock).toHaveBeenCalledWith('/v1/api/notes/1');
+    expect(note).toEqual(sampleNote);
+  });
+
+  it('createNote POSTs the dto', async () => {
+    postMock.mockResolvedValue({ data: sampleNote });
+    const dto = { title: 'x', content: '<p>y</p>', interviewId: 'int-1' };
+    const note = await createNote(dto);
+    expect(postMock).toHaveBeenCalledWith('/v1/api/notes', dto);
+    expect(note).toEqual(sampleNote);
+  });
+
+  it('updateNote PUTs the dto to the id url', async () => {
+    putMock.mockResolvedValue({ data: sampleNote });
+    await updateNote('1', { title: 'renamed' });
+    expect(putMock).toHaveBeenCalledWith('/v1/api/notes/1', {
+      title: 'renamed',
     });
-
-    vi.runAllTimers();
-    const note = await promise;
-
-    expect(note).toMatchObject({
-      title: 'New Note',
-      content: 'Content',
-      color: 'blue',
-    });
-    expect(note.note_id).toBeDefined();
-
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    expect(stored).toHaveLength(1);
-    expect(stored[0]).toMatchObject(note);
   });
 
-  it('gets user notes', async () => {
-    const mockNotes = [
-      {
-        note_id: '1',
-        user_id: 'current-user-id',
-        title: 'Note 1',
-        content: '',
-        color: 'blue',
-        is_favorite: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockNotes));
-
-    const promise = getUserNotes();
-    vi.runAllTimers();
-    const notes = await promise;
-
-    expect(notes).toHaveLength(1);
-    expect(notes[0].title).toBe('Note 1');
+  it('deleteNote DELETEs the id url', async () => {
+    deleteMock.mockResolvedValue({ data: undefined });
+    await deleteNote('1');
+    expect(deleteMock).toHaveBeenCalledWith('/v1/api/notes/1');
   });
 
-  it('gets note by id', async () => {
-    const mockNotes = [
-      {
-        note_id: '1',
-        user_id: 'current-user-id',
-        title: 'Note 1',
-        content: '',
-        color: 'blue',
-        is_favorite: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockNotes));
-
-    const promise = getNoteById('1');
-    vi.runAllTimers();
-    const note = await promise;
-
-    expect(note.title).toBe('Note 1');
-  });
-
-  it('updates a note', async () => {
-    const mockNotes = [
-      {
-        note_id: '1',
-        user_id: 'current-user-id',
-        title: 'Note 1',
-        content: '',
-        color: 'blue',
-        is_favorite: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockNotes));
-
-    const promise = updateNote('1', { title: 'Updated Title' });
-    vi.runAllTimers();
-    const updated = await promise;
-
-    expect(updated.title).toBe('Updated Title');
-
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    expect(stored[0].title).toBe('Updated Title');
-  });
-
-  it('deletes a note', async () => {
-    const mockNotes = [
-      {
-        note_id: '1',
-        user_id: 'current-user-id',
-        title: 'Note 1',
-        content: '',
-        color: 'blue',
-        is_favorite: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockNotes));
-
-    const promise = deleteNote('1');
-    vi.runAllTimers();
-    await promise;
-
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    expect(stored).toHaveLength(0);
-  });
-
-  it('throws error when note not found', async () => {
+  it('propagates errors (and logs)', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const promise = getNoteById('non-existent');
-    vi.runAllTimers();
-    await expect(promise).rejects.toThrow('Note not found');
+    getMock.mockRejectedValue(new Error('network'));
+    await expect(getNoteById('1')).rejects.toThrow('network');
     consoleSpy.mockRestore();
   });
 });

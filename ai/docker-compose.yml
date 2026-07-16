@@ -42,6 +42,32 @@ services:
   sts-service:
     build: ./microservices/speech-to-speech
     container_name: talkup-sts
+    env_file:
+      - core/server/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - talkup-ai
+    ports:
+      - "8002:8002"
+    environment:
+      - BACKEND_URL=${BACKEND_URL:-http://server:3000/v1/api}
+      - SIM_INTERNAL_API_KEY=${SIM_INTERNAL_API_KEY:-talkup-dev-internal-key}
+      - LLM_BACKEND=${LLM_BACKEND:-openrouter}
+      - LLM_MAX_NEW_TOKENS=${LLM_MAX_NEW_TOKENS:-320}
+      - VA_SERVICE_URL=http://verbal_analyzer:8006
+      - VA_ENABLED=true
+      - VA_TIMEOUT_SEC=3
+      - JWT_SECRET=${JWT_SECRET:-}
+      - STS_WS_AUTH_REQUIRED=${STS_WS_AUTH_REQUIRED:-false}
+      # LLM runs on OpenRouter (cloud), so the local GPU is dedicated to Whisper
+      # transcription for much better speed and accuracy than CPU int8.
+      - CUDA_VISIBLE_DEVICES=0
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    # volumes:
+    #   - ./llm-core/models/sup-it-v3-merged:/app/llm/sup-it-v3-merged
     deploy:
       resources:
         reservations:
@@ -49,17 +75,9 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    ports:
-      - "8002:8002"
-    volumes:
-      - ./llm-core/models/sup-it-v3-merged:/app/llm/sup-it-v3-merged
-    environment:
-      - CUDA_VISIBLE_DEVICES=-1
-      - NVIDIA_VISIBLE_DEVICES=none
-      - LLM_BACKEND=hf
-      - LLM_GPU_MAX_MEMORY=3GiB
-      - LLM_CPU_MAX_MEMORY=8GiB
-      - LLM_MAX_NEW_TOKENS=128
+    depends_on:
+      verbal_analyzer:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health')"]
@@ -72,12 +90,30 @@ services:
     build:
       context: ./microservices/verbal-analyzer
     container_name: verbal_analyzer_services
+    networks:
+      - default
+      - talkup-ai
     environment:
       - PYTHONUNBUFFERED=1
-    ports:
-      - "5055:5000"
+      - VA_PORT=8006
+      - VA_HISTORY_MAX_TURNS=${SIM_HISTORY_MAX_TURNS:-30}
+      - VA_SESSION_TTL_SEC=${SIM_CONTEXT_TTL_SEC:-7200}
+      - VA_QUEUE_MAXSIZE=${SIM_MAX_CONCURRENT:-2}
+      - BACKEND_URL=${BACKEND_URL:-http://server:3000/v1/api}
+      - SIM_INTERNAL_API_KEY=${SIM_INTERNAL_API_KEY:-talkup-dev-internal-key}
+    # Internal-only: reachable as verbal_analyzer:8006 on the Docker network.
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8006/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
 networks:
+  # Shared bridge between the AI stack and the backend (server/docker-compose.yml).
+  # Not marked external so whichever stack is brought up first creates this
+  # network (by its fixed name) and the other attaches to the same one — so the
+  # AI stack and the backend can each be launched standalone, in any order.
   talkup-ai:
-    external: true
     name: talkup-ai

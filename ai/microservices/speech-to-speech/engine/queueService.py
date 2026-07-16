@@ -24,6 +24,7 @@ class StsJob:
 	"""
 	audio_bytes: bytes
 	result_future: asyncio.Future[STSResult]
+	interview_id: str | None = None
 
 class StsQueueService:
 	"""
@@ -63,14 +64,24 @@ class StsQueueService:
 		await self._worker_task
 		self._worker_task = None
 
-	async def submit(self, audio_bytes: bytes) -> STSResult:
+	async def submit(
+		self,
+		audio_bytes: bytes,
+		interview_id: str | None = None,
+	) -> STSResult:
 		"""
 		Submits an audio request for processing and returns the result.
 		"""
 		loop = asyncio.get_running_loop()
 		result_future: asyncio.Future[STSResult] = loop.create_future()
 
-		await self._queue.put(StsJob(audio_bytes=audio_bytes, result_future=result_future))
+		await self._queue.put(
+			StsJob(
+				audio_bytes=audio_bytes,
+				result_future=result_future,
+				interview_id=interview_id,
+			),
+		)
 		return await result_future
 
 	async def _worker(self) -> None:
@@ -87,7 +98,12 @@ class StsQueueService:
 				break
 
 			try:
-				result = await asyncio.to_thread(process_sts_request, self._models, job.audio_bytes)
+				result = await asyncio.to_thread(
+					process_sts_request,
+					self._models,
+					job.audio_bytes,
+					job.interview_id,
+				)
 				if not job.result_future.done():
 					job.result_future.set_result(result)
 			except Exception as err:

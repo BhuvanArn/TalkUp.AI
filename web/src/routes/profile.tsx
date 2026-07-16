@@ -7,11 +7,14 @@ import {
 import { AppearanceSettings } from '@/components/organisms/profile-settings/AppearanceSettings';
 import { GeneralSettings } from '@/components/organisms/profile-settings/GeneralSettings';
 import { NotifSettings } from '@/components/organisms/profile-settings/NotifSettings';
+import { OrganizationSettings } from '@/components/organisms/profile-settings/OrganizationSettings';
 import {
-  type AccountSession,
+  // TODO(sessions-api): re-import `type AccountSession` when the mock
+  // "Devices & sessions" state below is re-enabled.
   SecuritySettings,
 } from '@/components/organisms/profile-settings/SecuritySettings';
 import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
+import { useAuthStatus } from '@/hooks/auth/useServices';
 import AuthService from '@/services/auth/http';
 import {
   deleteMyAccount,
@@ -45,7 +48,12 @@ const DEFAULT_JOB_TITLE = 'Product Manager Candidate';
 const SECURITY_SIGNIN_PREF_KEY = 'securityEmailOnNewDevice';
 const authService = new AuthService();
 
-type Tab = 'general' | 'appearance' | 'notifications' | 'security';
+type Tab =
+  | 'general'
+  | 'appearance'
+  | 'notifications'
+  | 'security'
+  | 'organization';
 
 function namesFromUsername(username: string): { first: string; last: string } {
   const parts = username.split(/[.\s_]+/).filter(Boolean);
@@ -147,39 +155,47 @@ function profileToSnapshot(p: UserProfile): ProfileSnapshot {
   };
 }
 
-const DEFAULT_SESSIONS: AccountSession[] = [
-  {
-    id: 'session-current',
-    deviceLabel: 'Chrome on Windows 11',
-    location: 'Paris, France',
-    lastActive: 'Active now',
-    isCurrent: true,
-    kind: 'desktop',
-  },
-  {
-    id: 'session-mobile',
-    deviceLabel: 'Safari on iOS',
-    location: 'Lyon, France',
-    lastActive: '2 days ago',
-    isCurrent: false,
-    kind: 'mobile',
-  },
-  {
-    id: 'session-work',
-    deviceLabel: 'Firefox on macOS',
-    location: 'Remote',
-    lastActive: '1 week ago',
-    isCurrent: false,
-    kind: 'desktop',
-  },
-];
+// TODO(sessions-api #193): mock "Devices & sessions" data — hidden until the
+// real sessions API lands. Kept for the future wiring; do NOT surface in the
+// demo. Tracking: EpitechPromo2027/G-EIP-600-NAN-6-1-eip-tugdual.de-reviers#193
+// const DEFAULT_SESSIONS: AccountSession[] = [
+//   {
+//     id: 'session-current',
+//     deviceLabel: 'Chrome on Windows 11',
+//     location: 'Paris, France',
+//     lastActive: 'Active now',
+//     isCurrent: true,
+//     kind: 'desktop',
+//   },
+//   {
+//     id: 'session-mobile',
+//     deviceLabel: 'Safari on iOS',
+//     location: 'Lyon, France',
+//     lastActive: '2 days ago',
+//     isCurrent: false,
+//     kind: 'mobile',
+//   },
+//   {
+//     id: 'session-work',
+//     deviceLabel: 'Firefox on macOS',
+//     location: 'Remote',
+//     lastActive: '1 week ago',
+//     isCurrent: false,
+//     kind: 'desktop',
+//   },
+// ];
 
-const TABS: { key: Tab; label: string }[] = [
+const BASE_TABS: { key: Tab; label: string }[] = [
   { key: 'general', label: 'General' },
   { key: 'appearance', label: 'Appearance' },
   { key: 'notifications', label: 'Notifications' },
   { key: 'security', label: 'Security' },
 ];
+
+const ORGANIZATION_TAB: { key: Tab; label: string } = {
+  key: 'organization',
+  label: 'Organization',
+};
 
 const emptySnapshot = (): ProfileSnapshot => ({
   firstName: '',
@@ -198,6 +214,9 @@ const emptySnapshot = (): ProfileSnapshot => ({
 
 function Profile() {
   const queryClient = useQueryClient();
+  const { data: authStatus } = useAuthStatus();
+  const organizationId = authStatus?.organizationId ?? null;
+  const authRole = authStatus?.role ?? null;
   const hydratedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<Tab>('general');
   const [firstName, setFirstName] = useState('');
@@ -214,7 +233,8 @@ function Profile() {
   const [notifs, setNotifs] = useState<NotifSetting[]>(() =>
     DEFAULT_NOTIFS.map((n) => ({ ...n })),
   );
-  const [sessions, setSessions] = useState<AccountSession[]>(DEFAULT_SESSIONS);
+  // TODO(sessions-api): session state for the hidden "Devices & sessions" UI.
+  // const [sessions, setSessions] = useState<AccountSession[]>(DEFAULT_SESSIONS);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [ctaAttentionTick, setCtaAttentionTick] = useState(0);
@@ -268,6 +288,7 @@ function Profile() {
         bio,
         linkedinUrl,
         jobTitle,
+        phone: phoneNumber,
         profilePicture,
         avatarAccentColor: avatarColor,
         bannerGradient,
@@ -328,6 +349,13 @@ function Profile() {
   const initials =
     (firstName.charAt(0) || '').toUpperCase() +
     (lastName.charAt(0) || '').toUpperCase();
+
+  // Role-agnostic gate: any org-affiliated account (admin / employee / user)
+  // sees the Organization tab. Absent when there is no organizationId.
+  const tabs = useMemo(
+    () => (organizationId ? [...BASE_TABS, ORGANIZATION_TAB] : BASE_TABS),
+    [organizationId],
+  );
 
   const currentSnapshot = useMemo<ProfileSnapshot>(
     () => ({
@@ -405,6 +433,15 @@ function Profile() {
     };
   }, []);
 
+  // If the active tab is no longer visible (e.g. org affiliation resolves to
+  // none after the initial render), fall back to General rather than showing an
+  // empty panel.
+  useEffect(() => {
+    if (!tabs.some((t) => t.key === activeTab)) {
+      setActiveTab('general');
+    }
+  }, [tabs, activeTab]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -475,11 +512,12 @@ function Profile() {
       prev.map((n) => (n.id === id ? { ...n, enabled: !n.enabled } : n)),
     );
 
-  const revokeSession = (sessionId: string) =>
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-
-  const logoutEverywhere = () =>
-    setSessions((prev) => prev.filter((s) => s.isCurrent));
+  // TODO(sessions-api): revoke/logout handlers for the hidden sessions UI.
+  // const revokeSession = (sessionId: string) =>
+  //   setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+  //
+  // const logoutEverywhere = () =>
+  //   setSessions((prev) => prev.filter((s) => s.isCurrent));
 
   const cycleBanner = () => {
     const idx = BANNER_PRESETS.findIndex((b) => b.value === bannerGradient);
@@ -689,7 +727,7 @@ function Profile() {
               </div>
 
               <div style={tabsBarStyle} role="tablist">
-                {TABS.map(({ key, label }) => (
+                {tabs.map(({ key, label }) => (
                   <Button
                     key={key}
                     type="button"
@@ -820,11 +858,15 @@ function Profile() {
                 )}
                 {activeTab === 'security' && (
                   <SecuritySettings
-                    sessions={sessions}
-                    onRevokeSession={revokeSession}
+                    // TODO(sessions-api): re-enable the mock props below once the
+                    // real sessions / data-export APIs exist. Omitting them hides
+                    // the "Devices & sessions" and "Your data" sections.
+                    // sessions={sessions}
+                    // onRevokeSession={revokeSession}
+                    // onLogoutEverywhere={logoutEverywhere}
+                    // onRequestDataExport={() => {}}
                     emailOnNewDevice={emailOnNewDevice}
                     onEmailOnNewDeviceChange={setEmailOnNewDevice}
-                    onLogoutEverywhere={logoutEverywhere}
                     onChangePassword={() => {
                       const email = profileQuery.data?.email?.trim();
                       if (!email) {
@@ -834,8 +876,14 @@ function Profile() {
                       setSaveError(null);
                       passwordResetRequestMutation.mutate(email);
                     }}
-                    onRequestDataExport={() => {}}
                     onDeleteAccount={() => deleteAccountMutation.mutate()}
+                  />
+                )}
+                {activeTab === 'organization' && organizationId && (
+                  <OrganizationSettings
+                    organizationId={organizationId}
+                    userId={profileQuery.data?.userId ?? null}
+                    userRole={authRole}
                   />
                 )}
               </div>

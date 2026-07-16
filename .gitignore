@@ -2,6 +2,8 @@ node_modules
 CLAUDE.md
 .vercel
 .env
+key.pem
+*.pem
 
 .vscode/
 .github/agents
@@ -11,3 +13,17 @@ recordings/
 
 # Local design specs and implementation plans (not pushed)
 docs/
+
+# AI build artifacts and local dev files
+ai/core/server/build/
+ai/**/.venv/
+ai/**/venv/
+ai/llm-core/models/
+ai/llm-core/sup-it-lora-v3/
+ai/llm-core/unsloth_compiled_cache/
+ai/microservices/**/llm/
+*.wav
+*.mp4
+
+# superpowers brainstorm companion artifacts
+.superpowers/

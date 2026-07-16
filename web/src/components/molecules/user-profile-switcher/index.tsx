@@ -19,7 +19,10 @@ const menuPanelClass =
 
 const menuItemClass =
   'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-body-s font-medium text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background';
-const DEFAULT_AVATAR_COLOR = '#2B70C9';
+// Falls back to the live brand accent token so the avatar follows the active
+// view (blue normally, emerald in the organization view). A user's explicit
+// avatarAccentColor still overrides it.
+const DEFAULT_AVATAR_COLOR = 'var(--color-accent)';
 
 function getDisplayName(
   firstName?: string | null,

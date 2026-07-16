@@ -10,30 +10,47 @@ const sortNotes = (notes: Note[]) => {
   });
 };
 
-/** Custom hook for managing the notes list */
-export const useNotesList = () => {
+/**
+ * Custom hook for managing the notes list.
+ *
+ * @param applicationId When set, only fetch notes for that application (its
+ *   application-scoped and in-simulation notes) — used by the roadmap "My
+ *   notes" deep-link. When undefined, fetch all of the user's notes.
+ */
+export const useNotesList = (applicationId?: string) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Guard against out-of-order responses when applicationId changes while a
+    // fetch is in flight (scoped <-> unscoped on the same mounted route): only
+    // the latest effect run may commit its result.
+    let ignore = false;
     const fetchNotes = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const fetchedNotes = await getUserNotes();
+        const fetchedNotes = await getUserNotes(
+          applicationId ? { applicationId } : undefined,
+        );
+        if (ignore) return;
         const sortedNotes = sortNotes(fetchedNotes);
         setNotes(sortedNotes);
       } catch (err) {
+        if (ignore) return;
         console.error('Error fetching notes:', err);
         setError('Failed to load notes. Please try again.');
       } finally {
-        setIsLoading(false);
+        if (!ignore) setIsLoading(false);
       }
     };
 
     fetchNotes();
-  }, []);
+    return () => {
+      ignore = true;
+    };
+  }, [applicationId]);
 
   const addNote = (note: Note) => {
     setNotes((prevNotes) => [note, ...prevNotes]);

@@ -27,13 +27,16 @@
 #include <condition_variable>
 #include <queue>
 #include <memory>
-#include <crow.h>
+#include <functional>
+#include <future>
 
 #include "ExceptionManager.hpp"
 
 using ResponseCallback = std::function<void(const nlohmann::json&)>;
 
 namespace talkup_network {
+    class WsClientSession;
+
     class MicroservicesManager {
         public:
             /**
@@ -72,7 +75,37 @@ namespace talkup_network {
              *
              * @param data Json data containing the audio information to be sent to the STS microservice.
              */
-            static void send_to_sts_microservice(const nlohmann::json &data, ResponseCallback callback);
+            static void send_to_sts_microservice(
+                const nlohmann::json &data,
+                ResponseCallback callback,
+                const std::shared_ptr<WsClientSession> &client_session = nullptr);
+
+            /**
+             * @brief Drop pending async VA replies for a disconnected browser session.
+             */
+            static void cancel_va_followups_for_client(
+                const std::shared_ptr<WsClientSession> &client_session);
+
+            /**
+             * @brief Push structured simulation context (company, job offer) to STS for one interview.
+             * @return true if STS acknowledged registration.
+             */
+            static bool send_simulation_context_to_sts(
+                const std::string &interview_id,
+                const nlohmann::json &context_data);
+
+            /**
+             * @brief Notify STS that an interview session ended (triggers VA finalize).
+             */
+            static void send_session_end_to_sts(const std::string &interview_id);
+
+            /**
+             * @brief Request STS to generate the proactive opening greeting.
+             */
+            static void send_session_start_to_sts(
+                const nlohmann::json &data,
+                ResponseCallback callback,
+                const std::shared_ptr<WsClientSession> &client_session = nullptr);
 
             /**
              * @brief Initialize WebSocket connections to all registered microservices.
@@ -108,9 +141,20 @@ namespace talkup_network {
         protected:
         private:
             struct WebSocketConnection {
+                enum class StsJobKind {
+                    StreamChunk,
+                    SimulationContext,
+                    SessionStart,
+                };
+
                 struct StsJob {
+                    StsJobKind kind = StsJobKind::StreamChunk;
                     nlohmann::json data;
                     ResponseCallback callback;
+                    std::weak_ptr<WsClientSession> client_session;
+                    std::string interview_id;
+                    nlohmann::json context_data;
+                    std::shared_ptr<std::promise<bool>> context_promise;
                 };
 
                 std::shared_ptr<boost::asio::io_context> io_context;
@@ -167,6 +211,19 @@ namespace talkup_network {
              *
              * @param data The JSON data containing the job information.
              */
-            static void process_sts_job(const nlohmann::json &data, ResponseCallback callback);
+            static void process_sts_job(
+                const nlohmann::json &data,
+                ResponseCallback callback,
+                const std::weak_ptr<WsClientSession> &client_session = {});
+
+            static void process_session_start_job(
+                const nlohmann::json &data,
+                ResponseCallback callback,
+                const std::weak_ptr<WsClientSession> &client_session = {});
+
+            static void process_simulation_context_job(
+                const std::string &interview_id,
+                const nlohmann::json &context_data,
+                const std::shared_ptr<std::promise<bool>> &result_promise);
     };
 }

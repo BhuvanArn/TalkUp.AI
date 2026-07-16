@@ -70,6 +70,7 @@ interface PricingTier {
   features: string[];
   cta: string;
   ctaHref: string;
+  ctaSearch?: Record<string, string>;
   highlight?: boolean;
 }
 
@@ -135,6 +136,7 @@ const PRICING: Record<PricingAudience, PricingTier[]> = {
       ],
       cta: 'I have a code',
       ctaHref: '/register',
+      ctaSearch: { code: '' },
     },
     {
       name: 'Business',
@@ -148,7 +150,7 @@ const PRICING: Record<PricingAudience, PricingTier[]> = {
         'Custom invite codes & onboarding',
       ],
       cta: 'Start a 30-day trial',
-      ctaHref: '/register',
+      ctaHref: '/register-organization',
       highlight: true,
     },
     {
@@ -383,7 +385,9 @@ const PricingCta = ({ tier }: { tier: PricingTier }) => (
     className="w-full"
   >
     {tier.ctaHref.startsWith('/') ? (
-      <Link to={tier.ctaHref}>{tier.cta}</Link>
+      <Link to={tier.ctaHref} search={tier.ctaSearch}>
+        {tier.cta}
+      </Link>
     ) : (
       <a href={tier.ctaHref}>{tier.cta}</a>
     )}
@@ -422,7 +426,7 @@ const PricingCard = ({ tier }: { tier: PricingTier }) => (
         </li>
       ))}
     </ul>
-    <div className="mt-8">
+    <div className="mt-auto pt-8">
       <PricingCta tier={tier} />
     </div>
   </article>
@@ -547,7 +551,11 @@ const Pricing = () => {
       {audience === 'organizations' && (
         <p className="mt-8 text-center text-body-s text-text-weaker">
           Already invited?{' '}
-          <Link to="/register" className="text-accent hover:underline">
+          <Link
+            to="/register"
+            search={{ code: '' }}
+            className="text-accent hover:underline"
+          >
             Sign up with your organization code
           </Link>
           .
