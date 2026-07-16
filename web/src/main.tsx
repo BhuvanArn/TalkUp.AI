@@ -9,13 +9,17 @@ import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { routeTree } from './routeTree.gen';
-import notFoundRoute from './routes/-not-found';
 
 const queryClient = new QueryClient();
 
 const router = createRouter({
   routeTree,
-  defaultNotFoundComponent: notFoundRoute,
+  // __root.tsx owns the 404: it detects the not-found match itself and renders
+  // <NotFoundPage /> with the auth-aware shell *instead of* <Outlet />. This
+  // component only renders where the router substitutes a not-found inside an
+  // <Outlet /> — a path the root's branch never reaches — so returning null
+  // keeps the page from rendering a second time without its shell.
+  defaultNotFoundComponent: () => null,
 });
 
 const rootElement = document.getElementById('root')!;

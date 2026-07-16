@@ -7,6 +7,7 @@ import { InternalApiKeyGuard } from "./guards/internal-api-key.guard";
 import { SimulationContextService } from "./simulation-context.service";
 import { SimulationVerbalAnalysisService } from "./simulation-verbal-analysis.service";
 import { AppendSimulationHistoryDto } from "./dto/appendSimulationHistory.dto";
+import { AppendAssistantTurnDto } from "./dto/appendAssistantTurn.dto";
 import { SaveVerbalAnalysisDto } from "./dto/saveVerbalAnalysis.dto";
 
 @ApiExcludeController()
@@ -32,6 +33,18 @@ export class SimulationInternalController {
     return this.contextService.appendTurn(
       interviewId,
       dto.userText,
+      dto.assistantText,
+    );
+  }
+
+  @UsePipes(new PostValidationPipe())
+  @Post("sessions/:interviewId/assistant-turn")
+  appendAssistantTurn(
+    @Param("interviewId") interviewId: string,
+    @Body() dto: AppendAssistantTurnDto,
+  ) {
+    return this.contextService.appendAssistantTurn(
+      interviewId,
       dto.assistantText,
     );
   }

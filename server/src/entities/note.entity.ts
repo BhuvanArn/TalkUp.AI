@@ -12,6 +12,7 @@ import { uuidv7 } from "uuidv7";
 
 import { user } from "./user.entity";
 import { ai_interview } from "./aiInterview.entity";
+import { application } from "./application.entity";
 
 @Entity()
 export class note {
@@ -28,6 +29,18 @@ export class note {
   })
   @JoinColumn({ name: "interview_id" })
   interview_id: string | null;
+
+  // Application this note belongs to. Set directly for application-scoped notes
+  // (roadmap "My notes"), and denormalized from the interview's application for
+  // in-simulation notes — so filtering by application catches both without a
+  // join. Null for general notes. SET NULL so deleting the application keeps the
+  // note (it just becomes a general note).
+  @ManyToOne(() => application, (app) => app.application_id, {
+    onDelete: "SET NULL",
+    nullable: true,
+  })
+  @JoinColumn({ name: "application_id" })
+  application_id: string | null;
 
   @Column({ type: "varchar", length: 255 })
   title: string;

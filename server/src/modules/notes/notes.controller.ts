@@ -39,16 +39,22 @@ export class NotesController {
   constructor(private readonly service: NotesService) {}
 
   @ApiOperation({
-    summary: "Create a note (standalone or linked to an interview).",
+    summary:
+      "Create a note (general, linked to an interview, or linked to an application). interviewId and applicationId are mutually exclusive.",
   })
   @ApiCreatedResponse({ description: "Note created.", type: NoteResponseDto })
   @ApiUnprocessableEntityResponse({
     description: "Missing required parameters.",
   })
-  @ApiBadRequestResponse({ description: "Badly formatted body." })
-  @ApiNotFoundResponse({ description: "Linked interview not found." })
+  @ApiBadRequestResponse({
+    description:
+      "Badly formatted body, or interviewId and applicationId both set.",
+  })
+  @ApiNotFoundResponse({
+    description: "Linked interview or application not found.",
+  })
   @ApiForbiddenResponse({
-    description: "Linked interview belongs to another user.",
+    description: "Linked interview or application belongs to another user.",
   })
   @UsePipes(new PostValidationPipe())
   @Post()
@@ -58,12 +64,12 @@ export class NotesController {
 
   @ApiOperation({
     summary:
-      "List the caller's notes. No filter = all; ?interviewId= = one interview; ?standalone=true = notes with no interview.",
+      "List the caller's notes. No filter = all; ?interviewId= = one interview; ?applicationId= = one application (application- and in-simulation notes); ?standalone=true = general notes only. The three filters are mutually exclusive.",
   })
   @ApiOkResponse({ description: "Notes retrieved.", type: [NoteResponseDto] })
   @ApiBadRequestResponse({
     description:
-      "Badly formatted query, or interviewId and standalone both set.",
+      "Badly formatted query, or more than one of interviewId, applicationId and standalone set.",
   })
   @UsePipes(new ValidationPipe({ transform: true }))
   @Get()

@@ -3,6 +3,13 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL } from '../config/env';
 import { API_ROUTES } from './api';
 
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    /** Treat a 401 as a valid "anonymous" answer: no refresh, no /login redirect. */
+    anonymousAllowed?: boolean;
+  }
+}
+
 /**
  * API client: httpOnly auth cookies require withCredentials.
  *
@@ -11,6 +18,11 @@ import { API_ROUTES } from './api';
  * /auth/refresh is allowlisted so a failed refresh does not recurse. /auth/status is not
  * allowlisted: a 401 there still attempts refresh once (session may be recoverable).
  * If refresh fails, we redirect to /login except on public auth routes (avoids reload loops).
+ *
+ * Per-request `anonymousAllowed: true` opts a single call out of that escalation, for
+ * callers that render for anonymous visitors and read 401 as "not logged in" rather than
+ * "session expired". Needed because the redirect allowlist above is keyed on pathname, and
+ * a 404 URL is unknowable ahead of time — see the not-found branch in `__root.tsx`.
  */
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL, // Dynamically determined API base URL
@@ -71,7 +83,10 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as
-      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | (InternalAxiosRequestConfig & {
+          _retry?: boolean;
+          anonymousAllowed?: boolean;
+        })
       | undefined;
     const requestUrl = originalRequest?.url ?? '';
 
@@ -82,6 +97,8 @@ axiosInstance.interceptors.response.use(
     if (
       error.response?.status !== 401 ||
       isPublicAuthEndpoint ||
+      // Caller asked to treat 401 as a valid "you are anonymous" answer.
+      originalRequest?.anonymousAllowed ||
       !originalRequest ||
       originalRequest._retry
     ) {

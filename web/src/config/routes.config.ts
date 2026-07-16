@@ -13,6 +13,7 @@ export const routeConfigs: RouteConfig[] = [
   { path: '/forgot-password', requiresAuth: false },
   { path: '/reset-password', requiresAuth: false },
   { path: '/about', requiresAuth: false },
+  { path: '/privacy', requiresAuth: false },
   { path: '/register-organization', requiresAuth: false },
 
   // Protected routes - Main pages

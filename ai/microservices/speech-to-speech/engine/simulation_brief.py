@@ -17,12 +17,32 @@ NOTIFIER = Notifications()
 
 BASE_RECRUITER_PERSONA = (
 	"Tu es Sophie Martin, recruteuse senior IT chez une ESN francaise. "
-	"Tu es chaleureuse, professionnelle, patiente et humaine. "
-	"Tu parles de facon naturelle comme dans une vraie conversation. "
-	"Tu dois repondre uniquement a la derniere prise de parole du candidat, "
-	"en une seule reponse courte et naturelle. "
-	"N'ecris jamais un dialogue multi-tours, n'imite jamais des balises comme system: ou user:, "
-	"et ne recopie jamais l'historique de conversation."
+	"Tu conduis un entretien d'embauche professionnel en visioconference. "
+	"Tu es la meneuse de l'entretien : c'est TOI qui guides la conversation, "
+	"poses les questions, fais les transitions entre les themes et conclus l'echange. "
+	"Ne laisse jamais le candidat diriger seul l'entretien.\n\n"
+	"Style : chaleureuse, professionnelle, humaine et naturelle. "
+	"Reponses orales concises (2 a 4 phrases en general, un peu plus pour l'accueil initial). "
+	"Une seule prise de parole a la fois — ne simule pas plusieurs tours. "
+	"N'ecris jamais de balises (system:, user:, assistant:) ni un dialogue multi-tours. "
+	"Utilise l'historique pour rester coherent : reprends le prenom et les elements deja "
+	"mentionnes, ne repose pas une question deja posee, ne contredis pas le candidat.\n\n"
+	"Structure de l'entretien (~15-20 minutes) — respecte cet ordre strict :\n"
+	"1. Accueil : salutations, remerciements, presentation de l'entreprise et du poste\n"
+	"2. Presentation du candidat : invite-le a se presenter AVANT toute question sur l'experience\n"
+	"3. Parcours : experiences passees, formations, evolutions de carriere\n"
+	"4. Competences : questions techniques ou metier selon le type de simulation\n"
+	"5. Motivation : pourquoi ce poste, projet professionnel, soft skills\n"
+	"6. Echange : propose au candidat de poser ses questions\n"
+	"7. Cloture : remerciements, prochaines etapes, au revoir chaleureux\n\n"
+	"Comportement proactif : pose TOUJOURS une question ou annonce clairement "
+	"la prochaine etape a la fin de chaque reponse. "
+	"Transitionne activement entre les phases. "
+	"Rebondis sur les reponses du candidat avant d'enchaîner. "
+	"Ne reponds jamais par un simple accord sans question de suivi.\n\n"
+	"Regles sur le prenom du candidat : n'utilise JAMAIS de placeholder entre crochets "
+	"(ex. [Prenom du candidat], [Nom]). Si le prenom n'est pas explicitement connu "
+	"dans le contexte, dis simplement « Bonjour » sans nom — le candidat se presentera ensuite."
 )
 
 
@@ -116,6 +136,16 @@ class SimulationBriefStore:
 				state.history = state.history[-60:]
 
 	@classmethod
+	def append_assistant(cls, interview_id: str, assistant_text: str) -> None:
+		with cls._lock:
+			state = cls._sessions.get(interview_id)
+			if state is None:
+				return
+			state.history.append({"role": "assistant", "content": assistant_text})
+			if len(state.history) > 60:
+				state.history = state.history[-60:]
+
+	@classmethod
 	def clear(cls, interview_id: str) -> None:
 		with cls._lock:
 			cls._sessions.pop(interview_id, None)
@@ -166,31 +196,85 @@ def build_system_prompt_from_brief(brief: SimulationBrief, fallback: str) -> str
 	return "\n".join(sections)
 
 
+def _append_history_turns(
+	messages: list[dict[str, str]],
+	history: list[dict[str, str]],
+) -> None:
+	for turn in history:
+		role = turn.get("role")
+		content = turn.get("content")
+		if role in ("user", "assistant") and isinstance(content, str) and content.strip():
+			messages.append({"role": role, "content": content})
+
+
+def _resolve_session(
+	default_system_prompt: str,
+	interview_id: str | None,
+) -> tuple[str, list[dict[str, str]]] | None:
+	from .session_context import fetch_session_context
+
+	if not interview_id:
+		return None
+
+	state = SimulationBriefStore.get(interview_id)
+	if state is not None:
+		system_prompt = build_system_prompt_from_brief(state.brief, default_system_prompt)
+		return system_prompt, list(state.history)
+
+	nest_session = fetch_session_context(interview_id)
+	if nest_session is not None:
+		system_prompt = nest_session.get("systemPrompt") or default_system_prompt
+		history = nest_session.get("history") or []
+		return system_prompt, list(history)
+
+	return None
+
+
 def build_messages_for_turn(
 	default_system_prompt: str,
 	interview_id: str | None,
 	user_text: str,
+	extra_instruction: str = "",
 ) -> list[dict[str, str]]:
 	from .session_context import build_messages_from_nest_session, fetch_session_context
 
 	if interview_id:
-		state = SimulationBriefStore.get(interview_id)
-		if state is not None:
-			system_prompt = build_system_prompt_from_brief(state.brief, default_system_prompt)
+		resolved = _resolve_session(default_system_prompt, interview_id)
+		if resolved is not None:
+			system_prompt, history = resolved
+			if extra_instruction:
+				system_prompt = f"{system_prompt}\n\n{extra_instruction}"
 			messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
-			for turn in state.history:
-				role = turn.get("role")
-				content = turn.get("content")
-				if role in ("user", "assistant") and isinstance(content, str) and content.strip():
-					messages.append({"role": role, "content": content})
+			_append_history_turns(messages, history)
 			messages.append({"role": "user", "content": user_text})
 			return messages
 
 		nest_session = fetch_session_context(interview_id)
 		if nest_session is not None:
-			return build_messages_from_nest_session(default_system_prompt, nest_session, user_text)
+			return build_messages_from_nest_session(
+				default_system_prompt,
+				nest_session,
+				user_text,
+				extra_instruction=extra_instruction,
+			)
 
+	system_prompt = default_system_prompt
+	if extra_instruction:
+		system_prompt = f"{system_prompt}\n\n{extra_instruction}"
 	return [
-		{"role": "system", "content": default_system_prompt},
+		{"role": "system", "content": system_prompt},
 		{"role": "user", "content": user_text},
 	]
+
+
+def build_messages_for_opening(
+	default_system_prompt: str,
+	interview_id: str | None,
+) -> list[dict[str, str]]:
+	from .interview_flow import OPENING_TRIGGER
+
+	return build_messages_for_turn(
+		default_system_prompt,
+		interview_id,
+		OPENING_TRIGGER,
+	)

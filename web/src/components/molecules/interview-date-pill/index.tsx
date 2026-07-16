@@ -1,6 +1,9 @@
+import { iconMap } from '@/components/atoms/icon/icon-map';
 import { useUpdateApplicationInterviewAt } from '@/services/applications/hooks';
 import { format } from 'date-fns';
 import { useRef } from 'react';
+
+const PlusIcon = iconMap.plus;
 
 interface InterviewDatePillProps {
   applicationId: string;
@@ -30,7 +33,7 @@ const isoToDateInput = (iso: string): string =>
 
 /**
  * Interview-date pill. One clickable control in both states:
- * - unset: dashed "Add interview date +".
+ * - unset: dashed "Add interview date" with a leading + icon.
  * - set: date + countdown + suggested pace (all computed client-side).
  *
  * Either way the whole pill is a `<label>` over a full-bleed, transparent date
@@ -82,7 +85,12 @@ export const InterviewDatePill = ({
       </>
     );
   } else {
-    content = <span className="text-label-m">Add interview date +</span>;
+    content = (
+      <span className="text-label-m flex items-center gap-1.5">
+        <PlusIcon size={14} aria-hidden="true" />
+        Add interview date
+      </span>
+    );
   }
 
   return (

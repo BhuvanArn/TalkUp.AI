@@ -8,11 +8,23 @@ import toast from 'react-hot-toast';
 
 const authService = new AuthService();
 
-/** Role/org for UI gating (B4). Guards fetch their own copy; this one is for rendering. */
-export const useAuthStatus = () => {
+/**
+ * Role/org for UI gating (B4). Guards fetch their own copy; this one is for rendering.
+ *
+ * Set `anonymousAllowed` when the caller renders for logged-out visitors, so a 401 resolves
+ * to ANONYMOUS instead of bouncing the browser to /login. See `checkAuthStatus`.
+ */
+export const useAuthStatus = ({
+  anonymousAllowed,
+}: { anonymousAllowed?: boolean } = {}) => {
   return useQuery<AuthStatus>({
-    queryKey: ['auth', 'status'],
-    queryFn: checkAuthStatus,
+    // Distinct key per variant. Sharing one key would let whichever observer fetches
+    // first decide the flag for every other caller (mount-order dependent), leaking
+    // the anonymous no-refresh behaviour onto guarded pages.
+    queryKey: anonymousAllowed
+      ? ['auth', 'status', 'anonymous']
+      : ['auth', 'status'],
+    queryFn: () => checkAuthStatus({ anonymousAllowed }),
     staleTime: 60 * 1000,
   });
 };

@@ -1,6 +1,7 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import { ChatWindow, Message } from '@/components/organisms/chatbot/ChatWindow';
+import { useChatContext } from '@/hooks/ui/useChatContext';
 import { useDragFAB } from '@/hooks/ui/useDragFAB';
 import { sendChatMessage } from '@/services/ai/http';
 import { ChatHistoryItem } from '@/services/ai/types';
@@ -24,6 +25,9 @@ const getTimestamp = () =>
 
 export const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
+  // The page the widget is on right now — sent as grounding context so the
+  // assistant can answer about what the user is looking at.
+  const chatContext = useChatContext();
   // Computed on mount so the welcome timestamp reflects when the chat is first
   // rendered, not when the module was loaded.
   const [messages, setMessages] = useState<Message[]>(() => [
@@ -74,7 +78,11 @@ export const ChatWidget = () => {
 
     let replyText = ERROR_TEXT;
     try {
-      const { reply } = await sendChatMessage({ message: text, history });
+      const { reply } = await sendChatMessage({
+        message: text,
+        history,
+        ...(chatContext ? { context: chatContext } : {}),
+      });
       replyText = reply;
     } catch {
       // Fall back to the error message; the details are logged in the service.
@@ -90,7 +98,7 @@ export const ChatWidget = () => {
     };
     setMessages((prev) => [...prev, aiMsg]);
     setIsTyping(false);
-  }, [inputValue, isTyping, messages]);
+  }, [inputValue, isTyping, messages, chatContext]);
 
   useEffect(() => {
     mounted.current = true;

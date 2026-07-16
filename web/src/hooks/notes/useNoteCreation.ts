@@ -7,7 +7,12 @@ export const useNoteCreation = () => {
   const [isCreating, setIsCreating] = useState(false);
   const isCreatingRef = useRef(false);
 
+  /**
+   * @param applicationId When set, the new note is scoped to that application
+   *   (created from an application's "My notes" view).
+   */
   const createNewNote = async (
+    applicationId?: string,
     title: string = 'Untitled Note',
     content: string = '',
     color: string = 'blue',
@@ -22,6 +27,7 @@ export const useNoteCreation = () => {
         title,
         content,
         color,
+        ...(applicationId ? { applicationId } : {}),
       });
       return newNote;
     } catch (err) {

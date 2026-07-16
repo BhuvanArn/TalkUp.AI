@@ -28,6 +28,7 @@ export interface UseSimulationWebSocketReturn {
   sendMessage: (message: string) => void;
   sendJsonMessage: (message: object) => void;
   sendPing: (payload?: unknown) => void;
+  sendSessionStart: () => void;
   lastMessage: MessageEvent | null;
   lastJsonMessage: unknown;
   getWebSocket: () => ReturnType<
@@ -156,6 +157,20 @@ export function useSimulationWebSocket(
     sendJsonMessage(pingMessage);
   }, [readyState, sendJsonMessage]);
 
+  const sendSessionStart = useCallback(() => {
+    if (readyState !== ReadyState.OPEN || !interviewIDRef.current) return;
+
+    sendJsonMessage({
+      type: 'session_start',
+      key: import.meta.env.VITE_WEBSOCKET_KEY,
+      interview_id: interviewIDRef.current,
+      stream_id: interviewIDRef.current,
+      format: 'text',
+      data: '{}',
+      timestamp: Date.now(),
+    });
+  }, [readyState, sendJsonMessage]);
+
   return {
     isConnected: readyState === ReadyState.OPEN,
     readyState,
@@ -165,6 +180,7 @@ export function useSimulationWebSocket(
     sendMessage,
     sendJsonMessage,
     sendPing,
+    sendSessionStart,
     lastMessage,
     lastJsonMessage,
     getWebSocket,

@@ -1,3 +1,4 @@
+import { CheckboxInput } from '@/components/atoms/checkbox-input';
 import { useCreateApplication } from '@/services/applications/hooks';
 import type { Application } from '@/services/applications/types';
 import { uploadMyCV } from '@/services/users/http';
@@ -43,6 +44,7 @@ function CVAnalysisPage() {
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [jobUrl, setJobUrl] = useState('');
   const [deadline, setDeadline] = useState<Date | null>(null);
+  const [dataConsentAccepted, setDataConsentAccepted] = useState(false);
   const [analysisStep, setAnalysisStep] = useState<'idle' | 'cv' | 'offer'>(
     'idle',
   );
@@ -50,7 +52,8 @@ function CVAnalysisPage() {
     useState<Application | null>(null);
   const createApplicationMutation = useCreateApplication();
 
-  const canStart = Boolean(cvFile) && isAllowedJobUrl(jobUrl);
+  const canStart =
+    Boolean(cvFile) && isAllowedJobUrl(jobUrl) && dataConsentAccepted;
   const isAnalyzing = analysisStep !== 'idle';
   const isFinished = createdApplication !== null;
 
@@ -110,6 +113,7 @@ function CVAnalysisPage() {
     setCvFile(null);
     setJobUrl('');
     setDeadline(null);
+    setDataConsentAccepted(false);
   };
 
   /**
@@ -219,7 +223,36 @@ function CVAnalysisPage() {
           </div>
 
           {/* Action Footer */}
-          <footer className="mt-8 text-center">
+          <footer className="mx-auto mt-8 flex max-w-[680px] flex-col items-center gap-5 text-center">
+            <div className="border-border bg-background w-full rounded-2xl border px-5 py-4 text-left">
+              <div className="flex items-start gap-3">
+                <CheckboxInput
+                  id="data-consent"
+                  name="dataConsent"
+                  checked={dataConsentAccepted}
+                  onChange={(event) =>
+                    setDataConsentAccepted(event.target.checked)
+                  }
+                  className="mt-0.5 shrink-0"
+                  aria-describedby="data-consent-helper"
+                />
+                <label
+                  htmlFor="data-consent"
+                  className="text-body-s text-text cursor-pointer"
+                >
+                  I consent to TalkUp processing my personal data (including my
+                  CV) to perform this compatibility analysis.
+                </label>
+              </div>
+              <p
+                id="data-consent-helper"
+                className="text-body-s text-text-weaker mt-3 pl-7"
+              >
+                Your data is stored securely. You can access, export, or delete
+                it at any time.
+              </p>
+            </div>
+
             <button
               type="button"
               onClick={handleStartAnalysis}

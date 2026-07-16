@@ -70,6 +70,7 @@ const mockHandleStreamToggle = vi.fn();
 
 const defaultAudioPlaybackReturn = {
   isAiSpeaking: false,
+  simulationComplete: false,
   stopPlayback: vi.fn(),
   error: null,
   transcript: null,

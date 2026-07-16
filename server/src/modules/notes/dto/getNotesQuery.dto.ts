@@ -17,7 +17,16 @@ export class GetNotesQueryDto {
 
   @ApiPropertyOptional({
     description:
-      "When true, return only standalone notes (no interview linkage). Mutually exclusive with interviewId.",
+      "Return only notes for this application. Catches both application-scoped notes and in-simulation notes (their application is denormalized onto the note).",
+    example: "019ac5a6-ada7-7a96-9a38-23819f37ab90",
+  })
+  @IsOptional()
+  @IsUUID()
+  applicationId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "When true, return only standalone notes (no interview or application linkage). Mutually exclusive with interviewId and applicationId.",
     example: true,
   })
   @Transform(({ value }) =>

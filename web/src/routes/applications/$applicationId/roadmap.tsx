@@ -1,5 +1,6 @@
 import { iconMap } from '@/components/atoms/icon/icon-map';
 import { InterviewDatePill } from '@/components/molecules/interview-date-pill';
+import { RoadmapSourcesModal } from '@/components/organisms/roadmap-sources-modal';
 import { RoadmapTalkingPoints } from '@/components/organisms/roadmap-talking-points';
 import { RoadmapTimeline } from '@/components/organisms/roadmap-timeline';
 import {
@@ -9,10 +10,11 @@ import {
 } from '@/services/applications/hooks';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { Link, createFileRoute } from '@tanstack/react-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 const RegenerateIcon = iconMap.redo;
+const SourcesIcon = iconMap.cv;
 const NotesIcon = iconMap.notes;
 const StartIcon = iconMap['arrow-right'];
 
@@ -67,6 +69,13 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
   // Which view is showing. The "talking" tab only appears when there are points
   // (see below), so this only ever reaches 'talking' while that tab exists.
   const [activeTab, setActiveTab] = useState<'path' | 'talking'>('path');
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+
+  // Ghost-reopen guard: if the application drops out of the cache while the
+  // modal is open, close it so a later cache refill can't resurrect it.
+  useEffect(() => {
+    if (!application) setSourcesOpen(false);
+  }, [application]);
 
   const heading = application
     ? [application.jobTitle, application.companyName]
@@ -148,25 +157,38 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
       </Link>
       <Link
         to="/notes"
+        search={{ applicationId }}
         className="text-button-m border-accent text-accent hover:bg-accent-weak flex items-center gap-2 rounded-2xl border px-8 py-3 transition-colors"
       >
         <NotesIcon size={16} aria-hidden="true" />
         My notes
       </Link>
       <div className="ml-auto flex flex-col items-end gap-1">
-        <button
-          type="button"
-          onClick={() => regenerate.mutate()}
-          disabled={regenerate.isPending}
-          className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-2xl border px-5 py-3 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <RegenerateIcon
-            size={16}
-            aria-hidden="true"
-            className={regenerate.isPending ? 'animate-spin' : ''}
-          />
-          {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
-        </button>
+        <div className="flex items-center gap-4">
+          {application && (
+            <button
+              type="button"
+              onClick={() => setSourcesOpen(true)}
+              className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-2xl border px-5 py-3 transition-colors"
+            >
+              <SourcesIcon size={16} aria-hidden="true" />
+              Sources
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => regenerate.mutate()}
+            disabled={regenerate.isPending}
+            className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-2xl border px-5 py-3 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RegenerateIcon
+              size={16}
+              aria-hidden="true"
+              className={regenerate.isPending ? 'animate-spin' : ''}
+            />
+            {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
+          </button>
+        </div>
         {regenerate.isError && (
           <p className="text-body-s text-error">
             Couldn't regenerate — try again in a minute.
@@ -177,80 +199,88 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
   );
 
   return (
-    <RoadmapShell
-      header={
-        <div className="flex w-full min-w-0 flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-h1 text-text-idle">{heading}</h1>
-            {roadmap.summary && (
-              <p className="text-body-m text-text-weak mt-1">
-                {roadmap.summary}
-              </p>
-            )}
+    <>
+      <RoadmapShell
+        header={
+          <div className="flex w-full min-w-0 flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-h1 text-text-idle">{heading}</h1>
+              {roadmap.summary && (
+                <p className="text-body-m text-text-weak mt-1">
+                  {roadmap.summary}
+                </p>
+              )}
+            </div>
+            <InterviewDatePill
+              applicationId={applicationId}
+              interviewAt={application?.interviewAt ?? null}
+              topicsCount={roadmap.topics.length}
+            />
           </div>
-          <InterviewDatePill
-            applicationId={applicationId}
-            interviewAt={application?.interviewAt ?? null}
-            topicsCount={roadmap.topics.length}
+        }
+      >
+        {isEmpty ? (
+          <div className="flex min-h-0 flex-1 flex-col gap-6">
+            <div className="border-border flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-10 text-center">
+              {hasOfferButEmpty ? (
+                <>
+                  <p className="text-body-l text-text-weak">
+                    Couldn't build a path from this offer yet — try Regenerate.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => regenerate.mutate()}
+                    disabled={regenerate.isPending}
+                    className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-2xl px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-disabled"
+                  >
+                    {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-body-l text-text-weak">
+                    No preparation path yet. Analyze an offer first.
+                  </p>
+                  <Link to="/cv-analysis" className="text-button-m text-accent">
+                    Go to CV analysis
+                  </Link>
+                </>
+              )}
+            </div>
+            <footer className="border-border shrink-0 border-t pt-6">
+              {actions}
+            </footer>
+          </div>
+        ) : talkingPoints.length > 0 ? (
+          <RoadmapTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            timeline={
+              <RoadmapTimeline
+                roadmap={roadmap}
+                interviewAt={application?.interviewAt ?? null}
+                actions={actions}
+              />
+            }
+            talkingPoints={<RoadmapTalkingPoints points={talkingPoints} />}
           />
-        </div>
-      }
-    >
-      {isEmpty ? (
-        <div className="flex min-h-0 flex-1 flex-col gap-6">
-          <div className="border-border flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-10 text-center">
-            {hasOfferButEmpty ? (
-              <>
-                <p className="text-body-l text-text-weak">
-                  Couldn't build a path from this offer yet — try Regenerate.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => regenerate.mutate()}
-                  disabled={regenerate.isPending}
-                  className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-2xl px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-disabled"
-                >
-                  {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-body-l text-text-weak">
-                  No preparation path yet. Analyze an offer first.
-                </p>
-                <Link to="/cv-analysis" className="text-button-m text-accent">
-                  Go to CV analysis
-                </Link>
-              </>
-            )}
-          </div>
-          <footer className="border-border shrink-0 border-t pt-6">
-            {actions}
-          </footer>
-        </div>
-      ) : talkingPoints.length > 0 ? (
-        <RoadmapTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          timeline={
+        ) : (
+          <div className="min-h-0 flex-1">
             <RoadmapTimeline
               roadmap={roadmap}
               interviewAt={application?.interviewAt ?? null}
               actions={actions}
             />
-          }
-          talkingPoints={<RoadmapTalkingPoints points={talkingPoints} />}
+          </div>
+        )}
+      </RoadmapShell>
+      {sourcesOpen && application && (
+        <RoadmapSourcesModal
+          application={application}
+          onClose={() => setSourcesOpen(false)}
         />
-      ) : (
-        <div className="min-h-0 flex-1">
-          <RoadmapTimeline
-            roadmap={roadmap}
-            interviewAt={application?.interviewAt ?? null}
-            actions={actions}
-          />
-        </div>
       )}
-    </RoadmapShell>
+    </>
   );
 }
 

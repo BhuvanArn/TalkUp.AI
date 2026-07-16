@@ -11,16 +11,19 @@ import {
 import { NotesService } from "./notes.service";
 import { note } from "@entities/note.entity";
 import { ai_interview } from "@entities/aiInterview.entity";
+import { application } from "@entities/application.entity";
 
 describe("NotesService", () => {
   let service: NotesService;
   let noteRepo: any;
   let interviewRepo: any;
+  let applicationRepo: any;
 
   const baseNote = {
     note_id: "note-1",
     user_id: "user-1",
     interview_id: null,
+    application_id: null,
     title: "My note",
     content: "<p>hi</p>",
     color: "blue",
@@ -40,12 +43,19 @@ describe("NotesService", () => {
     interviewRepo = {
       findOne: jest.fn(),
     };
+    applicationRepo = {
+      findOne: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         NotesService,
         { provide: getRepositoryToken(note), useValue: noteRepo },
         { provide: getRepositoryToken(ai_interview), useValue: interviewRepo },
+        {
+          provide: getRepositoryToken(application),
+          useValue: applicationRepo,
+        },
       ],
     }).compile();
 
@@ -72,6 +82,7 @@ describe("NotesService", () => {
       interviewRepo.findOne.mockResolvedValue({
         interview_id: "int-1",
         user_id: "user-1",
+        application_id: null,
       });
       noteRepo.save.mockResolvedValue({
         ...baseNote,
@@ -91,6 +102,28 @@ describe("NotesService", () => {
       expect(result.interview_id).toBe("int-1");
     });
 
+    it("denormalizes the interview's application onto an in-sim note", async () => {
+      // A simulation runs against an application; its note must carry that
+      // application so a ?applicationId= filter later catches it without a join.
+      interviewRepo.findOne.mockResolvedValue({
+        interview_id: "int-1",
+        user_id: "user-1",
+        application_id: "app-1",
+      });
+      noteRepo.save.mockImplementation((v: any) => Promise.resolve(v));
+      const result = await service.create("user-1", {
+        title: "Sim note",
+        interviewId: "int-1",
+      });
+      expect(noteRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          interview_id: "int-1",
+          application_id: "app-1",
+        }),
+      );
+      expect(result.application_id).toBe("app-1");
+    });
+
     it("throws NotFound when the interview does not exist", async () => {
       interviewRepo.findOne.mockResolvedValue(null);
       await expect(
@@ -106,6 +139,52 @@ describe("NotesService", () => {
       await expect(
         service.create("user-1", { title: "x", interviewId: "int-1" }),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("creates an application-scoped note when the application is owned", async () => {
+      applicationRepo.findOne.mockResolvedValue({
+        application_id: "app-1",
+        user_id: "user-1",
+      });
+      noteRepo.save.mockImplementation((v: any) => Promise.resolve(v));
+      const result = await service.create("user-1", {
+        title: "App note",
+        applicationId: "app-1",
+      });
+      expect(applicationRepo.findOne).toHaveBeenCalledWith({
+        where: { application_id: "app-1" },
+      });
+      expect(interviewRepo.findOne).not.toHaveBeenCalled();
+      expect(result.application_id).toBe("app-1");
+      expect(result.interview_id).toBeNull();
+    });
+
+    it("throws NotFound when the application does not exist", async () => {
+      applicationRepo.findOne.mockResolvedValue(null);
+      await expect(
+        service.create("user-1", { title: "x", applicationId: "app-x" }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("throws Forbidden when the application belongs to another user", async () => {
+      applicationRepo.findOne.mockResolvedValue({
+        application_id: "app-1",
+        user_id: "other-user",
+      });
+      await expect(
+        service.create("user-1", { title: "x", applicationId: "app-1" }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("rejects a create that sets both interviewId and applicationId", async () => {
+      await expect(
+        service.create("user-1", {
+          title: "x",
+          interviewId: "int-1",
+          applicationId: "app-1",
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(noteRepo.save).not.toHaveBeenCalled();
     });
 
     it("coalesces null content to empty string in the response", async () => {
@@ -139,10 +218,22 @@ describe("NotesService", () => {
       });
     });
 
-    it("filters standalone notes (interview_id null)", async () => {
+    it("filters by applicationId (application-scoped and in-sim notes)", async () => {
+      await service.findAll("user-1", { applicationId: "app-1" });
+      expect(noteRepo.find).toHaveBeenCalledWith({
+        where: { user_id: "user-1", application_id: "app-1" },
+        order: { updated_at: "DESC" },
+      });
+    });
+
+    it("filters general notes (both interview_id and application_id null)", async () => {
       await service.findAll("user-1", { standalone: true });
       expect(noteRepo.find).toHaveBeenCalledWith({
-        where: { user_id: "user-1", interview_id: IsNull() },
+        where: {
+          user_id: "user-1",
+          interview_id: IsNull(),
+          application_id: IsNull(),
+        },
         order: { updated_at: "DESC" },
       });
     });
@@ -158,6 +249,15 @@ describe("NotesService", () => {
     it("throws BadRequest when both interviewId and standalone are present", async () => {
       await expect(
         service.findAll("user-1", { interviewId: "int-1", standalone: false }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("throws BadRequest when interviewId and applicationId are both present", async () => {
+      await expect(
+        service.findAll("user-1", {
+          interviewId: "int-1",
+          applicationId: "app-1",
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 

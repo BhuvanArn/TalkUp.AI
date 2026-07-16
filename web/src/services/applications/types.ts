@@ -19,13 +19,31 @@ export interface OfferDetails {
   team_description: string | null;
 }
 
+export interface CvExperience {
+  company: string | null;
+  title: string | null;
+  description: string | null;
+  duration: string | null;
+}
+
+export interface CvEducation {
+  degree: string | null;
+  school_name: string | null;
+  duration: string | null;
+}
+
+export interface CvLanguage {
+  language: string | null;
+  level: string | null;
+}
+
 export interface CvDetails {
   desired_job: string | null;
   resume: string | null;
-  experiences: unknown[];
-  education: unknown[];
+  experiences: CvExperience[];
+  education: CvEducation[];
   technical_skills: string[];
-  languages: unknown[];
+  languages: CvLanguage[];
 }
 
 /**

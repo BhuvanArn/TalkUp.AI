@@ -6,7 +6,11 @@ import { SimulationVerbalAnalysisService } from "./simulation-verbal-analysis.se
 
 describe("SimulationInternalController", () => {
   let controller: SimulationInternalController;
-  let context: { getContextForSts: jest.Mock; appendTurn: jest.Mock };
+  let context: {
+    getContextForSts: jest.Mock;
+    appendTurn: jest.Mock;
+    appendAssistantTurn: jest.Mock;
+  };
   let verbalAnalysis: {
     saveForInterview: jest.Mock;
     getForInterview: jest.Mock;
@@ -16,6 +20,7 @@ describe("SimulationInternalController", () => {
     context = {
       getContextForSts: jest.fn(),
       appendTurn: jest.fn(),
+      appendAssistantTurn: jest.fn(),
     };
 
     verbalAnalysis = {
@@ -59,5 +64,18 @@ describe("SimulationInternalController", () => {
     });
 
     expect(context.appendTurn).toHaveBeenCalledWith("int-1", "hello", "hi");
+  });
+
+  it("appends a standalone assistant turn from the DTO", async () => {
+    context.appendAssistantTurn.mockResolvedValueOnce(undefined);
+
+    await controller.appendAssistantTurn("int-1", {
+      assistantText: "Bonjour et bienvenue",
+    });
+
+    expect(context.appendAssistantTurn).toHaveBeenCalledWith(
+      "int-1",
+      "Bonjour et bienvenue",
+    );
   });
 });

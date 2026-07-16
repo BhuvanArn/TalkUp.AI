@@ -140,15 +140,27 @@ describe("AiController", () => {
       expect(res).toEqual(true);
     });
 
-    it("chat should call service and return the reply", async () => {
+    it("chat should call service with the caller's id and return the reply", async () => {
       const dto = { message: "How do I answer behavioral questions?" } as any;
       const serviceResult = { reply: "Use the STAR method." };
       (mockAiService.chat as jest.Mock).mockResolvedValueOnce(serviceResult);
 
-      const res = await controller.chat(dto);
+      const res = await controller.chat(dto, "user-1");
 
-      expect(mockAiService.chat).toHaveBeenCalledWith(dto);
+      expect(mockAiService.chat).toHaveBeenCalledWith(dto, "user-1");
       expect(res).toEqual(serviceResult);
+    });
+
+    it("guards the chat route with the ThrottlerGuard so @Throttle fires", () => {
+      // @Throttle is a no-op without an explicit route ThrottlerGuard.
+      const guards = Reflect.getMetadata(
+        "__guards__",
+        AiController.prototype.chat,
+      ) as unknown[] | undefined;
+      const names = (guards ?? []).map((g: any) =>
+        typeof g === "function" ? g.name : g?.constructor?.name,
+      );
+      expect(names).toContain("ThrottlerGuard");
     });
 
     it("addTranscripts should call service and return result", async () => {

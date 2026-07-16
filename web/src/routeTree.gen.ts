@@ -16,6 +16,7 @@ import { Route as RegisterOrganizationRouteImport } from './routes/register-orga
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProgressionRouteImport } from './routes/progression'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OrganizationCreatedRouteImport } from './routes/organization-created'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -75,6 +76,11 @@ const ProgressionRoute = ProgressionRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizationCreatedRoute = OrganizationCreatedRouteImport.update({
@@ -217,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/organization-created': typeof OrganizationCreatedRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
@@ -251,6 +258,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/organization-created': typeof OrganizationCreatedRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
@@ -286,6 +294,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/organization-created': typeof OrganizationCreatedRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progression': typeof ProgressionRoute
   '/register': typeof RegisterRoute
@@ -322,6 +331,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/organization-created'
+    | '/privacy'
     | '/profile'
     | '/progression'
     | '/register'
@@ -356,6 +366,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/organization-created'
+    | '/privacy'
     | '/profile'
     | '/progression'
     | '/register'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/organization-created'
+    | '/privacy'
     | '/profile'
     | '/progression'
     | '/register'
@@ -425,6 +437,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   OrganizationCreatedRoute: typeof OrganizationCreatedRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ProgressionRoute: typeof ProgressionRoute
   RegisterRoute: typeof RegisterRoute
@@ -499,6 +512,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organization-created': {
@@ -689,6 +709,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   OrganizationCreatedRoute: OrganizationCreatedRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ProgressionRoute: ProgressionRoute,
   RegisterRoute: RegisterRoute,

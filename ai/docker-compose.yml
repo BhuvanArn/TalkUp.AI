@@ -55,7 +55,7 @@ services:
       - BACKEND_URL=${BACKEND_URL:-http://server:3000/v1/api}
       - SIM_INTERNAL_API_KEY=${SIM_INTERNAL_API_KEY:-talkup-dev-internal-key}
       - LLM_BACKEND=${LLM_BACKEND:-openrouter}
-      - LLM_MAX_NEW_TOKENS=${LLM_MAX_NEW_TOKENS:-160}
+      - LLM_MAX_NEW_TOKENS=${LLM_MAX_NEW_TOKENS:-320}
       - VA_SERVICE_URL=http://verbal_analyzer:8006
       - VA_ENABLED=true
       - VA_TIMEOUT_SEC=3

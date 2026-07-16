@@ -10,22 +10,43 @@ export type SimulationConfig = {
   heartbeatIntervalSec: number;
 };
 
+export const SIM_AI_INIT_TIMEOUT_MS_DEFAULT = 30_000;
+
+/** Parse a positive integer env var; invalid or non-positive values use fallback. */
+export function parsePositiveIntEnv(
+  raw: string | undefined,
+  fallback: number,
+): number {
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? Math.trunc(value) : fallback;
+}
+
+export function loadAiInitTimeoutMs(): number {
+  return parsePositiveIntEnv(
+    process.env.SIM_AI_INIT_TIMEOUT_MS,
+    SIM_AI_INIT_TIMEOUT_MS_DEFAULT,
+  );
+}
+
 export function loadSimulationConfig(): SimulationConfig {
   return {
-    maxConcurrent: parseInt(process.env.SIM_MAX_CONCURRENT ?? "2", 10),
-    queueMaxSize: parseInt(process.env.SIM_QUEUE_MAX_SIZE ?? "20", 10),
-    slotTtlSec: parseInt(process.env.SIM_SLOT_TTL_SEC ?? "900", 10),
-    queueEntryTtlSec: parseInt(
-      process.env.SIM_QUEUE_ENTRY_TTL_SEC ?? "3600",
-      10,
+    maxConcurrent: parsePositiveIntEnv(process.env.SIM_MAX_CONCURRENT, 2),
+    queueMaxSize: parsePositiveIntEnv(process.env.SIM_QUEUE_MAX_SIZE, 20),
+    slotTtlSec: parsePositiveIntEnv(process.env.SIM_SLOT_TTL_SEC, 900),
+    queueEntryTtlSec: parsePositiveIntEnv(
+      process.env.SIM_QUEUE_ENTRY_TTL_SEC,
+      3600,
     ),
-    wsTokenTtlSec: parseInt(process.env.SIM_WS_TOKEN_TTL_SEC ?? "900", 10),
-    estimatedTurnSec: parseInt(process.env.SIM_ESTIMATED_TURN_SEC ?? "90", 10),
-    historyMaxTurns: parseInt(process.env.SIM_HISTORY_MAX_TURNS ?? "30", 10),
-    contextTtlSec: parseInt(process.env.SIM_CONTEXT_TTL_SEC ?? "7200", 10),
-    heartbeatIntervalSec: parseInt(
-      process.env.SIM_HEARTBEAT_INTERVAL_SEC ?? "60",
-      10,
+    wsTokenTtlSec: parsePositiveIntEnv(process.env.SIM_WS_TOKEN_TTL_SEC, 900),
+    estimatedTurnSec: parsePositiveIntEnv(
+      process.env.SIM_ESTIMATED_TURN_SEC,
+      90,
+    ),
+    historyMaxTurns: parsePositiveIntEnv(process.env.SIM_HISTORY_MAX_TURNS, 30),
+    contextTtlSec: parsePositiveIntEnv(process.env.SIM_CONTEXT_TTL_SEC, 7200),
+    heartbeatIntervalSec: parsePositiveIntEnv(
+      process.env.SIM_HEARTBEAT_INTERVAL_SEC,
+      60,
     ),
   };
 }
