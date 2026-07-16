@@ -74,7 +74,14 @@ export class MailListener {
       payload?.registrationChannel === "organization" &&
       payload?.organizationName
     ) {
-      await this.sendOrganizationInviteRegisterMail(payload);
+      // The self-serve org admin (F12) carries a username; invited members do
+      // not. The admin gets a welcome email spelling out what was created and
+      // the next steps; members get the "you've been invited" email.
+      if (payload.adminUsername) {
+        await this.sendOrganizationAdminSignupMail(payload);
+      } else {
+        await this.sendOrganizationInviteRegisterMail(payload);
+      }
       return;
     }
 
@@ -102,6 +109,56 @@ export class MailListener {
     } catch (error) {
       this.logger.error(
         `Failed to dispatch OTP email to ${payload.email}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  /**
+   * F12: welcome email for the person who self-serves a new organization and
+   * becomes its admin. Unlike the member-invite email, this states what was
+   * created (the org + their admin account), names the admin username, gives
+   * the verification code, and lays out the next steps to manage the org.
+   */
+  private async sendOrganizationAdminSignupMail(payload: OtpGeneratedEvent) {
+    const orgName = payload.organizationName ?? "";
+    const adminUsername = payload.adminUsername ?? "";
+    const subject = `${orgName} is ready on TalkUp — verify your admin email`;
+
+    // The renderer owns all HTML/escaping and scheme-guards the CTA href to
+    // http(s); we pass only raw data strings — never markup. The `note` renders
+    // only when there is no valid CTA, so the next-steps also live in `intro`
+    // (always rendered) to stay visible whether or not the verify link is set.
+    const nextSteps = `Next steps: 1) Enter the code above on the TalkUp verify-email page to confirm ${payload.email}. 2) Sign in as ${adminUsername} to manage ${orgName} — invite members, manage roles, and review activity.`;
+
+    const { html, text } = renderOtpEmail({
+      heading: "Your organization is ready",
+      preHeading: `Your organization ${orgName} has been created on TalkUp, along with its administrator account (username: ${adminUsername}). If you did not do this, you can ignore this email.`,
+      intro: `Verify this admin email address with the code below to finish setting up. ${nextSteps}`,
+      code: payload.plainOtp,
+      expiryMinutes: OTP_EXPIRY_MINUTES,
+      cta: payload.verifyUrl
+        ? {
+            href: payload.verifyUrl,
+            label: "Verify admin email & continue",
+            helperText: `Or copy this link: ${payload.verifyUrl}`,
+          }
+        : undefined,
+      note: "Verify your email using the TalkUp sign-in flow on the website.",
+      securityNote: SECURITY_NOTE,
+      signoff: SIGNOFF,
+    });
+
+    try {
+      await this.mailService.sendMail({
+        to: payload.email,
+        subject,
+        html,
+        text,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to dispatch org admin signup email to ${payload.email}`,
         error instanceof Error ? error.stack : undefined,
       );
     }

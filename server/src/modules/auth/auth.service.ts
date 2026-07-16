@@ -97,12 +97,15 @@ export class AuthService {
    * @param trusted - When false (default), public signup ignores `organization_id`
    * and `user_role`, creating a standalone user with role `none`. When true, used by
    * organization bootstrap / member creation with full DTO semantics.
-   * @param inviteEmailContext - When an org creates the user, pass its display name for the invite email.
+   * @param inviteEmailContext - When an org creates the user, pass its display
+   * name for the org email. Pass `adminUsername` only for the self-serve org
+   * admin signup (F12) so the mail listener sends the org-admin welcome email
+   * (org name + username + code) rather than the member-invite email.
    */
   async register(
     createUserDto: CreateUserDto,
     trusted = false,
-    inviteEmailContext?: { organizationName: string },
+    inviteEmailContext?: { organizationName: string; adminUsername?: string },
   ): Promise<void> {
     let otpEvent: OtpGeneratedEvent | null = null;
 
@@ -339,16 +342,24 @@ export class AuthService {
       throw error;
     }
 
+    const adminUsername = buildAdminUsername(dto.organizationName);
+
     try {
       await this.register(
         {
-          username: buildAdminUsername(dto.organizationName),
+          username: adminUsername,
           email: dto.email,
           password: dto.password,
           organization_id: savedOrganization.organization_id,
           user_role: OrganizationUserRole.ADMIN,
         },
         true,
+        // Passing adminUsername selects the org-admin welcome email (org name +
+        // username + code + next steps) over the generic OTP / member-invite mail.
+        {
+          organizationName: savedOrganization.organization_name,
+          adminUsername,
+        },
       );
     } catch (error) {
       // No orphan org when the admin account can't be created (e.g. email taken).
@@ -948,7 +959,7 @@ export class AuthService {
     event: OtpGeneratedEvent,
     options: {
       organizationId?: string;
-      inviteEmailContext?: { organizationName: string };
+      inviteEmailContext?: { organizationName: string; adminUsername?: string };
     },
   ): OtpGeneratedEvent {
     if (
@@ -962,6 +973,9 @@ export class AuthService {
       ...event,
       registrationChannel: "organization",
       organizationName: options.inviteEmailContext.organizationName,
+      // Present only for the self-serve admin signup — it selects the org-admin
+      // welcome email over the member-invite email in the mail listener.
+      adminUsername: options.inviteEmailContext.adminUsername,
       verifyUrl: this.buildVerifyEmailUrl(event.email),
     };
   }

@@ -1424,7 +1424,7 @@ describe("AuthService", () => {
       mockDataSource.getRepository.mockReturnValue(orgRepo);
     });
 
-    it("creates the org then registers a trusted admin without invite mail context", async () => {
+    it("creates the org then registers a trusted admin with org-admin mail context", async () => {
       const registerSpy = jest
         .spyOn(service, "register")
         .mockResolvedValue(undefined);
@@ -1434,6 +1434,8 @@ describe("AuthService", () => {
       expect(orgRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ organization_name: "Acme School" }),
       );
+      // The org name + admin username are passed so the mail listener sends the
+      // org-admin welcome email instead of the generic OTP / member-invite mail.
       expect(registerSpy).toHaveBeenCalledWith(
         {
           username: "AcmeSchooladmin",
@@ -1443,6 +1445,10 @@ describe("AuthService", () => {
           user_role: OrganizationUserRole.ADMIN,
         },
         true,
+        {
+          organizationName: "Acme School",
+          adminUsername: "AcmeSchooladmin",
+        },
       );
     });
 

@@ -206,6 +206,17 @@ describe('auth.guards', () => {
         createPublicRouteGuard('/verify-email')(),
       ).resolves.toBeUndefined();
     });
+
+    it('returns early for organization-created (no auth-status call)', async () => {
+      // The org-created ack page is reached right after signup while the user
+      // is still unauthenticated. It must NOT run an auth-status check: the 401
+      // would trip the axios refresh→/login redirect. Kept out of the guard's
+      // allow-list on purpose.
+      await expect(
+        createPublicRouteGuard('/organization-created')(),
+      ).resolves.toBeUndefined();
+      expect(axiosGet).not.toHaveBeenCalled();
+    });
   });
 
   describe('role-gated guard (B4)', () => {

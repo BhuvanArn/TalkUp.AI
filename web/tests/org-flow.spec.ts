@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { buildAdminUsername } from '../src/utils/buildAdminUsername';
+
 /**
  * Org happy-path UI flow (F12/F2 surfaces). Full redemption needs OTP email
  * access, so this spec verifies the UI contract up to each 202 handoff.
@@ -42,16 +44,35 @@ test.describe('organization flows', () => {
     await expect(page.getByPlaceholder(/organization code/i)).toBeVisible();
   });
 
-  test('org signup form submits and hands off to verify-email', async ({
+  test('org signup lands on the created page then hands off to verify-email', async ({
     page,
   }) => {
     const suffix = Date.now();
+    const orgName = `PW Org ${suffix}`;
     await page.goto('/register-organization');
-    await page.getByPlaceholder(/organization name/i).fill(`PW Org ${suffix}`);
+    await page.getByPlaceholder(/organization name/i).fill(orgName);
     await page.getByPlaceholder(/email/i).fill(`pw_${suffix}@example.com`);
     await page.getByPlaceholder(/password/i).fill('Abcdefg1*');
     await page.getByRole('button', { name: /create organization/i }).click();
-    await expect(page).toHaveURL(/\/verify-email/);
+
+    // Signup now routes to the acknowledgement page (not straight to
+    // verify-email). It confirms creation and surfaces the admin username.
+    // The redirect waits on the org-signup 202 from the real CI backend
+    // (org + admin + OTP creation), which can exceed the 5s default — and the
+    // public-route guard runs an auth-status refresh on the way. Give the
+    // navigation a generous window so a slow round trip doesn't flake.
+    await expect(page).toHaveURL(/\/organization-created/, { timeout: 20000 });
+    await expect(
+      page.getByRole('heading', { name: /organization created/i }),
+    ).toBeVisible();
+    // The page must show the REAL admin username the backend generates
+    // (strip non-alphanumerics + `admin` suffix), not a `${orgName}_admin`
+    // lookalike — otherwise the user copies a username they can't sign in with.
+    await expect(page.getByText(buildAdminUsername(orgName))).toBeVisible();
+
+    // The primary CTA hands off to verify-email carrying the admin email.
+    await page.getByRole('button', { name: /verify admin email/i }).click();
+    await expect(page).toHaveURL(/\/verify-email/, { timeout: 20000 });
   });
 
   test('register with a bogus code surfaces the backend error', async ({
