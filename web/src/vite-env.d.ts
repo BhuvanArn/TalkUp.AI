@@ -5,6 +5,8 @@ interface ImportMetaEnv {
   readonly VITE_DOCUMENTATION_URL?: string;
   /** Set to 'true' to render the WebSocket debug panel in simulations (dev/debug only; off in prod). */
   readonly VITE_SHOW_WS_DEBUG?: string;
+  /** Set to 'true' to render the Google/Apple agenda connectors, whose OAuth flow is not implemented yet. */
+  readonly VITE_SHOW_AGENDA_CONNECTORS?: string;
   /** Same-origin relative path to the recruiter GLB avatar model. */
   readonly VITE_RECRUITER_AVATAR_URL?: string;
   /** Same-origin relative path to the recruiter office room background image. */

@@ -17,6 +17,10 @@ export const Route = createFileRoute('/agenda')({
 /**
  * Component to handle OAuth connections for external agendas.
  * UI states are ready for backend integration.
+ *
+ * The connection is simulated client-side — no OAuth flow exists yet, so the
+ * "Connected" state grants no access to any external calendar. Kept out of the
+ * UI behind VITE_SHOW_AGENDA_CONNECTORS until the real flow lands.
  */
 interface ExternalAppConnectorProps {
   isGoogleConnected: boolean;
@@ -150,12 +154,14 @@ function Agenda() {
         <div className="flex flex-col space-y-6 overflow-y-auto pr-1">
           <MiniCalendar />
 
-          <ExternalAppConnector
-            isGoogleConnected={isGoogleConnected}
-            onConnectGoogle={handleConnectGoogle}
-            isAppleConnected={isAppleConnected}
-            onConnectApple={handleConnectApple}
-          />
+          {import.meta.env.VITE_SHOW_AGENDA_CONNECTORS === 'true' && (
+            <ExternalAppConnector
+              isGoogleConnected={isGoogleConnected}
+              onConnectGoogle={handleConnectGoogle}
+              isAppleConnected={isAppleConnected}
+              onConnectApple={handleConnectApple}
+            />
+          )}
 
           <NextEventCard />
         </div>
