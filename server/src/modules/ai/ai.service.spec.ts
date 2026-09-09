@@ -766,7 +766,7 @@ describe("AiService", () => {
       expect(res).toEqual({ reply: "Use the STAR method." });
 
       const callArg = mockGroqCreate.mock.calls[0][0];
-      expect(callArg.model).toBe("llama-3.3-70b-versatile");
+      expect(callArg.model).toBe("openai/gpt-oss-120b");
       expect(callArg.messages[0].role).toBe("system");
       expect(callArg.messages).toHaveLength(4);
       expect(callArg.messages[callArg.messages.length - 1]).toEqual({

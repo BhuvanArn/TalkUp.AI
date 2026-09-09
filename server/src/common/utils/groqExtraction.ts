@@ -105,6 +105,16 @@ export interface RoadmapExtraction {
 
 const logger = new Logger("GroqExtraction");
 
+// Groq retires model ids without notice (llama-3.3-70b-versatile 404'd in prod
+// once Meta's Llama line was pulled from the platform). Read the id from the
+// env at call time so a decommission is a config change, not a redeploy.
+const DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b";
+
+/** Chat-completion model id used by every Groq call in the server. */
+export function getGroqModel(): string {
+  return process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
+}
+
 // Lazily built so a missing GROQ_API_KEY does not crash app bootstrap — the
 // groq-sdk constructor throws on an empty key. Only the extraction callers
 // need it; they surface the failure as a 500 instead of taking the server down.
@@ -120,12 +130,45 @@ function getGroq(): Groq {
 }
 
 /**
+ * Normalises a model reply into parseable JSON. Reasoning models (the default
+ * openai/gpt-oss-120b included) usually return their chain of thought in a
+ * separate `reasoning` field, but the format is model-dependent — a swap via
+ * GROQ_MODEL can put a <think> block or a sentence of prose in `content`. So
+ * strip the known wrappers, then fall back to the outermost {...} span.
+ */
+export function cleanJsonReply(responseText: string): string {
+  // Strip only a leading/trailing markdown code fence — a global strip would
+  // also delete backticks that appear inside JSON string values (e.g. a code
+  // snippet echoed into a description field), corrupting otherwise-valid JSON.
+  const cleaned = responseText
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+
+  // Last resort for prose around the object ("Here is the JSON: {...}"). Only
+  // used when the cleaned text is not already valid JSON, so a well-behaved
+  // reply is never reshaped.
+  try {
+    JSON.parse(cleaned);
+    return cleaned;
+  } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    return start !== -1 && end > start
+      ? cleaned.slice(start, end + 1)
+      : cleaned;
+  }
+}
+
+/**
  * Sends a prompt to Groq, strips any markdown fences from the reply, and parses
  * it as JSON. Throws InternalServerErrorException on empty or unparsable output.
  */
 export async function extractWithGroq<T>(prompt: string): Promise<T> {
   const completion = await getGroq().chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+    model: getGroqModel(),
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
   });
@@ -138,15 +181,7 @@ export async function extractWithGroq<T>(prompt: string): Promise<T> {
   }
 
   try {
-    // Strip only a leading/trailing markdown code fence — a global strip would
-    // also delete backticks that appear inside JSON string values (e.g. a code
-    // snippet echoed into a description field), corrupting otherwise-valid JSON.
-    const cleaned = responseText
-      .trim()
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/, "")
-      .trim();
-    return JSON.parse(cleaned) as T;
+    return JSON.parse(cleanJsonReply(responseText)) as T;
   } catch (parseError) {
     logger.error(`JSON parse error: ${parseError}`);
     throw new InternalServerErrorException("Failed to parse extracted data.");

@@ -49,6 +49,52 @@ describe("extractWithGroq", () => {
     });
   });
 
+  it("strips a <think> block a reasoning model leaked into content", async () => {
+    mockGroqCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: '<think>The CV lists two jobs.</think>\n{"a": 1}',
+          },
+        },
+      ],
+    });
+    await expect(extractWithGroq<{ a: number }>("prompt")).resolves.toEqual({
+      a: 1,
+    });
+  });
+
+  it("recovers the JSON object from surrounding prose", async () => {
+    mockGroqCreate.mockResolvedValue({
+      choices: [
+        { message: { content: 'Here is the JSON: {"a": 1} Hope it helps!' } },
+      ],
+    });
+    await expect(extractWithGroq<{ a: number }>("prompt")).resolves.toEqual({
+      a: 1,
+    });
+  });
+
+  it("sends the default model, overridable via GROQ_MODEL", async () => {
+    mockGroqCreate.mockResolvedValue({
+      choices: [{ message: { content: "{}" } }],
+    });
+    await extractWithGroq("prompt");
+    expect(mockGroqCreate.mock.calls[0][0]).toMatchObject({
+      model: "openai/gpt-oss-120b",
+    });
+
+    process.env.GROQ_MODEL = "some/other-model";
+    try {
+      await extractWithGroq("prompt");
+      expect(mockGroqCreate.mock.calls[1][0]).toMatchObject({
+        model: "some/other-model",
+      });
+    } finally {
+      delete process.env.GROQ_MODEL;
+    }
+  });
+
   it("throws InternalServerErrorException on empty response", async () => {
     mockGroqCreate.mockResolvedValue({ choices: [] });
     await expect(extractWithGroq("prompt")).rejects.toBeInstanceOf(

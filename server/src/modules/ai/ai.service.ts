@@ -13,6 +13,8 @@ import { FindOptionsOrder, In, Repository } from "typeorm";
 
 import Groq from "groq-sdk";
 
+import { getGroqModel } from "@common/utils/groqExtraction";
+
 import { ai_interview } from "@entities/aiInterview.entity";
 import { ai_transcript } from "@entities/aiTranscript.entity";
 
@@ -54,8 +56,6 @@ const CHATBOT_SYSTEM_PROMPT =
   "actionable advice. Keep replies short (a few sentences), encouraging, and " +
   "focused on interview preparation. If asked something unrelated, gently steer " +
   "back to interview prep.";
-
-const CHATBOT_MODEL = "llama-3.3-70b-versatile";
 
 @Injectable()
 export class AiService {
@@ -113,7 +113,7 @@ export class AiService {
 
     try {
       const completion = await this.groq.chat.completions.create({
-        model: CHATBOT_MODEL,
+        model: getGroqModel(),
         messages,
         temperature: 0.6,
         max_tokens: 512,
