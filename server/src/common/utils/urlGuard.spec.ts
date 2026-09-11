@@ -179,4 +179,70 @@ describe("canonicalizeOfferUrl", () => {
   it("returns the trimmed input when it does not parse", () => {
     expect(canonicalizeOfferUrl("  not a url  ")).toBe("not a url");
   });
+
+  it("keeps identifying params so two different postings stay distinct", () => {
+    // Indeed carries the posting id ONLY in the query string.
+    expect(
+      canonicalizeOfferUrl("https://fr.indeed.com/viewjob?jk=aaa"),
+    ).not.toBe(canonicalizeOfferUrl("https://fr.indeed.com/viewjob?jk=bbb"));
+    // LinkedIn search/collection links do the same with currentJobId.
+    expect(
+      canonicalizeOfferUrl(
+        "https://www.linkedin.com/jobs/collections/recommended/?currentJobId=1",
+      ),
+    ).not.toBe(
+      canonicalizeOfferUrl(
+        "https://www.linkedin.com/jobs/collections/recommended/?currentJobId=2",
+      ),
+    );
+    // Glassdoor.
+    expect(
+      canonicalizeOfferUrl(
+        "https://www.glassdoor.fr/job-listing?jobListingId=1",
+      ),
+    ).not.toBe(
+      canonicalizeOfferUrl(
+        "https://www.glassdoor.fr/job-listing?jobListingId=2",
+      ),
+    );
+  });
+
+  it("still maps one posting to one key when only tracking params differ", () => {
+    expect(
+      canonicalizeOfferUrl(
+        "https://fr.indeed.com/viewjob?jk=aaa&utm_source=google&from=serp",
+      ),
+    ).toBe(
+      canonicalizeOfferUrl(
+        "https://fr.indeed.com/viewjob?jk=aaa&utm_campaign=x&trk=feed",
+      ),
+    );
+  });
+
+  it("drops Indeed's per-visit `tk` token, which is not `trk`", () => {
+    // Real Indeed links are /viewjob?jk=<posting>&tk=<per-visit>&from=serp.
+    // `trk` was denylisted but `tk` is a different param, so two visits to the
+    // SAME posting produced two keys — a duplicate card plus a re-paid scrape.
+    expect(
+      canonicalizeOfferUrl(
+        "https://fr.indeed.com/viewjob?jk=aaa&tk=1iabcdef&from=serp&vjs=3",
+      ),
+    ).toBe("https://fr.indeed.com/viewjob?jk=aaa");
+  });
+
+  it("drops ad-network click ids on any host", () => {
+    expect(
+      canonicalizeOfferUrl(
+        "https://careers.example.com/job/42?gclid=A&fbclid=B&li_fat_id=C&ttclid=D",
+      ),
+    ).toBe("https://careers.example.com/job/42");
+  });
+
+  it("is stable regardless of query-param order", () => {
+    expect(
+      canonicalizeOfferUrl("https://boards.example.com/job?gh_jid=7&lang=fr"),
+    ).toBe(
+      canonicalizeOfferUrl("https://boards.example.com/job?lang=fr&gh_jid=7"),
+    );
+  });
 });
