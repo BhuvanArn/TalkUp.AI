@@ -105,4 +105,65 @@ describe('useStreamControls', () => {
     expect(mockStream.removeTrack).toHaveBeenCalledWith(mockVideoTrack);
     expect(screen.getByTestId('camera').textContent).toBe('false');
   });
+  it('reopens the camera chosen in the setup step', async () => {
+    const mockVideoTrack = {
+      enabled: true,
+      kind: 'video',
+      stop: vi.fn(),
+    } as any;
+    const mockStream = {
+      getAudioTracks: () => [],
+      getVideoTracks: () => [mockVideoTrack],
+      removeTrack: vi.fn(),
+      addTrack: vi.fn(),
+    } as any;
+
+    // @ts-ignore
+    if (typeof MediaStream === 'undefined') {
+      // @ts-ignore
+      vi.stubGlobal('MediaStream', function MediaStream() {});
+    }
+    Object.setPrototypeOf(
+      mockStream,
+      (globalThis as any).MediaStream.prototype,
+    );
+
+    const getUserMedia = vi.fn().mockResolvedValue({
+      getVideoTracks: () => [{ enabled: true, kind: 'video', stop: vi.fn() }],
+    });
+    // @ts-ignore
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+
+    function Test() {
+      const videoRef = useRef<HTMLVideoElement | null>(null);
+      const audioRef = useRef<HTMLAudioElement | null>(null);
+      const { isCameraActive, toggleCamera } = useStreamControls(
+        videoRef,
+        audioRef,
+        { videoInputId: 'cam-7' },
+      );
+
+      useEffect(() => {
+        // @ts-ignore
+        videoRef.current = { srcObject: mockStream };
+      }, []);
+
+      return (
+        <div>
+          <span data-testid="cam">{String(isCameraActive)}</span>
+          <button onClick={toggleCamera}>tc</button>
+        </div>
+      );
+    }
+
+    render(<Test />);
+
+    // off, then back on: the second call must reopen the chosen camera
+    await fireEvent.click(screen.getByText('tc'));
+    await fireEvent.click(screen.getByText('tc'));
+
+    expect(getUserMedia).toHaveBeenCalledWith({
+      video: { deviceId: { exact: 'cam-7' } },
+    });
+  });
 });

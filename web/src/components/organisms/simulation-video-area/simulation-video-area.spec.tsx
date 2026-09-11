@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import SimulationVideoArea from './index';
@@ -66,5 +66,37 @@ describe('SimulationVideoArea', () => {
     );
 
     expect(screen.getByText('Thinking…')).toBeInTheDocument();
+  });
+  it('routes the interview audio to the chosen output device', async () => {
+    const setSinkId = vi.fn(async () => {});
+    Object.defineProperty(HTMLMediaElement.prototype, 'setSinkId', {
+      configurable: true,
+      value: setSinkId,
+    });
+
+    render(
+      <SimulationVideoArea
+        devices={{
+          audioInputId: 'mic-1',
+          videoInputId: 'cam-1',
+          audioOutputId: 'out-2',
+          cameraEnabled: true,
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(setSinkId).toHaveBeenCalledWith('out-2'));
+
+    Reflect.deleteProperty(HTMLMediaElement.prototype, 'setSinkId');
+  });
+
+  it('asks the page to confirm before hanging up a live interview', () => {
+    const onEndCallRequest = vi.fn();
+
+    render(<SimulationVideoArea onEndCallRequest={onEndCallRequest} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /end call/i }));
+
+    expect(onEndCallRequest).toHaveBeenCalledTimes(1);
   });
 });

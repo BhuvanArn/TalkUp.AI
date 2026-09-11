@@ -7,6 +7,8 @@ interface UseStreamControlsOptions {
   onMicChange?: (active: boolean) => void;
   onSpeakerChange?: (active: boolean) => void;
   onCameraChange?: (active: boolean) => void;
+  /** Camera picked in the setup step, reused when the camera is switched back on. */
+  videoInputId?: string;
 }
 
 /**
@@ -28,6 +30,7 @@ export const useStreamControls = (
     onMicChange,
     onSpeakerChange,
     onCameraChange,
+    videoInputId = '',
   } = options || {};
 
   const [isMicActive, setIsMicActive] = useState(initialMicActive);
@@ -75,7 +78,7 @@ export const useStreamControls = (
         // Turn camera ON - request video stream
         try {
           const videoStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: videoInputId ? { deviceId: { exact: videoInputId } } : true,
           });
           const videoTrack = videoStream.getVideoTracks()[0];
 

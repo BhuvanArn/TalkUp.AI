@@ -3,6 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 interface UseVideoStreamOptions {
   shouldStartWithMic?: boolean;
   shouldStartWithCamera?: boolean;
+  /** Microphone picked in the setup step; empty means the system default. */
+  audioInputId?: string;
+  /** Camera picked in the setup step; empty means the system default. */
+  videoInputId?: string;
 }
 
 /**
@@ -17,8 +21,12 @@ interface UseVideoStreamOptions {
  * }}
  */
 export const useVideoStream = (options?: UseVideoStreamOptions) => {
-  const { shouldStartWithMic = true, shouldStartWithCamera = true } =
-    options || {};
+  const {
+    shouldStartWithMic = true,
+    shouldStartWithCamera = true,
+    audioInputId = '',
+    videoInputId = '',
+  } = options || {};
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -37,8 +45,9 @@ export const useVideoStream = (options?: UseVideoStreamOptions) => {
       // Start the stream
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          video: videoInputId ? { deviceId: { exact: videoInputId } } : true,
           audio: {
+            ...(audioInputId ? { deviceId: { exact: audioInputId } } : {}),
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,

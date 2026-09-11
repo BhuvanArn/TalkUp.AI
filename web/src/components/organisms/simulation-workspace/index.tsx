@@ -1,6 +1,10 @@
 import InfoBox from '@/components/molecules/info-box';
 import NotesEditor from '@/components/molecules/notes-editor/notes-editor';
 import SimulationQueueBanner from '@/components/molecules/simulation-queue-banner';
+import SimulationDeviceSetupModal from '@/components/organisms/simulation-device-setup-modal';
+import type { SimulationDeviceSelection } from '@/components/organisms/simulation-device-setup-modal';
+import SimulationEndModal from '@/components/organisms/simulation-end-modal';
+import type { SimulationEndModalMode } from '@/components/organisms/simulation-end-modal';
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
 import SimulationVideoArea from '@/components/organisms/simulation-video-area';
@@ -40,6 +44,12 @@ export function SimulationWorkspace({
   contextLabel,
 }: SimulationWorkspaceProps) {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [deviceSelection, setDeviceSelection] =
+    useState<SimulationDeviceSelection | null>(null);
+  const [isSetupOpen, setIsSetupOpen] = useState(true);
+  const [endModalMode, setEndModalMode] =
+    useState<SimulationEndModalMode | null>(null);
+  const pendingStartRef = useRef(false);
   const [wsError, setWsError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [isAwaitingAiResponse, setIsAwaitingAiResponse] = useState(false);
@@ -220,7 +230,7 @@ export function SimulationWorkspace({
 
   useEffect(() => {
     if (!simulationComplete || isAiSpeaking) return;
-    toast.success('Entretien terminé. Merci pour votre participation !');
+    setEndModalMode('summary');
     void handleStreamToggle(false);
   }, [simulationComplete, isAiSpeaking, handleStreamToggle]);
 
@@ -271,6 +281,46 @@ export function SimulationWorkspace({
     }
   }, [isCallActive]);
 
+  // A restored session is already live, so the device picker must not cover it.
+  useEffect(() => {
+    if (isCallActive) setIsSetupOpen(false);
+  }, [isCallActive]);
+
+  // Runs once the chosen devices have reached SimulationVideoArea, so the
+  // stream opens the microphone and camera the user actually picked.
+  useEffect(() => {
+    if (!pendingStartRef.current || !deviceSelection) return;
+    pendingStartRef.current = false;
+    videoStreamToggleRef.current?.();
+  }, [deviceSelection]);
+
+  const handleSetupStart = useCallback(
+    (selection: SimulationDeviceSelection) => {
+      pendingStartRef.current = true;
+      setDeviceSelection(selection);
+      setIsSetupOpen(false);
+    },
+    [],
+  );
+
+  const handleEndCallRequest = useCallback(() => {
+    setEndModalMode('confirm');
+  }, []);
+
+  const progressSaved = Boolean(analysis.aggregate);
+
+  const handleEndModalConfirm = useCallback(() => {
+    const wasConfirm = endModalMode === 'confirm';
+    setEndModalMode(null);
+    // The summary mode only acknowledges: the session already stopped itself.
+    if (wasConfirm) videoStreamToggleRef.current?.();
+    setIsSetupOpen(true);
+  }, [endModalMode]);
+
+  const handleEndModalCancel = useCallback(() => {
+    setEndModalMode(null);
+  }, []);
+
   const avatarStatusText =
     effectiveAvatarMode === '3d'
       ? 'Interactive 3D avatar active.'
@@ -306,6 +356,8 @@ export function SimulationWorkspace({
       <div className="grid grid-cols-[1fr_20rem] gap-6">
         <div>
           <SimulationVideoArea
+            devices={deviceSelection ?? undefined}
+            onEndCallRequest={handleEndCallRequest}
             isAiSpeaking={isAiSpeaking}
             isAwaitingAiResponse={isAwaitingAiResponse}
             speechTurn={speechTurn}
@@ -356,6 +408,19 @@ export function SimulationWorkspace({
         </div>
       </div>
       <NotesEditor interviewID={interviewID} />
+
+      <SimulationDeviceSetupModal
+        isOpen={isSetupOpen}
+        onStart={handleSetupStart}
+      />
+
+      <SimulationEndModal
+        isOpen={endModalMode !== null}
+        mode={endModalMode ?? 'confirm'}
+        progressSaved={progressSaved}
+        onConfirm={handleEndModalConfirm}
+        onCancel={handleEndModalCancel}
+      />
     </div>
   );
 }
