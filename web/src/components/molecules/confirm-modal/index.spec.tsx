@@ -393,4 +393,16 @@ describe('ConfirmModal', () => {
       expect(screen.getByText(longMessage)).toBeInTheDocument();
     });
   });
+  describe('single-action mode', () => {
+    it('hides the cancel button when hideCancel is set', () => {
+      render(
+        <ConfirmModal {...defaultProps} hideCancel confirmLabel="Close" />,
+      );
+
+      expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Cancel' }),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface UseStreamControlsOptions {
   initialMicActive?: boolean;
@@ -7,6 +7,8 @@ interface UseStreamControlsOptions {
   onMicChange?: (active: boolean) => void;
   onSpeakerChange?: (active: boolean) => void;
   onCameraChange?: (active: boolean) => void;
+  /** Camera picked in the setup step, reused when the camera is switched back on. */
+  videoInputId?: string;
 }
 
 /**
@@ -28,11 +30,18 @@ export const useStreamControls = (
     onMicChange,
     onSpeakerChange,
     onCameraChange,
+    videoInputId = '',
   } = options || {};
 
   const [isMicActive, setIsMicActive] = useState(initialMicActive);
   const [isSpeakerActive, setIsSpeakerActive] = useState(initialSpeakerActive);
   const [isCameraActive, setIsCameraActive] = useState(initialCameraActive);
+
+  // The device picker resolves after this hook first runs, so the camera choice
+  // it produces arrives as a changed `initialCameraActive` rather than on mount.
+  useEffect(() => {
+    setIsCameraActive(initialCameraActive);
+  }, [initialCameraActive]);
 
   const toggleMic = () => {
     setIsMicActive((prev) => {
@@ -75,7 +84,7 @@ export const useStreamControls = (
         // Turn camera ON - request video stream
         try {
           const videoStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: videoInputId ? { deviceId: { exact: videoInputId } } : true,
           });
           const videoTrack = videoStream.getVideoTracks()[0];
 
