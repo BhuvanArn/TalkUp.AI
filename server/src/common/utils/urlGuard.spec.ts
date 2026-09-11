@@ -219,6 +219,25 @@ describe("canonicalizeOfferUrl", () => {
     );
   });
 
+  it("drops Indeed's per-visit `tk` token, which is not `trk`", () => {
+    // Real Indeed links are /viewjob?jk=<posting>&tk=<per-visit>&from=serp.
+    // `trk` was denylisted but `tk` is a different param, so two visits to the
+    // SAME posting produced two keys — a duplicate card plus a re-paid scrape.
+    expect(
+      canonicalizeOfferUrl(
+        "https://fr.indeed.com/viewjob?jk=aaa&tk=1iabcdef&from=serp&vjs=3",
+      ),
+    ).toBe("https://fr.indeed.com/viewjob?jk=aaa");
+  });
+
+  it("drops ad-network click ids on any host", () => {
+    expect(
+      canonicalizeOfferUrl(
+        "https://careers.example.com/job/42?gclid=A&fbclid=B&li_fat_id=C&ttclid=D",
+      ),
+    ).toBe("https://careers.example.com/job/42");
+  });
+
   it("is stable regardless of query-param order", () => {
     expect(
       canonicalizeOfferUrl("https://boards.example.com/job?gh_jid=7&lang=fr"),

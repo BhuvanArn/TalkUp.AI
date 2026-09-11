@@ -241,6 +241,32 @@ describe("ApplicationsService", () => {
       expect(first.offer_url).not.toBe(second.offer_url);
     });
 
+    it("reuses the stored row when only per-visit params differ", async () => {
+      // The dedup *hit* side of the same regression: second visit to ONE Indeed
+      // posting, carrying a fresh `tk` token and campaign params. Must return
+      // the existing row instead of paying for another scrape + LLM call.
+      const existing = {
+        application_id: "a1",
+        user_id: "u1",
+        offer_url: "https://fr.indeed.com/viewjob?jk=aaa",
+        interview_at: null,
+      } as unknown as application;
+      applicationRepo.findOne = jest.fn(
+        async ({ where }: { where: { offer_url: string } }) =>
+          where.offer_url === existing.offer_url ? existing : null,
+      ) as unknown as Repository<application>["findOne"];
+
+      const row = await service.createFromUrl(
+        "u1",
+        "https://fr.indeed.com/viewjob?jk=aaa&tk=1izzzz&utm_source=google&from=serp",
+      );
+
+      expect(row).toBe(existing);
+      expect(mockScrapeAxios).not.toHaveBeenCalled();
+      expect(mockScrapeLinkedin).not.toHaveBeenCalled();
+      expect(mockGroqCreate).not.toHaveBeenCalled();
+    });
+
     it("leaves the interview date untouched on dedup when none is provided", async () => {
       const existing = {
         application_id: "a1",

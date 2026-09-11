@@ -83,26 +83,53 @@ const isBlockedIPv6 = (host: string): boolean => {
  * boards the posting id lives in the query string (Indeed `jk`, LinkedIn
  * `currentJobId`, Glassdoor `jobListingId`, Greenhouse `gh_jid`, …). Anything
  * matching TRACKING_PARAM_PREFIXES (utm_*, etc.) is dropped too.
+ *
+ * Grouped by provenance rather than alphabetically, on purpose: the
+ * generic-looking names here (`from`, `src`, `position`, `pagenum`) are only
+ * safe to drop because the boards that emit them carry the posting id
+ * elsewhere in the URL. Keeping that provenance visible is the guard against
+ * this list growing by vibes — a name with no known board behind it does NOT
+ * belong, since dropping an identifying param makes a real application
+ * impossible to create, while keeping an unknown one only risks a duplicate
+ * card.
  */
 const TRACKING_PARAMS = new Set([
+  // LinkedIn, around /jobs/view/<id> and ?currentJobId=<id>.
   "alternatechannel",
   "ebp",
-  "fbclid",
-  "from",
-  "gclid",
-  "igshid",
-  "mc_cid",
-  "mc_eid",
-  "msclkid",
   "originalsubdomain",
-  "position",
   "pagenum",
+  "position",
   "refid",
   "savedsearchid",
-  "src",
   "trackingid",
   "trk",
   "trkinfo",
+  // Indeed: the posting id is `jk`; `tk` is a per-visit token (different
+  // param from `trk`) and `vjs` a widget version, so both differ between two
+  // visits to the SAME posting.
+  "from",
+  "tk",
+  "vjs",
+  // Lever.
+  "lever-origin",
+  "lever-source",
+  // Ad-network click ids — host-independent, never identify a posting.
+  "dclid",
+  "fbclid",
+  "gbraid",
+  "gclid",
+  "igshid",
+  "li_fat_id",
+  "mc_cid",
+  "mc_eid",
+  "msclkid",
+  "ttclid",
+  "twclid",
+  "wbraid",
+  "yclid",
+  // Generic campaign source; no board is known to use it as an id.
+  "src",
 ]);
 
 const TRACKING_PARAM_PREFIXES = ["utm_", "utm-", "_hs", "spm_"];
@@ -133,9 +160,11 @@ const isTrackingParam = (name: string): boolean => {
  * dropping one can make a real application impossible to create.
  *
  * Also lowercases the host, drops the fragment and a bare trailing path slash.
- * Falls
- * back to the trimmed input if it won't parse (the caller still validates
- * fetch-safety separately).
+ * Kept params are re-serialized by URLSearchParams, so an encoded space comes
+ * back as `+` rather than `%20` — a normalization, not a loss: both decode to
+ * the same value, and applying it to every URL is what keeps the key stable.
+ * Falls back to the trimmed input if it won't parse (the caller still
+ * validates fetch-safety separately).
  */
 export const canonicalizeOfferUrl = (raw: string): string => {
   try {
