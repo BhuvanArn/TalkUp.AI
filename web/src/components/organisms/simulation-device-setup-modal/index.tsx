@@ -15,8 +15,8 @@ export type {
   SimulationDeviceSetupModalProps,
 } from './types';
 
-const SYSTEM_DEFAULT_OUTPUT = 'Sortie audio par défaut du système';
-const DETECTING = 'Détection des périphériques…';
+const SYSTEM_DEFAULT_OUTPUT = 'System default audio output';
+const DETECTING = 'Detecting devices…';
 
 /**
  * Browsers hand back unnamed devices in some configurations, so an index-based
@@ -66,6 +66,20 @@ const SimulationDeviceSetupModal = ({
 
   const { audioLevel } = useAudioAnalyzer(previewStream);
 
+  // The picker covers the whole page, so it needs a way out that is not the
+  // Start button: Escape and the backdrop, matching ConfirmModal.
+  useEffect(() => {
+    if (!isOpen || !onCancel) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      onCancel();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onCancel]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -86,15 +100,24 @@ const SimulationDeviceSetupModal = ({
       aria-modal="true"
       aria-labelledby="simulation-setup-title"
     >
-      <div className="absolute inset-0 bg-scrim/50" />
+      {onCancel ? (
+        <button
+          type="button"
+          className="absolute inset-0 bg-scrim/50"
+          onClick={onCancel}
+          aria-label="Close device setup"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-scrim/50" />
+      )}
 
       <div className="relative mx-4 w-full max-w-2xl rounded-lg border border-border bg-background shadow-xl">
         <div className="border-b border-border px-6 py-4">
           <h2 id="simulation-setup-title" className="text-h4 text-text">
-            Préparez votre simulation
+            Set up your simulation
           </h2>
           <p className="text-body-m text-text-weak">
-            Vérifiez vos périphériques, puis lancez l&apos;entretien.
+            Check your devices, then start the interview.
           </p>
         </div>
 
@@ -112,7 +135,7 @@ const SimulationDeviceSetupModal = ({
               />
               {!cameraEnabled && (
                 <p className="absolute inset-0 flex items-center justify-center text-body-m text-white">
-                  Caméra désactivée
+                  Camera off
                 </p>
               )}
             </div>
@@ -122,7 +145,7 @@ const SimulationDeviceSetupModal = ({
               <div
                 className="h-2 flex-1 overflow-hidden rounded-full bg-surface-raised"
                 role="meter"
-                aria-label="Niveau du micro"
+                aria-label="Microphone level"
                 aria-valuenow={Math.round(audioLevel)}
                 aria-valuemin={0}
                 aria-valuemax={100}
@@ -141,17 +164,17 @@ const SimulationDeviceSetupModal = ({
                 htmlFor="setup-audio-input"
                 className="mb-1 block text-label-m text-text-idle"
               >
-                Micro
+                Microphone
               </label>
               <SelectorInput
                 id="setup-audio-input"
-                name="Micro"
+                name="Microphone"
                 className="w-full"
                 value={selectedAudioInput}
                 options={toSelectOptions(
                   audioInputs,
-                  'Micro',
-                  emptyLabel('Aucun micro détecté'),
+                  'Microphone',
+                  emptyLabel('No microphone detected'),
                 )}
                 onChange={(event) => selectAudioInput(event.target.value)}
               />
@@ -162,17 +185,17 @@ const SimulationDeviceSetupModal = ({
                 htmlFor="setup-video-input"
                 className="mb-1 block text-label-m text-text-idle"
               >
-                Caméra
+                Camera
               </label>
               <SelectorInput
                 id="setup-video-input"
-                name="Caméra"
+                name="Camera"
                 className="w-full"
                 value={selectedVideoInput}
                 options={toSelectOptions(
                   videoInputs,
-                  'Caméra',
-                  emptyLabel('Aucune caméra détectée'),
+                  'Camera',
+                  emptyLabel('No camera detected'),
                 )}
                 disabled={!cameraEnabled}
                 onChange={(event) => selectVideoInput(event.target.value)}
@@ -184,19 +207,19 @@ const SimulationDeviceSetupModal = ({
                 htmlFor="setup-audio-output"
                 className="mb-1 block text-label-m text-text-idle"
               >
-                Sortie audio
+                Audio output
               </label>
               <SelectorInput
                 id="setup-audio-output"
-                name="Sortie audio"
+                name="Audio output"
                 className="w-full"
                 value={isOutputSelectionSupported ? selectedAudioOutput : ''}
                 options={
                   isOutputSelectionSupported
                     ? toSelectOptions(
                         audioOutputs,
-                        'Sortie audio',
-                        emptyLabel('Aucune sortie détectée'),
+                        'Audio output',
+                        emptyLabel('No output detected'),
                       )
                     : [{ value: '', label: SYSTEM_DEFAULT_OUTPUT }]
                 }
@@ -205,8 +228,8 @@ const SimulationDeviceSetupModal = ({
               />
               {!isOutputSelectionSupported && (
                 <p className="mt-1 text-body-s text-text-weakest">
-                  Ce navigateur ne permet pas de choisir la sortie audio. Le son
-                  utilisera le périphérique par défaut du système.
+                  This browser cannot choose the audio output. Sound will use
+                  the system default device.
                 </p>
               )}
             </div>
@@ -218,7 +241,7 @@ const SimulationDeviceSetupModal = ({
               onClick={() => setCameraEnabled(!cameraEnabled)}
             >
               <Icon icon={cameraEnabled ? 'video' : 'video-off'} size="sm" />
-              {cameraEnabled ? 'Désactiver la caméra' : 'Activer la caméra'}
+              {cameraEnabled ? 'Turn the camera off' : 'Turn the camera on'}
             </Button>
           </div>
         </div>
@@ -232,7 +255,7 @@ const SimulationDeviceSetupModal = ({
         <div className="flex justify-end gap-3 border-t border-border px-6 py-4">
           {onCancel && (
             <Button variant="outlined" color="neutral" onClick={onCancel}>
-              Plus tard
+              Later
             </Button>
           )}
           <Button
@@ -250,7 +273,7 @@ const SimulationDeviceSetupModal = ({
               })
             }
           >
-            Démarrer la simulation
+            Start the simulation
           </Button>
         </div>
       </div>

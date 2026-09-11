@@ -34,6 +34,8 @@ interface SimulationVideoAreaProps {
   avatarFallbackReason?: string | null;
   onAvatarFallbackRequest?: (reason: string) => void;
   onStreamToggle?: (streaming: boolean) => void;
+  /** Raised when the picked devices cannot be opened for the live interview. */
+  onStreamError?: () => void;
   onStreamChange?: (stream: MediaStream | null) => void;
   onToggleRef?: (toggleFn: (() => void) | null) => void;
 }
@@ -53,14 +55,23 @@ const SimulationVideoArea = ({
   avatarFallbackReason = null,
   onAvatarFallbackRequest,
   onStreamToggle,
+  onStreamError,
   onStreamChange,
   onToggleRef,
 }: SimulationVideoAreaProps = {}): React.ReactElement => {
+  const onStreamErrorRef = useRef(onStreamError);
+  onStreamErrorRef.current = onStreamError;
   const audioElementRef = useRef<HTMLAudioElement>(null);
   const [shouldStartWithMic, setShouldStartWithMic] = useState(true);
-  const [shouldStartWithCamera, setShouldStartWithCamera] = useState(
-    devices?.cameraEnabled ?? true,
-  );
+  const cameraRequested = devices?.cameraEnabled ?? true;
+  const [shouldStartWithCamera, setShouldStartWithCamera] =
+    useState(cameraRequested);
+
+  // `devices` is undefined until the setup modal resolves, so the picker's
+  // camera choice only ever arrives as a prop change, never as initial state.
+  useEffect(() => {
+    setShouldStartWithCamera(cameraRequested);
+  }, [cameraRequested]);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   const { videoRef, isStreaming, elapsedTime, toggleStream } = useVideoStream({
@@ -68,6 +79,7 @@ const SimulationVideoArea = ({
     shouldStartWithCamera,
     audioInputId: devices?.audioInputId,
     videoInputId: devices?.videoInputId,
+    onError: () => onStreamErrorRef.current?.(),
   });
 
   useEffect(() => {
@@ -85,7 +97,7 @@ const SimulationVideoArea = ({
     toggleSpeaker,
     toggleCamera,
   } = useStreamControls(videoRef, audioElementRef, {
-    initialCameraActive: devices?.cameraEnabled ?? true,
+    initialCameraActive: cameraRequested,
     videoInputId: devices?.videoInputId,
     onMicChange: setShouldStartWithMic,
     onCameraChange: setShouldStartWithCamera,

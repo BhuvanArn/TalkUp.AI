@@ -50,6 +50,7 @@ export function SimulationWorkspace({
   const [endModalMode, setEndModalMode] =
     useState<SimulationEndModalMode | null>(null);
   const pendingStartRef = useRef(false);
+  const completionHandledRef = useRef(false);
   const [wsError, setWsError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [isAwaitingAiResponse, setIsAwaitingAiResponse] = useState(false);
@@ -204,6 +205,7 @@ export function SimulationWorkspace({
 
   useEffect(() => {
     if (!interviewID) return;
+    completionHandledRef.current = false;
     setTranscriptions([]);
     clearAvatarFallbackForced();
     setAvatarModeOverride(null);
@@ -228,11 +230,17 @@ export function SimulationWorkspace({
     }
   }, [transcript]);
 
+  // Once the recruiter has said its farewell, close the capture down as if the
+  // user had hung up: `handleStreamToggle` only ends the backend session, so
+  // without this the camera, microphone and call timer keep running.
   useEffect(() => {
-    if (!simulationComplete || isAiSpeaking) return;
+    if (!simulationComplete || isAiSpeaking || completionHandledRef.current) {
+      return;
+    }
+    completionHandledRef.current = true;
     setEndModalMode('summary');
-    void handleStreamToggle(false);
-  }, [simulationComplete, isAiSpeaking, handleStreamToggle]);
+    videoStreamToggleRef.current?.();
+  }, [simulationComplete, isAiSpeaking]);
 
   useEffect(() => {
     if (!lastJsonMessage || typeof lastJsonMessage !== 'object') return;
@@ -244,7 +252,7 @@ export function SimulationWorkspace({
     const text =
       typeof packet.text === 'string' && packet.text.trim()
         ? packet.text
-        : 'Une erreur est survenue pendant la transcription.';
+        : 'Something went wrong during transcription.';
     toast.error(text);
   }, [lastJsonMessage]);
 
@@ -302,6 +310,19 @@ export function SimulationWorkspace({
     },
     [],
   );
+
+  const handleSetupCancel = useCallback(() => {
+    setIsSetupOpen(false);
+  }, []);
+
+  // The interview could not be opened with the chosen devices: say so and put
+  // the picker back rather than leaving a page that silently did nothing.
+  const handleStreamError = useCallback(() => {
+    toast.error(
+      'The selected microphone or camera could not be opened. Check your devices and try again.',
+    );
+    setIsSetupOpen(true);
+  }, []);
 
   const handleEndCallRequest = useCallback(() => {
     setEndModalMode('confirm');
@@ -368,6 +389,7 @@ export function SimulationWorkspace({
             }
             onAvatarFallbackRequest={handleAvatarFallbackRequest}
             onStreamToggle={handleStreamToggle}
+            onStreamError={handleStreamError}
             onStreamChange={setMediaStream}
             onToggleRef={(toggleFn) => {
               videoStreamToggleRef.current = toggleFn;
@@ -412,6 +434,7 @@ export function SimulationWorkspace({
       <SimulationDeviceSetupModal
         isOpen={isSetupOpen}
         onStart={handleSetupStart}
+        onCancel={handleSetupCancel}
       />
 
       <SimulationEndModal

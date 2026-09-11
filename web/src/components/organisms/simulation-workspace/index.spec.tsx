@@ -116,19 +116,19 @@ describe('SimulationWorkspace', () => {
     render(<SimulationWorkspace />);
 
     expect(
-      screen.getByRole('heading', { name: /préparez votre simulation/i }),
+      screen.getByRole('heading', { name: /set up your simulation/i }),
     ).toBeInTheDocument();
   });
   it('starts the interview straight from the setup step', async () => {
     render(<SimulationWorkspace />);
 
     fireEvent.click(
-      screen.getByRole('button', { name: /démarrer la simulation/i }),
+      screen.getByRole('button', { name: /start the simulation/i }),
     );
 
     await waitFor(() => expect(mockToggleStream).toHaveBeenCalledTimes(1));
     expect(
-      screen.queryByRole('heading', { name: /préparez votre simulation/i }),
+      screen.queryByRole('heading', { name: /set up your simulation/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -138,7 +138,7 @@ describe('SimulationWorkspace', () => {
     render(<SimulationWorkspace />);
 
     expect(
-      screen.queryByRole('heading', { name: /préparez votre simulation/i }),
+      screen.queryByRole('heading', { name: /set up your simulation/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -147,10 +147,10 @@ describe('SimulationWorkspace', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /end call/i }));
 
-    expect(screen.getByText(/terminer la simulation/i)).toBeInTheDocument();
+    expect(screen.getByText(/end the simulation/i)).toBeInTheDocument();
     expect(mockToggleStream).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: /^terminer$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^end$/i }));
 
     await waitFor(() => expect(mockToggleStream).toHaveBeenCalledTimes(1));
   });
@@ -159,11 +159,11 @@ describe('SimulationWorkspace', () => {
     render(<SimulationWorkspace />);
 
     fireEvent.click(screen.getByRole('button', { name: /end call/i }));
-    fireEvent.click(screen.getByRole('button', { name: /continuer/i }));
+    fireEvent.click(
+      screen.getByRole('button', { name: /continue the interview/i }),
+    );
 
-    expect(
-      screen.queryByText(/terminer la simulation/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/end the simulation/i)).not.toBeInTheDocument();
     expect(mockToggleStream).not.toHaveBeenCalled();
   });
 
@@ -172,8 +172,21 @@ describe('SimulationWorkspace', () => {
 
     render(<SimulationWorkspace />);
 
-    expect(await screen.findByText(/simulation terminée/i)).toBeInTheDocument();
-    expect(mockHandleStreamToggle).toHaveBeenCalledWith(false);
+    expect(await screen.findByText(/simulation complete/i)).toBeInTheDocument();
+    // The capture is closed down locally; SimulationVideoArea then reports the
+    // stream as stopped, which is what ends the backend session.
+    await waitFor(() => expect(mockToggleStream).toHaveBeenCalledTimes(1));
+  });
+
+  it('closes the capture only once when the interview completes', async () => {
+    audioPlayback.simulationComplete = true;
+
+    const { rerender } = render(<SimulationWorkspace />);
+    expect(await screen.findByText(/simulation complete/i)).toBeInTheDocument();
+
+    rerender(<SimulationWorkspace />);
+
+    await waitFor(() => expect(mockToggleStream).toHaveBeenCalledTimes(1));
   });
 
   it('tells the user their progression is kept once an analysis exists', () => {
@@ -183,9 +196,7 @@ describe('SimulationWorkspace', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /end call/i }));
 
-    expect(
-      screen.getByText(/votre progression est enregistrée/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/your progress is saved/i)).toBeInTheDocument();
   });
 
   it('warns that nothing is kept while no analysis has been produced', () => {
@@ -193,6 +204,17 @@ describe('SimulationWorkspace', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /end call/i }));
 
-    expect(screen.getByText(/rien ne sera enregistré/i)).toBeInTheDocument();
+    expect(screen.getByText(/nothing will be saved/i)).toBeInTheDocument();
+  });
+
+  it('lets the user step past the device picker without starting', () => {
+    render(<SimulationWorkspace />);
+
+    fireEvent.click(screen.getByRole('button', { name: /later/i }));
+
+    expect(
+      screen.queryByRole('heading', { name: /set up your simulation/i }),
+    ).not.toBeInTheDocument();
+    expect(mockToggleStream).not.toHaveBeenCalled();
   });
 });

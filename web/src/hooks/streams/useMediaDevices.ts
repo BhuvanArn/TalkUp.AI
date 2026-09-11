@@ -62,11 +62,13 @@ function firstDeviceId(
 }
 
 const MIC_DENIED_MESSAGE =
-  "L'accès au micro a été refusé. Autorisez-le dans les réglages du navigateur, puis rechargez la page.";
+  'Microphone access was denied. Allow it in your browser settings, then reload the page.';
 const MEDIA_UNSUPPORTED_MESSAGE =
-  'Ce navigateur ne donne pas accès aux périphériques audio et vidéo. Une connexion sécurisée (HTTPS) est nécessaire pour lancer une simulation.';
+  'This browser gives no access to audio and video devices. A secure connection (HTTPS) is required to start a simulation.';
 const MIC_MISSING_MESSAGE =
-  'Aucun micro utilisable. Branchez un micro, puis rechargez la page.';
+  'No usable microphone. Plug one in, then reload the page.';
+const DEVICE_UNAVAILABLE_MESSAGE =
+  'That device could not be opened. It may be in use by another application — pick a different one.';
 
 function isPermissionDenied(error: unknown): boolean {
   const name = (error as { name?: string } | null)?.name;
@@ -186,12 +188,23 @@ export function useMediaDevices({
       applyDevices(found);
     };
 
-    void probe();
+    // A rejected probe must not leave `permission` on 'pending' forever: that
+    // would keep the picker on "Detecting devices…" with Start enabled.
+    void probe().catch(() => {
+      if (cancelled) return;
+      setPermission('denied');
+      setError(MIC_MISSING_MESSAGE);
+    });
 
     const refresh = () => {
-      void navigator.mediaDevices.enumerateDevices().then((found) => {
-        if (!cancelled) applyDevices(found);
-      });
+      void navigator.mediaDevices
+        .enumerateDevices()
+        .then((found) => {
+          if (!cancelled) applyDevices(found);
+        })
+        .catch(() => {
+          // A failed hot-plug refresh keeps the lists we already have.
+        });
     };
 
     navigator.mediaDevices.addEventListener?.('devicechange', refresh);
@@ -202,8 +215,20 @@ export function useMediaDevices({
     };
   }, [enabled]);
 
+  const releasePreview = useCallback(() => {
+    stopStream(previewRef.current);
+    previewRef.current = null;
+    setPreviewStream(null);
+  }, []);
+
   useEffect(() => {
-    if (!enabled) return;
+    // The picker stays mounted behind the interview, so closing it has to hand
+    // the camera and microphone back — otherwise the recording indicator stays
+    // on for the whole session and the devices stay busy.
+    if (!enabled) {
+      releasePreview();
+      return;
+    }
     if (!selectedAudioInput && !selectedVideoInput) return;
 
     let cancelled = false;
@@ -226,14 +251,30 @@ export function useMediaDevices({
       stopStream(previewRef.current);
       previewRef.current = stream;
       setPreviewStream(stream);
+      // Clears a failure left by a previously picked device.
+      setPermission('granted');
+      setError(null);
     };
 
-    void acquire();
+    // A busy or unplugged device rejects here; say so rather than leaving a
+    // frozen preview and a Start button that would fail the same way.
+    void acquire().catch(() => {
+      if (cancelled) return;
+      releasePreview();
+      setPermission('denied');
+      setError(DEVICE_UNAVAILABLE_MESSAGE);
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [enabled, selectedAudioInput, selectedVideoInput, cameraEnabled]);
+  }, [
+    enabled,
+    selectedAudioInput,
+    selectedVideoInput,
+    cameraEnabled,
+    releasePreview,
+  ]);
 
   useEffect(() => {
     return () => {

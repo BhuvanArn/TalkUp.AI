@@ -40,16 +40,16 @@ describe('SimulationDeviceSetupModal', () => {
   it('lists the available microphones, cameras and outputs', () => {
     render(<SimulationDeviceSetupModal isOpen onStart={vi.fn()} />);
 
-    expect(screen.getByRole('combobox', { name: /micro/i })).toHaveValue(
+    expect(screen.getByRole('combobox', { name: /microphone/i })).toHaveValue(
       'mic-1',
     );
     expect(
       screen.getByRole('option', { name: 'USB Headset' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /caméra/i })).toHaveValue(
+    expect(screen.getByRole('combobox', { name: /camera/i })).toHaveValue(
       'cam-1',
     );
-    expect(screen.getByRole('combobox', { name: /sortie/i })).toHaveValue(
+    expect(screen.getByRole('combobox', { name: /audio output/i })).toHaveValue(
       'out-1',
     );
   });
@@ -58,7 +58,7 @@ describe('SimulationDeviceSetupModal', () => {
     render(<SimulationDeviceSetupModal isOpen onStart={onStart} />);
 
     fireEvent.click(
-      screen.getByRole('button', { name: /démarrer la simulation/i }),
+      screen.getByRole('button', { name: /start the simulation/i }),
     );
 
     expect(onStart).toHaveBeenCalledWith({
@@ -81,11 +81,11 @@ describe('SimulationDeviceSetupModal', () => {
 
     render(<SimulationDeviceSetupModal isOpen onStart={vi.fn()} />);
 
-    const output = screen.getByRole('combobox', { name: /sortie/i });
+    const output = screen.getByRole('combobox', { name: /audio output/i });
     expect(output).toBeDisabled();
-    expect(output).toHaveTextContent(/par défaut du système/i);
+    expect(output).toHaveTextContent(/system default/i);
     expect(
-      screen.getByText(/ne permet pas de choisir la sortie audio/i),
+      screen.getByText(/cannot choose the audio output/i),
     ).toBeInTheDocument();
 
     mediaDevices.isOutputSelectionSupported = true;
@@ -93,12 +93,12 @@ describe('SimulationDeviceSetupModal', () => {
 
   it('blocks the start and explains why when the microphone is refused', () => {
     mediaDevices.permission = 'denied';
-    mediaDevices.error = "L'accès au micro a été refusé.";
+    mediaDevices.error = 'Microphone access was denied.';
 
     render(<SimulationDeviceSetupModal isOpen onStart={vi.fn()} />);
 
     expect(
-      screen.getByRole('button', { name: /démarrer la simulation/i }),
+      screen.getByRole('button', { name: /start the simulation/i }),
     ).toBeDisabled();
     expect(screen.getByRole('alert')).toHaveTextContent(/micro/i);
 
@@ -110,7 +110,7 @@ describe('SimulationDeviceSetupModal', () => {
     render(<SimulationDeviceSetupModal isOpen onStart={vi.fn()} />);
 
     fireEvent.click(
-      screen.getByRole('button', { name: /désactiver la caméra/i }),
+      screen.getByRole('button', { name: /turn the camera off/i }),
     );
 
     expect(mediaDevices.setCameraEnabled).toHaveBeenCalledWith(false);
@@ -122,9 +122,9 @@ describe('SimulationDeviceSetupModal', () => {
 
     render(<SimulationDeviceSetupModal isOpen onStart={vi.fn()} />);
 
-    expect(screen.getByRole('combobox', { name: /micro/i })).toHaveTextContent(
-      /détection/i,
-    );
+    expect(
+      screen.getByRole('combobox', { name: /microphone/i }),
+    ).toHaveTextContent(/detecting/i);
 
     mediaDevices.permission = 'granted';
     mediaDevices.audioInputs = [
@@ -141,13 +141,41 @@ describe('SimulationDeviceSetupModal', () => {
 
     render(<SimulationDeviceSetupModal isOpen onStart={vi.fn()} />);
 
-    expect(screen.getByRole('combobox', { name: /micro/i })).toHaveTextContent(
-      /aucun micro/i,
-    );
+    expect(
+      screen.getByRole('combobox', { name: /microphone/i }),
+    ).toHaveTextContent(/no microphone/i);
 
     mediaDevices.audioInputs = [
       { deviceId: 'mic-1', label: 'Built-in Microphone' },
       { deviceId: 'mic-2', label: 'USB Headset' },
     ];
+  });
+
+  it('can be dismissed with Escape or the backdrop when a way out is given', () => {
+    const onCancel = vi.fn();
+
+    render(
+      <SimulationDeviceSetupModal
+        isOpen
+        onStart={vi.fn()}
+        onCancel={onCancel}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /close device setup/i }),
+    );
+    expect(onCancel).toHaveBeenCalledTimes(1);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onCancel).toHaveBeenCalledTimes(2);
+  });
+
+  it('stays put when the page offers no way out', () => {
+    render(<SimulationDeviceSetupModal isOpen onStart={vi.fn()} />);
+
+    expect(
+      screen.queryByRole('button', { name: /close device setup/i }),
+    ).not.toBeInTheDocument();
   });
 });

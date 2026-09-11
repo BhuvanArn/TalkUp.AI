@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { useStreamControls } from '../../../hooks/streams/useStreamControls';
+import { useVideoStream } from '../../../hooks/streams/useVideoStream';
 import SimulationVideoArea from './index';
 
 vi.mock('@/components/organisms/recruiter-avatar', () => ({
@@ -88,6 +90,44 @@ describe('SimulationVideoArea', () => {
     await waitFor(() => expect(setSinkId).toHaveBeenCalledWith('out-2'));
 
     Reflect.deleteProperty(HTMLMediaElement.prototype, 'setSinkId');
+  });
+
+  it('applies a camera choice that only reaches it after the first render', () => {
+    const { rerender } = render(<SimulationVideoArea />);
+
+    expect(vi.mocked(useVideoStream).mock.lastCall?.[0]).toMatchObject({
+      shouldStartWithCamera: true,
+    });
+
+    rerender(
+      <SimulationVideoArea
+        devices={{
+          audioInputId: 'mic-1',
+          videoInputId: 'cam-1',
+          audioOutputId: 'out-1',
+          cameraEnabled: false,
+        }}
+      />,
+    );
+
+    expect(vi.mocked(useVideoStream).mock.lastCall?.[0]).toMatchObject({
+      shouldStartWithCamera: false,
+    });
+    expect(vi.mocked(useStreamControls).mock.lastCall?.[2]).toMatchObject({
+      initialCameraActive: false,
+    });
+  });
+
+  it('reports a stream that could not be opened to the page', () => {
+    const onStreamError = vi.fn();
+
+    render(<SimulationVideoArea onStreamError={onStreamError} />);
+
+    vi
+      .mocked(useVideoStream)
+      .mock.lastCall?.[0]?.onError?.(new Error('busy device'));
+
+    expect(onStreamError).toHaveBeenCalledTimes(1);
   });
 
   it('asks the page to confirm before hanging up a live interview', () => {

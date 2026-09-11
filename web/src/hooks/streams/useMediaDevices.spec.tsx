@@ -182,7 +182,7 @@ describe('useMediaDevices', () => {
 
     await waitFor(() => expect(result.current.permission).toBe('denied'));
 
-    expect(result.current.error).toMatch(/micro/i);
+    expect(result.current.error).toMatch(/microphone/i);
     expect(enumerateDevices).not.toHaveBeenCalled();
   });
 
@@ -208,6 +208,53 @@ describe('useMediaDevices', () => {
 
     await waitFor(() => expect(result.current.audioInputs).toHaveLength(1));
   });
+  it('releases the preview stream when the picker closes', async () => {
+    const { result, rerender } = renderHook(
+      ({ enabled }) => useMediaDevices({ enabled }),
+      { initialProps: { enabled: true } },
+    );
+
+    await waitFor(() => expect(result.current.previewStream).not.toBeNull());
+
+    const tracks = result.current.previewStream!.getTracks();
+
+    rerender({ enabled: false });
+
+    await waitFor(() => expect(result.current.previewStream).toBeNull());
+    tracks.forEach((track) => expect(track.stop).toHaveBeenCalled());
+  });
+
+  it('reports a device that cannot be opened instead of failing silently', async () => {
+    let probed = false;
+    getUserMedia.mockImplementation(async () => {
+      if (!probed) {
+        probed = true;
+        return new FakeMediaStream([
+          new FakeMediaStreamTrack('audio'),
+          new FakeMediaStreamTrack('video'),
+        ]) as unknown as MediaStream;
+      }
+      throw Object.assign(new Error('busy'), { name: 'NotReadableError' });
+    });
+
+    const { result } = renderHook(() => useMediaDevices({ enabled: true }));
+
+    await waitFor(() => expect(result.current.permission).toBe('denied'));
+
+    expect(result.current.error).toMatch(/could not be opened/i);
+    expect(result.current.previewStream).toBeNull();
+  });
+
+  it('reports denied when the device listing itself fails', async () => {
+    enumerateDevices.mockRejectedValue(new Error('enumeration failed'));
+
+    const { result } = renderHook(() => useMediaDevices({ enabled: true }));
+
+    await waitFor(() => expect(result.current.permission).toBe('denied'));
+
+    expect(result.current.error).toBeTruthy();
+  });
+
   it('reports denied when the browser exposes no mediaDevices API', async () => {
     Object.defineProperty(navigator, 'mediaDevices', {
       configurable: true,

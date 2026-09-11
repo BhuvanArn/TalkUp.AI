@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface UseStreamControlsOptions {
   initialMicActive?: boolean;
@@ -36,6 +36,12 @@ export const useStreamControls = (
   const [isMicActive, setIsMicActive] = useState(initialMicActive);
   const [isSpeakerActive, setIsSpeakerActive] = useState(initialSpeakerActive);
   const [isCameraActive, setIsCameraActive] = useState(initialCameraActive);
+
+  // The device picker resolves after this hook first runs, so the camera choice
+  // it produces arrives as a changed `initialCameraActive` rather than on mount.
+  useEffect(() => {
+    setIsCameraActive(initialCameraActive);
+  }, [initialCameraActive]);
 
   const toggleMic = () => {
     setIsMicActive((prev) => {

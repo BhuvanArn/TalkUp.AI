@@ -166,4 +166,21 @@ describe('useStreamControls', () => {
       video: { deviceId: { exact: 'cam-7' } },
     });
   });
+
+  it('follows a camera choice that only arrives after the first render', () => {
+    function Test({ cameraOn }: { cameraOn: boolean }) {
+      const videoRef = useRef<HTMLVideoElement | null>(null);
+      const { isCameraActive } = useStreamControls(videoRef, undefined, {
+        initialCameraActive: cameraOn,
+      });
+
+      return <span data-testid="cam">{String(isCameraActive)}</span>;
+    }
+
+    const { rerender } = render(<Test cameraOn={true} />);
+    expect(screen.getByTestId('cam').textContent).toBe('true');
+
+    rerender(<Test cameraOn={false} />);
+    expect(screen.getByTestId('cam').textContent).toBe('false');
+  });
 });

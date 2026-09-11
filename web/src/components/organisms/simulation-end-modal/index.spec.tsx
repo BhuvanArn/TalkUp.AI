@@ -16,9 +16,9 @@ describe('SimulationEndModal', () => {
       />,
     );
 
-    expect(screen.getByText(/terminer la simulation/i)).toBeInTheDocument();
+    expect(screen.getByText(/end the simulation/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /terminer/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^end$/i }));
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
@@ -33,7 +33,7 @@ describe('SimulationEndModal', () => {
       />,
     );
 
-    expect(screen.getByText(/rien ne sera enregistré/i)).toBeInTheDocument();
+    expect(screen.getByText(/nothing will be saved/i)).toBeInTheDocument();
   });
 
   it('confirms the progression is kept when an analysis exists', () => {
@@ -47,9 +47,7 @@ describe('SimulationEndModal', () => {
       />,
     );
 
-    expect(
-      screen.getByText(/votre progression est enregistrée/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/your progress is saved/i)).toBeInTheDocument();
   });
 
   it('keeps the interview running when the user cancels', () => {
@@ -64,7 +62,9 @@ describe('SimulationEndModal', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /continuer/i }));
+    fireEvent.click(
+      screen.getByRole('button', { name: /continue the interview/i }),
+    );
 
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
@@ -80,10 +80,12 @@ describe('SimulationEndModal', () => {
       />,
     );
 
-    expect(screen.getByText(/simulation terminée/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /fermer/i })).toBeInTheDocument();
+    expect(screen.getByText(/simulation complete/i)).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: /continuer/i }),
+      screen.getByRole('button', { name: /^close$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /continue the interview/i }),
     ).not.toBeInTheDocument();
   });
 

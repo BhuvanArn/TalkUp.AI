@@ -5,9 +5,9 @@ import { SimulationEndModalProps } from './types';
 export type { SimulationEndModalMode, SimulationEndModalProps } from './types';
 
 const SAVED_MESSAGE =
-  'Votre progression est enregistrée : les analyses de cet entretien restent disponibles.';
+  'Your progress is saved: the analyses from this interview stay available.';
 const NOT_SAVED_MESSAGE =
-  "Vous n'avez pas encore parlé assez longtemps pour produire une analyse : rien ne sera enregistré pour cet entretien.";
+  'You have not spoken long enough yet to produce an analysis: nothing will be saved for this interview.';
 
 /**
  * Closing dialog of a simulation — either the guard shown when the user hangs
@@ -27,14 +27,14 @@ const SimulationEndModal = ({
   return (
     <ConfirmModal
       isOpen={isOpen}
-      title={isConfirm ? 'Terminer la simulation ?' : 'Simulation terminée'}
+      title={isConfirm ? 'End the simulation?' : 'Simulation complete'}
       message={
         isConfirm
-          ? `L'entretien sera interrompu et votre créneau libéré. ${progressMessage}`
+          ? `The interview will be cut short and your slot released. ${progressMessage}`
           : progressMessage
       }
-      confirmLabel={isConfirm ? 'Terminer' : 'Fermer'}
-      cancelLabel="Continuer l'entretien"
+      confirmLabel={isConfirm ? 'End' : 'Close'}
+      cancelLabel="Continue the interview"
       confirmColor={isConfirm ? 'error' : 'accent'}
       icon={isConfirm ? 'warning' : 'info'}
       hideCancel={!isConfirm}

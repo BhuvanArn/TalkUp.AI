@@ -225,7 +225,9 @@ describe('Simulations', () => {
   it('calls handleStreamToggle when stream is toggled on', async () => {
     renderWithProviders(<RouterProvider router={router} />);
 
-    const toggleButton = screen.getByRole('button', { name: /start/i });
+    const toggleButton = screen.getByRole('button', {
+      name: /start new call/i,
+    });
     fireEvent.click(toggleButton);
 
     await waitFor(() => {
