@@ -179,4 +179,51 @@ describe("canonicalizeOfferUrl", () => {
   it("returns the trimmed input when it does not parse", () => {
     expect(canonicalizeOfferUrl("  not a url  ")).toBe("not a url");
   });
+
+  it("keeps identifying params so two different postings stay distinct", () => {
+    // Indeed carries the posting id ONLY in the query string.
+    expect(
+      canonicalizeOfferUrl("https://fr.indeed.com/viewjob?jk=aaa"),
+    ).not.toBe(canonicalizeOfferUrl("https://fr.indeed.com/viewjob?jk=bbb"));
+    // LinkedIn search/collection links do the same with currentJobId.
+    expect(
+      canonicalizeOfferUrl(
+        "https://www.linkedin.com/jobs/collections/recommended/?currentJobId=1",
+      ),
+    ).not.toBe(
+      canonicalizeOfferUrl(
+        "https://www.linkedin.com/jobs/collections/recommended/?currentJobId=2",
+      ),
+    );
+    // Glassdoor.
+    expect(
+      canonicalizeOfferUrl(
+        "https://www.glassdoor.fr/job-listing?jobListingId=1",
+      ),
+    ).not.toBe(
+      canonicalizeOfferUrl(
+        "https://www.glassdoor.fr/job-listing?jobListingId=2",
+      ),
+    );
+  });
+
+  it("still maps one posting to one key when only tracking params differ", () => {
+    expect(
+      canonicalizeOfferUrl(
+        "https://fr.indeed.com/viewjob?jk=aaa&utm_source=google&from=serp",
+      ),
+    ).toBe(
+      canonicalizeOfferUrl(
+        "https://fr.indeed.com/viewjob?jk=aaa&utm_campaign=x&trk=feed",
+      ),
+    );
+  });
+
+  it("is stable regardless of query-param order", () => {
+    expect(
+      canonicalizeOfferUrl("https://boards.example.com/job?gh_jid=7&lang=fr"),
+    ).toBe(
+      canonicalizeOfferUrl("https://boards.example.com/job?lang=fr&gh_jid=7"),
+    );
+  });
 });

@@ -217,6 +217,30 @@ describe("ApplicationsService", () => {
       expect(row.offer_url).toBe("https://www.linkedin.com/jobs/view/123");
     });
 
+    it("keeps two different postings on the same board distinct", async () => {
+      // Regression: job boards that carry the posting id in the query string
+      // (Indeed `jk`, LinkedIn `currentJobId`, ...) used to canonicalize to one
+      // key, so the SECOND application silently returned the first one.
+      applicationRepo.findOne = jest.fn().mockResolvedValue(null);
+      mockScrapeAxios.mockResolvedValue("some job offer text");
+      mockGroqCreate.mockResolvedValue({
+        choices: [{ message: { content: validOfferResponse } }],
+      });
+
+      const first = await service.createFromUrl(
+        "u1",
+        "https://fr.indeed.com/viewjob?jk=aaa&from=serp",
+      );
+      const second = await service.createFromUrl(
+        "u1",
+        "https://fr.indeed.com/viewjob?jk=bbb&from=serp",
+      );
+
+      expect(first.offer_url).toBe("https://fr.indeed.com/viewjob?jk=aaa");
+      expect(second.offer_url).toBe("https://fr.indeed.com/viewjob?jk=bbb");
+      expect(first.offer_url).not.toBe(second.offer_url);
+    });
+
     it("leaves the interview date untouched on dedup when none is provided", async () => {
       const existing = {
         application_id: "a1",
