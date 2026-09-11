@@ -1,5 +1,6 @@
 import {
   Entity,
+  Index,
   Column,
   PrimaryGeneratedColumn,
   ManyToOne,
@@ -17,6 +18,13 @@ import type {
   RoadmapExtraction,
 } from "../common/utils/groqExtraction";
 
+// createFromUrl() looks every new application up by (user_id, offer_url)
+// before scraping, which was a full scan. Index user_id only, not the pair:
+// offer_url is an unbounded varchar and a btree entry over a long URL can blow
+// past Postgres' index-row size limit. A user holds few applications, so
+// narrowing to their rows and filtering offer_url in memory is already the
+// whole win. Applied by TypeORM synchronize — no migration.
+@Index(["user_id"])
 @Entity()
 export class application {
   @PrimaryGeneratedColumn("uuid")
