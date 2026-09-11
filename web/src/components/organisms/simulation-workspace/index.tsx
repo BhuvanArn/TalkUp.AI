@@ -1,16 +1,18 @@
 import InfoBox from '@/components/molecules/info-box';
 import NotesEditor from '@/components/molecules/notes-editor/notes-editor';
 import SimulationQueueBanner from '@/components/molecules/simulation-queue-banner';
+import { PersonaPickerModal } from '@/components/organisms/persona-picker-modal';
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
 import SimulationVideoArea from '@/components/organisms/simulation-video-area';
 import VerbalAnalysisPanel from '@/components/organisms/verbal-analysis-panel';
 import { WebSocketDebugPanel } from '@/components/organisms/websocket-debug-panel';
 import {
-  RECRUITER_DISPLAY_NAME,
-  RECRUITER_DISPLAY_ROLE,
-  clearAvatarFallbackForced,
-} from '@/config/recruiter-avatar';
+  DEFAULT_PERSONA,
+  type RecruiterPersona,
+  getPersonaById,
+} from '@/config/personas';
+import { clearAvatarFallbackForced } from '@/config/recruiter-avatar';
 import {
   WebSocketPacket,
   useAudioPlayback,
@@ -21,6 +23,7 @@ import {
   useVerbalAnalysis,
 } from '@/hooks/simulation';
 import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
+import usePersonaStore from '@/stores/usePersonaStore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ReadyState } from 'react-use-websocket';
@@ -31,6 +34,12 @@ export interface SimulationWorkspaceProps {
   title?: string;
   description?: string;
   contextLabel?: string;
+  /**
+   * Passed through to the persona picker modal's optional back control (#195).
+   * Left undefined on the standalone /simulations page, which has nowhere to
+   * navigate back to.
+   */
+  backTo?: { label: string; onNavigate: () => void };
 }
 
 export function SimulationWorkspace({
@@ -38,7 +47,41 @@ export function SimulationWorkspace({
   title = 'Simulations',
   description = 'Practice interview scenarios in a safe environment.',
   contextLabel,
+  backTo,
 }: SimulationWorkspaceProps) {
+  const selectedPersonaId = usePersonaStore((state) => state.selectedPersonaId);
+  const setPersona = usePersonaStore((state) => state.setPersona);
+  // Explicit "Change recruiter" clicks reopen the picker even though a
+  // persona is already selected. This is intentionally NOT the sole source
+  // of truth: it is OR-ed with `selectedPersonaId === null` below so the
+  // picker also reopens whenever the store is cleared out from under a
+  // mounted workspace (useInterviewSession.clearPersona() on hang-up), not
+  // just at mount time. See simulation-workspace/index.spec.tsx.
+  const [wantsPickerOpen, setWantsPickerOpen] = useState(false);
+  const isPickerOpen = selectedPersonaId === null || wantsPickerOpen;
+  const persona = getPersonaById(selectedPersonaId);
+
+  const handlePersonaSelect = useCallback(
+    (chosen: RecruiterPersona) => {
+      setPersona(chosen.id);
+      setWantsPickerOpen(false);
+    },
+    [setPersona],
+  );
+
+  // Dismiss means two different things depending on why the picker is open.
+  // First entry (nothing chosen): fall back to the default and persist it, so
+  // the modal does not nag on the next mount — today's shipped behaviour.
+  // Reopened via "Change recruiter": the user already has a pick, so dismiss
+  // means *cancel*. Writing the default here would silently downgrade a chosen
+  // Marc Bernard back to Sophie on an Esc.
+  const handlePersonaDismiss = useCallback(() => {
+    if (selectedPersonaId === null) {
+      setPersona(DEFAULT_PERSONA.id);
+    }
+    setWantsPickerOpen(false);
+  }, [selectedPersonaId, setPersona]);
+
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [wsError, setWsError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
@@ -306,6 +349,7 @@ export function SimulationWorkspace({
       <div className="grid grid-cols-[1fr_20rem] gap-6">
         <div>
           <SimulationVideoArea
+            persona={persona}
             isAiSpeaking={isAiSpeaking}
             isAwaitingAiResponse={isAwaitingAiResponse}
             speechTurn={speechTurn}
@@ -347,15 +391,32 @@ export function SimulationWorkspace({
           )}
 
           <InfoBox
-            title={RECRUITER_DISPLAY_NAME}
-            text={`${RECRUITER_DISPLAY_ROLE}. ${avatarStatusText}`}
+            title={persona.name}
+            text={`${persona.role}. ${avatarStatusText}`}
             icon="members"
           />
+          {!isCallActive && (
+            <button
+              type="button"
+              onClick={() => setWantsPickerOpen(true)}
+              className="text-button-m text-text-weak hover:text-text transition-colors"
+            >
+              Change recruiter
+            </button>
+          )}
 
           <VerbalAnalysisPanel analysis={analysis} />
         </div>
       </div>
       <NotesEditor interviewID={interviewID} />
+
+      <PersonaPickerModal
+        isOpen={isPickerOpen}
+        initialHighlight={persona}
+        onSelect={handlePersonaSelect}
+        onDismiss={handlePersonaDismiss}
+        backTo={backTo}
+      />
     </div>
   );
 }

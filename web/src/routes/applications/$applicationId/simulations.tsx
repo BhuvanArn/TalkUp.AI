@@ -2,7 +2,7 @@ import { iconMap } from '@/components/atoms/icon/icon-map';
 import { SimulationWorkspace } from '@/components/organisms/simulation-workspace';
 import { useApplications } from '@/services/applications/hooks';
 import { createAuthGuard } from '@/utils/auth.guards';
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 
 const BackIcon = iconMap['arrow-left'];
 
@@ -37,10 +37,21 @@ function BackToRoadmap({ applicationId }: { applicationId: string }) {
 
 function ApplicationSimulations() {
   const { applicationId } = Route.useParams();
+  const navigate = useNavigate();
   const { data: applications, isLoading } = useApplications();
   const application = applications?.find(
     (item) => item.applicationId === applicationId,
   );
+
+  // Same destination as the BackToRoadmap link below — this one lives inside
+  // the persona picker modal, whose scrim otherwise blocks that link on
+  // first entry (#195 regression from PR #165).
+  const handleBackToRoadmap = () => {
+    void navigate({
+      to: '/applications/$applicationId/roadmap',
+      params: { applicationId },
+    });
+  };
 
   const contextLabel = application
     ? [application.jobTitle, application.companyName]
@@ -73,6 +84,7 @@ function ApplicationSimulations() {
         title=""
         description="Practice with the AI recruiter for this job offer."
         contextLabel={contextLabel}
+        backTo={{ label: 'Back to roadmap', onNavigate: handleBackToRoadmap }}
       />
     </div>
   );

@@ -1,4 +1,5 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import usePersonaStore from '@/stores/usePersonaStore';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -160,5 +161,39 @@ describe('useInterviewSession restore', () => {
     expect(toast.error).toHaveBeenCalledWith(
       'Impossible de reprendre la simulation pour le moment. Rechargez la page pour réessayer.',
     );
+  });
+
+  it('clears the persona even when updateInterview rejects on end', async () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    localStorageMock.store.set('currentInterviewID', 'interview-1');
+    localStorageMock.store.set('currentInterviewURL', 'wss://example.test/ws');
+    mockGetInterviewSession.mockResolvedValue({
+      interviewID: 'interview-1',
+      dbStatus: 'in_progress',
+      sessionStatus: 'active',
+      queuePosition: 0,
+      entrypoint: 'wss://example.test/ws',
+    });
+    mockUpdateInterview.mockRejectedValueOnce(new Error('network down'));
+
+    const { result } = renderHook(() =>
+      useInterviewSession({
+        onConnect,
+        onDisconnect,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(onConnect).toHaveBeenCalledWith('wss://example.test/ws');
+    });
+
+    await act(async () => {
+      await result.current.handleStreamToggle(false);
+    });
+
+    expect(mockUpdateInterview).toHaveBeenCalledWith('interview-1', {
+      status: 'completed',
+    });
+    expect(usePersonaStore.getState().selectedPersonaId).toBeNull();
   });
 });

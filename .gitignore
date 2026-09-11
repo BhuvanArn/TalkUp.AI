@@ -27,3 +27,10 @@ ai/microservices/**/llm/
 
 # superpowers brainstorm companion artifacts
 .superpowers/
+
+# playwright mcp scratch (console logs, page snapshots, ad-hoc screenshots)
+.playwright-mcp/
+
+# playwright output when run from the repo root (web/.gitignore anchors these to web/)
+/test-results/
+/playwright-report/

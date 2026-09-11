@@ -5,6 +5,7 @@ import {
   heartbeatInterview,
   updateInterview,
 } from '@/services/ai/http';
+import usePersonaStore from '@/stores/usePersonaStore';
 import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -389,6 +390,11 @@ export function useInterviewSession({
             clearInterviewStorage();
           } catch (error) {
             console.error('Failed to update interview status:', error);
+          } finally {
+            // Outside the try: a rejected updateInterview must not strand the
+            // persona. Leaving it set would silently skip the picker on the
+            // next visit.
+            usePersonaStore.getState().clearPersona();
           }
         }
 

@@ -1,8 +1,4 @@
-import {
-  RECRUITER_AVATAR_SHOW_OPTIONS,
-  RECRUITER_DISPLAY_NAME,
-  RECRUITER_DISPLAY_ROLE,
-} from '@/config/recruiter-avatar';
+import { RECRUITER_AVATAR_SHOW_OPTIONS } from '@/config/recruiter-avatar';
 import type { AiSpeechTurn } from '@/hooks/simulation/useAudioPlayback';
 import { buildWordTimings, decodeAudioChunks } from '@/utils/aiSpeechPayload';
 import { TalkingHead } from '@met4citizen/talkinghead';
@@ -47,6 +43,7 @@ function ensureRendererRunning(head: TalkingHead, container: HTMLElement) {
  */
 export function RecruiterAvatar3D({
   active,
+  persona,
   avatarUrl,
   isAwaitingAiResponse,
   speechTurn,
@@ -278,10 +275,8 @@ export function RecruiterAvatar3D({
       />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-8">
-        <p className="text-sm font-semibold text-white">
-          {RECRUITER_DISPLAY_NAME}
-        </p>
-        <p className="text-xs text-white/80">{RECRUITER_DISPLAY_ROLE}</p>
+        <p className="text-sm font-semibold text-white">{persona.name}</p>
+        <p className="text-xs text-white/80">{persona.role}</p>
       </div>
 
       {initState === 'loading' ? (
