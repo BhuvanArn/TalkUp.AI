@@ -1,0 +1,190 @@
+import { DEFAULT_PERSONA, PERSONAS } from '@/config/personas';
+import * as simulationHooks from '@/hooks/simulation';
+import usePersonaStore from '@/stores/usePersonaStore';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { SimulationWorkspace } from './index';
+
+vi.mock('@/hooks/simulation', () => ({
+  useInterviewSession: vi.fn(() => ({
+    isCallActive: false,
+    isQueued: false,
+    queuePosition: 0,
+    estimatedWaitSec: undefined,
+    inputUrl: '',
+    interviewID: null,
+    handleStreamToggle: vi.fn(),
+  })),
+  useSimulationWebSocket: () => ({
+    sendMessage: vi.fn(),
+    sendJsonMessage: vi.fn(),
+    sendPing: vi.fn(),
+    sendSessionStart: vi.fn(),
+    lastMessage: null,
+    lastJsonMessage: null,
+    readyState: 3,
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  }),
+  useAudioPlayback: () => ({ isAiSpeaking: false, speechTurn: 0 }),
+  useAudioStreaming: () => ({
+    isListening: false,
+    isSpeaking: false,
+    isRecording: false,
+    packetsSent: 0,
+    supportedMimeType: '',
+    audioError: null,
+  }),
+  useVerbalAnalysis: () => ({
+    analysis: { latest: null, aggregate: null, history: [] },
+  }),
+  useRecruiterAvatarCapability: () => ({
+    avatarMode: 'fallback',
+    capabilityFallbackReason: null,
+  }),
+}));
+
+describe('SimulationWorkspace persona picker', () => {
+  beforeEach(() => {
+    act(() => usePersonaStore.getState().clearPersona());
+  });
+
+  it('shows the picker when no persona is chosen', () => {
+    render(<SimulationWorkspace />);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('hides the picker once a persona is chosen', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('shows the chosen persona name and role in the info box', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+    const marc = PERSONAS.find((persona) => persona.id === 'marc-bernard')!;
+    expect(screen.getByText(marc.name)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(marc.role))).toBeInTheDocument();
+  });
+
+  it('offers Change while idle', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+    expect(
+      screen.getByRole('button', { name: /change recruiter/i }),
+    ).toBeInTheDocument();
+  });
+
+  // Task 5's explicit highlight-on-reopen decision: reopening via "Change
+  // recruiter" must highlight the currently selected persona, not a stale
+  // highlight or an unconditional Sophie (the modal's own internal default).
+  it('highlights the currently selected persona when reopened via Change', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+
+    fireEvent.click(screen.getByRole('button', { name: /change recruiter/i }));
+
+    const marc = PERSONAS.find((persona) => persona.id === 'marc-bernard')!;
+    const radios = screen.getAllByRole('radio');
+    const marcRadio = radios.find(
+      (radio) => radio.getAttribute('aria-checked') === 'true',
+    );
+    expect(marcRadio).toHaveAccessibleName(new RegExp(marc.name));
+  });
+
+  // Regression guard: the "Change recruiter" button is gated on !isCallActive,
+  // NOT isAwaitingAiResponse. These are distinct states: isCallActive is the
+  // session-wide interview status (should hide during live call), while
+  // isAwaitingAiResponse flips true/false on every conversational turn (would
+  // cause the button to flicker visibly if used as the gate). A future refactor
+  // might conflate them; this test locks the distinction in place.
+  it('shows Change recruiter when idle (isCallActive: false)', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+    expect(
+      screen.getByRole('button', { name: /change recruiter/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('hides Change recruiter when call is active (isCallActive: true)', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    vi.mocked(simulationHooks.useInterviewSession).mockReturnValueOnce({
+      isCallActive: true,
+      isQueued: false,
+      queuePosition: 0,
+      estimatedWaitSec: undefined,
+      inputUrl: '',
+      interviewID: null,
+      handleStreamToggle: vi.fn(),
+    });
+    render(<SimulationWorkspace />);
+    expect(
+      screen.queryByRole('button', { name: /change recruiter/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  // Regression for the picker/store desync: useInterviewSession's finally
+  // block calls clearPersona() when an interview ends ("Leaving it set would
+  // silently skip the picker on the next visit"), but the workspace stayed
+  // mounted throughout that call. If isPickerOpen is only ever seeded from a
+  // useState initializer, this reset is invisible to the UI: the store goes
+  // back to null, persona quietly resolves to the default via
+  // getPersonaById(null), and the modal never reappears to let the user
+  // re-choose. The picker's open state must be derived from the store, not
+  // snapshotted once at mount.
+  it('reopens the picker when the store is cleared while mounted', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    act(() => usePersonaStore.getState().clearPersona());
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  // Dismiss is overloaded: on first entry it means "use the default", but once
+  // a persona is committed, reopening via "Change recruiter" and backing out
+  // means *cancel*. Writing the default on that path silently downgraded a
+  // chosen Marc Bernard to Sophie Martin.
+  it('keeps the committed persona when a reopened picker is dismissed', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+
+    fireEvent.click(screen.getByRole('button', { name: /change recruiter/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(usePersonaStore.getState().selectedPersonaId).toBe('marc-bernard');
+    expect(screen.getByText(/Marc Bernard/)).toBeInTheDocument();
+  });
+
+  it('still commits the default when the first-entry picker is dismissed', () => {
+    render(<SimulationWorkspace />);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(usePersonaStore.getState().selectedPersonaId).toBe(
+      DEFAULT_PERSONA.id,
+    );
+  });
+
+  // The modal is hidden, not unmounted, so a stale highlight survives a close.
+  it('re-seeds the highlight to the committed persona on reopen', () => {
+    act(() => usePersonaStore.getState().setPersona('marc-bernard'));
+    render(<SimulationWorkspace />);
+
+    fireEvent.click(screen.getByRole('button', { name: /change recruiter/i }));
+    fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'Home' });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: /change recruiter/i }));
+
+    const checked = screen
+      .getAllByRole('radio')
+      .find((radio) => radio.getAttribute('aria-checked') === 'true');
+    expect(checked).toHaveTextContent('Marc Bernard');
+  });
+});

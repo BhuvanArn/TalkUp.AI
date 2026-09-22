@@ -15,6 +15,7 @@ const RecruiterAvatar3D = lazy(() =>
  */
 export function RecruiterAvatarPanel({
   active,
+  persona,
   isAiSpeaking,
   isAwaitingAiResponse,
   speechTurn,
@@ -37,12 +38,13 @@ export function RecruiterAvatarPanel({
   const use3d = wants3d && !runtimeFallback;
 
   if (avatarMode === 'loading' && !runtimeFallback) {
-    return <RecruiterAvatarLoading />;
+    return <RecruiterAvatarLoading persona={persona} />;
   }
 
   if (!use3d) {
     return (
       <RecruiterAvatarFallback
+        persona={persona}
         isAiSpeaking={isAiSpeaking}
         isAwaitingAiResponse={isAwaitingAiResponse}
         fallbackReason={runtimeFallback ?? capabilityFallbackReason}
@@ -51,9 +53,10 @@ export function RecruiterAvatarPanel({
   }
 
   return (
-    <Suspense fallback={<RecruiterAvatarLoading />}>
+    <Suspense fallback={<RecruiterAvatarLoading persona={persona} />}>
       <RecruiterAvatar3D
         active={active}
+        persona={persona}
         avatarUrl={avatarUrl}
         isAiSpeaking={isAiSpeaking}
         isAwaitingAiResponse={isAwaitingAiResponse}

@@ -40,10 +40,36 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test('back control on the simulation page returns to the application roadmap', async ({
+test('back control inside the persona picker returns to the application roadmap', async ({
   page,
 }) => {
   await page.goto(`/applications/${app.applicationId}/simulations`);
+
+  // The persona picker modal is up on first entry and its scrim covers the
+  // page's own "Back to roadmap" link (#195 regression from PR #165) — so
+  // the real user path back is the modal's own back control.
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+
+  const back = dialog.getByRole('button', { name: /back to roadmap/i });
+  await expect(back).toBeVisible();
+
+  await back.click();
+
+  await expect(page).toHaveURL(
+    new RegExp(`/applications/${app.applicationId}/roadmap$`),
+  );
+});
+
+test('back link on the page returns to the roadmap once the modal is dismissed', async ({
+  page,
+}) => {
+  await page.goto(`/applications/${app.applicationId}/simulations`);
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
 
   const back = page.getByRole('link', { name: /back to roadmap/i });
   await expect(back).toBeVisible();
