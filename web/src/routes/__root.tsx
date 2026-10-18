@@ -1,5 +1,4 @@
 import { ChatWidget } from '@/components/organisms/chatbot/ChatWidget';
-import LandingNav from '@/components/organisms/landing-nav';
 import Sidebar from '@/components/organisms/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavigationProvider } from '@/contexts/NavigationContext';
@@ -16,6 +15,7 @@ import NotFoundPage from './-not-found';
 
 const PUBLIC_SHELL_PATHS = new Set<string>([
   '/',
+  '/about',
   '/privacy',
   '/login',
   '/register',
@@ -25,8 +25,6 @@ const PUBLIC_SHELL_PATHS = new Set<string>([
   '/reset-password',
   '/verify-email',
 ]);
-
-const PUBLIC_NAV_PATHS = new Set<string>(['/about']);
 
 const RootComponent = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -58,7 +56,6 @@ const RootComponent = () => {
   });
   const { isAuthenticated } = useAuth();
   const usePublicShell = PUBLIC_SHELL_PATHS.has(pathname);
-  const usePublicNav = PUBLIC_NAV_PATHS.has(pathname) && !isAuthenticated;
 
   if (isNotFoundMatch) {
     const isAuthed = authStatus?.isAuthenticated ?? false;
@@ -112,20 +109,6 @@ const RootComponent = () => {
       <NavigationProvider>
         <div className="min-h-screen w-full bg-background text-text">
           <Outlet />
-          <TanStackRouterDevtools position="top-right" />
-        </div>
-      </NavigationProvider>
-    );
-  }
-
-  if (usePublicNav) {
-    return (
-      <NavigationProvider>
-        <div className="min-h-screen w-full bg-background text-text">
-          <LandingNav />
-          <main>
-            <Outlet />
-          </main>
           <TanStackRouterDevtools position="top-right" />
         </div>
       </NavigationProvider>

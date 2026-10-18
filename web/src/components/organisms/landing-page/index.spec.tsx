@@ -1,15 +1,22 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import LandingPage from './index';
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to, hash, search, onClick, className, ...rest }: any) => {
+  Link: ({
+    children,
+    to,
+    hash,
+    search,
+    resetScroll: _resetScroll,
+    ...rest
+  }: any) => {
     const base = to === '/' ? '' : to;
     const query = search ? `?${new URLSearchParams(search).toString()}` : '';
     const href = hash ? `${base}#${hash}` : `${to}${query}`;
     return (
-      <a href={href} onClick={onClick} className={className} {...rest}>
+      <a href={href} {...rest}>
         {children}
       </a>
     );
@@ -25,159 +32,145 @@ vi.mock('@/components/organisms/landing-footer', () => ({
   default: () => <footer data-testid="landing-footer" />,
 }));
 
-vi.mock('@/components/molecules/convincing-banner/reviews.json', () => ({
-  default: [
-    { name: 'Alice', text: 'Great', review: 5 },
-    { name: 'Bob', text: 'Solid', review: 4 },
-    { name: 'Carol', text: 'Useful', review: 3 },
-  ],
-}));
-
 describe('LandingPage', () => {
-  it('renders nav, footer, and main sections', () => {
+  it('renders nav, footer and a single h1', () => {
     render(<LandingPage />);
     expect(screen.getByTestId('landing-nav')).toBeInTheDocument();
     expect(screen.getByTestId('landing-footer')).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /ace your next interview/i }),
-    ).toBeInTheDocument();
-  });
-
-  it('renders feature cards', () => {
-    render(<LandingPage />);
-    expect(
-      screen.getByText('Realistic interview simulations'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getAllByText('Behavior & emotion analysis').length,
-    ).toBeGreaterThan(0);
-    expect(screen.getByText('Notes & journaling')).toBeInTheDocument();
-  });
-
-  it('renders steps in how-it-works', () => {
-    render(<LandingPage />);
-    expect(screen.getByText('Create your profile')).toBeInTheDocument();
-    expect(screen.getByText('Run a simulation')).toBeInTheDocument();
-    expect(screen.getByText('Review and improve')).toBeInTheDocument();
-  });
-
-  it('renders pricing tabs and switches audience on click', () => {
-    render(<LandingPage />);
-    const candidatesTab = screen.getByRole('tab', { name: 'For candidates' });
-    const orgsTab = screen.getByRole('tab', { name: 'For organizations' });
-    expect(candidatesTab).toHaveAttribute('aria-selected', 'true');
-    expect(orgsTab).toHaveAttribute('aria-selected', 'false');
-    fireEvent.click(orgsTab);
-    expect(orgsTab).toHaveAttribute('aria-selected', 'true');
-    expect(candidatesTab).toHaveAttribute('aria-selected', 'false');
-  });
-
-  it('switches pricing audience via ArrowRight key', () => {
-    render(<LandingPage />);
-    const candidatesTab = screen.getByRole('tab', { name: 'For candidates' });
-    fireEvent.keyDown(candidatesTab, { key: 'ArrowRight' });
-    expect(
-      screen.getByRole('tab', { name: 'For organizations' }),
-    ).toHaveAttribute('aria-selected', 'true');
-  });
-
-  it('switches pricing audience via ArrowLeft key (wraps)', () => {
-    render(<LandingPage />);
-    const candidatesTab = screen.getByRole('tab', { name: 'For candidates' });
-    fireEvent.keyDown(candidatesTab, { key: 'ArrowLeft' });
-    expect(
-      screen.getByRole('tab', { name: 'For organizations' }),
-    ).toHaveAttribute('aria-selected', 'true');
-  });
-
-  it('switches pricing audience via End/Home keys', () => {
-    render(<LandingPage />);
-    const candidatesTab = screen.getByRole('tab', { name: 'For candidates' });
-    fireEvent.keyDown(candidatesTab, { key: 'End' });
-    expect(
-      screen.getByRole('tab', { name: 'For organizations' }),
-    ).toHaveAttribute('aria-selected', 'true');
-    fireEvent.keyDown(screen.getByRole('tab', { name: 'For organizations' }), {
-      key: 'Home',
-    });
-    expect(screen.getByRole('tab', { name: 'For candidates' })).toHaveAttribute(
-      'aria-selected',
-      'true',
+    const h1s = screen.getAllByRole('heading', { level: 1 });
+    expect(h1s).toHaveLength(1);
+    expect(h1s[0]).toHaveTextContent(
+      'Your interview is on Thursday. Walk in ready.',
     );
   });
 
-  it('ignores other keys on tabs', () => {
+  it('renders every section heading in order', () => {
     render(<LandingPage />);
-    const candidatesTab = screen.getByRole('tab', { name: 'For candidates' });
-    fireEvent.keyDown(candidatesTab, { key: 'Tab' });
-    expect(candidatesTab).toHaveAttribute('aria-selected', 'true');
+    const h2s = screen
+      .getAllByRole('heading', { level: 2 })
+      .map((h) => h.textContent);
+    expect(h2s).toEqual([
+      'From job offer to interview',
+      'Feedback while you speak',
+      'Know what to bring up',
+      'Built for people with everything to prove out loud',
+      'For schools, bootcamps and career services',
+      'Pricing',
+      'Speak with confidence. Land the job.',
+    ]);
   });
 
-  it('renders candidates pricing tier names by default', () => {
+  it('renders hero CTAs to register and the how-it-works anchor', () => {
     render(<LandingPage />);
-    const panel = screen.getByRole('tabpanel');
-    expect(within(panel).getByText('Free')).toBeInTheDocument();
-    expect(within(panel).getByText('Lite')).toBeInTheDocument();
-    expect(within(panel).getByText('Pro')).toBeInTheDocument();
-  });
-
-  it('renders organizations pricing tier names after switch', () => {
-    render(<LandingPage />);
-    fireEvent.click(screen.getByRole('tab', { name: 'For organizations' }));
-    const panel = screen.getByRole('tabpanel');
-    expect(within(panel).getByText('Member')).toBeInTheDocument();
-    expect(within(panel).getByText('Business')).toBeInTheDocument();
-    expect(within(panel).getByText('Enterprise')).toBeInTheDocument();
-    expect(screen.getByText(/already invited/i)).toBeInTheDocument();
-  });
-
-  it('routes org CTAs to the org signup and code register flows', () => {
-    render(<LandingPage />);
-    fireEvent.click(screen.getByRole('tab', { name: 'For organizations' }));
-
-    const business = screen.getByRole('link', { name: 'Start a 30-day trial' });
-    expect(business).toHaveAttribute('href', '/register-organization');
-
-    const member = screen.getByRole('link', { name: 'I have a code' });
-    expect(member).toHaveAttribute('href', '/register?code=');
-
-    const codeLink = screen.getByRole('link', {
-      name: 'Sign up with your organization code',
+    const [heroCta] = screen.getAllByRole('link', {
+      name: 'Analyze my CV and an offer',
     });
-    expect(codeLink).toHaveAttribute('href', '/register?code=');
+    expect(heroCta).toHaveAttribute('href', '/register');
+    expect(
+      screen.getByRole('link', { name: 'See how it works' }),
+    ).toHaveAttribute('href', '#how');
+    expect(
+      screen.getByText('CV in PDF. Simulations are held in French for now.'),
+    ).toBeInTheDocument();
   });
 
-  it('Enterprise tier uses mailto link via plain anchor', () => {
+  it('exposes the decorative mocks as labelled images without controls', () => {
     render(<LandingPage />);
-    fireEvent.click(screen.getByRole('tab', { name: 'For organizations' }));
-    const cta = screen.getByRole('link', { name: 'Contact sales' });
-    expect(cta).toHaveAttribute('href', 'mailto:contact@talkup.ai');
+    const roadmap = screen.getByRole('img', { name: /example roadmap/i });
+    const verbal = screen.getByRole('img', {
+      name: /live verbal analysis panel/i,
+    });
+    for (const mock of [roadmap, verbal]) {
+      expect(mock.querySelectorAll('a, button')).toHaveLength(0);
+    }
+    expect(within(roadmap).getByText('Start simulation')).toBeInTheDocument();
+    expect(within(roadmap).getByText('HIGH')).toBeInTheDocument();
+    expect(within(roadmap).getByText('Gap')).toBeInTheDocument();
+    expect(within(verbal).getByText('Clarity')).toBeInTheDocument();
   });
 
-  it('renders testimonials reviews', () => {
+  it('renders the problem band as a description list', () => {
     render(<LandingPage />);
-    expect(screen.getByText(/"Great"/)).toBeInTheDocument();
-    expect(screen.getByText(/"Solid"/)).toBeInTheDocument();
-    expect(screen.getByText(/"Useful"/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'A strong profile can still lose the job in a bad interview.',
+      ),
+    ).toBeInTheDocument();
+    for (const term of ['Stress', 'Improvising', 'No feedback']) {
+      expect(screen.getByText(term).tagName).toBe('DT');
+    }
+  });
+
+  it('renders the four how-it-works steps inside #how', () => {
+    render(<LandingPage />);
+    const how = document.getElementById('how') as HTMLElement;
+    expect(how).not.toBeNull();
+    const steps = within(how)
+      .getAllByRole('heading', { level: 3 })
+      .map((h) => h.textContent);
+    expect(steps).toEqual(['Analyze', 'Prepare', 'Rehearse', 'Adjust']);
+  });
+
+  it('renders the talking points list and audiences', () => {
+    render(<LandingPage />);
+    const list = screen.getByRole('list', {
+      name: 'Example interview talking points',
+    });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+    for (const who of ['Students', 'Recent graduates', 'Career changers']) {
+      expect(
+        screen.getByRole('heading', { level: 3, name: who }),
+      ).toBeInTheDocument();
+    }
+  });
+
+  it('routes organization CTAs and shows the members table', () => {
+    render(<LandingPage />);
+    const orgs = document.getElementById('orgs') as HTMLElement;
+    expect(
+      within(orgs).getByRole('link', { name: 'Create an organization' }),
+    ).toHaveAttribute('href', '/register-organization');
+    expect(
+      within(orgs).getByRole('link', { name: 'I have an invite code' }),
+    ).toHaveAttribute('href', '/register?code=');
+    const table = within(orgs).getByRole('table', {
+      name: 'Example members table',
+    });
+    expect(within(table).getAllByRole('row')).toHaveLength(5);
+  });
+
+  it('renders the two free beta plans with their signup routes', () => {
+    render(<LandingPage />);
+    const pricing = document.getElementById('pricing') as HTMLElement;
+    expect(within(pricing).getAllByText('during the beta')).toHaveLength(2);
+    expect(
+      within(pricing).getByRole('link', { name: 'Create an account' }),
+    ).toHaveAttribute('href', '/register');
+    expect(
+      within(pricing).getByRole('link', { name: 'Create an organization' }),
+    ).toHaveAttribute('href', '/register-organization');
+    expect(within(pricing).getByText(/short queue/)).toBeInTheDocument();
   });
 
   it('renders final CTA register/login links', () => {
     render(<LandingPage />);
-    const finalRegister = screen.getByRole('link', {
-      name: 'Create your free account',
+    const ctas = screen.getAllByRole('link', {
+      name: 'Analyze my CV and an offer',
     });
-    expect(finalRegister).toHaveAttribute('href', '/register');
-    const finalLogin = screen.getByRole('link', {
-      name: 'I already have an account',
-    });
-    expect(finalLogin).toHaveAttribute('href', '/login');
+    expect(ctas).toHaveLength(2);
+    expect(ctas[1]).toHaveAttribute('href', '/register');
+    expect(screen.getByRole('link', { name: 'Log in' })).toHaveAttribute(
+      'href',
+      '/login',
+    );
   });
 
-  it('renders hero CTAs', () => {
+  it('no longer renders the removed testimonials or feature grid', () => {
     render(<LandingPage />);
-    const start = screen.getByRole('link', { name: /Get started — it's free/ });
-    expect(start).toHaveAttribute('href', '/register');
-    const how = screen.getByRole('link', { name: /See how it works/ });
-    expect(how.getAttribute('href')).toBe('#how');
+    expect(screen.queryByText(/testimonials/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Realistic interview simulations'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
   });
 });
