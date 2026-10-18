@@ -22,6 +22,7 @@ import { HealthController } from "./health.controller";
 import { AgendaModule } from "./modules/agenda/agenda.module";
 import { OrganizationModule } from "./modules/organization/organization.module";
 import { NotesModule } from "./modules/notes/notes.module";
+import { StatsModule } from "./modules/stats/stats.module";
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { NotesModule } from "./modules/notes/notes.module";
     LinkedInModule,
     AgendaModule,
     NotesModule,
+    StatsModule,
     TypeOrmModule.forRootAsync({
       useFactory: () => {
         const config = pgConfig();
