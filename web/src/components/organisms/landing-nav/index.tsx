@@ -1,6 +1,7 @@
 import { Button } from '@/components/atoms/button';
 import Logo from '@/components/molecules/logo';
 import ThemeToggle from '@/components/molecules/theme-toggle';
+import { trackCtaClick } from '@/utils/analytics';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
@@ -96,7 +97,9 @@ const LandingNav = () => {
             size="sm"
             className={FOCUS_RING}
           >
-            <Link to="/register">Create an account</Link>
+            <Link to="/register" onClick={trackCtaClick('nav', '/register')}>
+              Create an account
+            </Link>
           </Button>
         </div>
 
@@ -167,7 +170,13 @@ const LandingNav = () => {
                 size="md"
                 className={`w-full ${FOCUS_RING}`}
               >
-                <Link to="/register" onClick={close}>
+                <Link
+                  to="/register"
+                  onClick={() => {
+                    trackCtaClick('nav', '/register')();
+                    close();
+                  }}
+                >
                   Create an account
                 </Link>
               </Button>

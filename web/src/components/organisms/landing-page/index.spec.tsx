@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import LandingPage from './index';
 
@@ -32,7 +32,34 @@ vi.mock('@/components/organisms/landing-footer', () => ({
   default: () => <footer data-testid="landing-footer" />,
 }));
 
+const usePublicStatsMock = vi.fn();
+vi.mock('@/hooks/stats/usePublicStats', () => ({
+  usePublicStats: () => usePublicStatsMock(),
+}));
+
+const trackEventMock = vi.fn();
+vi.mock('@/utils/analytics', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/analytics')>();
+  return {
+    ...actual,
+    trackCtaClick: (location: string, target: string) => () =>
+      trackEventMock('cta_click', { location, target }),
+  };
+});
+
+const statsResult = (totalAccounts?: number, extra = {}) => ({
+  data: totalAccounts === undefined ? undefined : { totalAccounts },
+  isLoading: false,
+  isError: false,
+  ...extra,
+});
+
 describe('LandingPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    usePublicStatsMock.mockReturnValue(statsResult(1284));
+  });
+
   it('renders nav, footer and a single h1', () => {
     render(<LandingPage />);
     expect(screen.getByTestId('landing-nav')).toBeInTheDocument();
@@ -172,5 +199,63 @@ describe('LandingPage', () => {
       screen.queryByText('Realistic interview simulations'),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+  });
+
+  describe('account counter', () => {
+    it('renders the formatted count in the hero and final CTA', () => {
+      render(<LandingPage />);
+      const hero = screen.getByTestId('account-counter-hero');
+      const final = screen.getByTestId('account-counter-final');
+      expect(hero).toHaveTextContent('1,284 accounts created so far');
+      expect(hero).toHaveAttribute('aria-live', 'polite');
+      expect(within(hero).getByText('1,284')).toHaveClass(
+        'font-semibold',
+        'text-text',
+      );
+      expect(final).toHaveTextContent(
+        'Join 1,284 candidates already preparing with Talkup.',
+      );
+    });
+
+    it('uses the singular for a single account', () => {
+      usePublicStatsMock.mockReturnValue(statsResult(1));
+      render(<LandingPage />);
+      expect(screen.getByTestId('account-counter-hero')).toHaveTextContent(
+        /^1 account created so far$/,
+      );
+      expect(screen.getByTestId('account-counter-final')).toHaveTextContent(
+        /^Join 1 candidate already preparing with Talkup\.$/,
+      );
+    });
+
+    it.each([
+      ['zero', statsResult(0)],
+      ['loading', statsResult(undefined, { isLoading: true })],
+      ['error', statsResult(undefined, { isError: true })],
+    ])('renders an empty reserved line when %s', (_label, result) => {
+      usePublicStatsMock.mockReturnValue(result);
+      render(<LandingPage />);
+      for (const id of ['account-counter-hero', 'account-counter-final']) {
+        const line = screen.getByTestId(id);
+        expect(line).toBeEmptyDOMElement();
+        expect(line).toHaveClass('min-h-5');
+      }
+    });
+  });
+
+  it('tracks landing CTA clicks with location and target', () => {
+    render(<LandingPage />);
+    const [hero, final] = screen.getAllByRole('link', {
+      name: 'Analyze my CV and an offer',
+    });
+    hero.click();
+    final.click();
+    const pricing = document.getElementById('pricing') as HTMLElement;
+    within(pricing).getByRole('link', { name: 'Create an account' }).click();
+    expect(trackEventMock.mock.calls).toEqual([
+      ['cta_click', { location: 'hero', target: '/register' }],
+      ['cta_click', { location: 'final', target: '/register' }],
+      ['cta_click', { location: 'pricing_candidates', target: '/register' }],
+    ]);
   });
 });

@@ -1,8 +1,10 @@
 import { Button } from '@/components/atoms/button';
 import LandingFooter from '@/components/organisms/landing-footer';
 import LandingNav from '@/components/organisms/landing-nav';
+import { type CtaLocation, trackCtaClick } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
 
+import AccountCounter from './account-counter';
 import HeroRoadmapMock from './hero-roadmap-mock';
 import MembersTableMock from './members-table-mock';
 import VerbalPanelMock from './verbal-panel-mock';
@@ -111,6 +113,7 @@ interface Plan {
   features: string[];
   cta: string;
   to: '/register' | '/register-organization';
+  location: CtaLocation;
   highlight?: boolean;
 }
 
@@ -125,6 +128,7 @@ const PLANS: Plan[] = [
     ],
     cta: 'Create an account',
     to: '/register',
+    location: 'pricing_candidates',
     highlight: true,
   },
   {
@@ -136,6 +140,7 @@ const PLANS: Plan[] = [
     ],
     cta: 'Create an organization',
     to: '/register-organization',
+    location: 'pricing_orgs',
   },
 ];
 
@@ -175,15 +180,23 @@ const Hero = () => (
         </p>
         <div className={CTAS}>
           <Button asChild variant="contained" color="accent" size="lg">
-            <Link to="/register">Analyze my CV and an offer</Link>
+            <Link to="/register" onClick={trackCtaClick('hero', '/register')}>
+              Analyze my CV and an offer
+            </Link>
           </Button>
           <Button asChild variant="outlined" color="neutral" size="lg">
-            <Link to="/" hash="how" resetScroll={false}>
+            <Link
+              to="/"
+              hash="how"
+              resetScroll={false}
+              onClick={trackCtaClick('hero', '#how')}
+            >
               See how it works
             </Link>
           </Button>
         </div>
-        <p className={FINE}>
+        <AccountCounter variant="hero" className="mt-4" />
+        <p className="mt-1 text-[13px] text-text-weaker">
           CV in PDF. Simulations are held in French for now.
         </p>
       </div>
@@ -338,10 +351,19 @@ const Organizations = () => (
         </ul>
         <div className={CTAS}>
           <Button asChild variant="contained" color="accent" size="lg">
-            <Link to="/register-organization">Create an organization</Link>
+            <Link
+              to="/register-organization"
+              onClick={trackCtaClick('orgs', '/register-organization')}
+            >
+              Create an organization
+            </Link>
           </Button>
           <Button asChild variant="outlined" color="neutral" size="lg">
-            <Link to="/register" search={{ code: '' }}>
+            <Link
+              to="/register"
+              search={{ code: '' }}
+              onClick={trackCtaClick('orgs', '/register')}
+            >
               I have an invite code
             </Link>
           </Button>
@@ -391,7 +413,12 @@ const Pricing = () => (
               size="md"
               className="mt-auto self-start"
             >
-              <Link to={plan.to}>{plan.cta}</Link>
+              <Link
+                to={plan.to}
+                onClick={trackCtaClick(plan.location, plan.to)}
+              >
+                {plan.cta}
+              </Link>
             </Button>
           </div>
         ))}
@@ -414,12 +441,17 @@ const FinalCta = () => (
       </h2>
       <div className={CTAS}>
         <Button asChild variant="contained" color="accent" size="lg">
-          <Link to="/register">Analyze my CV and an offer</Link>
+          <Link to="/register" onClick={trackCtaClick('final', '/register')}>
+            Analyze my CV and an offer
+          </Link>
         </Button>
         <Button asChild variant="outlined" color="neutral" size="lg">
-          <Link to="/login">Log in</Link>
+          <Link to="/login" onClick={trackCtaClick('final', '/login')}>
+            Log in
+          </Link>
         </Button>
       </div>
+      <AccountCounter variant="final" className="mt-4" />
     </div>
   </section>
 );

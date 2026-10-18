@@ -1,4 +1,5 @@
 import Logo from '@/components/molecules/logo';
+import { trackContactClick } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
 import { FaGithub, FaInstagram, FaLinkedin } from 'react-icons/fa6';
 
@@ -108,6 +109,7 @@ const LandingFooter = () => {
             <li>
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
+                onClick={trackContactClick('footer')}
                 className={`${LINK_CLASS} break-all`}
               >
                 {CONTACT_EMAIL}

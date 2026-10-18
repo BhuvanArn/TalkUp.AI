@@ -1,5 +1,6 @@
 import LandingFooter from '@/components/organisms/landing-footer';
 import LandingNav from '@/components/organisms/landing-nav';
+import { trackContactClick } from '@/utils/analytics';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/about')({
@@ -151,6 +152,7 @@ function About() {
               Write to us at{' '}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
+                onClick={trackContactClick('about')}
                 className="break-all rounded-sm font-semibold text-text-link underline underline-offset-4 hover:text-accent-hover focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 {CONTACT_EMAIL}
