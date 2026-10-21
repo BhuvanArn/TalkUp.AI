@@ -11,7 +11,7 @@ test.describe('Landing page', () => {
       page.getByRole('link', { name: /^log in$/i }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole('link', { name: /get started/i }).first(),
+      page.getByRole('link', { name: /create an account/i }).first(),
     ).toBeVisible();
   });
 

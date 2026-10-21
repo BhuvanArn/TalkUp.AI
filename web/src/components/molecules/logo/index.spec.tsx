@@ -47,7 +47,7 @@ describe('Logo Component', () => {
         'flex-row',
       );
 
-      const logoText = lineLogo.querySelector('h1');
+      const logoText = lineLogo.querySelector('span');
       expect(logoText).toBeInTheDocument();
       expect(logoText).toHaveTextContent('TALKUP');
     });
@@ -65,7 +65,7 @@ describe('Logo Component', () => {
         'flex-col',
       );
 
-      const logoText = columnLogo.querySelector('h1');
+      const logoText = columnLogo.querySelector('span');
       expect(logoText).toBeInTheDocument();
       expect(logoText).toHaveTextContent('TALKUP');
     });
@@ -81,7 +81,7 @@ describe('Logo Component', () => {
         'h-10',
       );
 
-      const logoText = noTextLogo.querySelector('h1');
+      const logoText = noTextLogo.querySelector('span');
       expect(logoText).not.toBeInTheDocument();
     });
 
@@ -135,7 +135,7 @@ describe('Logo Component', () => {
   describe('Color Prop Handling', () => {
     it('applies default color (primary) to line variant', () => {
       const { getByTestId } = render(<Logo variant="line" />);
-      const logoText = getByTestId('line-logo').querySelector('h1');
+      const logoText = getByTestId('line-logo').querySelector('span');
       const logoSvg = getByTestId('line-logo').querySelector('svg');
       expect(logoText).toHaveClass('text-primary');
       expect(logoSvg).toHaveClass('fill-primary');
@@ -143,7 +143,7 @@ describe('Logo Component', () => {
 
     it('applies accent color to line variant', () => {
       const { getByTestId } = render(<Logo variant="line" color="accent" />);
-      const logoText = getByTestId('line-logo').querySelector('h1');
+      const logoText = getByTestId('line-logo').querySelector('span');
       const logoSvg = getByTestId('line-logo').querySelector('svg');
       expect(logoText).toHaveClass('text-accent');
       expect(logoSvg).toHaveClass('fill-accent');
@@ -151,7 +151,7 @@ describe('Logo Component', () => {
 
     it('applies primary color to column variant', () => {
       const { getByTestId } = render(<Logo variant="column" />);
-      const logoText = getByTestId('column-logo').querySelector('h1');
+      const logoText = getByTestId('column-logo').querySelector('span');
       const logoSvg = getByTestId('column-logo').querySelector('svg');
       expect(logoText).toHaveClass('text-primary');
       expect(logoSvg).toHaveClass('fill-primary');
@@ -172,7 +172,7 @@ describe('Logo Component', () => {
   describe('Text Display Logic', () => {
     it('shows text for line variant', () => {
       const { getByTestId } = render(<Logo variant="line" />);
-      const logoText = getByTestId('line-logo').querySelector('h1');
+      const logoText = getByTestId('line-logo').querySelector('span');
       expect(logoText).toBeInTheDocument();
       expect(logoText).toHaveTextContent('TALKUP');
       expect(logoText).toHaveClass('text-primary', 'text-h4');
@@ -180,7 +180,7 @@ describe('Logo Component', () => {
 
     it('shows text for column variant', () => {
       const { getByTestId } = render(<Logo variant="column" />);
-      const logoText = getByTestId('column-logo').querySelector('h1');
+      const logoText = getByTestId('column-logo').querySelector('span');
       expect(logoText).toBeInTheDocument();
       expect(logoText).toHaveTextContent('TALKUP');
       expect(logoText).toHaveClass('text-primary', 'text-h4');
@@ -188,7 +188,7 @@ describe('Logo Component', () => {
 
     it('does not show text for no-text variant', () => {
       const { getByTestId } = render(<Logo variant="no-text" />);
-      const logoText = getByTestId('no-text-logo').querySelector('h1');
+      const logoText = getByTestId('no-text-logo').querySelector('span');
       expect(logoText).not.toBeInTheDocument();
     });
   });

@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import AuthService from '@/services/auth/http';
+import { trackEvent } from '@/utils/analytics';
 import { type AuthStatus, checkAuthStatus } from '@/utils/auth.guards';
 import { extractErrorMessage } from '@/utils/error';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -62,6 +63,9 @@ export const usePostRegister = () => {
       );
     },
     onSuccess: (_data, variables) => {
+      trackEvent('signup_completed', {
+        withOrganizationCode: Boolean(variables.organizationCode),
+      });
       toast.success('Check your email for a verification code');
       router.navigate({
         to: '/verify-email',
@@ -100,6 +104,7 @@ export const usePostRegisterOrganization = () => {
       );
     },
     onSuccess: (_data, variables) => {
+      trackEvent('organization_created');
       toast.success('Check your email for a verification code');
       router.navigate({
         to: '/organization-created',
@@ -143,6 +148,7 @@ export const usePostVerifyEmail = () => {
       return { redirectTo };
     },
     onSuccess: (data) => {
+      trackEvent('email_verified');
       login();
       // Fresh session on this tab — drop any leftover cache (incl. role/org)
       // from a prior account so stale cross-account state can't render.
