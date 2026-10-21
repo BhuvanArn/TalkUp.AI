@@ -1,8 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  getHeroVariant,
+  heroVariantData,
   initAnalytics,
+  peekHeroVariant,
+  resetHeroVariant,
   resetPageviewTracking,
+  trackCtaClick,
   trackEvent,
   trackPageview,
 } from './analytics';
@@ -15,6 +20,70 @@ describe('analytics', () => {
     loaderScripts().forEach((s) => s.remove());
     delete window.umami;
     resetPageviewTracking();
+    resetHeroVariant();
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  describe('event queue', () => {
+    it('queues events while the injected tracker loads, then flushes them', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      trackEvent('hero_view', { heroVariant: 'a' });
+      const track = vi.fn();
+      window.umami = { track };
+      const [script] = loaderScripts();
+      script.dispatchEvent(new Event('load'));
+      expect(track).toHaveBeenCalledWith('hero_view', { heroVariant: 'a' });
+    });
+
+    it('drops events when no tracker is configured', () => {
+      trackEvent('hero_view', { heroVariant: 'a' });
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      const track = vi.fn();
+      window.umami = { track };
+      loaderScripts()[0].dispatchEvent(new Event('load'));
+      expect(track).not.toHaveBeenCalledWith('hero_view', expect.anything());
+    });
+  });
+
+  describe('hero variant', () => {
+    it('assigns a variant once and keeps it in localStorage', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.7);
+      expect(peekHeroVariant()).toBeNull();
+      expect(getHeroVariant()).toBe('b');
+      resetHeroVariant();
+      vi.spyOn(Math, 'random').mockReturnValue(0.1);
+      expect(getHeroVariant()).toBe('b');
+      expect(localStorage.getItem('talkup.heroVariant')).toBe('b');
+    });
+
+    it('still assigns a variant when storage is blocked', () => {
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+        throw new Error('blocked');
+      });
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('blocked');
+      });
+      vi.spyOn(Math, 'random').mockReturnValue(0.1);
+      expect(getHeroVariant()).toBe('a');
+      expect(getHeroVariant()).toBe('a');
+    });
+
+    it('tags events only for visitors who saw the hero', () => {
+      const track = vi.fn();
+      window.umami = { track };
+      expect(heroVariantData()).toEqual({});
+      trackCtaClick('nav', '/register')();
+      localStorage.setItem('talkup.heroVariant', 'a');
+      trackCtaClick('hero', '/register')();
+      expect(track.mock.calls).toEqual([
+        ['cta_click', { location: 'nav', target: '/register' }],
+        [
+          'cta_click',
+          { location: 'hero', target: '/register', heroVariant: 'a' },
+        ],
+      ]);
+    });
   });
 
   describe('trackPageview', () => {

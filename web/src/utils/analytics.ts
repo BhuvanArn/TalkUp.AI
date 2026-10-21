@@ -34,6 +34,13 @@ export const TRACKED_PATHS: ReadonlySet<string> = new Set([
 
 let lastTrackedPath: string | null = null;
 
+/**
+ * Events sent before the deferred tracker has loaded (e.g. `hero_view` on first
+ * paint). Flushed on load. Only filled once the script is injected, and capped.
+ */
+const MAX_PENDING_EVENTS = 20;
+let pendingEvents: Array<[string, AnalyticsEventData | undefined]> = [];
+
 /** Records a page view for public paths, once per consecutive path. */
 export function trackPageview(pathname: string): void {
   if (!TRACKED_PATHS.has(pathname) || pathname === lastTrackedPath) return;
@@ -46,9 +53,10 @@ export function trackPageview(pathname: string): void {
   }
 }
 
-/** Test helper: forget the last tracked path. */
+/** Test helper: forget the last tracked path and any queued event. */
 export function resetPageviewTracking(): void {
   lastTrackedPath = null;
+  pendingEvents = [];
 }
 
 /** Injects the Umami tracker once. No-op when no website id is configured. */
@@ -70,21 +78,80 @@ export function initAnalytics(
   script.dataset.autoTrack = 'false';
   // Query strings carry PII (`/verify-email?email=…`) and invite codes.
   script.dataset.excludeSearch = 'true';
-  script.addEventListener('load', () =>
-    trackPageview(window.location.pathname),
-  );
+  script.addEventListener('load', () => {
+    trackPageview(window.location.pathname);
+    const queued = pendingEvents;
+    pendingEvents = [];
+    queued.forEach(([name, data]) => trackEvent(name, data));
+  });
   script.setAttribute(SCRIPT_ATTR, '');
   document.head.appendChild(script);
 }
 
-/** Sends a custom event. Silently ignored when Umami is absent or throws. */
+/**
+ * Sends a custom event. Queued while the injected tracker is still loading;
+ * silently ignored when Umami is not configured or throws.
+ */
 export function trackEvent(name: string, data?: AnalyticsEventData): void {
+  if (!window.umami) {
+    const loading = document.querySelector(`script[${SCRIPT_ATTR}]`);
+    if (loading && pendingEvents.length < MAX_PENDING_EVENTS) {
+      pendingEvents.push([name, data]);
+    }
+    return;
+  }
   try {
-    window.umami?.track(name, data);
+    window.umami.track(name, data);
   } catch {
     // Analytics must never break the UI.
   }
 }
+
+/**
+ * Hero headline A/B test. Each visitor gets one variant, kept in localStorage
+ * so a returning visitor sees the same headline. See `web/ANALYTICS.md`.
+ */
+export type HeroVariant = 'a' | 'b';
+
+const HERO_VARIANT_KEY = 'talkup.heroVariant';
+let heroVariant: HeroVariant | null = null;
+
+/** The visitor's variant if one was already assigned, without assigning one. */
+export function peekHeroVariant(): HeroVariant | null {
+  if (heroVariant) return heroVariant;
+  try {
+    const stored = localStorage.getItem(HERO_VARIANT_KEY);
+    if (stored === 'a' || stored === 'b') heroVariant = stored;
+  } catch {
+    // Storage blocked (private mode): the variant lives for this page only.
+  }
+  return heroVariant;
+}
+
+/** The visitor's variant, assigned 50/50 on first call. */
+export function getHeroVariant(): HeroVariant {
+  const existing = peekHeroVariant();
+  if (existing) return existing;
+  const assigned: HeroVariant = Math.random() < 0.5 ? 'a' : 'b';
+  heroVariant = assigned;
+  try {
+    localStorage.setItem(HERO_VARIANT_KEY, assigned);
+  } catch {
+    // Storage blocked: keep the in-memory variant.
+  }
+  return assigned;
+}
+
+/** Test helper: forget the in-memory variant. */
+export function resetHeroVariant(): void {
+  heroVariant = null;
+}
+
+/** `{ heroVariant }` when the visitor saw the hero, else nothing. */
+export const heroVariantData = (): AnalyticsEventData => {
+  const variant = peekHeroVariant();
+  return variant ? { heroVariant: variant } : {};
+};
 
 /** Where a landing CTA lives; one value per placement for the funnel table. */
 export type CtaLocation =
@@ -97,7 +164,7 @@ export type CtaLocation =
 
 /** `cta_click` helper for landing buttons. Usable directly as an onClick. */
 export const trackCtaClick = (location: CtaLocation, target: string) => () =>
-  trackEvent('cta_click', { location, target });
+  trackEvent('cta_click', { location, target, ...heroVariantData() });
 
 /** `contact_click` helper for the contact mailto links. */
 export const trackContactClick = (location: 'footer' | 'about') => () =>

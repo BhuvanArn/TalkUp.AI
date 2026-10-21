@@ -38,11 +38,40 @@ on every page:
 | ---------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `cta_click`            | A landing CTA is clicked                      | `location`: `hero`, `orgs`, `pricing_candidates`, `pricing_orgs`, `final`, `nav`; `target`: `/register`, `/register-organization`, `/login`, `#how` |
 | `signup_completed`     | `POST /auth/register` succeeds                | `withOrganizationCode`: boolean                                                             |
+| `hero_view`            | The landing hero renders                      | `heroVariant`: `a`, `b`                                                                     |
 | `email_verified`       | OTP email verification succeeds               | none                                                                                        |
 | `organization_created` | `POST /auth/register-organization` succeeds   | none                                                                                        |
 | `contact_click`        | A `contact@talkup.ai` mailto link is clicked  | `location`: `footer`, `about`                                                               |
 
 No personal data (email, name, ids) is ever sent with an event.
+
+`cta_click` and `signup_completed` also carry `heroVariant` when the visitor has
+seen the landing hero (see below). Events fired before the deferred tracker has
+loaded are queued and sent on load.
+
+## Hero headline A/B test
+
+The landing H1 is split 50/50 between two headlines (`HERO_HEADLINES` in
+`web/src/components/organisms/landing-page/index.tsx`):
+
+| Variant | Headline                              |
+| ------- | ------------------------------------- |
+| `a`     | The interview before the interview.   |
+| `b`     | Speak right. Land the job.            |
+
+The variant is drawn on the first landing visit and stored in `localStorage`
+(`talkup.heroVariant`), so a returning visitor keeps the same headline. It is
+not a cookie and holds no personal data.
+
+To compare, in Umami → Events, filter by property `heroVariant`:
+
+- **CTA rate** = unique visitors with `cta_click` (variant X) / unique visitors
+  with `hero_view` (variant X).
+- **Signup rate** = `signup_completed` (variant X) / `hero_view` (variant X).
+
+At student-project traffic the gap between variants is unlikely to be
+statistically significant unless it is large: report it as indicative. To end
+the test, keep the winning headline in `HERO_HEADLINES` and drop the split.
 
 ## Landing conversion table
 
