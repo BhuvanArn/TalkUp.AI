@@ -68,6 +68,8 @@ export function initAnalytics(
   script.dataset.websiteId = websiteId;
   // Page views are sent by trackPageview() so only public pages count.
   script.dataset.autoTrack = 'false';
+  // Query strings carry PII (`/verify-email?email=…`) and invite codes.
+  script.dataset.excludeSearch = 'true';
   script.addEventListener('load', () =>
     trackPageview(window.location.pathname),
   );

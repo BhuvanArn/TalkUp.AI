@@ -35,11 +35,11 @@ test.describe('organization flows', () => {
 
   test('landing routes org CTAs correctly', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('tab', { name: 'For organizations' }).click();
+    const orgs = page.locator('#orgs');
     await expect(
-      page.getByRole('link', { name: 'Start a 30-day trial' }),
+      orgs.getByRole('link', { name: 'Create an organization' }),
     ).toHaveAttribute('href', /\/register-organization/);
-    await page.getByRole('link', { name: 'I have a code' }).click();
+    await orgs.getByRole('link', { name: 'I have an invite code' }).click();
     await expect(page).toHaveURL(/\/register\?code=/);
     await expect(page.getByPlaceholder(/organization code/i)).toBeVisible();
   });

@@ -44,10 +44,11 @@ describe('analytics', () => {
       expect(track).toHaveBeenCalledTimes(1);
     });
 
-    it('disables automatic page views on the injected script', () => {
+    it('disables automatic page views and query strings on the injected script', () => {
       initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
       const [script] = loaderScripts() as NodeListOf<HTMLScriptElement>;
       expect(script.dataset.autoTrack).toBe('false');
+      expect(script.dataset.excludeSearch).toBe('true');
     });
   });
 

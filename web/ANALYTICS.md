@@ -67,5 +67,8 @@ numbers as a lower bound.
 
 Umami sets **no cookies** and stores no personal data (visitors are counted with a
 salted, rotating hash), so no consent banner is required under GDPR / ePrivacy.
+Query strings are stripped before sending (`data-exclude-search="true"`):
+`/verify-email?email=…` and `/register?code=…` would otherwise leak emails and
+invite codes to Umami.
 It should still be disclosed: add a short "Analytics" paragraph to the privacy
 page (`web/src/routes/privacy.tsx`) when enabling it in production.
