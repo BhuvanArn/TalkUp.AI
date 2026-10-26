@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  HERO_VARIANT_MAX_AGE_MS,
   getHeroVariant,
   heroVariantData,
   initAnalytics,
@@ -80,7 +81,21 @@ describe('analytics', () => {
       resetHeroVariant();
       vi.spyOn(Math, 'random').mockReturnValue(0.1);
       expect(getHeroVariant()).toBe('b');
-      expect(localStorage.getItem('talkup.heroVariant')).toBe('b');
+      expect(localStorage.getItem('talkup.heroVariant')).toMatch(/^b:\d+$/);
+    });
+
+    it('draws again once the stored variant is older than 13 months', () => {
+      const expired = Date.now() - HERO_VARIANT_MAX_AGE_MS - 1;
+      localStorage.setItem('talkup.heroVariant', `b:${expired}`);
+      expect(peekHeroVariant()).toBeNull();
+      expect(localStorage.getItem('talkup.heroVariant')).toBeNull();
+      vi.spyOn(Math, 'random').mockReturnValue(0.1);
+      expect(getHeroVariant()).toBe('a');
+    });
+
+    it('ignores a malformed stored value', () => {
+      localStorage.setItem('talkup.heroVariant', 'b');
+      expect(peekHeroVariant()).toBeNull();
     });
 
     it('still assigns a variant when storage is blocked', () => {
@@ -100,7 +115,7 @@ describe('analytics', () => {
       window.umami = { track };
       expect(heroVariantData()).toEqual({});
       trackCtaClick('nav', '/register')();
-      localStorage.setItem('talkup.heroVariant', 'a');
+      localStorage.setItem('talkup.heroVariant', `a:${Date.now()}`);
       trackCtaClick('hero', '/register')();
       expect(sentEvents(track).map(({ data }) => data)).toEqual([
         { location: 'nav', target: '/register' },

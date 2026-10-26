@@ -139,14 +139,31 @@ export function trackEvent(name: string, data?: AnalyticsEventData): void {
 export type HeroVariant = 'a' | 'b';
 
 const HERO_VARIANT_KEY = 'talkup.heroVariant';
+/**
+ * Stored as `<variant>:<assigned at, ms>` and dropped after 13 months, the
+ * CNIL's maximum lifetime for audience-measurement trackers.
+ */
+export const HERO_VARIANT_MAX_AGE_MS = 395 * 24 * 60 * 60 * 1000;
 let heroVariant: HeroVariant | null = null;
+
+const readStoredVariant = (): HeroVariant | null => {
+  const [variant, assignedAt] = (
+    localStorage.getItem(HERO_VARIANT_KEY) ?? ''
+  ).split(':');
+  const age = Date.now() - Number(assignedAt);
+  if ((variant === 'a' || variant === 'b') && age >= 0) {
+    if (age < HERO_VARIANT_MAX_AGE_MS) return variant;
+  }
+  // Expired, malformed or absent: forget it so a fresh draw is stored.
+  localStorage.removeItem(HERO_VARIANT_KEY);
+  return null;
+};
 
 /** The visitor's variant if one was already assigned, without assigning one. */
 export function peekHeroVariant(): HeroVariant | null {
   if (heroVariant) return heroVariant;
   try {
-    const stored = localStorage.getItem(HERO_VARIANT_KEY);
-    if (stored === 'a' || stored === 'b') heroVariant = stored;
+    heroVariant = readStoredVariant();
   } catch {
     // Storage blocked (private mode): the variant lives for this page only.
   }
@@ -160,7 +177,7 @@ export function getHeroVariant(): HeroVariant {
   const assigned: HeroVariant = Math.random() < 0.5 ? 'a' : 'b';
   heroVariant = assigned;
   try {
-    localStorage.setItem(HERO_VARIANT_KEY, assigned);
+    localStorage.setItem(HERO_VARIANT_KEY, `${assigned}:${Date.now()}`);
   } catch {
     // Storage blocked: keep the in-memory variant.
   }

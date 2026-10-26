@@ -57,7 +57,9 @@ loaded are queued and sent on load.
 ## Hero headline A/B test
 
 The landing H1 is split 50/50 between two headlines (`HERO_HEADLINES` in
-`web/src/components/organisms/landing-page/index.tsx`):
+`web/src/components/organisms/landing-page/index.tsx`). Both are new: the
+redesign drops the previous headline, so the test picks between the two
+candidates for it. It does not measure the gain over the old headline.
 
 | Variant | Headline                              |
 | ------- | ------------------------------------- |
@@ -65,18 +67,39 @@ The landing H1 is split 50/50 between two headlines (`HERO_HEADLINES` in
 | `b`     | Speak right. Land the job.            |
 
 The variant is drawn on the first landing visit and stored in `localStorage`
-(`talkup.heroVariant`), so a returning visitor keeps the same headline. It is
-not a cookie and holds no personal data.
+(`talkup.heroVariant` = `<variant>:<timestamp>`), so a returning visitor keeps
+the same headline. It holds no personal data and is dropped after 13 months.
+Storage is still a "similar technology" under ePrivacy, like a cookie: see
+[Privacy](#privacy).
 
-To compare, in Umami → Events, filter by property `heroVariant`:
+**Reading the results.** In Umami → Events, open each event and break it down
+by the `heroVariant` property. Umami shows *event counts* per property value,
+not unique visitors, and `hero_view` fires on every landing visit, so compare
+like with like:
 
-- **CTA rate** = unique visitors with `cta_click` (variant X) / unique visitors
-  with `hero_view` (variant X).
+- **CTA rate** = `cta_click` with `target` = `/register` or
+  `/register-organization` (variant X) / `hero_view` (variant X). Same signup
+  filter as step 2 of the conversion table below.
 - **Signup rate** = `signup_completed` (variant X) / `hero_view` (variant X).
 
-At student-project traffic the gap between variants is unlikely to be
-statistically significant unless it is large: report it as indicative. To end
-the test, keep the winning headline in `HERO_HEADLINES` and drop the split.
+Check the exact path once in the live dashboard and update this section if
+Umami offers per-visitor counts for a property.
+
+**When to conclude.** Decide the length before looking: at least 4 weeks, and
+aim for about 1,500 `hero_view` per variant (enough to detect a CTA rate moving
+from 5% to 7.5%). Do not stop at the first gap seen along the way. Then compare
+the two rates with a two-proportion z-test; below that traffic, report the
+result as indicative only.
+
+**Quota.** Each event data property counts as one Hobby event: `hero_view`
+(+1 property) and the extra `heroVariant` on `cta_click` and
+`signup_completed` roughly double the cost of a landing visit.
+
+**Ending the test.** Keep the winning headline as a plain H1 and remove
+`HERO_HEADLINES`, `getHeroVariant` / `peekHeroVariant` / `heroVariantData`,
+the `hero_view` event and the `heroVariant` tags, the A/B sentence of the
+privacy policy, and this section. Add a one-off
+`localStorage.removeItem('talkup.heroVariant')` for returning visitors.
 
 ## Landing conversion table
 
@@ -104,7 +127,12 @@ a lower bound.
 ## Privacy
 
 Umami sets **no cookies** and stores no personal data (visitors are counted with a
-salted, rotating hash), so no consent banner is required under GDPR / ePrivacy.
+salted, rotating hash). The hero A/B test stores one `localStorage` key on the
+visitor's device (variant + date, no personal data, 13 months maximum). No
+consent banner is used on the basis of the CNIL exemption for audience
+measurement (strictly measurement, no cross-site tracking, limited lifetime);
+whether an A/B test falls under it is a judgement call, so confirm before
+relying on it for anything beyond the beta.
 Query strings are stripped before sending (`data-exclude-search="true"`):
 `/verify-email?email=…` and `/register?code=…` would otherwise leak emails and
 invite codes to Umami.
