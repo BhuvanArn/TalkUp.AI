@@ -1,10 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import LandingNav from './index';
 
-const { routerState } = vi.hoisted(() => ({
-  routerState: { pathname: '/' },
+const { ctaClicks } = vi.hoisted(() => ({ ctaClicks: [] as string[][] }));
+
+vi.mock('@/utils/analytics', () => ({
+  trackCtaClick: (location: string, target: string) => () =>
+    ctaClicks.push([location, target]),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -28,8 +31,6 @@ vi.mock('@tanstack/react-router', () => ({
       {children}
     </a>
   ),
-  useRouterState: ({ select }: any) =>
-    select({ location: { pathname: routerState.pathname } }),
 }));
 
 vi.mock('@/components/molecules/theme-toggle', () => ({
@@ -41,10 +42,6 @@ vi.mock('@/components/molecules/logo', () => ({
 }));
 
 describe('LandingNav', () => {
-  beforeEach(() => {
-    routerState.pathname = '/';
-  });
-
   it('renders the four nav links and no removed sections', () => {
     render(<LandingNav />);
     for (const name of ['How it works', 'For schools', 'Pricing', 'About']) {
@@ -80,19 +77,20 @@ describe('LandingNav', () => {
     );
   });
 
-  it('marks About as current only on /about', () => {
-    const { unmount } = render(<LandingNav />);
-    expect(
-      screen.getAllByRole('link', { name: 'About' })[0],
-    ).not.toHaveAttribute('aria-current');
-    unmount();
-
-    routerState.pathname = '/about';
+  it('tracks the register CTA from the desktop nav and the mobile menu', () => {
+    ctaClicks.length = 0;
+    const stayOnPage = (e: Event) => e.preventDefault(); // jsdom can't navigate
+    document.addEventListener('click', stayOnPage);
     render(<LandingNav />);
-    expect(screen.getAllByRole('link', { name: 'About' })[0]).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
+    fireEvent.click(screen.getByRole('link', { name: 'Create an account' }));
+    fireEvent.click(screen.getByRole('button', { name: /toggle menu/i }));
+    const links = screen.getAllByRole('link', { name: 'Create an account' });
+    fireEvent.click(links[links.length - 1]);
+    expect(ctaClicks).toEqual([
+      ['nav', '/register'],
+      ['nav', '/register'],
+    ]);
+    document.removeEventListener('click', stayOnPage);
   });
 
   it('renders login + register CTAs', () => {

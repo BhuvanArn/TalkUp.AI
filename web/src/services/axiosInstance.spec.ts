@@ -62,6 +62,18 @@ describe('axiosInstance 401 handling', () => {
     expect(assigned).toEqual(['/login']);
   });
 
+  it.each(['/about', '/privacy'])(
+    'refreshes but does not redirect a logged-out visitor on %s',
+    async (pathname) => {
+      const assigned = setLocation(pathname);
+      axiosInstance.defaults.adapter = (config) => unauthorized(config);
+
+      await expect(axiosInstance.get('/v1/api/auth/status')).rejects.toThrow();
+
+      expect(assigned).toEqual([]);
+    },
+  );
+
   it('treats a 401 as anonymous when anonymousAllowed is set: no refresh, no redirect', async () => {
     const assigned = setLocation('/some-404-url');
     const requested: string[] = [];

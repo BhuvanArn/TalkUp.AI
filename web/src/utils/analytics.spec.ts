@@ -25,6 +25,17 @@ describe('analytics', () => {
     vi.restoreAllMocks();
   });
 
+  /** Runs each payload function Umami received against a stale default payload. */
+  const sentPayloads = (track: ReturnType<typeof vi.fn>) =>
+    track.mock.calls.map(([build]) =>
+      build({ website: 'abc', url: 'https://talkup.test/stale' }),
+    );
+
+  const sentEvents = (track: ReturnType<typeof vi.fn>) =>
+    sentPayloads(track)
+      .filter((p) => p.name)
+      .map(({ name, data, url }) => ({ name, data, url }));
+
   describe('event queue', () => {
     it('queues events while the injected tracker loads, then flushes them', () => {
       initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
@@ -33,7 +44,22 @@ describe('analytics', () => {
       window.umami = { track };
       const [script] = loaderScripts();
       script.dispatchEvent(new Event('load'));
-      expect(track).toHaveBeenCalledWith('hero_view', { heroVariant: 'a' });
+      expect(sentEvents(track)).toEqual([
+        { name: 'hero_view', data: { heroVariant: 'a' }, url: '/' },
+      ]);
+    });
+
+    it('keeps the path an event was fired on when flushing later', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      trackEvent('hero_view', { heroVariant: 'a' });
+      window.history.pushState({}, '', '/register');
+      const track = vi.fn();
+      window.umami = { track };
+      loaderScripts()[0].dispatchEvent(new Event('load'));
+      window.history.pushState({}, '', '/');
+      expect(sentEvents(track)).toEqual([
+        { name: 'hero_view', data: { heroVariant: 'a' }, url: '/' },
+      ]);
     });
 
     it('drops events when no tracker is configured', () => {
@@ -42,7 +68,7 @@ describe('analytics', () => {
       const track = vi.fn();
       window.umami = { track };
       loaderScripts()[0].dispatchEvent(new Event('load'));
-      expect(track).not.toHaveBeenCalledWith('hero_view', expect.anything());
+      expect(sentEvents(track)).toEqual([]);
     });
   });
 
@@ -76,25 +102,45 @@ describe('analytics', () => {
       trackCtaClick('nav', '/register')();
       localStorage.setItem('talkup.heroVariant', 'a');
       trackCtaClick('hero', '/register')();
-      expect(track.mock.calls).toEqual([
-        ['cta_click', { location: 'nav', target: '/register' }],
-        [
-          'cta_click',
-          { location: 'hero', target: '/register', heroVariant: 'a' },
-        ],
+      expect(sentEvents(track).map(({ data }) => data)).toEqual([
+        { location: 'nav', target: '/register' },
+        { location: 'hero', target: '/register', heroVariant: 'a' },
       ]);
     });
   });
 
   describe('trackPageview', () => {
-    it('tracks public paths once per consecutive path', () => {
+    it('tracks public paths once per consecutive path, with the path as url', () => {
       const track = vi.fn();
       window.umami = { track };
       trackPageview('/');
       trackPageview('/');
       trackPageview('/about');
-      expect(track).toHaveBeenCalledTimes(2);
-      expect(track).toHaveBeenCalledWith();
+      expect(sentPayloads(track)).toEqual([
+        { website: 'abc', url: '/' },
+        { website: 'abc', url: '/about' },
+      ]);
+    });
+
+    it('counts a return through an untracked page as a new view', () => {
+      const track = vi.fn();
+      window.umami = { track };
+      trackPageview('/login');
+      trackPageview('/forgot-password');
+      trackPageview('/login');
+      expect(sentPayloads(track).map((p) => p.url)).toEqual([
+        '/login',
+        '/login',
+      ]);
+    });
+
+    it('reports the right url after Back, when Umami still holds the previous page', () => {
+      const track = vi.fn();
+      window.umami = { track };
+      trackPageview('/');
+      trackPageview('/about');
+      trackPageview('/'); // popstate: Umami's own url is still /about
+      expect(sentPayloads(track).at(-1)?.url).toBe('/');
     });
 
     it('ignores in-app paths', () => {
@@ -112,16 +158,17 @@ describe('analytics', () => {
       trackPageview('/');
       expect(track).toHaveBeenCalledTimes(1);
     });
-
-    it('disables automatic page views and query strings on the injected script', () => {
-      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
-      const [script] = loaderScripts() as NodeListOf<HTMLScriptElement>;
-      expect(script.dataset.autoTrack).toBe('false');
-      expect(script.dataset.excludeSearch).toBe('true');
-    });
   });
 
   describe('initAnalytics', () => {
+    it('disables automatic page views and query strings on the injected script', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      const [script] = loaderScripts() as NodeListOf<HTMLScriptElement>;
+      expect(script.dataset.autoPageview).toBe('false');
+      expect(script.dataset.autoTrack).toBeUndefined();
+      expect(script.dataset.excludeSearch).toBe('true');
+    });
+
     it('does nothing without a website id', () => {
       initAnalytics({});
       initAnalytics({ VITE_UMAMI_WEBSITE_ID: '  ' });
@@ -154,14 +201,18 @@ describe('analytics', () => {
       expect(() => trackEvent('cta_click')).not.toThrow();
     });
 
-    it('forwards name and data to umami.track', () => {
+    it('forwards name and data, attributed to the current path', () => {
       const track = vi.fn();
       window.umami = { track };
       trackEvent('cta_click', { location: 'hero', target: '/register' });
-      expect(track).toHaveBeenCalledWith('cta_click', {
-        location: 'hero',
-        target: '/register',
-      });
+      expect(sentPayloads(track)).toEqual([
+        {
+          website: 'abc',
+          url: window.location.pathname,
+          name: 'cta_click',
+          data: { location: 'hero', target: '/register' },
+        },
+      ]);
     });
 
     it('swallows errors thrown by the tracker', () => {

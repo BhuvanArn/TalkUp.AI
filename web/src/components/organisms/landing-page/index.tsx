@@ -73,7 +73,7 @@ const STEPS: { title: string; body: string; where: string }[] = [
 const LIVE_FACTS = [
   'Clarity, politeness and vocabulary scores for every answer',
   'Register detection: professional, neutral or too casual',
-  'Your most frequent verbal tics, counted',
+  'Your most frequent verbal tics, named',
   'One concrete tip after each answer',
 ];
 
@@ -111,7 +111,7 @@ const AUDIENCES: { title: string; body: string }[] = [
 
 const ORG_FEATURES = [
   'Invite codes by email, with a role for each person',
-  'Admin, staff and member roles',
+  'Admin, employee and user roles',
   'Interviews, completion and average score per member',
 ];
 
@@ -142,7 +142,7 @@ const PLANS: Plan[] = [
     name: 'Organizations',
     features: [
       'Organization with invite codes',
-      'Roles for staff and members',
+      'Admin, employee and user roles',
       'Progress stats for each member',
     ],
     cta: 'Create an organization',

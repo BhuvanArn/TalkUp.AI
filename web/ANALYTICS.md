@@ -19,7 +19,10 @@ Set these build-time variables (Vercel project settings, or `web/.env` locally):
 - **Umami Cloud**: create a website at cloud.umami.is, copy its id into
   `VITE_UMAMI_WEBSITE_ID`, leave `VITE_UMAMI_SCRIPT_URL` unset.
 - **Self-hosted**: deploy Umami (Docker + Postgres), create the website there and
-  set `VITE_UMAMI_SCRIPT_URL=https://<your-umami-host>/script.js`.
+  set `VITE_UMAMI_SCRIPT_URL=https://<your-umami-host>/script.js`. The tracker
+  must support `data-auto-pageview` (Umami Cloud does): check that the instance's
+  `/script.js` contains `auto-pageview`. An older tracker ignores it and records
+  every page view on every page, twice on public pages.
 
 Because these are `VITE_` variables they are baked in at build time: redeploy after
 changing them. Leave them unset in dev and preview builds to keep data clean.
@@ -29,17 +32,19 @@ changing them. Leave them unset in dev and preview builds to keep data clean.
 Page views (path, referrer, browser, OS, device, country) are recorded only on
 the public pages listed in `TRACKED_PATHS` (`web/src/utils/analytics.ts`): `/`,
 `/about`, `/privacy`, `/login`, `/register`, `/register-organization` and
-`/verify-email`. Automatic tracking is disabled (`data-auto-track="false"`) so
-in-app navigation does not consume the Umami Hobby quota (100K events/month,
-where each event data property also counts as one event). Custom events fire
-on every page:
+`/verify-email`. Automatic page views are disabled (`data-auto-pageview="false"`)
+so in-app navigation does not consume the Umami Hobby quota (100K events/month,
+where each event data property also counts as one event). Do not use
+`data-auto-track="false"` instead: it also stops Umami from following route
+changes, so every page view and event would be reported with the first URL
+loaded. Custom events fire on every page:
 
 | Event                  | Fired when                                    | Data                                                                                        |
 | ---------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `cta_click`            | A landing CTA is clicked                      | `location`: `hero`, `orgs`, `pricing_candidates`, `pricing_orgs`, `final`, `nav`; `target`: `/register`, `/register-organization`, `/login`, `#how` |
 | `signup_completed`     | `POST /auth/register` succeeds                | `withOrganizationCode`: boolean                                                             |
 | `hero_view`            | The landing hero renders                      | `heroVariant`: `a`, `b`                                                                     |
-| `email_verified`       | OTP email verification succeeds               | none                                                                                        |
+| `email_verified`       | OTP email verification succeeds               | `flow`: `candidate`, `organization` (admin of a new organization)                           |
 | `organization_created` | `POST /auth/register-organization` succeeds   | none                                                                                        |
 | `contact_click`        | A `contact@talkup.ai` mailto link is clicked  | `location`: `footer`, `about`                                                               |
 
@@ -81,16 +86,20 @@ the counts from the Events tab):
 | Step | Source                                                     | Metric                       |
 | ---- | ---------------------------------------------------------- | ---------------------------- |
 | 1    | Page views, URL = `/`                                      | Unique visitors on landing   |
-| 2    | Event `cta_click` (optionally filter by `location`)        | Unique visitors who clicked  |
+| 2    | Event `cta_click`, `target` = `/register` or `/register-organization` | Unique visitors who clicked a signup CTA |
 | 3    | Event `signup_completed`                                   | Accounts created (tracked)   |
-| 4    | Event `email_verified`                                     | Verified accounts            |
-| ref  | `GET /v1/api/stats/public` → `totalAccounts` (server)      | Ground-truth account total   |
+| 4    | Event `email_verified`, `flow` = `candidate`               | Verified accounts            |
+| ref  | `GET /v1/api/stats/public` → `totalAccounts` (server)      | Ground-truth verified total  |
 
 Conversion rates: step N / step 1 (overall) and step N / step N-1 (per step). The
-`cta_click` breakdown by `location` shows which section converts best. Compare the
-delta of `totalAccounts` over the same period with `signup_completed`: the gap is
-roughly the share of visitors who block the tracker (ad blockers), so treat Umami
-numbers as a lower bound.
+`cta_click` breakdown by `location` shows which section converts best. Step 2
+leaves out the `/login` and `#how` targets: they are not signups. Organization
+signups are a parallel branch: `organization_created`, then `email_verified`
+with `flow` = `organization`.
+`totalAccounts` only counts verified emails, so compare its delta over the same
+period with all `email_verified` (both flows, not `signup_completed`): the gap is roughly the
+share of visitors who block the tracker (ad blockers), so treat Umami numbers as
+a lower bound.
 
 ## Privacy
 
@@ -99,5 +108,5 @@ salted, rotating hash), so no consent banner is required under GDPR / ePrivacy.
 Query strings are stripped before sending (`data-exclude-search="true"`):
 `/verify-email?email=…` and `/register?code=…` would otherwise leak emails and
 invite codes to Umami.
-It should still be disclosed: add a short "Analytics" paragraph to the privacy
-page (`web/src/routes/privacy.tsx`) when enabling it in production.
+It is disclosed in the privacy policy (`web/src/routes/privacy.tsx`, "Cookies and
+similar technologies"): update that paragraph if the tracked pages or events change.

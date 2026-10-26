@@ -5,11 +5,14 @@
 
 export type AnalyticsEventData = Record<string, string | number | boolean>;
 
+/** The payload Umami builds for the current page (url, title, referrer…). */
+type UmamiPayload = Record<string, unknown>;
+
 declare global {
   interface Window {
     umami?: {
-      /** No arguments records a page view of the current URL. */
-      track: (name?: string, data?: AnalyticsEventData) => void;
+      /** A function receives Umami's default payload and returns the one to send. */
+      track: (payload: (props: UmamiPayload) => UmamiPayload) => void;
     };
   }
 }
@@ -36,18 +39,27 @@ let lastTrackedPath: string | null = null;
 
 /**
  * Events sent before the deferred tracker has loaded (e.g. `hero_view` on first
- * paint). Flushed on load. Only filled once the script is injected, and capped.
+ * paint), with the path they were fired on. Flushed on load. Only filled once
+ * the script is injected, and capped.
  */
 const MAX_PENDING_EVENTS = 20;
-let pendingEvents: Array<[string, AnalyticsEventData | undefined]> = [];
+let pendingEvents: Array<[string, AnalyticsEventData | undefined, string]> = [];
 
-/** Records a page view for public paths, once per consecutive path. */
+/**
+ * Records a page view for public paths, once per consecutive path. The URL is
+ * passed explicitly: Umami only follows pushState/replaceState, so after a
+ * Back/Forward (popstate) its own URL would still be the previous page.
+ */
 export function trackPageview(pathname: string): void {
-  if (!TRACKED_PATHS.has(pathname) || pathname === lastTrackedPath) return;
-  if (!window.umami) return;
+  if (!TRACKED_PATHS.has(pathname)) {
+    // Coming back from an untracked page is a new view, not a duplicate.
+    lastTrackedPath = null;
+    return;
+  }
+  if (pathname === lastTrackedPath || !window.umami) return;
   lastTrackedPath = pathname;
   try {
-    window.umami.track();
+    window.umami.track((props) => ({ ...props, url: pathname }));
   } catch {
     // Analytics must never break the UI.
   }
@@ -74,37 +86,50 @@ export function initAnalytics(
   script.defer = true;
   script.src = env.VITE_UMAMI_SCRIPT_URL?.trim() || DEFAULT_SCRIPT_URL;
   script.dataset.websiteId = websiteId;
-  // Page views are sent by trackPageview() so only public pages count.
-  script.dataset.autoTrack = 'false';
+  // Page views are sent by trackPageview() so only public pages count. Not
+  // `data-auto-track="false"`: that also stops Umami from following SPA route
+  // changes, so every manual page view and event would report the landing URL.
+  script.dataset.autoPageview = 'false';
   // Query strings carry PII (`/verify-email?email=…`) and invite codes.
   script.dataset.excludeSearch = 'true';
   script.addEventListener('load', () => {
     trackPageview(window.location.pathname);
     const queued = pendingEvents;
     pendingEvents = [];
-    queued.forEach(([name, data]) => trackEvent(name, data));
+    queued.forEach(([name, data, url]) => sendEvent(name, data, url));
   });
   script.setAttribute(SCRIPT_ATTR, '');
   document.head.appendChild(script);
 }
 
-/**
- * Sends a custom event. Queued while the injected tracker is still loading;
- * silently ignored when Umami is not configured or throws.
- */
-export function trackEvent(name: string, data?: AnalyticsEventData): void {
-  if (!window.umami) {
-    const loading = document.querySelector(`script[${SCRIPT_ATTR}]`);
-    if (loading && pendingEvents.length < MAX_PENDING_EVENTS) {
-      pendingEvents.push([name, data]);
-    }
-    return;
-  }
+/** Sends one event attributed to `url` (see trackPageview for why). */
+function sendEvent(
+  name: string,
+  data: AnalyticsEventData | undefined,
+  url: string,
+): void {
   try {
-    window.umami.track(name, data);
+    window.umami?.track((props) => ({ ...props, url, name, data }));
   } catch {
     // Analytics must never break the UI.
   }
+}
+
+/**
+ * Sends a custom event, attributed to the current path. Queued while the
+ * injected tracker is still loading; silently ignored when Umami is not
+ * configured or throws.
+ */
+export function trackEvent(name: string, data?: AnalyticsEventData): void {
+  const url = window.location.pathname;
+  if (!window.umami) {
+    const loading = document.querySelector(`script[${SCRIPT_ATTR}]`);
+    if (loading && pendingEvents.length < MAX_PENDING_EVENTS) {
+      pendingEvents.push([name, data, url]);
+    }
+    return;
+  }
+  sendEvent(name, data, url);
 }
 
 /**

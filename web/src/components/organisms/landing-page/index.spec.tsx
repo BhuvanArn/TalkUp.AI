@@ -222,14 +222,14 @@ describe('LandingPage', () => {
       render(<LandingPage />);
       const hero = screen.getByTestId('account-counter-hero');
       const final = screen.getByTestId('account-counter-final');
-      expect(hero).toHaveTextContent('1,284 accounts created so far');
-      expect(hero).toHaveAttribute('aria-live', 'polite');
+      expect(hero).toHaveTextContent('1,284 verified accounts so far');
+      expect(hero).not.toHaveAttribute('aria-live');
       expect(within(hero).getByText('1,284')).toHaveClass(
         'font-semibold',
         'text-text',
       );
       expect(final).toHaveTextContent(
-        'Join 1,284 candidates already preparing with Talkup.',
+        'Join 1,284 people already preparing with Talkup.',
       );
     });
 
@@ -237,10 +237,10 @@ describe('LandingPage', () => {
       usePublicStatsMock.mockReturnValue(statsResult(1));
       render(<LandingPage />);
       expect(screen.getByTestId('account-counter-hero')).toHaveTextContent(
-        /^1 account created so far$/,
+        /^1 verified account so far$/,
       );
       expect(screen.getByTestId('account-counter-final')).toHaveTextContent(
-        /^Join 1 candidate already preparing with Talkup\.$/,
+        /^Join 1 person already preparing with Talkup\.$/,
       );
     });
 

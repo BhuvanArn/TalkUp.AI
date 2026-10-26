@@ -33,7 +33,7 @@ describe('usePublicStats', () => {
     expect(result.current.data).toEqual({ totalAccounts: 42 });
   });
 
-  it('configures polling, staleness and a single retry', () => {
+  it('fetches once (no polling) with a single retry', () => {
     mockedGet.mockResolvedValue({ totalAccounts: 1 });
 
     const { queryClient } = renderWithClient();
@@ -42,10 +42,10 @@ describe('usePublicStats', () => {
       .find({ queryKey: PUBLIC_STATS_QUERY_KEY });
 
     expect(query?.options).toMatchObject({
-      refetchInterval: 60_000,
-      staleTime: 60_000,
+      staleTime: Infinity,
       retry: 1,
     });
+    expect(query?.options).not.toHaveProperty('refetchInterval');
   });
 
   it('surfaces errors after one retry', async () => {

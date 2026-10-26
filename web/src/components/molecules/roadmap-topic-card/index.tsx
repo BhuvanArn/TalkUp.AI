@@ -8,10 +8,13 @@ interface RoadmapTopicCardProps {
 }
 
 // HIGH -> error, MED -> warning (there is no `warn` token), LOW -> success.
-const PRIORITY_STYLES: Record<RoadmapTopic['priority'], string> = {
-  HIGH: 'bg-error-weak text-error',
-  MED: 'bg-warning-weak text-warning',
-  LOW: 'bg-success-weak text-success',
+// `-active` text shades keep the small labels above 4.5:1 on their weak
+// backgrounds in both themes (the base status tokens fall short). Also used by
+// the landing roadmap mock, so the two stay in sync.
+export const PRIORITY_STYLES: Record<RoadmapTopic['priority'], string> = {
+  HIGH: 'bg-error-weak text-error-active',
+  MED: 'bg-warning-weak text-warning-active',
+  LOW: 'bg-success-weak text-success-active',
 };
 
 /**

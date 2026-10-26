@@ -1,13 +1,15 @@
 import LandingFooter from '@/components/organisms/landing-footer';
 import LandingNav from '@/components/organisms/landing-nav';
+import {
+  CONTACT_EMAIL,
+  LANDING_FOCUS_RING,
+} from '@/components/organisms/landing-nav/landing-links';
 import { trackContactClick } from '@/utils/analytics';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/about')({
   component: About,
 });
-
-const CONTACT_EMAIL = 'contact@talkup.ai';
 
 const CONTAINER = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
 
@@ -24,7 +26,7 @@ const VALUES = [
   },
   {
     title: 'Concrete',
-    body: 'Feedback names the habit to change: a verbal tic, a casual register, a missing example.',
+    body: 'Feedback names the habit to change: a verbal tic, a casual register, too many filler words.',
   },
 ];
 
@@ -153,7 +155,7 @@ function About() {
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
                 onClick={trackContactClick('about')}
-                className="break-all rounded-sm font-semibold text-text-link underline underline-offset-4 hover:text-accent-hover focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className={`break-all rounded-sm font-semibold text-text-link underline underline-offset-4 hover:text-accent-hover ${LANDING_FOCUS_RING}`}
               >
                 {CONTACT_EMAIL}
               </a>

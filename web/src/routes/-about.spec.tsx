@@ -1,10 +1,18 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import About, { Route } from './about';
 
 vi.mock('@/components/organisms/landing-nav', () => ({
   default: () => <nav data-testid="landing-nav" />,
+}));
+
+const { contactClicks } = vi.hoisted(() => ({
+  contactClicks: [] as string[],
+}));
+
+vi.mock('@/utils/analytics', () => ({
+  trackContactClick: (location: string) => () => contactClicks.push(location),
 }));
 
 vi.mock('@/components/organisms/landing-footer', () => ({
@@ -75,5 +83,14 @@ describe('About route', () => {
     expect(
       screen.getByRole('link', { name: 'contact@talkup.ai' }),
     ).toHaveAttribute('href', 'mailto:contact@talkup.ai');
+  });
+
+  it('tracks clicks on the contact email', () => {
+    const stayOnPage = (e: Event) => e.preventDefault(); // jsdom can't navigate
+    document.addEventListener('click', stayOnPage);
+    render(<About />);
+    fireEvent.click(screen.getByRole('link', { name: 'contact@talkup.ai' }));
+    expect(contactClicks).toEqual(['about']);
+    document.removeEventListener('click', stayOnPage);
   });
 });

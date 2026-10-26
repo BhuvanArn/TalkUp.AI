@@ -1,7 +1,15 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import LandingFooter from './index';
+
+const { contactClicks } = vi.hoisted(() => ({
+  contactClicks: [] as string[],
+}));
+
+vi.mock('@/utils/analytics', () => ({
+  trackContactClick: (location: string) => () => contactClicks.push(location),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
@@ -110,5 +118,14 @@ describe('LandingFooter', () => {
     render(<LandingFooter />);
     const year = new Date().getFullYear();
     expect(screen.getByText(new RegExp(`© ${year}`))).toBeInTheDocument();
+  });
+
+  it('tracks clicks on the contact email', () => {
+    const stayOnPage = (e: Event) => e.preventDefault(); // jsdom can't navigate
+    document.addEventListener('click', stayOnPage);
+    render(<LandingFooter />);
+    fireEvent.click(screen.getByRole('link', { name: 'contact@talkup.ai' }));
+    expect(contactClicks).toEqual(['footer']);
+    document.removeEventListener('click', stayOnPage);
   });
 });
