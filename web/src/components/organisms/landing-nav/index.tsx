@@ -15,20 +15,25 @@ import {
 const DESKTOP_LINK_CLASS = `rounded-sm text-body-m text-text-weaker transition-colors hover:text-text aria-[current=page]:text-text ${FOCUS_RING}`;
 const MOBILE_LINK_CLASS = `block rounded-sm py-2 text-body-l text-text hover:text-accent aria-[current=page]:text-accent ${FOCUS_RING}`;
 
-/** A hidden group keeps its space in the layout but is not shown, read or focusable. */
+/**
+ * An inactive group keeps its space in the layout but is not shown, read or
+ * focusable (`invisible` + `inert`). Not named `hidden`: the native attribute
+ * means `display: none`, which would bring the layout shift back. `aria-hidden`
+ * is redundant for browsers but lets tests (jsdom ignores CSS) find the group.
+ */
 const CtaGroup = ({
-  hidden,
+  inactive,
   className,
   children,
 }: {
-  hidden: boolean;
+  inactive: boolean;
   className: string;
   children: ReactNode;
 }) => (
   <div
-    aria-hidden={hidden || undefined}
-    inert={hidden || undefined}
-    className={hidden ? `${className} invisible` : className}
+    aria-hidden={inactive || undefined}
+    inert={inactive || undefined}
+    className={inactive ? `${className} invisible` : className}
   >
     {children}
   </div>
@@ -100,7 +105,7 @@ const LandingNav = () => {
               the wider one and resolving the auth status never moves the links. */}
           <div className="grid">
             <CtaGroup
-              hidden={isAuthenticated}
+              inactive={isAuthenticated}
               className="col-start-1 row-start-1 flex items-center justify-end gap-3"
             >
               <Button
@@ -128,7 +133,7 @@ const LandingNav = () => {
               </Button>
             </CtaGroup>
             <CtaGroup
-              hidden={!isAuthenticated}
+              inactive={!isAuthenticated}
               className="col-start-1 row-start-1 flex items-center justify-end"
             >
               <Button
@@ -188,8 +193,9 @@ const LandingNav = () => {
             </li>
             <li className="mt-2 flex flex-col gap-2">
               <ThemeToggle />
-              {/* The menu opens on a tap, once the auth status is known: no
-                  space to reserve here. */}
+              {/* No reserved space here: if the status arrives while the menu
+                  is open (slow network), the two guest buttons become one.
+                  Accepted: the menu usually opens after the status is known. */}
               {isAuthenticated ? (
                 <Button
                   asChild

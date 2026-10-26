@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import LandingNav from './index';
 
@@ -56,10 +56,18 @@ vi.mock('@/components/molecules/logo', () => ({
   default: () => <span data-testid="logo">Logo</span>,
 }));
 
+/** jsdom can't navigate: tests that click real hrefs add this listener. */
+const stayOnPage = (e: Event) => e.preventDefault();
+
 describe('LandingNav', () => {
   beforeEach(() => {
     useAuthStatusMock.mockReset();
     useAuthStatusMock.mockReturnValue(authState(false));
+  });
+
+  // Removed even when an assertion fails, so it can't leak into later tests.
+  afterEach(() => {
+    document.removeEventListener('click', stayOnPage);
   });
 
   it('renders the four nav links and no removed sections', () => {
@@ -99,7 +107,6 @@ describe('LandingNav', () => {
 
   it('tracks the register CTA from the desktop nav and the mobile menu', () => {
     ctaClicks.length = 0;
-    const stayOnPage = (e: Event) => e.preventDefault(); // jsdom can't navigate
     document.addEventListener('click', stayOnPage);
     render(<LandingNav />);
     fireEvent.click(screen.getByRole('link', { name: 'Create an account' }));
@@ -110,7 +117,6 @@ describe('LandingNav', () => {
       ['nav', '/register'],
       ['nav', '/register'],
     ]);
-    document.removeEventListener('click', stayOnPage);
   });
 
   it('renders login + register CTAs', () => {
@@ -209,7 +215,6 @@ describe('LandingNav', () => {
 
     it('signed in: the mobile Open the app link closes the menu', () => {
       useAuthStatusMock.mockReturnValue(authState(true));
-      const stayOnPage = (e: Event) => e.preventDefault(); // jsdom can't navigate
       document.addEventListener('click', stayOnPage);
       render(<LandingNav />);
       const toggle = screen.getByRole('button', { name: /toggle menu/i });
@@ -217,7 +222,27 @@ describe('LandingNav', () => {
       const links = screen.getAllByRole('link', { name: 'Open the app' });
       fireEvent.click(links[links.length - 1]);
       expect(toggle).toHaveAttribute('aria-expanded', 'false');
-      document.removeEventListener('click', stayOnPage);
+    });
+
+    it('offline (query paused, no data, not loading): shows the guest CTAs', () => {
+      useAuthStatusMock.mockReturnValue({ data: undefined, isLoading: false });
+      render(<LandingNav />);
+      expect(screen.getByRole('link', { name: 'Log in' })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Open the app' })).toBeNull();
+    });
+
+    it('switches the open mobile menu to Open the app when the status arrives', () => {
+      useAuthStatusMock.mockReturnValue(authState(undefined));
+      const { rerender } = render(<LandingNav />);
+      const toggle = screen.getByRole('button', { name: /toggle menu/i });
+      fireEvent.click(toggle);
+      useAuthStatusMock.mockReturnValue(authState(true));
+      rerender(<LandingNav />);
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(
+        screen.getAllByRole('link', { name: 'Open the app' }),
+      ).toHaveLength(2);
+      expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
     });
 
     it('while loading: shows the guest CTAs (the landing never waits for them)', () => {
