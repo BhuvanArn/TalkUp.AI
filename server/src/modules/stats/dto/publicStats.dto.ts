@@ -1,5 +1,4 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
-import { IsInt, Min } from "class-validator";
 
 @ApiSchema({
   name: "PublicStatsDto",
@@ -10,7 +9,5 @@ export class PublicStatsDto {
     description: "Number of accounts with a verified email address.",
     example: 1234,
   })
-  @IsInt()
-  @Min(0)
   totalAccounts: number;
 }

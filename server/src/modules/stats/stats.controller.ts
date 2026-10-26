@@ -23,7 +23,9 @@ export class StatsController {
   // No auth guard: public route. The app has no global ThrottlerGuard, so it
   // is attached here; unauthenticated callers are bucketed per IP.
   @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  // Generous limit: the response is cached 60 s server-side, and a whole school
+  // can share one IP. The throttle only stops a single client hammering it.
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
   @Get("public")
   getPublicStats(): Promise<PublicStatsDto> {
     return this.service.getPublicStats();
