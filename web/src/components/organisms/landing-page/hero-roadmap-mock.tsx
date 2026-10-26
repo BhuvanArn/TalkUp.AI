@@ -1,9 +1,11 @@
-type Priority = 'HIGH' | 'MED' | 'LOW';
+import { MatchGauge } from '@/components/atoms/match-gauge';
+import { PRIORITY_STYLES } from '@/components/molecules/roadmap-topic-card';
+import type { RoadmapTopic } from '@/services/applications/types';
 
 interface PathItem {
   title: string;
   detail: string;
-  priority: Priority;
+  priority: RoadmapTopic['priority'];
   gap?: boolean;
 }
 
@@ -26,16 +28,6 @@ const PATH: PathItem[] = [
   },
 ];
 
-// `-active` text shades keep the 11px labels above 4.5:1 on their weak
-// backgrounds in both themes (the base status tokens fall short).
-const PRIORITY_CLASS: Record<Priority, string> = {
-  HIGH: 'bg-error-weak text-error-active',
-  MED: 'bg-warning-weak text-warning-active',
-  LOW: 'bg-success-weak text-success-active',
-};
-
-const GAUGE_RADIUS = 15.5;
-const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
 const MATCH_SCORE = 72;
 
 const MockButton = ({
@@ -57,7 +49,9 @@ const MockButton = ({
 /**
  * Static picture of the roadmap screen for one application. Purely visual:
  * exposed as a single image so its fake tabs and buttons are never focusable
- * or announced as controls.
+ * or announced as controls. The gauge and priority chips are the app's own
+ * (`MatchGauge`, `PRIORITY_STYLES`) so the picture follows the product; the
+ * timeline layout is simplified to fit the hero.
  */
 const HeroRoadmapMock = () => (
   <div
@@ -79,33 +73,8 @@ const HeroRoadmapMock = () => (
           <span>≈4 topics/week</span>
         </span>
       </div>
-      <div className="relative size-[76px] flex-none">
-        <svg viewBox="0 0 36 36" className="size-full -rotate-90">
-          <circle
-            cx="18"
-            cy="18"
-            r={GAUGE_RADIUS}
-            fill="none"
-            strokeWidth="3.5"
-            className="stroke-surface-raised"
-          />
-          <circle
-            cx="18"
-            cy="18"
-            r={GAUGE_RADIUS}
-            fill="none"
-            strokeWidth="3.5"
-            strokeLinecap="round"
-            strokeDasharray={`${(MATCH_SCORE / 100) * GAUGE_CIRCUMFERENCE} ${GAUGE_CIRCUMFERENCE}`}
-            className="stroke-accent"
-          />
-        </svg>
-        <div className="absolute inset-0 grid place-content-center text-center font-display text-2xl font-extrabold leading-none tabular-nums text-text">
-          {MATCH_SCORE}
-          <small className="mt-0.5 block font-body text-[10px] font-medium leading-tight text-text-weaker">
-            match
-          </small>
-        </div>
+      <div className="flex-none">
+        <MatchGauge score={MATCH_SCORE} />
       </div>
     </div>
 
@@ -132,7 +101,7 @@ const HeroRoadmapMock = () => (
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[15px] font-medium text-text">
               {item.title}
               <span
-                className={`rounded px-1.5 py-[3px] text-[11px] font-semibold leading-none ${PRIORITY_CLASS[item.priority]}`}
+                className={`rounded px-1.5 py-[3px] text-[11px] font-semibold leading-none ${PRIORITY_STYLES[item.priority]}`}
               >
                 {item.priority}
               </span>

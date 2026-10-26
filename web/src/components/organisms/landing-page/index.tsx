@@ -104,7 +104,7 @@ const AUDIENCES: { title: string; body: string }[] = [
 
 const ORG_FEATURES = [
   'Invite codes by email, with a role for each person',
-  'Admin, staff and member roles',
+  'Admin, employee and user roles',
   'Interviews, completion and average score per member',
 ];
 
@@ -135,7 +135,7 @@ const PLANS: Plan[] = [
     name: 'Organizations',
     features: [
       'Organization with invite codes',
-      'Roles for staff and members',
+      'Admin, employee and user roles',
       'Progress stats for each member',
     ],
     cta: 'Create an organization',

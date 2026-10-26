@@ -9,7 +9,9 @@ const TICS = ['"du coup" ×4', '"en fait" ×3', '"voilà" ×2'];
 /**
  * Static picture of the live verbal analysis panel shown during a voice
  * simulation. Exposed as a single labelled image. The transcript lines stay
- * in French because simulations are held in French.
+ * in French because simulations are held in French. Not the real
+ * `VerbalAnalysisPanel`: it is fed by the live socket and uses raw Tailwind
+ * colors that do not follow the dark theme.
  */
 const VerbalPanelMock = () => (
   <div
