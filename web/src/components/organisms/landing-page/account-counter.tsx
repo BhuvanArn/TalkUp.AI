@@ -10,13 +10,13 @@ const PHRASES: Record<
 > = {
   hero: (count, number) => (
     <>
-      {number} {count === 1 ? 'account' : 'accounts'} created so far
+      {number} verified {count === 1 ? 'account' : 'accounts'} so far
     </>
   ),
   final: (count, number) => (
     <>
-      Join {number} {count === 1 ? 'candidate' : 'candidates'} already preparing
-      with Talkup.
+      Join {number} {count === 1 ? 'person' : 'people'} already preparing with
+      Talkup.
     </>
   ),
 };
@@ -27,10 +27,10 @@ interface AccountCounterProps {
 }
 
 /**
- * Public "accounts created" line. The live region is always mounted with a
- * reserved line height (no layout shift); it stays empty while loading, on
- * error, or when the count is 0. No count-up: animating digits inside an
- * aria-live region would flood screen readers.
+ * Public verified-accounts line (the server counts verified emails, all roles).
+ * Always mounted with a reserved line height (no layout shift); it stays empty
+ * while loading, on error, or when the count is 0. Not a live region: the
+ * count arrives once, and two of them (hero, final CTA) would both be read.
  */
 const AccountCounter = ({ variant, className = '' }: AccountCounterProps) => {
   const { data } = usePublicStats();
@@ -39,7 +39,6 @@ const AccountCounter = ({ variant, className = '' }: AccountCounterProps) => {
 
   return (
     <p
-      aria-live="polite"
       data-testid={`account-counter-${variant}`}
       className={`min-h-5 text-sm leading-5 text-text-weaker tabular-nums ${className}`}
     >

@@ -26,7 +26,7 @@ const VALUES = [
   },
   {
     title: 'Concrete',
-    body: 'Feedback names the habit to change: a verbal tic, a casual register, a missing example.',
+    body: 'Feedback names the habit to change: a verbal tic, a casual register, too many filler words.',
   },
 ];
 

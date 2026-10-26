@@ -4,7 +4,7 @@ const SCORES: { label: string; value: number }[] = [
   { label: 'Vocabulary', value: 63 },
 ];
 
-const TICS = ['"du coup" ×4', '"en fait" ×3', '"voilà" ×2'];
+const TICS = ['"du coup"', '"en fait"', '"voilà"'];
 
 /**
  * Static picture of the live verbal analysis panel shown during a voice
@@ -57,14 +57,14 @@ const VerbalPanelMock = () => (
       <span className="mb-0.5 block font-display text-xs font-semibold text-warning-active">
         Alert
       </span>
-      <span className="text-text">Four filler words in this answer.</span>
+      <span className="text-text">Many filler words detected.</span>
     </div>
 
     <div className="mt-3.5 rounded-md bg-accent-weak px-3 py-2.5 text-sm text-text">
       <span className="mb-0.5 block font-display text-xs font-semibold text-accent-active">
         Live tip
       </span>
-      Open with the context of the project before the technical detail.
+      Pause briefly instead of saying “euh” or “genre”.
     </div>
 
     <div className="mt-3.5 text-[13px] text-text-weaker">Frequent tics</div>
