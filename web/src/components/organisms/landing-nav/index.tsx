@@ -1,6 +1,7 @@
 import { Button } from '@/components/atoms/button';
 import Logo from '@/components/molecules/logo';
 import ThemeToggle from '@/components/molecules/theme-toggle';
+import { APP_HOME } from '@/config/routes.config';
 import { useAuthStatus } from '@/hooks/auth/useServices';
 import { trackCtaClick } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
@@ -13,9 +14,6 @@ import {
 
 const DESKTOP_LINK_CLASS = `rounded-sm text-body-m text-text-weaker transition-colors hover:text-text aria-[current=page]:text-text ${FOCUS_RING}`;
 const MOBILE_LINK_CLASS = `block rounded-sm py-2 text-body-l text-text hover:text-accent aria-[current=page]:text-accent ${FOCUS_RING}`;
-
-/** Signed-in home: `/` sends authenticated users here (see `routes/index.tsx`). */
-const APP_HOME = '/applications';
 
 /** A hidden group keeps its space in the layout but is not shown, read or focusable. */
 const CtaGroup = ({
@@ -48,11 +46,10 @@ const LandingNav = () => {
   }, []);
 
   // Same query (and cache key) the root layout already runs on every public
-  // page, so this adds no request. While it loads, neither CTA variant shows.
-  const { data: authStatus, isLoading: authLoading } = useAuthStatus();
+  // page, so this adds no request. Guest CTAs show until the user is known to
+  // be signed in: on `/` (signed-in users are redirected away) they never wait.
+  const { data: authStatus } = useAuthStatus();
   const isAuthenticated = authStatus?.isAuthenticated ?? false;
-  const hideGuestCtas = authLoading || isAuthenticated;
-  const hideAppCta = authLoading || !isAuthenticated;
 
   const close = () => setOpen(false);
 
@@ -103,7 +100,7 @@ const LandingNav = () => {
               the wider one and resolving the auth status never moves the links. */}
           <div className="grid">
             <CtaGroup
-              hidden={hideGuestCtas}
+              hidden={isAuthenticated}
               className="col-start-1 row-start-1 flex items-center justify-end gap-3"
             >
               <Button
@@ -131,7 +128,7 @@ const LandingNav = () => {
               </Button>
             </CtaGroup>
             <CtaGroup
-              hidden={hideAppCta}
+              hidden={!isAuthenticated}
               className="col-start-1 row-start-1 flex items-center justify-end"
             >
               <Button
@@ -191,7 +188,9 @@ const LandingNav = () => {
             </li>
             <li className="mt-2 flex flex-col gap-2">
               <ThemeToggle />
-              {!hideAppCta ? (
+              {/* The menu opens on a tap, once the auth status is known: no
+                  space to reserve here. */}
+              {isAuthenticated ? (
                 <Button
                   asChild
                   variant="contained"
@@ -204,7 +203,7 @@ const LandingNav = () => {
                   </Link>
                 </Button>
               ) : (
-                <CtaGroup hidden={authLoading} className="flex flex-col gap-2">
+                <>
                   <Button
                     asChild
                     variant="outlined"
@@ -233,7 +232,7 @@ const LandingNav = () => {
                       Create an account
                     </Link>
                   </Button>
-                </CtaGroup>
+                </>
               )}
             </li>
           </ul>

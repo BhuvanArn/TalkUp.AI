@@ -220,30 +220,27 @@ describe('LandingNav', () => {
       document.removeEventListener('click', stayOnPage);
     });
 
-    it('while loading: keeps the CTA space but shows and focuses neither variant', () => {
+    it('while loading: shows the guest CTAs (the landing never waits for them)', () => {
       useAuthStatusMock.mockReturnValue(authState(undefined));
       render(<LandingNav />);
       fireEvent.click(screen.getByRole('button', { name: /toggle menu/i }));
-      for (const name of ['Log in', 'Create an account', 'Open the app']) {
-        expect(screen.queryByRole('link', { name })).toBeNull();
-      }
-      // Still in the DOM (holding their space), just hidden and inert.
-      const reserved = screen.getAllByText('Log in');
-      expect(reserved.length).toBeGreaterThan(0);
-      for (const el of reserved) {
-        const group = el.closest('[aria-hidden="true"]');
-        expect(group).toHaveClass('invisible');
-        expect(group).toHaveAttribute('inert');
-      }
+      expect(screen.getAllByRole('link', { name: 'Log in' })).toHaveLength(2);
       expect(
-        screen.getByText('Open the app').closest('[aria-hidden="true"]'),
-      ).toHaveAttribute('inert');
+        screen.getAllByRole('link', { name: 'Create an account' }),
+      ).toHaveLength(2);
+      expect(screen.queryByRole('link', { name: 'Open the app' })).toBeNull();
+      // The desktop app CTA stays in the slot, hidden and inert, for its width.
+      const appCta = screen.getByText('Open the app').closest('[aria-hidden]');
+      expect(appCta).toHaveClass('invisible');
+      expect(appCta).toHaveAttribute('inert');
     });
 
     it('resolving the auth status keeps the desktop CTA slot mounted', () => {
       useAuthStatusMock.mockReturnValue(authState(undefined));
       const { rerender } = render(<LandingNav />);
-      const slot = screen.getByText('Open the app').closest('.grid');
+      const slot = screen
+        .getByRole('link', { name: 'Log in' })
+        .closest('.grid');
       useAuthStatusMock.mockReturnValue(authState(true));
       rerender(<LandingNav />);
       expect(

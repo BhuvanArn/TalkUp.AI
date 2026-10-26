@@ -1,3 +1,6 @@
+/** Signed-in home: where `/` sends authenticated users and "home" links point. */
+export const APP_HOME = '/applications' as const;
+
 export interface RouteConfig {
   path: string;
   requiresAuth: boolean;
