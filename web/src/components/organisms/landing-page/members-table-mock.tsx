@@ -62,7 +62,13 @@ const CELL = 'whitespace-nowrap border-b border-border px-3.5 py-[11px]';
  * vocabulary and pill colors (`ROLE_META`) are shared here.
  */
 const MembersTableMock = () => (
-  <div className="relative min-w-0 overflow-x-auto rounded-2xl border border-border bg-background">
+  // Scrolls sideways on phones: focusable so keyboard users can scroll it too.
+  <div
+    role="region"
+    aria-label="Example members table, scrollable"
+    tabIndex={0}
+    className="relative min-w-0 overflow-x-auto rounded-2xl border border-border bg-background focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-accent"
+  >
     <table
       aria-label="Example members table"
       className="w-full min-w-[520px] border-collapse text-left text-[13px] tabular-nums text-text"

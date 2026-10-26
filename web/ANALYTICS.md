@@ -43,7 +43,7 @@ loaded. Custom events fire on every page:
 | ---------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `cta_click`            | A landing CTA is clicked                      | `location`: `hero`, `orgs`, `pricing_candidates`, `pricing_orgs`, `final`, `nav`; `target`: `/register`, `/register-organization`, `/login`, `#how` |
 | `signup_completed`     | `POST /auth/register` succeeds                | `withOrganizationCode`: boolean                                                             |
-| `email_verified`       | OTP email verification succeeds               | none                                                                                        |
+| `email_verified`       | OTP email verification succeeds               | `flow`: `candidate`, `organization` (admin of a new organization)                           |
 | `organization_created` | `POST /auth/register-organization` succeeds   | none                                                                                        |
 | `contact_click`        | A `contact@talkup.ai` mailto link is clicked  | `location`: `footer`, `about`                                                               |
 
@@ -57,15 +57,18 @@ the counts from the Events tab):
 | Step | Source                                                     | Metric                       |
 | ---- | ---------------------------------------------------------- | ---------------------------- |
 | 1    | Page views, URL = `/`                                      | Unique visitors on landing   |
-| 2    | Event `cta_click` (optionally filter by `location`)        | Unique visitors who clicked  |
+| 2    | Event `cta_click`, `target` = `/register` or `/register-organization` | Unique visitors who clicked a signup CTA |
 | 3    | Event `signup_completed`                                   | Accounts created (tracked)   |
-| 4    | Event `email_verified`                                     | Verified accounts            |
+| 4    | Event `email_verified`, `flow` = `candidate`               | Verified accounts            |
 | ref  | `GET /v1/api/stats/public` → `totalAccounts` (server)      | Ground-truth verified total  |
 
 Conversion rates: step N / step 1 (overall) and step N / step N-1 (per step). The
-`cta_click` breakdown by `location` shows which section converts best.
+`cta_click` breakdown by `location` shows which section converts best. Step 2
+leaves out the `/login` and `#how` targets: they are not signups. Organization
+signups are a parallel branch: `organization_created`, then `email_verified`
+with `flow` = `organization`.
 `totalAccounts` only counts verified emails, so compare its delta over the same
-period with `email_verified` (not `signup_completed`): the gap is roughly the
+period with all `email_verified` (both flows, not `signup_completed`): the gap is roughly the
 share of visitors who block the tracker (ad blockers), so treat Umami numbers as
 a lower bound.
 

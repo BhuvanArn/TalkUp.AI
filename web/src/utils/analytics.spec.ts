@@ -17,15 +17,44 @@ describe('analytics', () => {
     resetPageviewTracking();
   });
 
+  /** Runs each payload function Umami received against a stale default payload. */
+  const sentPayloads = (track: ReturnType<typeof vi.fn>) =>
+    track.mock.calls.map(([build]) =>
+      build({ website: 'abc', url: 'https://talkup.test/stale' }),
+    );
+
   describe('trackPageview', () => {
-    it('tracks public paths once per consecutive path', () => {
+    it('tracks public paths once per consecutive path, with the path as url', () => {
       const track = vi.fn();
       window.umami = { track };
       trackPageview('/');
       trackPageview('/');
       trackPageview('/about');
-      expect(track).toHaveBeenCalledTimes(2);
-      expect(track).toHaveBeenCalledWith();
+      expect(sentPayloads(track)).toEqual([
+        { website: 'abc', url: '/' },
+        { website: 'abc', url: '/about' },
+      ]);
+    });
+
+    it('counts a return through an untracked page as a new view', () => {
+      const track = vi.fn();
+      window.umami = { track };
+      trackPageview('/login');
+      trackPageview('/forgot-password');
+      trackPageview('/login');
+      expect(sentPayloads(track).map((p) => p.url)).toEqual([
+        '/login',
+        '/login',
+      ]);
+    });
+
+    it('reports the right url after Back, when Umami still holds the previous page', () => {
+      const track = vi.fn();
+      window.umami = { track };
+      trackPageview('/');
+      trackPageview('/about');
+      trackPageview('/'); // popstate: Umami's own url is still /about
+      expect(sentPayloads(track).at(-1)?.url).toBe('/');
     });
 
     it('ignores in-app paths', () => {
@@ -86,14 +115,18 @@ describe('analytics', () => {
       expect(() => trackEvent('cta_click')).not.toThrow();
     });
 
-    it('forwards name and data to umami.track', () => {
+    it('forwards name and data, attributed to the current path', () => {
       const track = vi.fn();
       window.umami = { track };
       trackEvent('cta_click', { location: 'hero', target: '/register' });
-      expect(track).toHaveBeenCalledWith('cta_click', {
-        location: 'hero',
-        target: '/register',
-      });
+      expect(sentPayloads(track)).toEqual([
+        {
+          website: 'abc',
+          url: window.location.pathname,
+          name: 'cta_click',
+          data: { location: 'hero', target: '/register' },
+        },
+      ]);
     });
 
     it('swallows errors thrown by the tracker', () => {

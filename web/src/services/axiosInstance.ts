@@ -48,6 +48,9 @@ const PUBLIC_AUTH_ENDPOINTS = [
 /** Routes where failed refresh must not assign `/login` (public routes — landing + auth pages). */
 const NO_LOGIN_REDIRECT_AFTER_REFRESH_FAIL = new Set([
   '/',
+  // Public pages: the root shell checks auth status there for logged-out visitors.
+  '/about',
+  '/privacy',
   '/login',
   '/register',
   '/register-organization',

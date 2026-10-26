@@ -66,7 +66,7 @@ const STEPS: { title: string; body: string; where: string }[] = [
 const LIVE_FACTS = [
   'Clarity, politeness and vocabulary scores for every answer',
   'Register detection: professional, neutral or too casual',
-  'Your most frequent verbal tics, counted',
+  'Your most frequent verbal tics, named',
   'One concrete tip after each answer',
 ];
 

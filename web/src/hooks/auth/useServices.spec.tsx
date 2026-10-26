@@ -85,17 +85,23 @@ describe('auth mutations analytics', () => {
     expect(trackEvent).toHaveBeenCalledWith('organization_created');
   });
 
-  it('tracks email_verified', async () => {
-    const { result } = renderHook(() => usePostVerifyEmail(), { wrapper });
-    await act(() =>
-      result.current.mutateAsync({
-        email: 'lea@example.com',
-        otpCode: '123456',
-        redirectTo: '/',
-      }),
-    );
-    expect(trackEvent).toHaveBeenCalledWith('email_verified');
-  });
+  it.each([
+    ['/', 'candidate'],
+    ['/organization', 'organization'],
+  ])(
+    'tracks email_verified (redirect %s -> flow %s)',
+    async (redirectTo, flow) => {
+      const { result } = renderHook(() => usePostVerifyEmail(), { wrapper });
+      await act(() =>
+        result.current.mutateAsync({
+          email: 'lea@example.com',
+          otpCode: '123456',
+          redirectTo,
+        }),
+      );
+      expect(trackEvent).toHaveBeenCalledWith('email_verified', { flow });
+    },
+  );
 
   it('sends no personal data with the events', async () => {
     const { result } = renderHook(() => usePostRegister(), { wrapper });
