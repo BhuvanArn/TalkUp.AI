@@ -133,6 +133,9 @@ export function initAnalytics(
   trackerLoading = true;
   script.setAttribute(SCRIPT_ATTR, '');
   document.head.appendChild(script);
+  // Queue the landing page view now, before the first render: otherwise the
+  // Hero's `hero_view` effect would be queued ahead of the router's page view.
+  trackPageview(window.location.pathname);
 }
 
 /**

@@ -80,6 +80,18 @@ describe('analytics', () => {
       ).toEqual(['pageview /', 'cta_click /', 'pageview /register']);
     });
 
+    it('sends the landing page view before events fired on first render', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      trackEvent('hero_view', { heroVariant: 'a' }); // Hero effect
+      trackPageview('/'); // router onResolved, after the first render
+      const track = vi.fn();
+      window.umami = { track };
+      loaderScripts()[0].dispatchEvent(new Event('load'));
+      expect(
+        sentPayloads(track).map((p) => `${p.name ?? 'pageview'} ${p.url}`),
+      ).toEqual(['pageview /', 'hero_view /']);
+    });
+
     it('stops queueing when the script fails to load (blocked)', () => {
       initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
       trackEvent('hero_view', { heroVariant: 'a' });
