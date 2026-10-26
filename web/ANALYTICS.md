@@ -29,10 +29,12 @@ changing them. Leave them unset in dev and preview builds to keep data clean.
 Page views (path, referrer, browser, OS, device, country) are recorded only on
 the public pages listed in `TRACKED_PATHS` (`web/src/utils/analytics.ts`): `/`,
 `/about`, `/privacy`, `/login`, `/register`, `/register-organization` and
-`/verify-email`. Automatic tracking is disabled (`data-auto-track="false"`) so
-in-app navigation does not consume the Umami Hobby quota (100K events/month,
-where each event data property also counts as one event). Custom events fire
-on every page:
+`/verify-email`. Automatic page views are disabled (`data-auto-pageview="false"`)
+so in-app navigation does not consume the Umami Hobby quota (100K events/month,
+where each event data property also counts as one event). Do not use
+`data-auto-track="false"` instead: it also stops Umami from following route
+changes, so every page view and event would be reported with the first URL
+loaded. Custom events fire on every page:
 
 | Event                  | Fired when                                    | Data                                                                                        |
 | ---------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------- |

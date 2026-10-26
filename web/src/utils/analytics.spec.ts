@@ -47,7 +47,8 @@ describe('analytics', () => {
     it('disables automatic page views and query strings on the injected script', () => {
       initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
       const [script] = loaderScripts() as NodeListOf<HTMLScriptElement>;
-      expect(script.dataset.autoTrack).toBe('false');
+      expect(script.dataset.autoPageview).toBe('false');
+      expect(script.dataset.autoTrack).toBeUndefined();
       expect(script.dataset.excludeSearch).toBe('true');
     });
   });

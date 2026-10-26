@@ -66,8 +66,10 @@ export function initAnalytics(
   script.defer = true;
   script.src = env.VITE_UMAMI_SCRIPT_URL?.trim() || DEFAULT_SCRIPT_URL;
   script.dataset.websiteId = websiteId;
-  // Page views are sent by trackPageview() so only public pages count.
-  script.dataset.autoTrack = 'false';
+  // Page views are sent by trackPageview() so only public pages count. Not
+  // `data-auto-track="false"`: that also stops Umami from following SPA route
+  // changes, so every manual page view and event would report the landing URL.
+  script.dataset.autoPageview = 'false';
   // Query strings carry PII (`/verify-email?email=…`) and invite codes.
   script.dataset.excludeSearch = 'true';
   script.addEventListener('load', () =>
