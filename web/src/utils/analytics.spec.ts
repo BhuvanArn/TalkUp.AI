@@ -10,6 +10,7 @@ import {
   resetPageviewTracking,
   trackCtaClick,
   trackEvent,
+  trackHeroView,
   trackPageview,
 } from './analytics';
 
@@ -23,6 +24,7 @@ describe('analytics', () => {
     resetPageviewTracking();
     resetHeroVariant();
     localStorage.clear();
+    sessionStorage.clear();
     vi.restoreAllMocks();
   });
 
@@ -63,6 +65,32 @@ describe('analytics', () => {
       ]);
     });
 
+    it('queues the first page view too, and flushes in order', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      trackPageview('/');
+      trackEvent('cta_click', { location: 'hero', target: '/register' });
+      window.history.pushState({}, '', '/register');
+      trackPageview('/register');
+      const track = vi.fn();
+      window.umami = { track };
+      loaderScripts()[0].dispatchEvent(new Event('load'));
+      window.history.pushState({}, '', '/');
+      expect(
+        sentPayloads(track).map((p) => `${p.name ?? 'pageview'} ${p.url}`),
+      ).toEqual(['pageview /', 'cta_click /', 'pageview /register']);
+    });
+
+    it('stops queueing when the script fails to load (blocked)', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      trackEvent('hero_view', { heroVariant: 'a' });
+      loaderScripts()[0].dispatchEvent(new Event('error'));
+      trackEvent('cta_click', { location: 'hero', target: '/register' });
+      const track = vi.fn();
+      window.umami = { track };
+      loaderScripts()[0].dispatchEvent(new Event('load'));
+      expect(sentEvents(track)).toEqual([]);
+    });
+
     it('drops events when no tracker is configured', () => {
       trackEvent('hero_view', { heroVariant: 'a' });
       initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
@@ -96,6 +124,34 @@ describe('analytics', () => {
     it('ignores a malformed stored value', () => {
       localStorage.setItem('talkup.heroVariant', 'b');
       expect(peekHeroVariant()).toBeNull();
+    });
+
+    it('keeps the variant when its date is in the future, restarting it from now', () => {
+      localStorage.setItem('talkup.heroVariant', `b:${Date.now() + 60_000}`);
+      expect(peekHeroVariant()).toBe('b');
+      const [, assignedAt] = localStorage
+        .getItem('talkup.heroVariant')!
+        .split(':');
+      expect(Number(assignedAt)).toBeLessThanOrEqual(Date.now());
+    });
+
+    it('does not touch storage for a visitor without a variant', () => {
+      const remove = vi.spyOn(Storage.prototype, 'removeItem');
+      expect(peekHeroVariant()).toBeNull();
+      expect(remove).not.toHaveBeenCalled();
+    });
+
+    it('sends hero_view once per browser session', () => {
+      const track = vi.fn();
+      window.umami = { track };
+      trackHeroView('a');
+      trackHeroView('a');
+      expect(sentEvents(track)).toEqual([
+        { name: 'hero_view', data: { heroVariant: 'a' }, url: '/' },
+      ]);
+      sessionStorage.clear(); // new tab
+      trackHeroView('a');
+      expect(sentEvents(track)).toHaveLength(2);
     });
 
     it('still assigns a variant when storage is blocked', () => {

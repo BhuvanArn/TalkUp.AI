@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import LandingPage from './index';
@@ -45,6 +46,8 @@ vi.mock('@/utils/analytics', async (importOriginal) => {
     ...actual,
     getHeroVariant: () => heroVariantMock(),
     trackEvent: (...args: unknown[]) => trackEventMock(...args),
+    trackHeroView: (heroVariant: string) =>
+      trackEventMock('hero_view', { heroVariant }),
     trackCtaClick: (location: string, target: string) => () =>
       trackEventMock('cta_click', { location, target }),
   };
@@ -85,6 +88,18 @@ describe('LandingPage', () => {
     expect(trackEventMock).toHaveBeenCalledWith('hero_view', {
       heroVariant: variant,
     });
+  });
+
+  it('reports the hero view once under StrictMode', () => {
+    render(
+      <StrictMode>
+        <LandingPage />
+      </StrictMode>,
+    );
+    const views = trackEventMock.mock.calls.filter(
+      ([name]) => name === 'hero_view',
+    );
+    expect(views).toHaveLength(1);
   });
 
   it('renders every section heading in order', () => {

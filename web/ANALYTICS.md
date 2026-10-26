@@ -68,19 +68,28 @@ candidates for it. It does not measure the gain over the old headline.
 
 The variant is drawn on the first landing visit and stored in `localStorage`
 (`talkup.heroVariant` = `<variant>:<timestamp>`), so a returning visitor keeps
-the same headline. It holds no personal data and is dropped after 13 months.
+the same headline. It holds no personal data; a value older than 13 months is
+ignored and deleted on the next visit (localStorage has no expiry of its own,
+so the key stays on the device of a visitor who never comes back). A
+`sessionStorage` flag (`talkup.heroViewCounted`, cleared when the tab closes)
+makes `hero_view` fire once per session.
 Storage is still a "similar technology" under ePrivacy, like a cookie: see
 [Privacy](#privacy).
 
 **Reading the results.** In Umami → Events, open each event and break it down
 by the `heroVariant` property. Umami shows *event counts* per property value,
-not unique visitors, and `hero_view` fires on every landing visit, so compare
-like with like:
+not unique visitors; `hero_view` fires once per browser session, so the unit is
+the session (close to a visit). The headline targets candidates, so both rates
+leave organizations out:
 
-- **CTA rate** = `cta_click` with `target` = `/register` or
-  `/register-organization` (variant X) / `hero_view` (variant X). Same signup
-  filter as step 2 of the conversion table below.
-- **Signup rate** = `signup_completed` (variant X) / `hero_view` (variant X).
+- **CTA rate** = `cta_click` with `target` = `/register` (variant X) /
+  `hero_view` (variant X). Several clicks in one session count several times.
+- **Signup rate** = `signup_completed` with `withOrganizationCode` = `false`
+  (variant X) / `hero_view` (variant X). Invited members came for the invite,
+  not the headline.
+
+During the test, search engines (no storage) may index either headline: both
+say the same thing and the test is short, so this is accepted.
 
 Check the exact path once in the live dashboard and update this section if
 Umami offers per-visitor counts for a property.
@@ -93,10 +102,12 @@ result as indicative only.
 
 **Quota.** Each event data property counts as one Hobby event: `hero_view`
 (+1 property) and the extra `heroVariant` on `cta_click` and
-`signup_completed` roughly double the cost of a landing visit.
+`signup_completed` make a landing visit without a click cost about three events
+instead of one (page view, `hero_view`, its property).
 
 **Ending the test.** Keep the winning headline as a plain H1 and remove
-`HERO_HEADLINES`, `getHeroVariant` / `peekHeroVariant` / `heroVariantData`,
+`HERO_HEADLINES`, `getHeroVariant` / `peekHeroVariant` / `heroVariantData` /
+`trackHeroView`,
 the `hero_view` event and the `heroVariant` tags, the A/B sentence of the
 privacy policy, and this section. Add a one-off
 `localStorage.removeItem('talkup.heroVariant')` for returning visitors.
@@ -128,7 +139,8 @@ a lower bound.
 
 Umami sets **no cookies** and stores no personal data (visitors are counted with a
 salted, rotating hash). The hero A/B test stores one `localStorage` key on the
-visitor's device (variant + date, no personal data, 13 months maximum). No
+visitor's device (variant + date, no personal data, ignored and deleted on the
+next visit after 13 months), plus a session-only flag. No
 consent banner is used on the basis of the CNIL exemption for audience
 measurement (strictly measurement, no cross-site tracking, limited lifetime);
 whether an A/B test falls under it is a judgement call, so confirm before

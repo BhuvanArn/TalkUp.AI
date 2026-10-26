@@ -6,7 +6,7 @@ import {
   type HeroVariant,
   getHeroVariant,
   trackCtaClick,
-  trackEvent,
+  trackHeroView,
 } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
@@ -183,7 +183,7 @@ const Hero = () => {
     // StrictMode replays effects in dev: report one view per mount.
     if (viewTracked.current) return;
     viewTracked.current = true;
-    trackEvent('hero_view', { heroVariant: variant });
+    trackHeroView(variant);
   }, [variant]);
 
   return (
