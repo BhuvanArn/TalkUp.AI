@@ -5,11 +5,14 @@
 
 export type AnalyticsEventData = Record<string, string | number | boolean>;
 
+/** The payload Umami builds for the current page (url, title, referrer…). */
+type UmamiPayload = Record<string, unknown>;
+
 declare global {
   interface Window {
     umami?: {
-      /** No arguments records a page view of the current URL. */
-      track: (name?: string, data?: AnalyticsEventData) => void;
+      /** A function receives Umami's default payload and returns the one to send. */
+      track: (payload: (props: UmamiPayload) => UmamiPayload) => void;
     };
   }
 }
@@ -34,13 +37,21 @@ export const TRACKED_PATHS: ReadonlySet<string> = new Set([
 
 let lastTrackedPath: string | null = null;
 
-/** Records a page view for public paths, once per consecutive path. */
+/**
+ * Records a page view for public paths, once per consecutive path. The URL is
+ * passed explicitly: Umami only follows pushState/replaceState, so after a
+ * Back/Forward (popstate) its own URL would still be the previous page.
+ */
 export function trackPageview(pathname: string): void {
-  if (!TRACKED_PATHS.has(pathname) || pathname === lastTrackedPath) return;
-  if (!window.umami) return;
+  if (!TRACKED_PATHS.has(pathname)) {
+    // Coming back from an untracked page is a new view, not a duplicate.
+    lastTrackedPath = null;
+    return;
+  }
+  if (pathname === lastTrackedPath || !window.umami) return;
   lastTrackedPath = pathname;
   try {
-    window.umami.track();
+    window.umami.track((props) => ({ ...props, url: pathname }));
   } catch {
     // Analytics must never break the UI.
   }
@@ -79,10 +90,18 @@ export function initAnalytics(
   document.head.appendChild(script);
 }
 
-/** Sends a custom event. Silently ignored when Umami is absent or throws. */
+/**
+ * Sends a custom event, attributed to the current path (see trackPageview for
+ * why the URL is explicit). Silently ignored when Umami is absent or throws.
+ */
 export function trackEvent(name: string, data?: AnalyticsEventData): void {
   try {
-    window.umami?.track(name, data);
+    window.umami?.track((props) => ({
+      ...props,
+      url: window.location.pathname,
+      name,
+      data,
+    }));
   } catch {
     // Analytics must never break the UI.
   }

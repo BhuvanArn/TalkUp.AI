@@ -148,7 +148,12 @@ export const usePostVerifyEmail = () => {
       return { redirectTo };
     },
     onSuccess: (data) => {
-      trackEvent('email_verified');
+      // The org admin signup verifies through this same hook; `flow` keeps the
+      // candidate funnel (signup_completed -> email_verified) under 100%.
+      trackEvent('email_verified', {
+        flow:
+          data.redirectTo === '/organization' ? 'organization' : 'candidate',
+      });
       login();
       // Fresh session on this tab — drop any leftover cache (incl. role/org)
       // from a prior account so stale cross-account state can't render.
