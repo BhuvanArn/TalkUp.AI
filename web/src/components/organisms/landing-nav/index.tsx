@@ -1,9 +1,10 @@
 import { Button } from '@/components/atoms/button';
 import Logo from '@/components/molecules/logo';
 import ThemeToggle from '@/components/molecules/theme-toggle';
+import { useAuthStatus } from '@/hooks/auth/useServices';
 import { trackCtaClick } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 import {
   LANDING_FOCUS_RING as FOCUS_RING,
@@ -12,6 +13,28 @@ import {
 
 const DESKTOP_LINK_CLASS = `rounded-sm text-body-m text-text-weaker transition-colors hover:text-text aria-[current=page]:text-text ${FOCUS_RING}`;
 const MOBILE_LINK_CLASS = `block rounded-sm py-2 text-body-l text-text hover:text-accent aria-[current=page]:text-accent ${FOCUS_RING}`;
+
+/** Signed-in home: `/` sends authenticated users here (see `routes/index.tsx`). */
+const APP_HOME = '/applications';
+
+/** A hidden group keeps its space in the layout but is not shown, read or focusable. */
+const CtaGroup = ({
+  hidden,
+  className,
+  children,
+}: {
+  hidden: boolean;
+  className: string;
+  children: ReactNode;
+}) => (
+  <div
+    aria-hidden={hidden || undefined}
+    inert={hidden || undefined}
+    className={hidden ? `${className} invisible` : className}
+  >
+    {children}
+  </div>
+);
 
 const LandingNav = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -23,6 +46,13 @@ const LandingNav = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Same query (and cache key) the root layout already runs on every public
+  // page, so this adds no request. While it loads, neither CTA variant shows.
+  const { data: authStatus, isLoading: authLoading } = useAuthStatus();
+  const isAuthenticated = authStatus?.isAuthenticated ?? false;
+  const hideGuestCtas = authLoading || isAuthenticated;
+  const hideAppCta = authLoading || !isAuthenticated;
 
   const close = () => setOpen(false);
 
@@ -69,26 +99,52 @@ const LandingNav = () => {
 
         <div className="hidden items-center gap-3 lg:flex">
           <ThemeToggle />
-          <Button
-            asChild
-            variant="text"
-            color="neutral"
-            size="sm"
-            className={FOCUS_RING}
-          >
-            <Link to="/login">Log in</Link>
-          </Button>
-          <Button
-            asChild
-            variant="contained"
-            color="accent"
-            size="sm"
-            className={FOCUS_RING}
-          >
-            <Link to="/register" onClick={trackCtaClick('nav', '/register')}>
-              Create an account
-            </Link>
-          </Button>
+          {/* Both variants share one grid cell, so the slot is always as wide as
+              the wider one and resolving the auth status never moves the links. */}
+          <div className="grid">
+            <CtaGroup
+              hidden={hideGuestCtas}
+              className="col-start-1 row-start-1 flex items-center justify-end gap-3"
+            >
+              <Button
+                asChild
+                variant="text"
+                color="neutral"
+                size="sm"
+                className={FOCUS_RING}
+              >
+                <Link to="/login">Log in</Link>
+              </Button>
+              <Button
+                asChild
+                variant="contained"
+                color="accent"
+                size="sm"
+                className={FOCUS_RING}
+              >
+                <Link
+                  to="/register"
+                  onClick={trackCtaClick('nav', '/register')}
+                >
+                  Create an account
+                </Link>
+              </Button>
+            </CtaGroup>
+            <CtaGroup
+              hidden={hideAppCta}
+              className="col-start-1 row-start-1 flex items-center justify-end"
+            >
+              <Button
+                asChild
+                variant="contained"
+                color="accent"
+                size="sm"
+                className={FOCUS_RING}
+              >
+                <Link to={APP_HOME}>Open the app</Link>
+              </Button>
+            </CtaGroup>
+          </div>
         </div>
 
         <button
@@ -135,34 +191,50 @@ const LandingNav = () => {
             </li>
             <li className="mt-2 flex flex-col gap-2">
               <ThemeToggle />
-              <Button
-                asChild
-                variant="outlined"
-                color="neutral"
-                size="md"
-                className={`w-full ${FOCUS_RING}`}
-              >
-                <Link to="/login" onClick={close}>
-                  Log in
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="contained"
-                color="accent"
-                size="md"
-                className={`w-full ${FOCUS_RING}`}
-              >
-                <Link
-                  to="/register"
-                  onClick={() => {
-                    trackCtaClick('nav', '/register')();
-                    close();
-                  }}
+              {!hideAppCta ? (
+                <Button
+                  asChild
+                  variant="contained"
+                  color="accent"
+                  size="md"
+                  className={`w-full ${FOCUS_RING}`}
                 >
-                  Create an account
-                </Link>
-              </Button>
+                  <Link to={APP_HOME} onClick={close}>
+                    Open the app
+                  </Link>
+                </Button>
+              ) : (
+                <CtaGroup hidden={authLoading} className="flex flex-col gap-2">
+                  <Button
+                    asChild
+                    variant="outlined"
+                    color="neutral"
+                    size="md"
+                    className={`w-full ${FOCUS_RING}`}
+                  >
+                    <Link to="/login" onClick={close}>
+                      Log in
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="contained"
+                    color="accent"
+                    size="md"
+                    className={`w-full ${FOCUS_RING}`}
+                  >
+                    <Link
+                      to="/register"
+                      onClick={() => {
+                        trackCtaClick('nav', '/register')();
+                        close();
+                      }}
+                    >
+                      Create an account
+                    </Link>
+                  </Button>
+                </CtaGroup>
+              )}
             </li>
           </ul>
         </div>
