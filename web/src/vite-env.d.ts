@@ -9,7 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_RECRUITER_AVATAR_URL?: string;
   /** Same-origin relative path to the recruiter office room background image. */
   readonly VITE_RECRUITER_OFFICE_BACKGROUND_URL?: string;
-  /** Umami website id. Analytics load only when set (see docs/analytics.md). */
+  /** Umami website id. Analytics load only when set (see web/ANALYTICS.md). */
   readonly VITE_UMAMI_WEBSITE_ID?: string;
   /** Umami tracker script URL (self-hosted). Defaults to Umami Cloud. */
   readonly VITE_UMAMI_SCRIPT_URL?: string;

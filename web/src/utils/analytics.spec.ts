@@ -43,7 +43,9 @@ describe('analytics', () => {
       trackPageview('/');
       expect(track).toHaveBeenCalledTimes(1);
     });
+  });
 
+  describe('initAnalytics', () => {
     it('disables automatic page views and query strings on the injected script', () => {
       initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
       const [script] = loaderScripts() as NodeListOf<HTMLScriptElement>;
@@ -51,9 +53,7 @@ describe('analytics', () => {
       expect(script.dataset.autoTrack).toBeUndefined();
       expect(script.dataset.excludeSearch).toBe('true');
     });
-  });
 
-  describe('initAnalytics', () => {
     it('does nothing without a website id', () => {
       initAnalytics({});
       initAnalytics({ VITE_UMAMI_WEBSITE_ID: '  ' });

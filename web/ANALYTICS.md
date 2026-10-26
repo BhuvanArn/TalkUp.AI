@@ -19,7 +19,10 @@ Set these build-time variables (Vercel project settings, or `web/.env` locally):
 - **Umami Cloud**: create a website at cloud.umami.is, copy its id into
   `VITE_UMAMI_WEBSITE_ID`, leave `VITE_UMAMI_SCRIPT_URL` unset.
 - **Self-hosted**: deploy Umami (Docker + Postgres), create the website there and
-  set `VITE_UMAMI_SCRIPT_URL=https://<your-umami-host>/script.js`.
+  set `VITE_UMAMI_SCRIPT_URL=https://<your-umami-host>/script.js`. The tracker
+  must support `data-auto-pageview` (Umami Cloud does): check that the instance's
+  `/script.js` contains `auto-pageview`. An older tracker ignores it and records
+  every page view on every page, twice on public pages.
 
 Because these are `VITE_` variables they are baked in at build time: redeploy after
 changing them. Leave them unset in dev and preview builds to keep data clean.
@@ -57,13 +60,14 @@ the counts from the Events tab):
 | 2    | Event `cta_click` (optionally filter by `location`)        | Unique visitors who clicked  |
 | 3    | Event `signup_completed`                                   | Accounts created (tracked)   |
 | 4    | Event `email_verified`                                     | Verified accounts            |
-| ref  | `GET /v1/api/stats/public` → `totalAccounts` (server)      | Ground-truth account total   |
+| ref  | `GET /v1/api/stats/public` → `totalAccounts` (server)      | Ground-truth verified total  |
 
 Conversion rates: step N / step 1 (overall) and step N / step N-1 (per step). The
-`cta_click` breakdown by `location` shows which section converts best. Compare the
-delta of `totalAccounts` over the same period with `signup_completed`: the gap is
-roughly the share of visitors who block the tracker (ad blockers), so treat Umami
-numbers as a lower bound.
+`cta_click` breakdown by `location` shows which section converts best.
+`totalAccounts` only counts verified emails, so compare its delta over the same
+period with `email_verified` (not `signup_completed`): the gap is roughly the
+share of visitors who block the tracker (ad blockers), so treat Umami numbers as
+a lower bound.
 
 ## Privacy
 
@@ -72,5 +76,5 @@ salted, rotating hash), so no consent banner is required under GDPR / ePrivacy.
 Query strings are stripped before sending (`data-exclude-search="true"`):
 `/verify-email?email=…` and `/register?code=…` would otherwise leak emails and
 invite codes to Umami.
-It should still be disclosed: add a short "Analytics" paragraph to the privacy
-page (`web/src/routes/privacy.tsx`) when enabling it in production.
+It is disclosed in the privacy policy (`web/src/routes/privacy.tsx`, "Cookies and
+similar technologies"): update that paragraph if the tracked pages or events change.
