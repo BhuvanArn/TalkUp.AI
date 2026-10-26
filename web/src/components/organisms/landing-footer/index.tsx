@@ -1,20 +1,16 @@
 import Logo from '@/components/molecules/logo';
+import {
+  CONTACT_EMAIL,
+  LANDING_FOCUS_RING,
+  LANDING_SECTION_LINKS as PRODUCT_LINKS,
+} from '@/components/organisms/landing-nav/landing-links';
 import { trackContactClick } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
 import { FaGithub, FaInstagram, FaLinkedin } from 'react-icons/fa6';
 
-const CONTACT_EMAIL = 'contact@talkup.ai';
-
-const FOCUS_RING =
-  'rounded-sm focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-accent';
+const FOCUS_RING = `rounded-sm ${LANDING_FOCUS_RING}`;
 
 const LINK_CLASS = `text-body-m text-text-weaker transition-colors hover:text-text ${FOCUS_RING}`;
-
-const PRODUCT_LINKS = [
-  { hash: 'how', label: 'How it works' },
-  { hash: 'orgs', label: 'For schools' },
-  { hash: 'pricing', label: 'Pricing' },
-] as const;
 
 const SOCIAL_LINKS = [
   {

@@ -2,19 +2,13 @@ import { Button } from '@/components/atoms/button';
 import Logo from '@/components/molecules/logo';
 import ThemeToggle from '@/components/molecules/theme-toggle';
 import { trackCtaClick } from '@/utils/analytics';
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
-/** Landing section anchors. The ids live on the landing page sections. */
-const SECTION_LINKS = [
-  { hash: 'how', label: 'How it works' },
-  { hash: 'orgs', label: 'For schools' },
-  { hash: 'pricing', label: 'Pricing' },
-] as const;
-
-/** Visible keyboard focus — the Button atom resets outlines on focus. */
-const FOCUS_RING =
-  'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-accent';
+import {
+  LANDING_FOCUS_RING as FOCUS_RING,
+  LANDING_SECTION_LINKS as SECTION_LINKS,
+} from './landing-links';
 
 const DESKTOP_LINK_CLASS = `rounded-sm text-body-m text-text-weaker transition-colors hover:text-text aria-[current=page]:text-text ${FOCUS_RING}`;
 const MOBILE_LINK_CLASS = `block rounded-sm py-2 text-body-l text-text hover:text-accent aria-[current=page]:text-accent ${FOCUS_RING}`;
@@ -22,8 +16,6 @@ const MOBILE_LINK_CLASS = `block rounded-sm py-2 text-body-l text-text hover:tex
 const LandingNav = () => {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const onAbout = pathname === '/about';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -69,11 +61,7 @@ const LandingNav = () => {
             </li>
           ))}
           <li>
-            <Link
-              to="/about"
-              aria-current={onAbout ? 'page' : undefined}
-              className={DESKTOP_LINK_CLASS}
-            >
+            <Link to="/about" className={DESKTOP_LINK_CLASS}>
               About
             </Link>
           </li>
@@ -141,12 +129,7 @@ const LandingNav = () => {
               </li>
             ))}
             <li>
-              <Link
-                to="/about"
-                aria-current={onAbout ? 'page' : undefined}
-                onClick={close}
-                className={MOBILE_LINK_CLASS}
-              >
+              <Link to="/about" onClick={close} className={MOBILE_LINK_CLASS}>
                 About
               </Link>
             </li>
