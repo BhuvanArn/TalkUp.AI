@@ -11,4 +11,4 @@ export const LANDING_SECTION_LINKS = [
 export const LANDING_FOCUS_RING =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-accent';
 
-export const CONTACT_EMAIL = 'contact@talkup.ai';
+export const CONTACT_EMAIL = 'contact.talkup.ai@gmail.com';

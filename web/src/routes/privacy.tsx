@@ -26,7 +26,7 @@ const SECTIONS: LegalSection[] = [
     title: '2. Data controller',
     paragraphs: [
       'TalkUp.AI is the data controller for the personal data processed through our platform.',
-      'For privacy-related requests, contact us at contact@talkup.ai. We are based in Paris, France.',
+      'For privacy-related requests, contact us at contact.talkup.ai@gmail.com. We are based in Paris, France.',
     ],
   },
   {
@@ -92,7 +92,7 @@ const SECTIONS: LegalSection[] = [
     title: '9. Your rights',
     paragraphs: [
       'Depending on your location, you may have the right to access, rectify, erase, restrict, or object to certain processing of your personal data, as well as the right to data portability.',
-      'You can update much of your information directly in your account settings. To exercise other rights, email contact@talkup.ai. You may also lodge a complaint with your local supervisory authority.',
+      'You can update much of your information directly in your account settings. To exercise other rights, email contact.talkup.ai@gmail.com. You may also lodge a complaint with your local supervisory authority.',
     ],
   },
   {
@@ -124,7 +124,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: '14. Contact',
     paragraphs: [
-      'Questions about this Privacy Policy or your personal data? Email us at contact@talkup.ai.',
+      'Questions about this Privacy Policy or your personal data? Email us at contact.talkup.ai@gmail.com.',
     ],
   },
 ];
