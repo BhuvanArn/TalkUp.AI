@@ -27,7 +27,10 @@ describe('RoadmapTopicCard', () => {
     render(<RoadmapTopicCard step={1} topic={topic} />);
     expect(screen.getByText('Step 1')).toBeInTheDocument();
     expect(screen.getByText('Kubernetes fundamentals')).toBeInTheDocument();
-    expect(screen.getByText('HIGH')).toHaveClass('bg-error-weak', 'text-error');
+    expect(screen.getByText('HIGH')).toHaveClass(
+      'bg-error-weak',
+      'text-error-active',
+    );
     expect(
       screen.getByText('Required by the offer, absent from the CV.'),
     ).toBeInTheDocument();
@@ -43,7 +46,7 @@ describe('RoadmapTopicCard', () => {
     );
     expect(screen.getByText('MED')).toHaveClass(
       'bg-warning-weak',
-      'text-warning',
+      'text-warning-active',
     );
     expect(screen.queryByText('Gap to close')).not.toBeInTheDocument();
     rerender(
@@ -54,7 +57,7 @@ describe('RoadmapTopicCard', () => {
     );
     expect(screen.getByText('LOW')).toHaveClass(
       'bg-success-weak',
-      'text-success',
+      'text-success-active',
     );
   });
 

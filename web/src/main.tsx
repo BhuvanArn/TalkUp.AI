@@ -2,6 +2,7 @@ import ToasterConfig from '@/components/atoms/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import '@/styles/index';
+import { initAnalytics, trackPageview } from '@/utils/analytics';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
@@ -9,6 +10,8 @@ import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { routeTree } from './routeTree.gen';
+
+initAnalytics();
 
 const queryClient = new QueryClient();
 
@@ -21,6 +24,10 @@ const router = createRouter({
   // keeps the page from rendering a second time without its shell.
   defaultNotFoundComponent: () => null,
 });
+
+router.subscribe('onResolved', ({ toLocation }) =>
+  trackPageview(toLocation.pathname),
+);
 
 const rootElement = document.getElementById('root')!;
 if (!rootElement.innerHTML) {

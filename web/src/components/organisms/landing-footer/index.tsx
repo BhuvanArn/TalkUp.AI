@@ -1,131 +1,118 @@
 import Logo from '@/components/molecules/logo';
+import {
+  CONTACT_EMAIL,
+  LANDING_FOCUS_RING,
+  LANDING_SECTION_LINKS as PRODUCT_LINKS,
+} from '@/components/organisms/landing-nav/landing-links';
+import { trackContactClick } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
 import { FaGithub, FaInstagram, FaLinkedin } from 'react-icons/fa6';
 
-const COLUMNS: {
-  title: string;
-  items: { label: string; href: string }[];
-}[] = [
+const FOCUS_RING = `rounded-sm ${LANDING_FOCUS_RING}`;
+
+const LINK_CLASS = `text-body-m text-text-weaker transition-colors hover:text-text ${FOCUS_RING}`;
+
+const SOCIAL_LINKS = [
   {
-    title: 'Product',
-    items: [
-      { label: 'Features', href: '#features' },
-      { label: 'How it works', href: '#how' },
-      { label: 'Pricing', href: '#pricing' },
-      { label: 'Testimonials', href: '#testimonials' },
-    ],
+    label: 'GitHub',
+    href: 'https://github.com/BhuvanArn/TalkUp.AI',
+    Icon: FaGithub,
   },
   {
-    title: 'Company',
-    items: [
-      { label: 'About', href: '/about' },
-      { label: 'Contact', href: 'mailto:contact@talkup.ai' },
-      { label: 'Careers', href: '#' },
-    ],
+    label: 'LinkedIn',
+    href: 'https://www.linkedin.com/company/talkup-ai/',
+    Icon: FaLinkedin,
   },
   {
-    title: 'Legal',
-    items: [
-      { label: 'Terms', href: '#' },
-      { label: 'Privacy', href: '/privacy' },
-      { label: 'Cookies', href: '#' },
-    ],
+    label: 'Instagram',
+    href: 'https://www.instagram.com/talkup.ai/',
+    Icon: FaInstagram,
   },
-];
+] as const;
+
+const ColumnTitle = ({ children }: { children: string }) => (
+  <h2 className="font-display text-body-m font-semibold text-text mb-3">
+    {children}
+  </h2>
+);
 
 const LandingFooter = () => {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border bg-surface">
-      <div className="mx-auto max-w-7xl px-6 py-14">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div className="flex flex-col gap-4">
+    <footer className="border-t border-border bg-background">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-10 sm:grid-cols-[1.4fr_1fr_1fr] sm:px-6">
+        <div className="col-span-2 flex flex-col gap-3 sm:col-span-1">
+          <Link
+            to="/"
+            aria-label="TalkUp home"
+            className={`self-start ${FOCUS_RING}`}
+          >
             <Logo variant="line" color="primary" />
-            <p className="text-body-m text-text-weaker max-w-xs">
-              Career and interview preparation with realistic AI simulations,
-              behavioral analysis, and personal coaching.
-            </p>
-            <div className="flex items-center gap-3">
-              <a
-                href="https://github.com/BhuvanArn/TalkUp.AI"
-                aria-label="GitHub"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-icon hover:text-accent transition-colors"
-              >
-                <FaGithub size={20} />
-              </a>
-              <a
-                href="https://www.linkedin.com/company/talkup-ai/"
-                aria-label="LinkedIn"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-icon hover:text-accent transition-colors"
-              >
-                <FaLinkedin size={20} />
-              </a>
-              <a
-                href="https://www.instagram.com/talkup.ai/"
-                aria-label="Instagram"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-icon hover:text-accent transition-colors"
-              >
-                <FaInstagram size={20} />
-              </a>
-            </div>
-          </div>
-
-          {COLUMNS.map((col) => (
-            <div key={col.title} className="flex flex-col gap-3">
-              <h3 className="text-body-s-strong text-text uppercase tracking-wider">
-                {col.title}
-              </h3>
-              <ul className="flex flex-col gap-2">
-                {col.items.map((item) => {
-                  const linkClass =
-                    'text-body-m text-text-weaker hover:text-accent transition-colors';
-                  const isInternalPath =
-                    item.href.startsWith('/') && !item.href.startsWith('//');
-                  const isHashOnly =
-                    item.href.startsWith('#') && item.href.length > 1;
-                  return (
-                    <li key={item.label}>
-                      {isInternalPath ? (
-                        <Link to={item.href} className={linkClass}>
-                          {item.label}
-                        </Link>
-                      ) : isHashOnly ? (
-                        <Link
-                          to="/"
-                          hash={item.href.slice(1)}
-                          resetScroll={false}
-                          className={linkClass}
-                        >
-                          {item.label}
-                        </Link>
-                      ) : (
-                        <a href={item.href} className={linkClass}>
-                          {item.label}
-                        </a>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+          </Link>
+          <p className="text-body-m text-text-weaker max-w-[36ch]">
+            Interview preparation built by four Epitech students. © {year}{' '}
+            Talkup.
+          </p>
+          <ul className="flex items-center gap-1" aria-label="Social links">
+            {SOCIAL_LINKS.map(({ label, href, Icon }) => (
+              <li key={label}>
+                <a
+                  href={href}
+                  aria-label={label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex h-11 w-11 items-center justify-center text-icon transition-colors hover:text-accent ${FOCUS_RING}`}
+                >
+                  <Icon size={20} aria-hidden="true" />
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 md:flex-row md:items-center">
-          <p className="text-body-s text-text-weakest">
-            © {year} TalkUp.AI — All rights reserved.
-          </p>
-          <p className="text-body-s text-text-weakest">
-            Made with care · Paris, France
-          </p>
-        </div>
+        <nav aria-label="Product">
+          <ColumnTitle>Product</ColumnTitle>
+          <ul className="flex flex-col gap-2">
+            {PRODUCT_LINKS.map((item) => (
+              <li key={item.hash}>
+                <Link
+                  to="/"
+                  hash={item.hash}
+                  resetScroll={false}
+                  className={LINK_CLASS}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <nav aria-label="Company">
+          <ColumnTitle>Company</ColumnTitle>
+          <ul className="flex flex-col gap-2">
+            <li>
+              <Link to="/about" className={LINK_CLASS}>
+                About
+              </Link>
+            </li>
+            <li>
+              <Link to="/privacy" className={LINK_CLASS}>
+                Privacy
+              </Link>
+            </li>
+            <li>
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                onClick={trackContactClick('footer')}
+                className={`${LINK_CLASS} break-all`}
+              >
+                {CONTACT_EMAIL}
+              </a>
+            </li>
+          </ul>
+        </nav>
       </div>
     </footer>
   );

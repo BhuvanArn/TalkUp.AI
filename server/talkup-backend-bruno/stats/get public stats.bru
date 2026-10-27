@@ -1,0 +1,16 @@
+meta {
+  name: get public stats
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/stats/public
+  body: none
+  auth: none
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

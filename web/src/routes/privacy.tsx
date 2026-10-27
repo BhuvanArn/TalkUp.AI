@@ -6,7 +6,7 @@ export const Route = createFileRoute('/privacy')({
   component: PrivacyPage,
 });
 
-const LAST_UPDATED = 'July 15, 2026';
+const LAST_UPDATED = 'October 26, 2026';
 
 interface LegalSection {
   title: string;
@@ -26,7 +26,7 @@ const SECTIONS: LegalSection[] = [
     title: '2. Data controller',
     paragraphs: [
       'TalkUp.AI is the data controller for the personal data processed through our platform.',
-      'For privacy-related requests, contact us at contact@talkup.ai. We are based in Paris, France.',
+      'For privacy-related requests, contact us at contact.talkup.ai@gmail.com. We are based in Paris, France.',
     ],
   },
   {
@@ -92,7 +92,7 @@ const SECTIONS: LegalSection[] = [
     title: '9. Your rights',
     paragraphs: [
       'Depending on your location, you may have the right to access, rectify, erase, restrict, or object to certain processing of your personal data, as well as the right to data portability.',
-      'You can update much of your information directly in your account settings. To exercise other rights, email contact@talkup.ai. You may also lodge a complaint with your local supervisory authority.',
+      'You can update much of your information directly in your account settings. To exercise other rights, email contact.talkup.ai@gmail.com. You may also lodge a complaint with your local supervisory authority.',
     ],
   },
   {
@@ -106,6 +106,7 @@ const SECTIONS: LegalSection[] = [
     paragraphs: [
       'TalkUp uses cookies and similar technologies to keep you signed in, remember preferences, and understand how the product is used.',
       'For more detail on the cookies we use and how to manage them, see our Cookies policy (coming soon).',
+      'Analytics: on our public pages (home, about, privacy, sign-in and sign-up), we measure visits and a few anonymous actions, such as clicking a sign-up button or completing registration, with Umami, a privacy-friendly analytics service. Umami sets no cookies and stores no personal data: visitors are counted with a salted hash that changes regularly, and we never send your name, email or account identifiers. Query strings are removed from page addresses before they are sent. This helps us understand which parts of the site are useful, based on our legitimate interest. Blocking the Umami script, for example with an ad blocker, has no effect on how TalkUp works.',
     ],
   },
   {
@@ -123,7 +124,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: '14. Contact',
     paragraphs: [
-      'Questions about this Privacy Policy or your personal data? Email us at contact@talkup.ai.',
+      'Questions about this Privacy Policy or your personal data? Email us at contact.talkup.ai@gmail.com.',
     ],
   },
 ];

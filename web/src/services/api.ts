@@ -8,4 +8,5 @@ export const API_ROUTES = {
   agenda: `${BASE_ROUTE}/agenda`,
   organization: `${BASE_ROUTE}/organization`,
   applications: `${BASE_ROUTE}/applications`,
+  stats: `${BASE_ROUTE}/stats`,
 };
