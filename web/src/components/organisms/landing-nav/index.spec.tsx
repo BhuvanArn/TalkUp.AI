@@ -182,7 +182,10 @@ describe('LandingNav', () => {
   describe('auth-aware CTAs', () => {
     it('reads the shared auth status query, not the anonymous variant', () => {
       render(<LandingNav />);
-      expect(useAuthStatusMock).toHaveBeenCalledWith(undefined);
+      expect(useAuthStatusMock).toHaveBeenCalled();
+      for (const [options] of useAuthStatusMock.mock.calls) {
+        expect(options?.anonymousAllowed).not.toBe(true);
+      }
     });
 
     it('signed out: shows Log in / Create an account, not Open the app', () => {

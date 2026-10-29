@@ -164,8 +164,8 @@ const LandingNav = () => {
             </li>
             <li className="mt-2 flex flex-col gap-2">
               <ThemeToggle />
-              {/* No reserved space here: if the status arrives while the menu
-                  is open (slow network), the two guest buttons become one.
+              {/* As on desktop, nothing is reserved: if the status arrives while
+                  the menu is open (slow network), the two guest buttons become one.
                   Accepted: the menu usually opens after the status is known. */}
               {isAuthenticated ? (
                 <Button
