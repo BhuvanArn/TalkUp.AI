@@ -287,10 +287,18 @@ export function useInterviewSession({
 
   const handleStreamToggle = useCallback(
     async (streaming: boolean) => {
-      if (processingRef.current) return;
+      if (processingRef.current) {
+        // A start waiting in the queue holds the lock for up to 20 minutes:
+        // "End call" must still leave the queue. The start branch then cancels
+        // the interview and resets the call.
+        if (!streaming) queueAbortRef.current?.abort();
+        return;
+      }
       processingRef.current = true;
 
       if (streaming) {
+        let queueAbort: AbortController | null = null;
+        let connected = false;
         try {
           const staleInterviewId = safeLocalStorage.getItem(
             STORAGE_KEYS.INTERVIEW_ID,
@@ -333,16 +341,21 @@ export function useInterviewSession({
             toast.loading("En file d'attente…", { id: 'sim-queue' });
 
             queueAbortRef.current?.abort();
-            queueAbortRef.current = new AbortController();
+            queueAbort = new AbortController();
+            queueAbortRef.current = queueAbort;
 
             entrypoint = await waitForReadyEntrypoint(
               created.interviewID,
-              queueAbortRef.current.signal,
+              queueAbort.signal,
               ({ queuePosition, estimatedWaitSec }) => {
                 setQueuePosition(queuePosition);
                 setEstimatedWaitSec(estimatedWaitSec);
               },
             );
+            // The slot may free up while "End call" is being handled.
+            if (queueAbort.signal.aborted) {
+              throw new Error('Queue wait aborted');
+            }
 
             toast.dismiss('sim-queue');
             setIsQueued(false);
@@ -359,12 +372,23 @@ export function useInterviewSession({
           setInputUrl(entrypoint);
           setIsCallActive(true);
           onConnect(entrypoint);
+          connected = true;
 
           await updateInterview(created.interviewID, { status: 'in_progress' });
         } catch (error) {
-          console.error('Failed to start interview:', error);
+          const leftQueue = queueAbort?.signal.aborted ?? false;
+          if (!leftQueue) console.error('Failed to start interview:', error);
           toast.dismiss('sim-queue');
           setIsQueued(false);
+          setQueuePosition(0);
+          if (connected) {
+            try {
+              onBeforeDisconnect?.();
+              onDisconnect(WEBSOCKET_CLOSE_CODE_NORMAL, 'Start failed');
+            } catch (disconnectError) {
+              console.error('Failed to disconnect WebSocket:', disconnectError);
+            }
+          }
           const interviewId = safeLocalStorage.getItem(
             STORAGE_KEYS.INTERVIEW_ID,
           );
@@ -376,7 +400,12 @@ export function useInterviewSession({
             }
           }
           clearInterviewStorage();
-          toast.error('Failed to start interview. Please try again.');
+          setIsCallActive(false);
+          setInputUrl('');
+          setInterviewID(null);
+          if (!leftQueue) {
+            toast.error('Failed to start interview. Please try again.');
+          }
         } finally {
           processingRef.current = false;
         }

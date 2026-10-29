@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -160,5 +160,86 @@ describe('useInterviewSession restore', () => {
     expect(toast.error).toHaveBeenCalledWith(
       'Impossible de reprendre la simulation pour le moment. Rechargez la page pour réessayer.',
     );
+  });
+});
+
+describe('useInterviewSession start', () => {
+  const ENTRYPOINT = 'wss://example.test/ws';
+  const onConnect = vi.fn();
+  const onDisconnect = vi.fn();
+
+  const renderSession = () =>
+    renderHook(() => useInterviewSession({ onConnect, onDisconnect }));
+
+  beforeEach(() => {
+    localStorageMock.store.clear();
+    vi.clearAllMocks();
+    mockHeartbeatInterview.mockResolvedValue(undefined);
+    mockUpdateInterview.mockResolvedValue(undefined);
+    mockCancelInterview.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('resets the call when the start fails after connecting', async () => {
+    mockCreateInterview.mockResolvedValue({
+      interviewID: 'interview-1',
+      status: 'ready',
+      entrypoint: ENTRYPOINT,
+      queuePosition: 0,
+    });
+    mockUpdateInterview.mockRejectedValueOnce(new Error('network down'));
+    const { result } = renderSession();
+
+    await act(() => result.current.handleStreamToggle(true));
+
+    expect(onConnect).toHaveBeenCalledWith(ENTRYPOINT);
+    expect(onDisconnect).toHaveBeenCalledWith(1000, 'Start failed');
+    expect(mockCancelInterview).toHaveBeenCalledWith('interview-1');
+    expect(result.current.isCallActive).toBe(false);
+    expect(result.current.interviewID).toBeNull();
+    expect(result.current.inputUrl).toBe('');
+    expect(localStorageMock.store.has('currentInterviewID')).toBe(false);
+    expect(toast.error).toHaveBeenCalledWith(
+      'Failed to start interview. Please try again.',
+    );
+  });
+
+  it('leaves the queue on End call, even if the slot frees up meanwhile', async () => {
+    mockCreateInterview.mockResolvedValue({
+      interviewID: 'interview-1',
+      status: 'queued',
+      queuePosition: 2,
+    });
+    let releaseSlot: (session: unknown) => void = () => {};
+    mockGetInterviewSession.mockReturnValue(
+      new Promise((resolve) => {
+        releaseSlot = resolve;
+      }),
+    );
+    const { result } = renderSession();
+
+    let starting: Promise<void> = Promise.resolve();
+    act(() => {
+      starting = result.current.handleStreamToggle(true);
+    });
+    await waitFor(() => expect(result.current.isQueued).toBe(true));
+    await waitFor(() => expect(mockGetInterviewSession).toHaveBeenCalled());
+
+    // "End call" while the start still holds the lock.
+    await act(() => result.current.handleStreamToggle(false));
+    await act(async () => {
+      releaseSlot({ sessionStatus: 'ready', entrypoint: ENTRYPOINT });
+      await starting;
+    });
+
+    expect(onConnect).not.toHaveBeenCalled();
+    expect(mockUpdateInterview).not.toHaveBeenCalled();
+    expect(mockCancelInterview).toHaveBeenCalledWith('interview-1');
+    expect(result.current.isQueued).toBe(false);
+    expect(result.current.isCallActive).toBe(false);
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

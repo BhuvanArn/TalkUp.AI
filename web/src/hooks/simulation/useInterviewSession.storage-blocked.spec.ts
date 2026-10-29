@@ -153,6 +153,7 @@ describe.each(['getter', 'methods'] as const)(
       await waitFor(() => {
         expect(mockCancelInterview).toHaveBeenCalledWith('interview-1');
       });
+      expect(result.current.isCallActive).toBe(false);
       expect(toast.error).toHaveBeenCalledWith(
         'Failed to start interview. Please try again.',
       );
