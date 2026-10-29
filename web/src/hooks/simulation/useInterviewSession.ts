@@ -21,10 +21,45 @@ const QUEUE_POLL_INTERVAL_MS = 3000;
 const QUEUE_POLL_MAX_MS = 20 * 60 * 1000;
 const HEARTBEAT_INTERVAL_MS = 60 * 1000;
 
+/**
+ * Page-lifetime copy of the session keys, used when localStorage is unusable.
+ * With cookies/site data blocked, merely reading `window.localStorage` throws a
+ * SecurityError; the simulation must still work, it just cannot be resumed
+ * after a reload.
+ */
+const memoryStorage = new Map<string, string>();
+
+function readStoredValue(key: string): string | null {
+  try {
+    const value = window.localStorage.getItem(key);
+    if (value !== null) return value;
+  } catch {
+    // Storage blocked — fall back to the in-memory copy.
+  }
+  return memoryStorage.get(key) ?? null;
+}
+
+function writeStoredValue(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    memoryStorage.set(key, value);
+  }
+}
+
+function removeStoredValue(key: string): void {
+  memoryStorage.delete(key);
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Storage blocked — nothing was persisted.
+  }
+}
+
 function clearInterviewStorage(): void {
-  localStorage.removeItem(STORAGE_KEYS.INTERVIEW_ID);
-  localStorage.removeItem(STORAGE_KEYS.INTERVIEW_URL);
-  localStorage.removeItem(STORAGE_KEYS.IS_STREAMING);
+  removeStoredValue(STORAGE_KEYS.INTERVIEW_ID);
+  removeStoredValue(STORAGE_KEYS.INTERVIEW_URL);
+  removeStoredValue(STORAGE_KEYS.IS_STREAMING);
 }
 
 function isTerminalSessionRestoreError(error: unknown): boolean {
@@ -155,12 +190,10 @@ export function useInterviewSession({
     hasResumedRef.current = true;
 
     const restoreSavedSession = async () => {
-      const savedInterviewID = localStorage.getItem(STORAGE_KEYS.INTERVIEW_ID);
-      const savedInterviewURL = localStorage.getItem(
-        STORAGE_KEYS.INTERVIEW_URL,
-      );
+      const savedInterviewID = readStoredValue(STORAGE_KEYS.INTERVIEW_ID);
+      const savedInterviewURL = readStoredValue(STORAGE_KEYS.INTERVIEW_URL);
       const wasStreaming =
-        localStorage.getItem(STORAGE_KEYS.IS_STREAMING) === 'true';
+        readStoredValue(STORAGE_KEYS.IS_STREAMING) === 'true';
 
       if (!savedInterviewID) return;
 
@@ -194,7 +227,7 @@ export function useInterviewSession({
           toast.dismiss('sim-queue');
           setIsQueued(false);
           setQueuePosition(0);
-          localStorage.setItem(STORAGE_KEYS.INTERVIEW_URL, entrypoint);
+          writeStoredValue(STORAGE_KEYS.INTERVIEW_URL, entrypoint);
           setInputUrl(entrypoint);
           setInterviewID(savedInterviewID);
           onConnect(entrypoint);
@@ -210,7 +243,7 @@ export function useInterviewSession({
           return;
         }
 
-        localStorage.setItem(STORAGE_KEYS.INTERVIEW_URL, entrypoint);
+        writeStoredValue(STORAGE_KEYS.INTERVIEW_URL, entrypoint);
         setInputUrl(entrypoint);
         setInterviewID(savedInterviewID);
         onConnect(entrypoint);
@@ -287,9 +320,7 @@ export function useInterviewSession({
 
       if (streaming) {
         try {
-          const staleInterviewId = localStorage.getItem(
-            STORAGE_KEYS.INTERVIEW_ID,
-          );
+          const staleInterviewId = readStoredValue(STORAGE_KEYS.INTERVIEW_ID);
           if (staleInterviewId) {
             onBeforeDisconnect?.();
             onDisconnect(
@@ -314,7 +345,7 @@ export function useInterviewSession({
           });
 
           setInterviewID(created.interviewID);
-          localStorage.setItem(STORAGE_KEYS.INTERVIEW_ID, created.interviewID);
+          writeStoredValue(STORAGE_KEYS.INTERVIEW_ID, created.interviewID);
 
           let entrypoint = created.entrypoint ?? null;
 
@@ -346,8 +377,8 @@ export function useInterviewSession({
             throw new Error('No WebSocket entrypoint returned');
           }
 
-          localStorage.setItem(STORAGE_KEYS.INTERVIEW_URL, entrypoint);
-          localStorage.setItem(STORAGE_KEYS.IS_STREAMING, 'true');
+          writeStoredValue(STORAGE_KEYS.INTERVIEW_URL, entrypoint);
+          writeStoredValue(STORAGE_KEYS.IS_STREAMING, 'true');
           setInputUrl(entrypoint);
           setIsCallActive(true);
           onConnect(entrypoint);
@@ -357,7 +388,7 @@ export function useInterviewSession({
           console.error('Failed to start interview:', error);
           toast.dismiss('sim-queue');
           setIsQueued(false);
-          const interviewId = localStorage.getItem(STORAGE_KEYS.INTERVIEW_ID);
+          const interviewId = readStoredValue(STORAGE_KEYS.INTERVIEW_ID);
           if (interviewId) {
             try {
               await cancelInterview(interviewId);
@@ -365,15 +396,13 @@ export function useInterviewSession({
               /* ignore cleanup errors */
             }
           }
-          localStorage.removeItem(STORAGE_KEYS.INTERVIEW_ID);
-          localStorage.removeItem(STORAGE_KEYS.INTERVIEW_URL);
-          localStorage.removeItem(STORAGE_KEYS.IS_STREAMING);
+          clearInterviewStorage();
           toast.error('Failed to start interview. Please try again.');
         } finally {
           processingRef.current = false;
         }
       } else {
-        const interviewId = localStorage.getItem(STORAGE_KEYS.INTERVIEW_ID);
+        const interviewId = readStoredValue(STORAGE_KEYS.INTERVIEW_ID);
         queueAbortRef.current?.abort();
 
         try {
