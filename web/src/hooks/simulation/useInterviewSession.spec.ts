@@ -451,4 +451,41 @@ describe('useInterviewSession start', () => {
 
     expect(mockCreateInterview).toHaveBeenCalledTimes(1);
   });
+
+  it('completes, not cancels, a connected call ended during its start', async () => {
+    mockCreateInterview.mockResolvedValue({
+      interviewID: 'interview-1',
+      status: 'ready',
+      entrypoint: ENTRYPOINT,
+      queuePosition: 0,
+    });
+    let markInProgress: () => void = () => {};
+    mockUpdateInterview.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        markInProgress = resolve;
+      }),
+    );
+    const { result } = renderSession();
+
+    let starting: Promise<void> = Promise.resolve();
+    act(() => {
+      starting = result.current.handleStreamToggle(true);
+    });
+    await waitFor(() => expect(onConnect).toHaveBeenCalledWith(ENTRYPOINT));
+
+    // End call while `PUT status: in_progress` is in flight.
+    await act(() => result.current.handleStreamToggle(false));
+    await act(async () => {
+      markInProgress();
+      await starting;
+    });
+
+    expect(mockUpdateInterview).toHaveBeenLastCalledWith('interview-1', {
+      status: 'completed',
+    });
+    expect(mockCancelInterview).not.toHaveBeenCalled();
+    expect(onDisconnect).toHaveBeenCalledWith(1000, 'Call ended');
+    expect(result.current.isCallActive).toBe(false);
+    expect(toast.error).not.toHaveBeenCalled();
+  });
 });

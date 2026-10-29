@@ -465,7 +465,12 @@ export function useInterviewSession({
           // storage holds now (another tab may have written it).
           if (createdId) {
             try {
-              await cancelInterview(createdId);
+              // Ended by the user once connected: a normal end, not a cancel.
+              if (stopped && connected) {
+                await updateInterview(createdId, { status: 'completed' });
+              } else {
+                await cancelInterview(createdId);
+              }
             } catch {
               /* ignore cleanup errors */
             }
