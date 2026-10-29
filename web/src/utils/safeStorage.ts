@@ -28,8 +28,16 @@ const createSafeStorage = (name: StorageName): SafeStorage => {
     setItem(key, value) {
       try {
         window[name].setItem(key, value);
+        memory.delete(key);
       } catch {
         memory.set(key, value);
+        // A failed write (e.g. quota) must not leave the older real value to
+        // shadow the in-memory one on the next read.
+        try {
+          window[name].removeItem(key);
+        } catch {
+          // Storage blocked: nothing real to shadow it.
+        }
       }
     },
     removeItem(key) {

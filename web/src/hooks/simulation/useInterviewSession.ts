@@ -381,30 +381,36 @@ export function useInterviewSession({
           processingRef.current = false;
         }
       } else {
-        const interviewId = safeLocalStorage.getItem(STORAGE_KEYS.INTERVIEW_ID);
-        queueAbortRef.current?.abort();
-
+        // `finally`: a lock left set makes every later start a silent no-op.
         try {
-          onBeforeDisconnect?.();
-          onDisconnect(WEBSOCKET_CLOSE_CODE_NORMAL, 'Call ended');
-        } catch (error) {
-          console.error('Failed to disconnect WebSocket:', error);
-        }
+          const interviewId = safeLocalStorage.getItem(
+            STORAGE_KEYS.INTERVIEW_ID,
+          );
+          queueAbortRef.current?.abort();
 
-        if (interviewId) {
           try {
-            await updateInterview(interviewId, { status: 'completed' });
-            clearInterviewStorage();
+            onBeforeDisconnect?.();
+            onDisconnect(WEBSOCKET_CLOSE_CODE_NORMAL, 'Call ended');
           } catch (error) {
-            console.error('Failed to update interview status:', error);
+            console.error('Failed to disconnect WebSocket:', error);
           }
-        }
 
-        setIsCallActive(false);
-        setIsQueued(false);
-        setInputUrl('');
-        setInterviewID(null);
-        processingRef.current = false;
+          if (interviewId) {
+            try {
+              await updateInterview(interviewId, { status: 'completed' });
+              clearInterviewStorage();
+            } catch (error) {
+              console.error('Failed to update interview status:', error);
+            }
+          }
+
+          setIsCallActive(false);
+          setIsQueued(false);
+          setInputUrl('');
+          setInterviewID(null);
+        } finally {
+          processingRef.current = false;
+        }
       }
     },
     [applicationId, onConnect, onDisconnect, onBeforeDisconnect],

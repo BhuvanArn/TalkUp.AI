@@ -1,5 +1,6 @@
 // Separate from useInterviewSession.spec.ts, which defines `window.localStorage`
 // as a non-configurable mock at module level, so it can't be blocked there.
+import { safeLocalStorage } from '@/utils/safeStorage';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import toast from 'react-hot-toast';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -72,6 +73,14 @@ describe.each(['getter', 'methods'] as const)(
 
     beforeEach(() => {
       blockMode = mode;
+      // The in-memory fallback is module-level: start each test empty.
+      for (const key of [
+        'currentInterviewID',
+        'currentInterviewURL',
+        'isInterviewStreaming',
+      ]) {
+        safeLocalStorage.removeItem(key);
+      }
       vi.clearAllMocks();
       mockHeartbeatInterview.mockResolvedValue(undefined);
       mockUpdateInterview.mockResolvedValue(undefined);
@@ -92,12 +101,15 @@ describe.each(['getter', 'methods'] as const)(
       const unhandled = vi.fn();
       process.on('unhandledRejection', unhandled);
 
-      renderSession();
+      const { result } = renderSession();
       await act(async () => {});
+      // Node reports unhandled rejections after the current tick.
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       process.off('unhandledRejection', unhandled);
       expect(unhandled).not.toHaveBeenCalled();
       expect(mockGetInterviewSession).not.toHaveBeenCalled();
+      expect(result.current.isCallActive).toBe(false);
     });
 
     it('starts a simulation after the initial stop toggle', async () => {

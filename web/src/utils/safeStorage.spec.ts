@@ -44,4 +44,26 @@ describe.each([
     expect(() => storage.removeItem('key')).not.toThrow();
     expect(storage.getItem('key')).toBeNull();
   });
+
+  it('drops the in-memory copy once a write succeeds again', () => {
+    const setItem = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementationOnce(() => {
+        throw blocked();
+      });
+    storage.setItem('key', 'old');
+    setItem.mockRestore();
+    storage.setItem('key', 'new');
+    window[name].removeItem('key'); // e.g. cleared by another tab
+    expect(storage.getItem('key')).toBeNull();
+  });
+
+  it('returns the new value when only writes fail (quota)', () => {
+    window[name].setItem('key', 'old');
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota exceeded', 'QuotaExceededError');
+    });
+    storage.setItem('key', 'new');
+    expect(storage.getItem('key')).toBe('new');
+  });
 });
