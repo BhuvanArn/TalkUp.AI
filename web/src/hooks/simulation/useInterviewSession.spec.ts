@@ -242,4 +242,157 @@ describe('useInterviewSession start', () => {
     expect(result.current.isCallActive).toBe(false);
     expect(toast.error).not.toHaveBeenCalled();
   });
+
+  it('leaves the queue at once while waiting between polls', async () => {
+    mockCreateInterview.mockResolvedValue({
+      interviewID: 'interview-1',
+      status: 'queued',
+      queuePosition: 2,
+    });
+    mockGetInterviewSession.mockResolvedValue({
+      sessionStatus: 'queued',
+      queuePosition: 2,
+    });
+    const { result } = renderSession();
+
+    let starting: Promise<void> = Promise.resolve();
+    act(() => {
+      starting = result.current.handleStreamToggle(true);
+    });
+    await waitFor(() => expect(mockGetInterviewSession).toHaveBeenCalled());
+
+    const stoppedAt = Date.now();
+    await act(() => result.current.handleStreamToggle(false));
+    await act(() => starting);
+
+    // Well under the 3 s poll interval: the wait wakes up on abort.
+    expect(Date.now() - stoppedAt).toBeLessThan(1000);
+    expect(mockCancelInterview).toHaveBeenCalledWith('interview-1');
+    expect(onConnect).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it('does not connect when End call lands during createInterview', async () => {
+    let respond: (created: unknown) => void = () => {};
+    mockCreateInterview.mockReturnValue(
+      new Promise((resolve) => {
+        respond = resolve;
+      }),
+    );
+    const { result } = renderSession();
+
+    let starting: Promise<void> = Promise.resolve();
+    act(() => {
+      starting = result.current.handleStreamToggle(true);
+    });
+    await waitFor(() => expect(mockCreateInterview).toHaveBeenCalled());
+
+    await act(() => result.current.handleStreamToggle(false));
+    await act(async () => {
+      respond({
+        interviewID: 'interview-1',
+        status: 'ready',
+        entrypoint: ENTRYPOINT,
+        queuePosition: 0,
+      });
+      await starting;
+    });
+
+    expect(onConnect).not.toHaveBeenCalled();
+    expect(mockCancelInterview).toHaveBeenCalledWith('interview-1');
+    expect(result.current.isCallActive).toBe(false);
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it('runs a Start clicked while the previous End call is finishing', async () => {
+    mockCreateInterview
+      .mockResolvedValueOnce({
+        interviewID: 'interview-1',
+        status: 'queued',
+        queuePosition: 2,
+      })
+      .mockResolvedValueOnce({
+        interviewID: 'interview-2',
+        status: 'ready',
+        entrypoint: ENTRYPOINT,
+        queuePosition: 0,
+      });
+    let releaseSlot: (session: unknown) => void = () => {};
+    mockGetInterviewSession.mockReturnValue(
+      new Promise((resolve) => {
+        releaseSlot = resolve;
+      }),
+    );
+    const { result } = renderSession();
+
+    let starting: Promise<void> = Promise.resolve();
+    act(() => {
+      starting = result.current.handleStreamToggle(true);
+    });
+    await waitFor(() => expect(mockGetInterviewSession).toHaveBeenCalled());
+
+    // End, then Start again before the first start has unwound.
+    await act(() => result.current.handleStreamToggle(false));
+    await act(() => result.current.handleStreamToggle(true));
+    await act(async () => {
+      releaseSlot({ sessionStatus: 'queued', queuePosition: 2 });
+      await starting;
+    });
+
+    await waitFor(() => expect(result.current.isCallActive).toBe(true));
+    expect(mockCancelInterview).toHaveBeenCalledWith('interview-1');
+    expect(mockCreateInterview).toHaveBeenCalledTimes(2);
+    expect(result.current.interviewID).toBe('interview-2');
+    expect(onConnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores the stop sent on mount, so the saved call resumes', async () => {
+    localStorageMock.store.set('currentInterviewID', 'interview-1');
+    localStorageMock.store.set('currentInterviewURL', ENTRYPOINT);
+    mockGetInterviewSession.mockResolvedValue({
+      sessionStatus: 'active',
+      entrypoint: ENTRYPOINT,
+    });
+    const { result } = renderSession();
+
+    // SimulationVideoArea reports `isStreaming=false` on mount.
+    await act(() => result.current.handleStreamToggle(false));
+
+    await waitFor(() => expect(onConnect).toHaveBeenCalledWith(ENTRYPOINT));
+    expect(onDisconnect).not.toHaveBeenCalled();
+    expect(mockUpdateInterview).not.toHaveBeenCalled();
+    expect(result.current.isCallActive).toBe(true);
+  });
+
+  it('leaves a restored queue on End call without connecting or an error', async () => {
+    localStorageMock.store.set('currentInterviewID', 'interview-1');
+    let releaseSlot: (session: unknown) => void = () => {};
+    mockGetInterviewSession
+      .mockResolvedValueOnce({ sessionStatus: 'queued', queuePosition: 3 })
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          releaseSlot = resolve;
+        }),
+      );
+    const { result } = renderSession();
+
+    await waitFor(() => expect(result.current.isQueued).toBe(true));
+    await waitFor(() =>
+      expect(mockGetInterviewSession).toHaveBeenCalledTimes(2),
+    );
+
+    await act(() => result.current.handleStreamToggle(false));
+    expect(mockUpdateInterview).toHaveBeenCalledWith('interview-1', {
+      status: 'completed',
+    });
+
+    await act(async () => {
+      releaseSlot({ sessionStatus: 'ready', entrypoint: ENTRYPOINT });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(onConnect).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(result.current.isCallActive).toBe(false);
+  });
 });
