@@ -5,7 +5,7 @@ import { APP_HOME } from '@/config/routes.config';
 import { useAuthStatus } from '@/hooks/auth/useServices';
 import { trackCtaClick } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
-import { type ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   LANDING_FOCUS_RING as FOCUS_RING,
@@ -14,30 +14,6 @@ import {
 
 const DESKTOP_LINK_CLASS = `rounded-sm text-body-m text-text-weaker transition-colors hover:text-text aria-[current=page]:text-text ${FOCUS_RING}`;
 const MOBILE_LINK_CLASS = `block rounded-sm py-2 text-body-l text-text hover:text-accent aria-[current=page]:text-accent ${FOCUS_RING}`;
-
-/**
- * An inactive group keeps its space in the layout but is not shown, read or
- * focusable (`invisible` + `inert`). Not named `hidden`: the native attribute
- * means `display: none`, which would bring the layout shift back. `aria-hidden`
- * is redundant for browsers but lets tests (jsdom ignores CSS) find the group.
- */
-const CtaGroup = ({
-  inactive,
-  className,
-  children,
-}: {
-  inactive: boolean;
-  className: string;
-  children: ReactNode;
-}) => (
-  <div
-    aria-hidden={inactive || undefined}
-    inert={inactive || undefined}
-    className={inactive ? `${className} invisible` : className}
-  >
-    {children}
-  </div>
-);
 
 const LandingNav = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -101,13 +77,22 @@ const LandingNav = () => {
 
         <div className="hidden items-center gap-3 lg:flex">
           <ThemeToggle />
-          {/* Both variants share one grid cell, so the slot is always as wide as
-              the wider one and resolving the auth status never moves the links. */}
-          <div className="grid">
-            <CtaGroup
-              inactive={isAuthenticated}
-              className="col-start-1 row-start-1 flex items-center justify-end gap-3"
+          {/* Sized to what it shows, so signed-in users get no gap next to
+              Open the app. A signed-in user reloading /about or /privacy sees
+              the links shift once when the status arrives: accepted, rather
+              than a permanent gap for every signed-in visitor. */}
+          {isAuthenticated ? (
+            <Button
+              asChild
+              variant="contained"
+              color="accent"
+              size="sm"
+              className={FOCUS_RING}
             >
+              <Link to={APP_HOME}>Open the app</Link>
+            </Button>
+          ) : (
+            <>
               <Button
                 asChild
                 variant="text"
@@ -131,22 +116,8 @@ const LandingNav = () => {
                   Create an account
                 </Link>
               </Button>
-            </CtaGroup>
-            <CtaGroup
-              inactive={!isAuthenticated}
-              className="col-start-1 row-start-1 flex items-center justify-end"
-            >
-              <Button
-                asChild
-                variant="contained"
-                color="accent"
-                size="sm"
-                className={FOCUS_RING}
-              >
-                <Link to={APP_HOME}>Open the app</Link>
-              </Button>
-            </CtaGroup>
-          </div>
+            </>
+          )}
         </div>
 
         <button

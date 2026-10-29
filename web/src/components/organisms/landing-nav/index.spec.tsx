@@ -253,28 +253,21 @@ describe('LandingNav', () => {
       expect(
         screen.getAllByRole('link', { name: 'Create an account' }),
       ).toHaveLength(2);
-      expect(screen.queryByRole('link', { name: 'Open the app' })).toBeNull();
-      // The desktop app CTA stays in the slot, hidden and inert, for its width.
-      const appCta = screen.getByText('Open the app').closest('[aria-hidden]');
-      expect(appCta).toHaveClass('invisible');
-      expect(appCta).toHaveAttribute('inert');
+      expect(screen.queryByText('Open the app')).toBeNull();
     });
 
-    it('resolving the auth status keeps the desktop CTA slot mounted', () => {
+    it('switches the desktop CTAs to Open the app when the status arrives', () => {
       useAuthStatusMock.mockReturnValue(authState(undefined));
       const { rerender } = render(<LandingNav />);
-      const slot = screen
-        .getByRole('link', { name: 'Log in' })
-        .closest('.grid');
+      expect(screen.getByRole('link', { name: 'Log in' })).toBeInTheDocument();
       useAuthStatusMock.mockReturnValue(authState(true));
       rerender(<LandingNav />);
       expect(
-        screen.getByRole('link', { name: 'Open the app' }).closest('.grid'),
-      ).toBe(slot);
-      // The guest group stays in the slot, hidden, so its width still counts.
-      expect(
-        screen.getByText('Log in').closest('[aria-hidden="true"]'),
-      ).toHaveClass('invisible');
+        screen.getByRole('link', { name: 'Open the app' }),
+      ).toHaveAttribute('href', '/applications');
+      // Unmounted, not kept hidden: nothing reserves the guest CTAs' width.
+      expect(screen.queryByText('Log in')).toBeNull();
+      expect(screen.queryByText('Create an account')).toBeNull();
     });
   });
 });
