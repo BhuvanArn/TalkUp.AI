@@ -81,8 +81,8 @@ describe('LandingFooter', () => {
   it('shows the contact email as visible mailto text', () => {
     render(<LandingFooter />);
     expect(
-      screen.getByRole('link', { name: 'contact@talkup.ai' }),
-    ).toHaveAttribute('href', 'mailto:contact@talkup.ai');
+      screen.getByRole('link', { name: 'contact.talkup.ai@gmail.com' }),
+    ).toHaveAttribute('href', 'mailto:contact.talkup.ai@gmail.com');
   });
 
   it('has no dead links', () => {
@@ -124,7 +124,9 @@ describe('LandingFooter', () => {
     const stayOnPage = (e: Event) => e.preventDefault(); // jsdom can't navigate
     document.addEventListener('click', stayOnPage);
     render(<LandingFooter />);
-    fireEvent.click(screen.getByRole('link', { name: 'contact@talkup.ai' }));
+    fireEvent.click(
+      screen.getByRole('link', { name: 'contact.talkup.ai@gmail.com' }),
+    );
     expect(contactClicks).toEqual(['footer']);
     document.removeEventListener('click', stayOnPage);
   });

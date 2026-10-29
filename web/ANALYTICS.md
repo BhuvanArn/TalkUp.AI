@@ -46,7 +46,7 @@ loaded. Custom events fire on every page:
 | `hero_view`            | The landing hero renders                      | `heroVariant`: `a`, `b`                                                                     |
 | `email_verified`       | OTP email verification succeeds               | `flow`: `candidate`, `organization` (admin of a new organization)                           |
 | `organization_created` | `POST /auth/register-organization` succeeds   | none                                                                                        |
-| `contact_click`        | A `contact@talkup.ai` mailto link is clicked  | `location`: `footer`, `about`                                                               |
+| `contact_click`        | A `contact.talkup.ai@gmail.com` mailto link is clicked  | `location`: `footer`, `about`                                                               |
 
 No personal data (email, name, ids) is ever sent with an event.
 
