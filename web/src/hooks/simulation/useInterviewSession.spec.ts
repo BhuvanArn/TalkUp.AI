@@ -304,7 +304,7 @@ describe('useInterviewSession start', () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
-  it('runs a Start clicked while the previous End call is finishing', async () => {
+  it('runs a Start clicked while an aborted start is unwinding', async () => {
     mockCreateInterview
       .mockResolvedValueOnce({
         interviewID: 'interview-1',
@@ -394,5 +394,61 @@ describe('useInterviewSession start', () => {
     expect(onConnect).not.toHaveBeenCalled();
     expect(toast.error).not.toHaveBeenCalled();
     expect(result.current.isCallActive).toBe(false);
+    expect(result.current.isQueued).toBe(false);
+    expect(toast.dismiss).toHaveBeenCalledWith('sim-queue');
+  });
+
+  it('clears a restored queue when the user starts a new call', async () => {
+    localStorageMock.store.set('currentInterviewID', 'interview-1');
+    mockGetInterviewSession
+      .mockResolvedValueOnce({ sessionStatus: 'queued', queuePosition: 3 })
+      .mockReturnValue(new Promise(() => {}));
+    mockCreateInterview.mockResolvedValue({
+      interviewID: 'interview-2',
+      status: 'ready',
+      entrypoint: ENTRYPOINT,
+      queuePosition: 0,
+    });
+    const { result } = renderSession();
+    await waitFor(() => expect(result.current.isQueued).toBe(true));
+
+    await act(() => result.current.handleStreamToggle(true));
+
+    expect(mockCancelInterview).toHaveBeenCalledWith('interview-1');
+    expect(result.current.isCallActive).toBe(true);
+    expect(result.current.isQueued).toBe(false);
+    expect(result.current.queuePosition).toBe(0);
+    expect(toast.dismiss).toHaveBeenCalledWith('sim-queue');
+  });
+
+  it('does not replay a pending Start after unmount', async () => {
+    mockCreateInterview.mockResolvedValue({
+      interviewID: 'interview-1',
+      status: 'ready',
+      entrypoint: ENTRYPOINT,
+      queuePosition: 0,
+    });
+    const { result, unmount } = renderSession();
+    await act(() => result.current.handleStreamToggle(true));
+
+    let finishStop: () => void = () => {};
+    mockUpdateInterview.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishStop = resolve;
+      }),
+    );
+    let stopping: Promise<void> = Promise.resolve();
+    act(() => {
+      stopping = result.current.handleStreamToggle(false);
+    });
+    // Start again while the stop is in flight, then leave the page.
+    await act(() => result.current.handleStreamToggle(true));
+    unmount();
+    await act(async () => {
+      finishStop();
+      await stopping;
+    });
+
+    expect(mockCreateInterview).toHaveBeenCalledTimes(1);
   });
 });

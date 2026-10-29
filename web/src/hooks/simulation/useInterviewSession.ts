@@ -289,6 +289,8 @@ export function useInterviewSession({
     return () => {
       queueAbortRef.current?.abort();
       startAbortRef.current?.abort();
+      // A stop still in flight must not replay a start after unmount.
+      pendingStartRef.current = false;
     };
   }, []);
 
@@ -316,11 +318,20 @@ export function useInterviewSession({
   >(null);
 
   /** Runs a start that arrived while the lock was held. */
-  const runPendingStart = () => {
+  const runPendingStart = useCallback(() => {
     if (!pendingStartRef.current) return;
     pendingStartRef.current = false;
     void handleStreamToggleRef.current?.(true);
-  };
+  }, []);
+
+  /** Ends a restored queue wait that a stop or a new start supersedes. */
+  const clearQueueState = useCallback(() => {
+    queueAbortRef.current?.abort();
+    toast.dismiss('sim-queue');
+    setIsQueued(false);
+    setQueuePosition(0);
+    setEstimatedWaitSec(undefined);
+  }, []);
 
   const handleStreamToggle = useCallback(
     async (streaming: boolean) => {
@@ -355,7 +366,7 @@ export function useInterviewSession({
         let connected = false;
         try {
           // A new start supersedes a restored queue wait.
-          queueAbortRef.current?.abort();
+          clearQueueState();
 
           const staleInterviewId = safeLocalStorage.getItem(
             STORAGE_KEYS.INTERVIEW_ID,
@@ -446,6 +457,10 @@ export function useInterviewSession({
               console.error('Failed to disconnect WebSocket:', disconnectError);
             }
           }
+          // Reset before the cancel round-trip, so heartbeats stop at once.
+          setIsCallActive(false);
+          setInputUrl('');
+          setInterviewID(null);
           // Cancel the interview this start created, not whatever the shared
           // storage holds now (another tab may have written it).
           if (createdId) {
@@ -460,9 +475,6 @@ export function useInterviewSession({
               clearInterviewStorage();
             }
           }
-          setIsCallActive(false);
-          setInputUrl('');
-          setInterviewID(null);
           if (!stopped) {
             toast.error('Failed to start interview. Please try again.');
           }
@@ -477,7 +489,7 @@ export function useInterviewSession({
           const interviewId = safeLocalStorage.getItem(
             STORAGE_KEYS.INTERVIEW_ID,
           );
-          queueAbortRef.current?.abort();
+          clearQueueState();
 
           try {
             onBeforeDisconnect?.();
@@ -496,7 +508,6 @@ export function useInterviewSession({
           }
 
           setIsCallActive(false);
-          setIsQueued(false);
           setInputUrl('');
           setInterviewID(null);
         } finally {
@@ -505,9 +516,14 @@ export function useInterviewSession({
         }
       }
     },
-    // runPendingStart only reads refs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [applicationId, onConnect, onDisconnect, onBeforeDisconnect],
+    [
+      applicationId,
+      onConnect,
+      onDisconnect,
+      onBeforeDisconnect,
+      runPendingStart,
+      clearQueueState,
+    ],
   );
   handleStreamToggleRef.current = handleStreamToggle;
 
