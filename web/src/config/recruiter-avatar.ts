@@ -1,3 +1,5 @@
+import { safeSessionStorage } from '@/utils/safeStorage';
+
 /**
  * Default bundled avatar: Avaturn character in blazer + dress shirt (`avaturn_look_0`).
  * TalkingHead demo asset (Avaturn, non-commercial — see TalkingHead README).
@@ -126,24 +128,14 @@ function appendOfficeBackgroundVersion(url: string): string {
 }
 
 export function isAvatarFallbackForced(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    return window.sessionStorage.getItem(FORCE_FALLBACK_STORAGE_KEY) === '1';
-  } catch {
-    return false;
-  }
+  return safeSessionStorage.getItem(FORCE_FALLBACK_STORAGE_KEY) === '1';
 }
 
 export function setAvatarFallbackForced(forced: boolean): void {
-  if (typeof window === 'undefined') return;
-  try {
-    if (forced) {
-      window.sessionStorage.setItem(FORCE_FALLBACK_STORAGE_KEY, '1');
-    } else {
-      window.sessionStorage.removeItem(FORCE_FALLBACK_STORAGE_KEY);
-    }
-  } catch {
-    // sessionStorage may be unavailable in private mode — ignore.
+  if (forced) {
+    safeSessionStorage.setItem(FORCE_FALLBACK_STORAGE_KEY, '1');
+  } else {
+    safeSessionStorage.removeItem(FORCE_FALLBACK_STORAGE_KEY);
   }
 }
 

@@ -1,3 +1,5 @@
+// Separate from useInterviewSession.spec.ts, which defines `window.localStorage`
+// as a non-configurable mock at module level, so it can't be blocked there.
 import { act, renderHook, waitFor } from '@testing-library/react';
 import toast from 'react-hot-toast';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
