@@ -11,7 +11,7 @@ import frSettings from '../locales/fr/settings.json';
 
 /**
  * Bundled translations, keyed by language then namespace. `en` is the source
- * of truth: its shape types every `t()` key (see `i18next.d.ts`), and a unit
+ * of truth: its shape types every `t()` key (see `types.ts`), and a unit
  * test checks that `fr` has exactly the same keys.
  */
 export const resources = {
