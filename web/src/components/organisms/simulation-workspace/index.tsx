@@ -1,6 +1,7 @@
 import InfoBox from '@/components/molecules/info-box';
 import NotesEditor from '@/components/molecules/notes-editor/notes-editor';
 import SimulationQueueBanner from '@/components/molecules/simulation-queue-banner';
+import type { RecruiterFallbackReasonKey } from '@/components/organisms/recruiter-avatar/types';
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
 import SimulationVideoArea from '@/components/organisms/simulation-video-area';
@@ -48,7 +49,7 @@ export function SimulationWorkspace({
   const [avatarModeOverride, setAvatarModeOverride] =
     useState<RecruiterAvatarMode | null>(null);
   const [avatarRuntimeFallbackReason, setAvatarRuntimeFallbackReason] =
-    useState<string | null>(null);
+    useState<RecruiterFallbackReasonKey | null>(null);
   const packetsSentRef = useRef(0);
   const videoStreamToggleRef = useRef<(() => void) | null>(null);
   const connectRef = useRef<(url?: string) => void>(() => {});
@@ -180,10 +181,16 @@ export function SimulationWorkspace({
       interviewID,
     });
 
-  const handleAvatarFallbackRequest = useCallback((reason: string) => {
-    setAvatarModeOverride('fallback');
-    setAvatarRuntimeFallbackReason(reason);
-  }, []);
+  const handleAvatarFallbackRequest = useCallback(
+    (reasonKey: RecruiterFallbackReasonKey) => {
+      setAvatarModeOverride('fallback');
+      setAvatarRuntimeFallbackReason(reasonKey);
+    },
+    [],
+  );
+  const runtimeFallbackReason = avatarRuntimeFallbackReason
+    ? t(avatarRuntimeFallbackReason)
+    : null;
 
   const { analysis } = useVerbalAnalysis({
     message: lastJsonMessage,
@@ -280,7 +287,7 @@ export function SimulationWorkspace({
   const avatarStatusText =
     effectiveAvatarMode === '3d'
       ? t('recruiter.status.interactive')
-      : (avatarRuntimeFallbackReason ??
+      : (runtimeFallbackReason ??
         capabilityFallbackReason ??
         t('recruiter.status.static'));
 
@@ -322,7 +329,7 @@ export function SimulationWorkspace({
             avatarUrl={avatarUrl}
             avatarMode={effectiveAvatarMode}
             avatarFallbackReason={
-              avatarRuntimeFallbackReason ?? capabilityFallbackReason
+              runtimeFallbackReason ?? capabilityFallbackReason
             }
             onAvatarFallbackRequest={handleAvatarFallbackRequest}
             onStreamToggle={handleStreamToggle}

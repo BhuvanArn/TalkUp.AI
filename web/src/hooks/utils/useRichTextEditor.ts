@@ -9,7 +9,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import i18next from 'i18next';
+import i18next, { type ParseKeys } from 'i18next';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -77,10 +77,17 @@ const FontSize = Extension.create({
   },
 });
 
-// Default font (Inter) shown in label so users know what's used without explicit font-family.
-// Its label is translated at render time (`editor.defaultFont`).
-export const FONT_FAMILIES = [
-  { label: 'Default (Inter)', value: '' },
+/**
+ * Font names are proper nouns and stay as-is. The default entry (Inter, no
+ * explicit font-family) has a translated label instead, resolved at render.
+ */
+type FontFamilyEntry = { value: string } & (
+  | { label: string; labelKey?: never }
+  | { labelKey: ParseKeys<'app'>; label?: never }
+);
+
+export const FONT_FAMILIES: readonly FontFamilyEntry[] = [
+  { labelKey: 'editor.defaultFont', value: '' },
   { label: 'Saira', value: 'Saira, sans-serif' },
   { label: 'Arial', value: 'Arial, sans-serif' },
   { label: 'Times New Roman', value: 'Times New Roman, serif' },
@@ -188,7 +195,8 @@ export const useRichTextEditor = (initialContent?: string) => {
         nested: true,
       }),
       Placeholder.configure({
-        placeholder: i18next.t('app:editor.placeholder'),
+        // A function so the placeholder follows a language switch.
+        placeholder: () => i18next.t('app:editor.placeholder'),
         emptyEditorClass: 'is-editor-empty',
       }),
     ],
@@ -348,9 +356,10 @@ export const useRichTextEditor = (initialContent?: string) => {
     editor.chain().focus().redo().run();
   };
 
-  const fontFamilies = FONT_FAMILIES.map((font) =>
-    font.value === '' ? { ...font, label: t('editor.defaultFont') } : font,
-  );
+  const fontFamilies = FONT_FAMILIES.map((font) => ({
+    label: font.labelKey ? t(font.labelKey) : font.label,
+    value: font.value,
+  }));
   const mixedOption = { label: t('editor.mixed'), value: 'mixed' };
 
   const fontFamilyOptions =
