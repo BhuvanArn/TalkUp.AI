@@ -294,12 +294,11 @@ export const UserProfileSwitcher = ({
                   />
                 </button>
                 <LanguageSwitcher
-                  variant="text"
-                  color="neutral"
+                  unstyled
                   role="menuitem"
                   className={cn(
                     menuIconButtonClass,
-                    'px-2 text-body-s font-medium',
+                    'flex items-center px-2 text-body-s font-medium',
                   )}
                 />
               </div>
