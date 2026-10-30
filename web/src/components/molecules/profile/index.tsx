@@ -2,6 +2,7 @@ import { ActivityBubble } from '@/components/atoms/activity-bubble';
 import { Avatar } from '@/components/atoms/avatar';
 import { cn } from '@/utils/cn';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ProfileProps } from './types';
 
@@ -38,6 +39,7 @@ export const Profile = React.forwardRef<HTMLDivElement, ProfileProps>(
     },
     ref,
   ) => {
+    const { t } = useTranslation('app');
     const displayFallback = fallback || name.charAt(0).toUpperCase();
 
     return (
@@ -49,7 +51,7 @@ export const Profile = React.forwardRef<HTMLDivElement, ProfileProps>(
         <div className="relative">
           <Avatar
             src={src}
-            alt={alt || `${name}'s avatar`}
+            alt={alt || t('profile.avatarAlt', { name })}
             fallback={displayFallback}
             size={avatarSize}
           />

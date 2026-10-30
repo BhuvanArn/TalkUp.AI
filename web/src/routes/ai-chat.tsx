@@ -1,5 +1,6 @@
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 /**
  * @route /ai-chat
@@ -13,17 +14,15 @@ export const Route = createFileRoute('/ai-chat')({
 });
 
 function AiChatPage() {
+  const { t } = useTranslation('app');
+
   return (
     <div className="relative min-h-screen bg-surface flex items-center justify-center">
       <div className="text-center max-w-md px-6">
         <h1 className="text-2xl font-extrabold text-text mb-2">
-          TalkUp AI Assistant
+          {t('chat.page.title')}
         </h1>
-        <p className="text-sm text-text-weaker">
-          The assistant floats in the bottom-right corner on every page. Open it
-          anywhere and ask about what you're looking at — your roadmap, a
-          simulation, your agenda, or your notes.
-        </p>
+        <p className="text-sm text-text-weaker">{t('chat.page.description')}</p>
       </div>
     </div>
   );

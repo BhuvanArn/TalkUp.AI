@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * @interface GoalProgressCardProps
@@ -25,6 +26,7 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
   progress,
   target,
 }) => {
+  const { t } = useTranslation('app');
   const radius = 30;
   const circumference = 2 * Math.PI * radius;
   const normalizedProgress = Math.min(100, Math.max(0, progress));
@@ -33,7 +35,9 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
   const isGoalReached = progress >= target;
   const ringColor = isGoalReached ? 'text-success' : 'text-accent';
-  const targetText = isGoalReached ? 'Goal Reached' : `→ ${target}% Target`;
+  const targetText = isGoalReached
+    ? t('progression.goal.reached')
+    : t('progression.goal.target', { target });
 
   const cardStyle = {
     backgroundColor: '#f9fbfd',

@@ -1,5 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { changeLanguage } from '@/i18n';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import i18next from 'i18next';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { UploaderCard } from './index';
 
@@ -265,5 +267,25 @@ describe('UploaderCard', () => {
       );
       expect(screen.getByText('5 days left')).toBeInTheDocument();
     });
+  });
+});
+
+describe('UploaderCard in French', () => {
+  afterEach(async () => {
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders the drop zone and the deadline countdown in French', async () => {
+    await act(() => changeLanguage('fr'));
+    const inThreeDays = new Date();
+    inThreeDays.setDate(inThreeDays.getDate() + 3);
+    render(<UploaderCard {...defaultProps} deadline={inThreeDays} />);
+
+    expect(
+      screen.getByText('Glissez-déposez votre CV ici'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('parcourez vos fichiers').tagName).toBe('LABEL');
+    expect(screen.getByText('3 jours restants')).toBeInTheDocument();
   });
 });

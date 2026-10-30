@@ -1,5 +1,6 @@
 import { BaseInput } from '@/components/atoms/base-input';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ChatInput
@@ -35,16 +36,9 @@ interface ChatInputProps {
 }
 
 export const ChatInput = React.forwardRef<HTMLInputElement, ChatInputProps>(
-  (
-    {
-      value,
-      onChange,
-      onSend,
-      placeholder = 'Ask a question...',
-      disabled = false,
-    },
-    ref,
-  ) => {
+  ({ value, onChange, onSend, placeholder, disabled = false }, ref) => {
+    const { t } = useTranslation('app');
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -56,11 +50,11 @@ export const ChatInput = React.forwardRef<HTMLInputElement, ChatInputProps>(
       <BaseInput
         ref={ref}
         // `name` drives BaseInput's accessible name (aria-label).
-        name="Chat message input"
+        name={t('chat.input.label')}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('chat.input.placeholder')}
         disabled={disabled}
         className="flex-1 rounded-xl bg-background focus:bg-surface"
       />

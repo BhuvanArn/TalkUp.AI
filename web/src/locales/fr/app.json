@@ -511,5 +511,127 @@
     "thisApplication": "cette candidature",
     "title": "Mes notes",
     "untitled": "Note sans titre"
+  },
+  "activity": {
+    "status": {
+      "away": "absent",
+      "busy": "occupé",
+      "offline": "hors ligne",
+      "online": "en ligne"
+    },
+    "title": "Statut : {{status}}"
+  },
+  "chat": {
+    "close": "Fermer le chat",
+    "error": "Désolé, impossible de joindre l’assistant pour le moment. Veuillez réessayer.",
+    "input": {
+      "label": "Saisie du message",
+      "placeholder": "Posez une question…",
+      "send": "Envoyer le message"
+    },
+    "open": "Ouvrir le chat TalkUp",
+    "page": {
+      "description": "L’assistant est disponible en bas à droite de chaque page. Ouvrez-le où que vous soyez et posez-lui vos questions sur ce que vous consultez : votre feuille de route, une simulation, votre agenda ou vos notes.",
+      "title": "Assistant TalkUp AI"
+    },
+    "typing": "TalkUp AI est en train d’écrire",
+    "welcome": "Bonjour, je suis TalkUp AI. Posez-moi vos questions pour préparer votre entretien 🎯",
+    "window": {
+      "label": "Chat TalkUp AI",
+      "messages": "Messages du chat",
+      "poweredBy": "Propulsé par TalkUp AI",
+      "status": "En ligne, prêt à vous aider"
+    }
+  },
+  "cv": {
+    "consent": {
+      "helper": "Vos données sont stockées de façon sécurisée. Vous pouvez y accéder, les exporter ou les supprimer à tout moment.",
+      "label": "J’accepte que TalkUp traite mes données personnelles (y compris mon CV) pour réaliser cette analyse de compatibilité."
+    },
+    "file": {
+      "ready": "{{size}} Mo • Prêt",
+      "remove": "Retirer"
+    },
+    "offer": {
+      "helper": "TalkUp extraira automatiquement les informations de l’annonce.",
+      "label": "Lien de l’offre d’emploi",
+      "placeholder": "Collez un lien LinkedIn, WTTJ…"
+    },
+    "processing": {
+      "cv": "Analyse de votre CV…",
+      "offer": "Extraction de l’offre d’emploi…",
+      "title": "Analyse TalkUp.AI en cours"
+    },
+    "result": {
+      "description": "Votre profil a été entièrement analysé. TalkUp a préparé un plan d’action personnalisé à partir de vos points forts et des attentes des recruteurs.",
+      "ready": "Votre entraînement sur mesure est prêt.",
+      "retry": "Analyser un autre profil",
+      "start": "Commencer mon entraînement",
+      "targetRole": "Votre poste visé",
+      "title": "Analyse terminée !"
+    },
+    "start": "Lancer l’analyse TalkUp",
+    "stepper": {
+      "analysis": "Analyse",
+      "confirmation": "Confirmation",
+      "upload": "Import"
+    },
+    "steps": {
+      "cv": "1. Votre CV",
+      "offer": "2. Offre d’emploi (lien)"
+    },
+    "subtitle": "Importez votre CV et collez le lien de l’offre d’emploi pour commencer.",
+    "title": "Analyse de compatibilité",
+    "toasts": {
+      "cvSaved": "Votre CV a été enregistré dans votre profil.",
+      "offerFailed": "L’analyse de l’offre a échoué. Vérifiez le lien et réessayez.",
+      "throttled": "Trop de tentatives. Réessayez dans une minute.",
+      "uploadFailed": "L’import du CV a échoué. Réessayez avec un PDF de meilleure qualité (texte sélectionnable)."
+    },
+    "uploader": {
+      "browse": "ou <browse>parcourez vos fichiers</browse>",
+      "clearDate": "Effacer la date",
+      "dateHelper": "Facultatif : quand avez-vous votre entretien avec cette entreprise ?",
+      "dropTitle": "Glissez-déposez votre CV ici",
+      "errors": {
+        "format": "Format de fichier non pris en charge. Utilisez un fichier PDF, DOC ou DOCX.",
+        "size": "Fichier trop volumineux. Taille maximale : {{max}} Mo."
+      },
+      "interviewDate": "Date de l’entretien",
+      "maxSize": "Taille maximale : {{max}} Mo",
+      "pastDate": "Cette date est déjà passée.",
+      "urgency": {
+        "daysLeft_one": "{{count}} jour restant",
+        "daysLeft_other": "{{count}} jours restants",
+        "overdue": "Dépassée",
+        "today": "Aujourd’hui !",
+        "tomorrow": "Demain !"
+      }
+    }
+  },
+  "profile": {
+    "avatarAlt": "Avatar de {{name}}"
+  },
+  "progression": {
+    "downloadReport": "Télécharger le rapport",
+    "goal": {
+      "reached": "Objectif atteint",
+      "target": "→ objectif {{target}} %"
+    },
+    "history": "Historique des simulations",
+    "overview": "Vue d’ensemble",
+    "stats": {
+      "averageScore": "Score moyen",
+      "averageScoreDetail": "↑ {{change}} % sur 30 jours",
+      "improvement": "Progression globale",
+      "improvementDetail": "par rapport au mois dernier",
+      "nextGoal": "Prochain objectif",
+      "totalSimulations": "Simulations réalisées",
+      "totalSimulationsDetail": "90 % des objectifs atteints",
+      "totalTime": "Temps total",
+      "totalTimeDetail": "En entretiens pratiques"
+    },
+    "subtitle": "Visualisez votre évolution et identifiez vos points forts",
+    "title": "Progression et statistiques"
   }
 }

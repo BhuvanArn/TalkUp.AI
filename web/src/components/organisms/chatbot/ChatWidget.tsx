@@ -3,27 +3,28 @@ import { Icon } from '@/components/atoms/icon';
 import { ChatWindow, Message } from '@/components/organisms/chatbot/ChatWindow';
 import { useChatContext } from '@/hooks/ui/useChatContext';
 import { useDragFAB } from '@/hooks/ui/useDragFAB';
+import { getLanguage } from '@/i18n';
+import { getLocale } from '@/i18n/locale';
 import { sendChatMessage } from '@/services/ai/http';
 import { ChatHistoryItem } from '@/services/ai/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-const WELCOME_TEXT =
-  "Hello! I'm TalkUp AI. Ask me anything to prepare for your interview 🎯";
-
-const ERROR_TEXT =
-  'Sorry, I could not reach the assistant right now. Please try again.';
+/** Id of the greeting message; its text is translated at render time. */
+const WELCOME_ID = 'welcome';
 
 // How many prior turns to send as context. Keeps the request small and bounded
 // (the server also caps history), while giving the model enough to stay coherent.
 const HISTORY_LIMIT = 10;
 
 const getTimestamp = () =>
-  new Date().toLocaleTimeString('fr-FR', {
+  new Date().toLocaleTimeString(getLocale(getLanguage()).intlLocale, {
     hour: '2-digit',
     minute: '2-digit',
   });
 
 export const ChatWidget = () => {
+  const { t } = useTranslation('app');
   const [isOpen, setIsOpen] = useState(false);
   // The page the widget is on right now — sent as grounding context so the
   // assistant can answer about what the user is looking at.
@@ -32,8 +33,8 @@ export const ChatWidget = () => {
   // rendered, not when the module was loaded.
   const [messages, setMessages] = useState<Message[]>(() => [
     {
-      id: 'welcome',
-      text: WELCOME_TEXT,
+      id: WELCOME_ID,
+      text: '',
       variant: 'ai',
       timestamp: getTimestamp(),
     },
@@ -65,7 +66,7 @@ export const ChatWidget = () => {
     // Snapshot the prior turns before appending the new user message so we send
     // history that excludes the current question, matching the API contract.
     const history: ChatHistoryItem[] = messages
-      .filter((m) => m.id !== 'welcome')
+      .filter((m) => m.id !== WELCOME_ID)
       .slice(-HISTORY_LIMIT)
       .map((m) => ({
         role: m.variant === 'ai' ? 'assistant' : 'user',
@@ -76,7 +77,7 @@ export const ChatWidget = () => {
     setInputValue('');
     setIsTyping(true);
 
-    let replyText = ERROR_TEXT;
+    let replyText = t('chat.error');
     try {
       const { reply } = await sendChatMessage({
         message: text,
@@ -98,7 +99,7 @@ export const ChatWidget = () => {
     };
     setMessages((prev) => [...prev, aiMsg]);
     setIsTyping(false);
-  }, [inputValue, isTyping, messages, chatContext]);
+  }, [inputValue, isTyping, messages, chatContext, t]);
 
   useEffect(() => {
     mounted.current = true;
@@ -142,7 +143,11 @@ export const ChatWidget = () => {
       {isOpen && (
         <div className="absolute bottom-16 right-0 transition-all duration-200 origin-bottom-right">
           <ChatWindow
-            messages={messages}
+            messages={messages.map((message) =>
+              message.id === WELCOME_ID
+                ? { ...message, text: t('chat.welcome') }
+                : message,
+            )}
             inputValue={inputValue}
             onInputChange={setInputValue}
             onSend={handleSend}
@@ -160,7 +165,7 @@ export const ChatWidget = () => {
         onClick={handleFabClick}
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
-        aria-label={isOpen ? 'Close chat' : 'Open TalkUp chat'}
+        aria-label={isOpen ? t('chat.close') : t('chat.open')}
         aria-expanded={isOpen}
         className="w-14 h-14 bg-brand-gradient shadow-lg cursor-grab active:cursor-grabbing select-none hover:scale-105"
       >

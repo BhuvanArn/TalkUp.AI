@@ -511,5 +511,127 @@
     "thisApplication": "this application",
     "title": "My Notes",
     "untitled": "Untitled Note"
+  },
+  "activity": {
+    "status": {
+      "away": "away",
+      "busy": "busy",
+      "offline": "offline",
+      "online": "online"
+    },
+    "title": "Status: {{status}}"
+  },
+  "chat": {
+    "close": "Close chat",
+    "error": "Sorry, I could not reach the assistant right now. Please try again.",
+    "input": {
+      "label": "Chat message input",
+      "placeholder": "Ask a question...",
+      "send": "Send message"
+    },
+    "open": "Open TalkUp chat",
+    "page": {
+      "description": "The assistant floats in the bottom-right corner on every page. Open it anywhere and ask about what you're looking at — your roadmap, a simulation, your agenda, or your notes.",
+      "title": "TalkUp AI Assistant"
+    },
+    "typing": "TalkUp AI is typing",
+    "welcome": "Hello! I'm TalkUp AI. Ask me anything to prepare for your interview 🎯",
+    "window": {
+      "label": "TalkUp AI chat",
+      "messages": "Chat messages",
+      "poweredBy": "Powered by TalkUp AI",
+      "status": "Online, ready to help"
+    }
+  },
+  "cv": {
+    "consent": {
+      "helper": "Your data is stored securely. You can access, export, or delete it at any time.",
+      "label": "I consent to TalkUp processing my personal data (including my CV) to perform this compatibility analysis."
+    },
+    "file": {
+      "ready": "{{size}} MB • Ready",
+      "remove": "Remove"
+    },
+    "offer": {
+      "helper": "TalkUp will automatically extract details from the listing.",
+      "label": "Job offer link",
+      "placeholder": "Paste LinkedIn, WTTJ link..."
+    },
+    "processing": {
+      "cv": "Analyzing your CV...",
+      "offer": "Extracting the job offer...",
+      "title": "TalkUp.AI analysis in progress"
+    },
+    "result": {
+      "description": "Your profile has been fully processed. TalkUp has generated a personalized action plan based on your strengths and recruiter expectations.",
+      "ready": "Your custom training is ready.",
+      "retry": "Analyze another profile",
+      "start": "Start My Training",
+      "targetRole": "Your target role",
+      "title": "Analysis Complete!"
+    },
+    "start": "Start TalkUp Analysis",
+    "stepper": {
+      "analysis": "Analysis",
+      "confirmation": "Confirmation",
+      "upload": "Upload"
+    },
+    "steps": {
+      "cv": "1. Your CV",
+      "offer": "2. Job Offer (Link)"
+    },
+    "subtitle": "Upload your CV and paste the job offer link to begin.",
+    "title": "Compatibility Analysis",
+    "toasts": {
+      "cvSaved": "Your CV has been saved to your profile.",
+      "offerFailed": "Offer analysis failed. Check the link and try again.",
+      "throttled": "Too many attempts. Try again in a minute.",
+      "uploadFailed": "CV upload failed. Try again with a higher-quality PDF (selectable text)."
+    },
+    "uploader": {
+      "browse": "or <browse>browse your files</browse>",
+      "clearDate": "Clear date",
+      "dateHelper": "Optional: when is your interview with this company?",
+      "dropTitle": "Drag and drop your CV here",
+      "errors": {
+        "format": "Unsupported file format. Please use a PDF, DOC or DOCX file.",
+        "size": "File is too large. Maximum size: {{max}} MB."
+      },
+      "interviewDate": "Interview date",
+      "maxSize": "Max size: {{max}} MB",
+      "pastDate": "This date is in the past.",
+      "urgency": {
+        "daysLeft_one": "{{count}} day left",
+        "daysLeft_other": "{{count}} days left",
+        "overdue": "Overdue",
+        "today": "Today!",
+        "tomorrow": "Tomorrow!"
+      }
+    }
+  },
+  "profile": {
+    "avatarAlt": "{{name}}'s avatar"
+  },
+  "progression": {
+    "downloadReport": "Download Report",
+    "goal": {
+      "reached": "Goal Reached",
+      "target": "→ {{target}}% Target"
+    },
+    "history": "Simulation History",
+    "overview": "Overview",
+    "stats": {
+      "averageScore": "Average Score",
+      "averageScoreDetail": "↑ {{change}}% over 30 days",
+      "improvement": "Overall Improvement",
+      "improvementDetail": "vs previous month",
+      "nextGoal": "Next Goal",
+      "totalSimulations": "Total Simulations",
+      "totalSimulationsDetail": "90% of goals achieved",
+      "totalTime": "Total Time",
+      "totalTimeDetail": "In practical interviews"
+    },
+    "subtitle": "Visualize your evolution and identify your strengths",
+    "title": "Progression and Statistics"
   }
 }
