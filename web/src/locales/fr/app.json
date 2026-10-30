@@ -523,8 +523,8 @@
     "interviewContext": "Contexte de l’entretien : {{label}}",
     "loadingContext": "Chargement du contexte de la candidature…",
     "queue": {
-      "estimatedWait": "— attente estimée ~<strong>{{minutes}}</strong> min",
       "position": "Position : <strong>{{position}}</strong>",
+      "positionWithWait": "Position : <strong>{{position}}</strong> — attente estimée ~<strong>{{minutes}}</strong> min",
       "slots": "{{active}}/{{max}} créneaux GPU utilisés. Votre session démarrera automatiquement.",
       "title": "File d’attente de la simulation"
     },

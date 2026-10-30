@@ -523,8 +523,8 @@
     "interviewContext": "Interview context: {{label}}",
     "loadingContext": "Loading application context…",
     "queue": {
-      "estimatedWait": "— estimated wait ~<strong>{{minutes}}</strong> min",
       "position": "Position: <strong>{{position}}</strong>",
+      "positionWithWait": "Position: <strong>{{position}}</strong> — estimated wait ~<strong>{{minutes}}</strong> min",
       "slots": "{{active}}/{{max}} GPU slots in use. Your session will start automatically.",
       "title": "Simulation queue"
     },

@@ -27,22 +27,21 @@ export default function SimulationQueueBanner({
     >
       <p className="font-medium">{t('simulations.queue.title')}</p>
       <p className="text-sm mt-1">
-        <Trans
-          ns="app"
-          i18nKey="simulations.queue.position"
-          values={{ position: queuePosition }}
-          components={{ strong: <strong /> }}
-        />
-        {waitMin != null && (
-          <>
-            {' '}
-            <Trans
-              ns="app"
-              i18nKey="simulations.queue.estimatedWait"
-              values={{ minutes: waitMin }}
-              components={{ strong: <strong /> }}
-            />
-          </>
+        {/* One whole sentence per case, so translators never see a fragment. */}
+        {waitMin != null ? (
+          <Trans
+            ns="app"
+            i18nKey="simulations.queue.positionWithWait"
+            values={{ position: queuePosition, minutes: waitMin }}
+            components={{ strong: <strong /> }}
+          />
+        ) : (
+          <Trans
+            ns="app"
+            i18nKey="simulations.queue.position"
+            values={{ position: queuePosition }}
+            components={{ strong: <strong /> }}
+          />
         )}
       </p>
       {activeCount != null && maxConcurrent != null && (

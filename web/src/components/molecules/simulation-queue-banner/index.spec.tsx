@@ -32,6 +32,21 @@ describe('SimulationQueueBanner', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders each case as one sentence with bold values', () => {
+    const { rerender } = render(
+      <SimulationQueueBanner queuePosition={3} estimatedWaitSec={150} />,
+    );
+    const sentence = () =>
+      screen.getByRole('status').querySelector('p.text-sm');
+
+    expect(sentence()?.innerHTML).toBe(
+      'Position: <strong>3</strong> — estimated wait ~<strong>3</strong> min',
+    );
+
+    rerender(<SimulationQueueBanner queuePosition={2} />);
+    expect(sentence()?.innerHTML).toBe('Position: <strong>2</strong>');
+  });
+
   it('renders in French', async () => {
     await act(() => changeLanguage('fr'));
     render(<SimulationQueueBanner queuePosition={1} estimatedWaitSec={30} />);
