@@ -5,6 +5,7 @@ import {
   LANGUAGE_STORAGE_KEY,
   changeLanguage,
   getLanguage,
+  initI18n,
   setupI18n,
   toSupportedLanguage,
 } from './index';
@@ -131,6 +132,26 @@ describe('i18n setup', () => {
       expect(getLanguage(instance)).toBe('fr');
       expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('fr');
       expect(instance.t('actions.save')).toBe('Enregistrer');
+    });
+  });
+
+  describe('initI18n', () => {
+    it('warns when called again with options', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      // setupTests already initialized the app-wide instance.
+      expect(initI18n({ lng: 'fr' })).toBe(i18next);
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('setupI18n'));
+      expect(getLanguage()).toBe('en');
+    });
+
+    it('stays silent when called again without options', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      initI18n();
+
+      expect(warn).not.toHaveBeenCalled();
     });
   });
 

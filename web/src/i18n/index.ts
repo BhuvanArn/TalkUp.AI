@@ -86,6 +86,11 @@ export const setupI18n = (instance: i18n, { lng }: I18nOptions = {}): i18n => {
  */
 export const initI18n = (options?: I18nOptions): i18n => {
   if (i18next.isInitialized) {
+    if (options && import.meta.env.DEV) {
+      console.warn(
+        'initI18n: already initialized, options ignored. Use setupI18n(i18next.createInstance(), options) for a separate instance.',
+      );
+    }
     return i18next;
   }
   return setupI18n(i18next.use(initReactI18next), options);
