@@ -1,4 +1,5 @@
 import { Icon } from '@/components/atoms/icon';
+import { useTranslation } from 'react-i18next';
 
 import { TranscriptionProps } from './types';
 
@@ -9,9 +10,13 @@ interface TranscriptionAreaProps {
 const SimulationTranscriptionArea = ({
   transcriptions,
 }: TranscriptionAreaProps) => {
+  const { t } = useTranslation('app');
+
   return (
     <div className="w-full mt-8">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Transcriptions</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-4">
+        {t('simulations.transcriptions.title')}
+      </h2>
       <div className="max-h-96 overflow-y-auto">
         {transcriptions.length === 0 && (
           <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
@@ -19,13 +24,13 @@ const SimulationTranscriptionArea = ({
               <Icon icon="notes" className="w-8 h-8 text-text-weaker" />
             </div>
             <p className="text-body-md text-text-weaker max-w-xs">
-              Transcriptions will appear here once the interview starts.
+              {t('simulations.transcriptions.empty')}
             </p>
           </div>
         )}
-        {transcriptions.map((t, index) => {
-          const alignment = t.isIA ? 'justify-start' : 'justify-end';
-          const bubbleColor = t.isIA
+        {transcriptions.map((turn, index) => {
+          const alignment = turn.isIA ? 'justify-start' : 'justify-end';
+          const bubbleColor = turn.isIA
             ? 'bg-primary-weak text-primary'
             : 'bg-neutral-weaker text-neutral';
 
@@ -36,9 +41,9 @@ const SimulationTranscriptionArea = ({
               >
                 <p className="text-sm">
                   <span className="font-semibold bg-accent/80 text-white px-2 py-0.5 rounded-full mr-2">
-                    {t.speaker}
+                    {turn.speaker}
                   </span>
-                  {t.text}
+                  {turn.text}
                 </p>
               </div>
             </div>

@@ -49,5 +49,146 @@
     "noEmail": "Aucune adresse e-mail",
     "open": "Ouvrir le menu du compte, {{name}}",
     "profile": "Profil"
+  },
+  "recruiter": {
+    "fallback": {
+      "contextLost": "Contexte WebGL perdu : passage à l’avatar statique.",
+      "downloadTimeout": "Le téléchargement du modèle d’avatar a expiré.",
+      "forced": "Avatar 3D désactivé pour cette session.",
+      "loadFailed": "Impossible de charger l’avatar 3D.",
+      "noWebgl": "WebGL n’est pas disponible dans ce navigateur.",
+      "parseTimeout": "L’analyse du modèle d’avatar a expiré.",
+      "unavailable": "Avatar 3D indisponible."
+    },
+    "loadSteps": {
+      "downloading": "Téléchargement du modèle…",
+      "initializing": "Initialisation…",
+      "preparing": "Préparation de l’avatar…",
+      "starting": "Démarrage du moteur 3D…",
+      "viewport": "Préparation de l’affichage…"
+    },
+    "loading3d": "Chargement de l’avatar 3D…",
+    "role": "Recruteuse IT",
+    "speaking": "Parle…",
+    "status": {
+      "interactive": "Avatar 3D interactif activé.",
+      "static": "Image statique de la recruteuse affichée."
+    },
+    "thinking": "Réfléchit…",
+    "unavailable": "Avatar 3D indisponible"
+  },
+  "simulations": {
+    "applicationDescription": "Entraînez-vous avec la recruteuse IA sur cette offre d’emploi.",
+    "backToRoadmap": "Retour à la feuille de route",
+    "description": "Entraînez-vous à des entretiens dans un cadre sans risque.",
+    "history": {
+      "action": "Action",
+      "date": "Date",
+      "finalScore": "Score final",
+      "loadMore": "Afficher plus…",
+      "showing": "Affichage de 1 à {{to}} sur {{total}} résultats",
+      "status": {
+        "cancelled": "Annulé",
+        "completed": "Terminé",
+        "inProgress": "En cours"
+      },
+      "statusHeader": "Statut",
+      "time": "Heure",
+      "title": "Titre",
+      "viewAnalysis": "Voir l’analyse"
+    },
+    "interviewContext": "Contexte de l’entretien : {{label}}",
+    "jobAtCompany": "{{jobTitle}} chez {{companyName}}",
+    "loadingContext": "Chargement du contexte de la candidature…",
+    "queue": {
+      "estimatedWait": "— attente estimée ~<strong>{{minutes}}</strong> min",
+      "position": "Position : <strong>{{position}}</strong>",
+      "slots": "{{active}}/{{max}} créneaux GPU utilisés. Votre session démarrera automatiquement.",
+      "title": "File d’attente de la simulation"
+    },
+    "speakers": {
+      "ai": "IA",
+      "you": "Vous"
+    },
+    "title": "Simulations",
+    "toasts": {
+      "interviewEnded": "Entretien terminé. Merci pour votre participation !",
+      "queueResuming": "Reprise de la file d’attente…",
+      "queued": "En file d’attente…",
+      "resumeFailed": "Impossible de reprendre la simulation pour le moment. Rechargez la page pour réessayer.",
+      "resumed": "Simulation reprise",
+      "sessionExpired": "La session précédente a expiré. Vous pouvez démarrer un nouvel entretien.",
+      "startFailed": "Impossible de démarrer l’entretien. Veuillez réessayer.",
+      "transcriptionError": "Une erreur est survenue pendant la transcription.",
+      "yourTurn": "C’est votre tour — démarrage de la simulation"
+    },
+    "transcriptions": {
+      "empty": "Les transcriptions apparaîtront ici dès le début de l’entretien.",
+      "title": "Transcriptions"
+    }
+  },
+  "verbalAnalysis": {
+    "adviceFallback": "Continuez à structurer vos réponses.",
+    "clarity": "Clarté",
+    "empty": "L’analyse apparaîtra après votre première prise de parole.",
+    "liveAdvice": "Conseil en direct",
+    "politeness": "Politesse",
+    "register": "Registre : <strong>{{register}}</strong> · Tour {{turn}}",
+    "registers": {
+      "inappropriate": "Inadapté",
+      "informal": "Familier",
+      "mixed": "Mixte",
+      "neutral": "Neutre",
+      "professional": "Professionnel"
+    },
+    "sessionScore": "/ 100 sur la session",
+    "title": "Analyse verbale",
+    "topTics": "Tics fréquents : {{tics}}",
+    "vocabulary": "Vocabulaire",
+    "warnings": "Alertes"
+  },
+  "videoControls": {
+    "cameraOff": "Désactiver la caméra",
+    "cameraOn": "Activer la caméra",
+    "endCall": "Raccrocher",
+    "muteMic": "Couper le micro",
+    "muteSpeaker": "Couper le son",
+    "startCall": "Démarrer un nouvel appel",
+    "unmuteMic": "Réactiver le micro",
+    "unmuteSpeaker": "Réactiver le son"
+  },
+  "wsDebug": {
+    "altServers": "Autres serveurs de test",
+    "attempts_one": "Tentative de connexion : {{count}}",
+    "attempts_other": "Tentatives de connexion : {{count}}",
+    "audio": "Audio :",
+    "audioError": "Erreur audio :",
+    "audioStates": {
+      "idle": "Inactif",
+      "listening": "À l’écoute",
+      "recording": "Enregistrement de la prise de parole",
+      "speaking": "Parole détectée"
+    },
+    "connection": "Connexion WebSocket",
+    "format": "Format : {{format}}",
+    "lastJson": "Dernier JSON :",
+    "lastMessage": "Dernier message :",
+    "messages": "Messages WebSocket",
+    "packetsSent_one": "Paquet envoyé : {{count}}",
+    "packetsSent_other": "Paquets envoyés : {{count}}",
+    "sendJson": "Envoyer un message JSON",
+    "sendMessage": "Envoyer un message",
+    "sendPing": "Envoyer un ping",
+    "socketUrl": "URL du socket",
+    "startsWithCall": "La connexion démarre avec l’appel",
+    "states": {
+      "closed": "Fermée",
+      "closing": "Fermeture",
+      "connecting": "Connexion…",
+      "open": "Connectée",
+      "uninstantiated": "Non initialisée"
+    },
+    "status": "Statut :",
+    "wsError": "Erreur WebSocket :"
   }
 }

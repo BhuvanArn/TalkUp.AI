@@ -4,7 +4,9 @@ import {
   resolveRecruiterAvatarUrl,
 } from '@/config/recruiter-avatar';
 import { detectWebGLSupport } from '@/utils/webgl';
+import type { ParseKeys } from 'i18next';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type RecruiterAvatarMode = 'loading' | '3d' | 'fallback';
 
@@ -21,7 +23,10 @@ export interface UseRecruiterAvatarCapabilityReturn {
  */
 export function useRecruiterAvatarCapability(): UseRecruiterAvatarCapabilityReturn {
   const [mode, setMode] = useState<RecruiterAvatarMode>('loading');
-  const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const { t } = useTranslation('app');
+  const [fallbackReason, setFallbackReason] = useState<ParseKeys<'app'> | null>(
+    null,
+  );
   const [retryToken, setRetryToken] = useState(0);
 
   useEffect(() => {
@@ -40,14 +45,14 @@ export function useRecruiterAvatarCapability(): UseRecruiterAvatarCapabilityRetu
     setMode('fallback');
     switch (support.reason) {
       case 'forced-fallback':
-        setFallbackReason('3D avatar disabled for this session.');
+        setFallbackReason('recruiter.fallback.forced');
         break;
       case 'webgl-unavailable':
       case 'webgl-context-failed':
-        setFallbackReason('WebGL is not available in this browser.');
+        setFallbackReason('recruiter.fallback.noWebgl');
         break;
       default:
-        setFallbackReason('3D avatar unavailable.');
+        setFallbackReason('recruiter.fallback.unavailable');
         break;
     }
   }, [retryToken]);
@@ -55,7 +60,7 @@ export function useRecruiterAvatarCapability(): UseRecruiterAvatarCapabilityRetu
   return {
     mode,
     avatarUrl: resolveRecruiterAvatarUrl(),
-    fallbackReason,
+    fallbackReason: fallbackReason ? t(fallbackReason) : null,
     retry3d: () => setRetryToken((value) => value + 1),
   };
 }

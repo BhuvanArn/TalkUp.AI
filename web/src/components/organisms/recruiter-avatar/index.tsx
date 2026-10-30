@@ -1,4 +1,5 @@
 import { Suspense, lazy, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import RecruiterAvatarFallback from './recruiter-avatar-fallback';
 import RecruiterAvatarLoading from './recruiter-avatar-loading';
@@ -23,6 +24,7 @@ export function RecruiterAvatarPanel({
   capabilityFallbackReason,
   onFallbackRequest,
 }: RecruiterAvatarPanelProps) {
+  const { t } = useTranslation('app');
   const [runtimeFallback, setRuntimeFallback] = useState<string | null>(null);
 
   const handleRuntimeFallback = useCallback(
@@ -60,7 +62,7 @@ export function RecruiterAvatarPanel({
         speechTurn={speechTurn}
         onLoadError={handleRuntimeFallback}
         onContextLost={() =>
-          handleRuntimeFallback('WebGL context lost — using static avatar.')
+          handleRuntimeFallback(t('recruiter.fallback.contextLost'))
         }
       />
     </Suspense>

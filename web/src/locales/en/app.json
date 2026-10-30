@@ -49,5 +49,146 @@
     "noEmail": "No email set",
     "open": "Open account menu, {{name}}",
     "profile": "Profile"
+  },
+  "recruiter": {
+    "fallback": {
+      "contextLost": "WebGL context lost — using static avatar.",
+      "downloadTimeout": "Avatar model download timed out.",
+      "forced": "3D avatar disabled for this session.",
+      "loadFailed": "Failed to load 3D avatar.",
+      "noWebgl": "WebGL is not available in this browser.",
+      "parseTimeout": "Avatar model parsing timed out.",
+      "unavailable": "3D avatar unavailable."
+    },
+    "loadSteps": {
+      "downloading": "Downloading model…",
+      "initializing": "Initializing…",
+      "preparing": "Preparing avatar…",
+      "starting": "Starting 3D engine…",
+      "viewport": "Preparing viewport…"
+    },
+    "loading3d": "Loading 3D avatar…",
+    "role": "IT Recruiter",
+    "speaking": "Speaking…",
+    "status": {
+      "interactive": "Interactive 3D avatar active.",
+      "static": "Static interviewer image active."
+    },
+    "thinking": "Thinking…",
+    "unavailable": "3D avatar unavailable"
+  },
+  "simulations": {
+    "applicationDescription": "Practice with the AI recruiter for this job offer.",
+    "backToRoadmap": "Back to roadmap",
+    "description": "Practice interview scenarios in a safe environment.",
+    "history": {
+      "action": "Action",
+      "date": "Date",
+      "finalScore": "Final Score",
+      "loadMore": "Load more...",
+      "showing": "Showing 1 to {{to}} of {{total}} results",
+      "status": {
+        "cancelled": "Cancelled",
+        "completed": "Completed",
+        "inProgress": "In Progress"
+      },
+      "statusHeader": "Status",
+      "time": "Time",
+      "title": "Title",
+      "viewAnalysis": "View Analysis"
+    },
+    "interviewContext": "Interview context: {{label}}",
+    "jobAtCompany": "{{jobTitle}} at {{companyName}}",
+    "loadingContext": "Loading application context…",
+    "queue": {
+      "estimatedWait": "— estimated wait ~<strong>{{minutes}}</strong> min",
+      "position": "Position: <strong>{{position}}</strong>",
+      "slots": "{{active}}/{{max}} GPU slots in use. Your session will start automatically.",
+      "title": "Simulation queue"
+    },
+    "speakers": {
+      "ai": "AI",
+      "you": "You"
+    },
+    "title": "Simulations",
+    "toasts": {
+      "interviewEnded": "Interview finished. Thank you for taking part!",
+      "queueResuming": "Resuming your place in the queue…",
+      "queued": "Waiting in the queue…",
+      "resumeFailed": "Unable to resume the simulation right now. Reload the page to try again.",
+      "resumed": "Simulation resumed",
+      "sessionExpired": "The previous session has expired. You can start a new interview.",
+      "startFailed": "Failed to start interview. Please try again.",
+      "transcriptionError": "An error occurred during transcription.",
+      "yourTurn": "It's your turn — starting the simulation"
+    },
+    "transcriptions": {
+      "empty": "Transcriptions will appear here once the interview starts.",
+      "title": "Transcriptions"
+    }
+  },
+  "verbalAnalysis": {
+    "adviceFallback": "Keep structuring your answers.",
+    "clarity": "Clarity",
+    "empty": "The analysis will appear after you first speak.",
+    "liveAdvice": "Live advice",
+    "politeness": "Politeness",
+    "register": "Register: <strong>{{register}}</strong> · Turn {{turn}}",
+    "registers": {
+      "inappropriate": "Inappropriate",
+      "informal": "Informal",
+      "mixed": "Mixed",
+      "neutral": "Neutral",
+      "professional": "Professional"
+    },
+    "sessionScore": "/ 100 session",
+    "title": "Verbal analysis",
+    "topTics": "Frequent tics: {{tics}}",
+    "vocabulary": "Vocabulary",
+    "warnings": "Alerts"
+  },
+  "videoControls": {
+    "cameraOff": "Turn off camera",
+    "cameraOn": "Turn on camera",
+    "endCall": "End call",
+    "muteMic": "Mute microphone",
+    "muteSpeaker": "Mute speaker",
+    "startCall": "Start new call",
+    "unmuteMic": "Unmute microphone",
+    "unmuteSpeaker": "Unmute speaker"
+  },
+  "wsDebug": {
+    "altServers": "Alternative test servers",
+    "attempts_one": "Connection attempts: {{count}}",
+    "attempts_other": "Connection attempts: {{count}}",
+    "audio": "Audio:",
+    "audioError": "Audio Error:",
+    "audioStates": {
+      "idle": "Idle",
+      "listening": "Listening",
+      "recording": "Recording utterance",
+      "speaking": "Speaking"
+    },
+    "connection": "WebSocket Connection",
+    "format": "Format: {{format}}",
+    "lastJson": "Last JSON:",
+    "lastMessage": "Last Message:",
+    "messages": "WebSocket Messages",
+    "packetsSent_one": "Packets sent: {{count}}",
+    "packetsSent_other": "Packets sent: {{count}}",
+    "sendJson": "Send JSON Message",
+    "sendMessage": "Send Message",
+    "sendPing": "Send Ping",
+    "socketUrl": "Socket URL",
+    "startsWithCall": "Connection starts when call begins",
+    "states": {
+      "closed": "Closed",
+      "closing": "Closing",
+      "connecting": "Connecting",
+      "open": "Connected",
+      "uninstantiated": "Uninstantiated"
+    },
+    "status": "Status:",
+    "wsError": "WebSocket Error:"
   }
 }

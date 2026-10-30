@@ -1,8 +1,9 @@
 import {
   RECRUITER_DISPLAY_NAME,
-  RECRUITER_DISPLAY_ROLE,
+  RECRUITER_DISPLAY_ROLE_KEY,
 } from '@/config/recruiter-avatar';
 import { cn } from '@/utils/cn';
+import { useTranslation } from 'react-i18next';
 
 interface RecruiterAvatarFallbackProps {
   isAiSpeaking: boolean;
@@ -21,11 +22,14 @@ export function RecruiterAvatarFallback({
   fallbackReason,
   className,
 }: RecruiterAvatarFallbackProps) {
+  const { t } = useTranslation('app');
+  const role = t(RECRUITER_DISPLAY_ROLE_KEY);
+
   return (
     <div className={cn('relative h-full w-full', className)}>
       <img
         src="/interviewer.jpg"
-        alt={`${RECRUITER_DISPLAY_NAME}, ${RECRUITER_DISPLAY_ROLE}`}
+        alt={`${RECRUITER_DISPLAY_NAME}, ${role}`}
         className="h-full w-full object-cover"
       />
 
@@ -33,15 +37,15 @@ export function RecruiterAvatarFallback({
         <p className="text-sm font-semibold text-white">
           {RECRUITER_DISPLAY_NAME}
         </p>
-        <p className="text-xs text-white/80">{RECRUITER_DISPLAY_ROLE}</p>
+        <p className="text-xs text-white/80">{role}</p>
       </div>
 
       {isAiSpeaking ? (
-        <StatusBadge label="Speaking…" variant="speaking" />
+        <StatusBadge label={t('recruiter.speaking')} variant="speaking" />
       ) : null}
 
       {isAwaitingAiResponse && !isAiSpeaking ? (
-        <StatusBadge label="Thinking…" variant="thinking" />
+        <StatusBadge label={t('recruiter.thinking')} variant="thinking" />
       ) : null}
 
       {fallbackReason ? (

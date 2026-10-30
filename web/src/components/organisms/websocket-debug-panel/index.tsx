@@ -2,6 +2,8 @@ import { Button } from '@/components/atoms/button';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import type { InputChangeEvent } from '@/types/events';
 import { cn } from '@/utils/cn';
+import type { ParseKeys } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { ReadyState } from 'react-use-websocket';
 
 import { WebSocketDebugPanelProps } from './types';
@@ -29,29 +31,41 @@ export function WebSocketDebugPanel({
   wsError,
   connectionAttempts,
 }: WebSocketDebugPanelProps) {
-  const readyStateRecord: Record<ReadyState, { label: string; color: string }> =
-    {
-      [ReadyState.CONNECTING]: {
-        label: 'Connecting',
-        color: 'text-yellow-600',
-      },
-      [ReadyState.OPEN]: { label: 'Connected', color: 'text-green-600' },
-      [ReadyState.CLOSING]: { label: 'Closing', color: 'text-red-600' },
-      [ReadyState.CLOSED]: { label: 'Closed', color: 'text-red-600' },
-      [ReadyState.UNINSTANTIATED]: {
-        label: 'Uninstantiated',
-        color: 'text-gray-600',
-      },
-    };
+  const { t } = useTranslation('app');
+  const readyStateRecord: Record<
+    ReadyState,
+    { labelKey: ParseKeys<'app'>; color: string }
+  > = {
+    [ReadyState.CONNECTING]: {
+      labelKey: 'wsDebug.states.connecting',
+      color: 'text-yellow-600',
+    },
+    [ReadyState.OPEN]: {
+      labelKey: 'wsDebug.states.open',
+      color: 'text-green-600',
+    },
+    [ReadyState.CLOSING]: {
+      labelKey: 'wsDebug.states.closing',
+      color: 'text-red-600',
+    },
+    [ReadyState.CLOSED]: {
+      labelKey: 'wsDebug.states.closed',
+      color: 'text-red-600',
+    },
+    [ReadyState.UNINSTANTIATED]: {
+      labelKey: 'wsDebug.states.uninstantiated',
+      color: 'text-gray-600',
+    },
+  };
 
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-3">
         <h2 className="text-sm font-semibold text-gray-800">
-          WebSocket Connection
+          {t('wsDebug.connection')}
         </h2>
         <InputMolecule
-          label="Socket URL"
+          label={t('wsDebug.socketUrl')}
           inputType="base"
           type="text"
           value={inputUrl}
@@ -59,15 +73,15 @@ export function WebSocketDebugPanel({
           disabled={isCallActive || !onInputUrlChange}
         />
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-gray-600">Status:</span>
+          <span className="text-gray-600">{t('wsDebug.status')}</span>
           <span
             className={cn('font-medium', readyStateRecord[readyState].color)}
           >
-            {readyStateRecord[readyState].label}
+            {t(readyStateRecord[readyState].labelKey)}
           </span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-gray-600">Audio:</span>
+          <span className="text-gray-600">{t('wsDebug.audio')}</span>
           <span
             className={cn(
               'font-medium',
@@ -81,46 +95,48 @@ export function WebSocketDebugPanel({
             )}
           >
             {isRecording
-              ? 'Recording utterance'
+              ? t('wsDebug.audioStates.recording')
               : isSpeaking
-                ? 'Speaking'
+                ? t('wsDebug.audioStates.speaking')
                 : isListening
-                  ? 'Listening'
-                  : 'Idle'}
+                  ? t('wsDebug.audioStates.listening')
+                  : t('wsDebug.audioStates.idle')}
           </span>
         </div>
         {(isRecording || isListening) && (
           <div className="text-xs text-gray-600">
-            Packets sent: {packetsSent}
+            {t('wsDebug.packetsSent', { count: packetsSent })}
             {supportedMimeType && (
               <span className="block text-gray-500">
-                Format: {supportedMimeType.split(';')[0]}
+                {t('wsDebug.format', {
+                  format: supportedMimeType.split(';')[0],
+                })}
               </span>
             )}
           </div>
         )}
         {audioError && (
           <div className="text-xs text-red-600 p-2 bg-red-50 rounded">
-            <div className="font-semibold">Audio Error:</div>
+            <div className="font-semibold">{t('wsDebug.audioError')}</div>
             <div>{audioError}</div>
           </div>
         )}
         {wsError && (
           <div className="text-xs text-red-600 p-2 bg-red-50 rounded border border-red-200">
-            <div className="font-semibold">WebSocket Error:</div>
+            <div className="font-semibold">{t('wsDebug.wsError')}</div>
             <div>{wsError}</div>
             {connectionAttempts > 0 && (
               <div className="mt-1 text-gray-600">
-                Connection attempts: {connectionAttempts}
+                {t('wsDebug.attempts', { count: connectionAttempts })}
               </div>
             )}
           </div>
         )}
         <p className="text-xs text-gray-500 italic">
-          Connection starts when call begins
+          {t('wsDebug.startsWithCall')}
         </p>
         <details className="text-xs text-gray-500 cursor-pointer">
-          <summary className="font-medium">Alternative test servers</summary>
+          <summary className="font-medium">{t('wsDebug.altServers')}</summary>
           <div className="mt-2 space-y-1 pl-2 cursor-default">
             <div className="font-mono">ws://localhost:8080</div>
             <div className="font-mono">wss://echo.websocket.org</div>
@@ -134,7 +150,7 @@ export function WebSocketDebugPanel({
             size="sm"
             variant="contained"
           >
-            Send Message
+            {t('wsDebug.sendMessage')}
           </Button>
           <Button
             onClick={() =>
@@ -147,7 +163,7 @@ export function WebSocketDebugPanel({
             size="sm"
             variant="contained"
           >
-            Send JSON Message
+            {t('wsDebug.sendJson')}
           </Button>
           <Button
             onClick={() => sendPing({ message: 'Ping from client' })}
@@ -155,7 +171,7 @@ export function WebSocketDebugPanel({
             size="sm"
             variant="contained"
           >
-            Send Ping
+            {t('wsDebug.sendPing')}
           </Button>
         </div>
       </div>
@@ -163,12 +179,12 @@ export function WebSocketDebugPanel({
       {lastMessage || lastJsonMessage ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-3">
           <h2 className="text-sm font-semibold text-gray-800">
-            WebSocket Messages
+            {t('wsDebug.messages')}
           </h2>
           {lastMessage ? (
             <div className="bg-gray-50 rounded p-2 border border-gray-200">
               <p className="text-xs font-semibold text-gray-600 mb-1">
-                Last Message:
+                {t('wsDebug.lastMessage')}
               </p>
               <p className="text-xs text-gray-800 break-all">
                 {String(lastMessage.data)}
@@ -178,7 +194,7 @@ export function WebSocketDebugPanel({
           {lastJsonMessage ? (
             <div className="bg-gray-50 rounded p-2 border border-gray-200 max-h-48 overflow-y-auto">
               <p className="text-xs font-semibold text-gray-600 mb-1">
-                Last JSON:
+                {t('wsDebug.lastJson')}
               </p>
               <pre className="text-xs text-gray-800 whitespace-pre-wrap">
                 {JSON.stringify(

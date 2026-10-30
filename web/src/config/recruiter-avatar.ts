@@ -47,7 +47,8 @@ export const RECRUITER_AVATAR_SHOW_OPTIONS = {
 };
 
 export const RECRUITER_DISPLAY_NAME = 'Sophie Martin';
-export const RECRUITER_DISPLAY_ROLE = 'Recruteuse IT';
+/** `app` translation key of the recruiter's job title. */
+export const RECRUITER_DISPLAY_ROLE_KEY = 'recruiter.role' as const;
 
 const FORCE_FALLBACK_STORAGE_KEY = 'talkup.avatar.forceFallback';
 

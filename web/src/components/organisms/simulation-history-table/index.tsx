@@ -1,4 +1,6 @@
+import type { ParseKeys } from 'i18next';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * @interface SimulationEntry
@@ -54,6 +56,12 @@ const MOCK_HISTORY: SimulationEntry[] = [
   },
 ];
 
+const STATUS_KEYS = {
+  Completed: 'simulations.history.status.completed',
+  'In Progress': 'simulations.history.status.inProgress',
+  Cancelled: 'simulations.history.status.cancelled',
+} as const satisfies Record<SimulationEntry['status'], ParseKeys<'app'>>;
+
 /**
  * @function SimulationHistoryTable
  * @description Organism component displaying a table of the completed simulation history.
@@ -61,6 +69,8 @@ const MOCK_HISTORY: SimulationEntry[] = [
  * @returns {JSX.Element} The Simulation History Table component.
  */
 const SimulationHistoryTable: React.FC = () => {
+  const { t } = useTranslation('app');
+
   return (
     <div className="bg-white overflow-hidden">
       <table className="min-w-full divide-y divide-border">
@@ -70,34 +80,34 @@ const SimulationHistoryTable: React.FC = () => {
               scope="col"
               className="px-6 py-3 text-left text-label-s text-idle uppercase tracking-wider"
             >
-              Date
+              {t('simulations.history.date')}
             </th>
             <th
               scope="col"
               className="px-6 py-3 text-left text-label-s text-idle uppercase tracking-wider"
             >
-              Title
+              {t('simulations.history.title')}
             </th>
             <th
               scope="col"
               className="px-6 py-3 text-left text-label-s text-idle uppercase tracking-wider"
             >
-              Time
+              {t('simulations.history.time')}
             </th>
             <th
               scope="col"
               className="px-6 py-3 text-left text-label-s text-idle uppercase tracking-wider"
             >
-              Final Score
+              {t('simulations.history.finalScore')}
             </th>
             <th
               scope="col"
               className="px-6 py-3 text-left text-label-s text-idle uppercase tracking-wider"
             >
-              Status
+              {t('simulations.history.statusHeader')}
             </th>
             <th scope="col" className="relative px-6 py-3">
-              <span className="sr-only">Action</span>
+              <span className="sr-only">{t('simulations.history.action')}</span>
             </th>
           </tr>
         </thead>
@@ -131,14 +141,14 @@ const SimulationHistoryTable: React.FC = () => {
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-body-m text-idle">
-                {simulation.status}
+                {t(STATUS_KEYS[simulation.status])}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-body-m font-medium">
                 <a
                   href={`/simulations/${simulation.id}/review`}
                   className="text-accent hover:text-accent-hover transition duration-150 ease-in-out font-medium"
                 >
-                  View Analysis
+                  {t('simulations.history.viewAnalysis')}
                 </a>
               </td>
             </tr>
@@ -149,10 +159,13 @@ const SimulationHistoryTable: React.FC = () => {
       {/* Table Footer */}
       <div className="flex justify-between items-center p-4 border-t border-border bg-blue-100">
         <span className="text-body-s text-idle">
-          Showing 1 to {MOCK_HISTORY.length} of {MOCK_HISTORY.length} results
+          {t('simulations.history.showing', {
+            to: MOCK_HISTORY.length,
+            total: MOCK_HISTORY.length,
+          })}
         </span>
         <button className="text-body-s font-medium text-accent hover:text-accent-hover">
-          Load more...
+          {t('simulations.history.loadMore')}
         </button>
       </div>
     </div>

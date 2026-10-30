@@ -8,7 +8,7 @@ import VerbalAnalysisPanel from '@/components/organisms/verbal-analysis-panel';
 import { WebSocketDebugPanel } from '@/components/organisms/websocket-debug-panel';
 import {
   RECRUITER_DISPLAY_NAME,
-  RECRUITER_DISPLAY_ROLE,
+  RECRUITER_DISPLAY_ROLE_KEY,
   clearAvatarFallbackForced,
 } from '@/config/recruiter-avatar';
 import {
@@ -23,6 +23,7 @@ import {
 import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { ReadyState } from 'react-use-websocket';
 
 export interface SimulationWorkspaceProps {
@@ -35,10 +36,11 @@ export interface SimulationWorkspaceProps {
 
 export function SimulationWorkspace({
   applicationId,
-  title = 'Simulations',
-  description = 'Practice interview scenarios in a safe environment.',
+  title,
+  description,
   contextLabel,
 }: SimulationWorkspaceProps) {
+  const { t } = useTranslation('app');
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [wsError, setWsError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
@@ -206,23 +208,27 @@ export function SimulationWorkspace({
     if (transcript.transcription) {
       turns.push({
         isIA: false,
-        speaker: 'You',
+        speaker: t('simulations.speakers.you'),
         text: transcript.transcription,
       });
     }
     if (transcript.response) {
-      turns.push({ isIA: true, speaker: 'AI', text: transcript.response });
+      turns.push({
+        isIA: true,
+        speaker: t('simulations.speakers.ai'),
+        text: transcript.response,
+      });
     }
     if (turns.length > 0) {
       setTranscriptions((prev) => [...prev, ...turns]);
     }
-  }, [transcript]);
+  }, [transcript, t]);
 
   useEffect(() => {
     if (!simulationComplete || isAiSpeaking) return;
-    toast.success('Entretien terminé. Merci pour votre participation !');
+    toast.success(t('simulations.toasts.interviewEnded'));
     void handleStreamToggle(false);
-  }, [simulationComplete, isAiSpeaking, handleStreamToggle]);
+  }, [simulationComplete, isAiSpeaking, handleStreamToggle, t]);
 
   useEffect(() => {
     if (!lastJsonMessage || typeof lastJsonMessage !== 'object') return;
@@ -234,9 +240,9 @@ export function SimulationWorkspace({
     const text =
       typeof packet.text === 'string' && packet.text.trim()
         ? packet.text
-        : 'Une erreur est survenue pendant la transcription.';
+        : t('simulations.toasts.transcriptionError');
     toast.error(text);
-  }, [lastJsonMessage]);
+  }, [lastJsonMessage, t]);
 
   const {
     isListening,
@@ -273,22 +279,26 @@ export function SimulationWorkspace({
 
   const avatarStatusText =
     effectiveAvatarMode === '3d'
-      ? 'Interactive 3D avatar active.'
+      ? t('recruiter.status.interactive')
       : (avatarRuntimeFallbackReason ??
         capabilityFallbackReason ??
-        'Static interviewer image active.');
+        t('recruiter.status.static'));
 
   return (
     <div className="p-6 h-full">
       <div className="flex justify-between items-start mb-6">
         <div>
-          {title ? (
-            <h1 className="text-2xl font-bold text-text">{title}</h1>
+          {(title ?? t('simulations.title')) ? (
+            <h1 className="text-2xl font-bold text-text">
+              {title ?? t('simulations.title')}
+            </h1>
           ) : null}
-          <p className="text-text-weak">{description}</p>
+          <p className="text-text-weak">
+            {description ?? t('simulations.description')}
+          </p>
           {contextLabel ? (
             <p className="mt-2 text-sm text-idle">
-              Interview context: {contextLabel}
+              {t('simulations.interviewContext', { label: contextLabel })}
             </p>
           ) : null}
         </div>
@@ -348,7 +358,7 @@ export function SimulationWorkspace({
 
           <InfoBox
             title={RECRUITER_DISPLAY_NAME}
-            text={`${RECRUITER_DISPLAY_ROLE}. ${avatarStatusText}`}
+            text={`${t(RECRUITER_DISPLAY_ROLE_KEY)}. ${avatarStatusText}`}
             icon="members"
           />
 
