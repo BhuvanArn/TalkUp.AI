@@ -29,9 +29,18 @@ export type Namespace = (typeof NAMESPACES)[number];
 
 export const DEFAULT_NAMESPACE = 'common' satisfies Namespace;
 
+/** Lowercased primary subtag of a language tag: `fr-CA` gives `fr`. */
+export const toPrimarySubtag = (tag: string): string =>
+  tag.split('-')[0].toLowerCase();
+
 /**
- * Narrow any language tag (`fr-FR`, `en`, `de`…) to a supported language:
- * `fr` and `fr-*` give `fr`, anything else gives the default.
+ * Narrow any language tag (`fr-FR`, `en`, `de`…) to a supported language: its
+ * primary subtag when supported (`fr-CA` gives `fr`), else the default.
  */
-export const toSupportedLanguage = (tag?: string | null): Language =>
-  tag?.toLowerCase().split('-')[0] === 'fr' ? 'fr' : DEFAULT_LANGUAGE;
+export const toSupportedLanguage = (tag?: string | null): Language => {
+  const primary = tag ? toPrimarySubtag(tag) : undefined;
+  return (
+    SUPPORTED_LANGUAGES.find((language) => language === primary) ??
+    DEFAULT_LANGUAGE
+  );
+};

@@ -9,6 +9,7 @@ import {
   type Language,
   NAMESPACES,
   SUPPORTED_LANGUAGES,
+  toPrimarySubtag,
   toSupportedLanguage,
 } from './config';
 import { resources } from './resources';
@@ -58,6 +59,11 @@ export const setupI18n = (instance: i18n, { lng }: I18nOptions = {}): i18n => {
       order: ['localStorage', 'navigator'],
       lookupLocalStorage: LANGUAGE_STORAGE_KEY,
       caches: [],
+      // Reduce every detected tag (stored value included) to its primary
+      // subtag, so i18next picks the first supported entry in list order.
+      // Without it, an exact match later in the list wins: `fr-CA, en` would
+      // give `en`.
+      convertDetectedLanguage: toPrimarySubtag,
     },
     interpolation: {
       // React already escapes rendered strings.

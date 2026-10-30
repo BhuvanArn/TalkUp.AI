@@ -36,6 +36,10 @@ describe('i18n setup', () => {
       [['en-GB'], 'en'],
       [['de-DE', 'fr-FR'], 'fr'],
       [['es', 'en', 'fr'], 'en'],
+      [['fr-CA', 'en'], 'fr'],
+      [['en-GB', 'fr'], 'en'],
+      [['fr-FR', 'en-US', 'en'], 'fr'],
+      [['de', 'fr-CH'], 'fr'],
       [[], 'en'],
     ])('detects %j as %s', (languages, expected) => {
       mockBrowserLanguages(languages);
@@ -52,6 +56,23 @@ describe('i18n setup', () => {
       const instance = setupI18n(i18next.createInstance());
 
       expect(getLanguage(instance)).toBe('en');
+    });
+
+    it('reduces a stored regional tag to its primary subtag', () => {
+      mockBrowserLanguages(['en-US']);
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, 'fr-CA');
+
+      const instance = setupI18n(i18next.createInstance());
+
+      expect(instance.language).toBe('fr');
+    });
+
+    it('sets the language to the bare supported code', () => {
+      mockBrowserLanguages(['fr-CA', 'en']);
+
+      const instance = setupI18n(i18next.createInstance());
+
+      expect(instance.language).toBe('fr');
     });
 
     it('ignores an unsupported stored value', () => {
