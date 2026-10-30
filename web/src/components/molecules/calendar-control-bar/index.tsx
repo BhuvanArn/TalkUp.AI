@@ -29,14 +29,26 @@ const CalendarControlBar = () => {
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <h2 className="text-h5 text-idle">{t('agenda.controlBar.title')}</h2>
-      <div className="flex gap-4 items-center">
-        <Button color="accent" size="xs" onClick={handleCreateEvent}>
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <h2 className="min-w-0 text-h5 text-idle">
+        {t('agenda.controlBar.title')}
+      </h2>
+      <div className="flex flex-wrap gap-x-4 gap-y-2 items-center">
+        <Button
+          color="accent"
+          size="xs"
+          className="shrink-0 whitespace-nowrap"
+          onClick={handleCreateEvent}
+        >
           {t('agenda.controlBar.createEvent')}
           <Icon icon="plus" />
         </Button>
-        <Button variant="outlined" color="sidebar" size="xs">
+        <Button
+          variant="outlined"
+          color="sidebar"
+          size="xs"
+          className="shrink-0 whitespace-nowrap"
+        >
           {t('agenda.controlBar.filters')}
           <Icon icon="settings" />
         </Button>
