@@ -1,7 +1,15 @@
 import AuthPageShell from '@/components/molecules/auth-page-shell';
 import ConvincingBanner from '@/components/molecules/convincing-banner';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import * as services from '@/hooks/auth/useServices';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import i18next from 'i18next';
+import toast from 'react-hot-toast';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ForgotPasswordForm } from './forgot-password-form';
@@ -23,6 +31,27 @@ const NBSP = ' ';
 const SP = ' ';
 
 const mutation = () => ({ mutate: vi.fn(), isPending: false });
+
+type MutateOptions = {
+  onSuccess?: () => void;
+  onError?: (error: unknown) => void;
+};
+
+/**
+ * Make `hook` return a mutation whose `mutate` settles at once through
+ * `settle`. The `afterEach` below restores the inert default.
+ */
+const settleWith = (
+  hook: (typeof services)[keyof typeof services],
+  settle: (options: MutateOptions) => void,
+) => {
+  vi.mocked(hook as () => unknown).mockReturnValue({
+    mutate: vi.fn((_variables: unknown, options?: MutateOptions) =>
+      settle(options ?? {}),
+    ),
+    isPending: false,
+  });
+};
 
 vi.mock('@/hooks/auth/useServices', () => ({
   usePostLogin: vi.fn(() => mutation()),
@@ -51,6 +80,10 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 
+vi.mock('react-hot-toast', () => ({
+  default: { success: vi.fn(), error: vi.fn() },
+}));
+
 /** Type a value then clear it, so the field's onChange validator runs. */
 const typeThenClear = (input: HTMLElement) => {
   fireEvent.change(input, { target: { value: 'x' } });
@@ -59,10 +92,14 @@ const typeThenClear = (input: HTMLElement) => {
 
 describe('auth flows in French', () => {
   beforeEach(async () => {
+    vi.clearAllMocks();
     await act(() => i18next.changeLanguage('fr'));
   });
 
   afterEach(async () => {
+    for (const hook of Object.values(services)) {
+      vi.mocked(hook as () => unknown).mockImplementation(mutation);
+    }
     // setupTests pins English for every other test.
     await act(() => i18next.changeLanguage('en'));
   });
@@ -110,6 +147,29 @@ describe('auth flows in French', () => {
         screen.getByText('Le mot de passe est obligatoire'),
       ).toBeInTheDocument();
     });
+
+    it('falls back to the French server error', async () => {
+      settleWith(services.usePostLogin, ({ onError }) =>
+        onError?.(new Error('Network Error')),
+      );
+      render(<LoginForm />);
+
+      fireEvent.change(
+        screen.getByPlaceholderText(
+          `Quelle adresse e-mail avez-vous utilisée${SP}?`,
+        ),
+        { target: { value: 'user@example.com' } },
+      );
+      fireEvent.change(
+        screen.getByPlaceholderText('Saisissez votre mot de passe'),
+        { target: { value: 'secret' } },
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Se connecter' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'La connexion a échoué. Veuillez réessayer.',
+      );
+    });
   });
 
   describe('RegisterForm', () => {
@@ -140,6 +200,18 @@ describe('auth flows in French', () => {
       expect(screen.getByRole('status')).toHaveTextContent(
         `Robustesse${SP}: Faible`,
       );
+    });
+
+    it('shows the organization code length error in French', () => {
+      render(<RegisterForm />);
+
+      fireEvent.change(
+        screen.getByPlaceholderText('Code d’organisation (facultatif)'),
+        { target: { value: 'x'.repeat(33) } },
+      );
+      expect(
+        screen.getByText('Le code d’organisation est trop long'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -185,6 +257,21 @@ describe('auth flows in French', () => {
         screen.getByText('L’adresse e-mail est obligatoire'),
       ).toBeInTheDocument();
     });
+
+    it('confirms the code was sent with a French toast', async () => {
+      settleWith(services.usePostPasswordResetRequest, ({ onSuccess }) =>
+        onSuccess?.(),
+      );
+      render(<ForgotPasswordForm initialEmail="user@example.com" />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continuer' }));
+
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith(
+          `Si un compte est associé à cette adresse, vous allez recevoir un code à 6${NBSP}chiffres par e-mail.`,
+        ),
+      );
+    });
   });
 
   describe('ResetPasswordForm', () => {
@@ -213,6 +300,81 @@ describe('auth flows in French', () => {
       expect(
         screen.getByText(`Le code doit comporter 6${SP}chiffres`),
       ).toBeInTheDocument();
+    });
+
+    /** Fill a valid code and password, with `confirm` as the confirmation. */
+    const fillReset = (confirm: string) => {
+      fireEvent.change(screen.getByLabelText('Code de vérification'), {
+        target: { value: '123456' },
+      });
+      fireEvent.change(screen.getByPlaceholderText('Nouveau mot de passe'), {
+        target: { value: 'Abcdefg1!' },
+      });
+      fireEvent.change(
+        screen.getByPlaceholderText('Confirmez le nouveau mot de passe'),
+        { target: { value: confirm } },
+      );
+    };
+
+    it('reports mismatched passwords in French, then in English after a switch', async () => {
+      render(<ResetPasswordForm initialEmail="user@example.com" />);
+
+      fillReset('Abcdefg1?');
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Mettre à jour le mot de passe' }),
+      );
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Les mots de passe ne correspondent pas',
+      );
+      // The error is stored as a key, so it follows the language.
+      await act(() => i18next.changeLanguage('en'));
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Passwords do not match',
+      );
+    });
+
+    it('reports the missing email on submit in French', async () => {
+      const { container } = render(<ResetPasswordForm initialEmail="" />);
+
+      fillReset('Abcdefg1!');
+      // The submit button is disabled without an email; submit the form.
+      fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        `Adresse e-mail manquante. Recommencez depuis «${SP}Mot de passe oublié${SP}» et saisissez votre adresse.`,
+      );
+    });
+
+    it('falls back to the French reset error, and shows server text as is', async () => {
+      settleWith(services.usePasswordResetComplete, ({ onError }) =>
+        onError?.(new Error('Network Error')),
+      );
+      const { unmount } = render(
+        <ResetPasswordForm initialEmail="user@example.com" />,
+      );
+
+      fillReset('Abcdefg1!');
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Mettre à jour le mot de passe' }),
+      );
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Impossible de réinitialiser le mot de passe. Vérifiez le code et réessayez.',
+      );
+      unmount();
+
+      settleWith(services.usePasswordResetComplete, ({ onError }) =>
+        onError?.({ response: { data: { message: 'Code expired' } } }),
+      );
+      render(<ResetPasswordForm initialEmail="user@example.com" />);
+
+      fillReset('Abcdefg1!');
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Mettre à jour le mot de passe' }),
+      );
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Code expired',
+      );
     });
 
     it('explains the missing email in French', () => {
@@ -247,6 +409,19 @@ describe('auth flows in French', () => {
       typeThenClear(screen.getByLabelText('Code de vérification'));
       expect(screen.getByText('Le code est obligatoire')).toBeInTheDocument();
     });
+
+    it('counts down the resend in French', () => {
+      settleWith(services.usePostResendOtp, ({ onSuccess }) => onSuccess?.());
+      render(
+        <VerifyEmailForm initialEmail="user@example.com" redirectTo="/" />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Renvoyer le code' }));
+
+      expect(
+        screen.getByRole('button', { name: `Renvoyer le code (60${NBSP}s)` }),
+      ).toBeDisabled();
+    });
   });
 
   describe('OrganizationCreated', () => {
@@ -266,6 +441,38 @@ describe('auth flows in French', () => {
           name: 'Vérifier l’adresse e-mail et continuer',
         }),
       ).toBeInTheDocument();
+    });
+
+    it('fills the org name and email into the French sentences', () => {
+      render(
+        <OrganizationCreated organizationName="Acme" email="admin@acme.test" />,
+      );
+
+      expect(screen.getByText(/est prête/)).toHaveTextContent(
+        'L’organisation Acme est prête. Nous lui avons créé un compte administrateur.',
+      );
+      expect(screen.getByText(/Pour gérer/)).toHaveTextContent(
+        'Pour gérer Acme, vérifiez l’adresse e-mail de l’administrateur, puis connectez-vous avec ce compte. Un code de vérification a été envoyé à admin@acme.test.',
+      );
+    });
+
+    it('renders markup in the org name and email as text', () => {
+      const organizationName = '<strong>Evil</strong> & <br/>Co';
+      const email = '<i>admin</i>@evil.test';
+      const { container } = render(
+        <OrganizationCreated
+          organizationName={organizationName}
+          email={email}
+        />,
+      );
+
+      expect(container.querySelector('strong, br, i')).toBeNull();
+      expect(screen.getByText(/est prête/).textContent).toBe(
+        `L’organisation ${organizationName} est prête. Nous lui avons créé un compte administrateur.`,
+      );
+      expect(screen.getByText(/Pour gérer/).textContent).toBe(
+        `Pour gérer ${organizationName}, vérifiez l’adresse e-mail de l’administrateur, puis connectez-vous avec ce compte. Un code de vérification a été envoyé à ${email}.`,
+      );
     });
   });
 
