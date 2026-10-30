@@ -1,5 +1,6 @@
 import { Avatar } from '@/components/atoms/avatar';
 import { Icon } from '@/components/atoms/icon';
+import LanguageSwitcher from '@/components/molecules/language-switcher';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { fetchMyProfile } from '@/services/users/http';
@@ -267,23 +268,31 @@ export const UserProfileSwitcher = ({
             <hr className="my-1 border-border" />
 
             <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-              <button
-                type="button"
-                role="menuitem"
-                className="flex size-9 items-center justify-center rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
-                aria-label={
-                  theme === 'light'
-                    ? 'Switch to dark theme'
-                    : 'Switch to light theme'
-                }
-                onClick={() => toggleTheme()}
-              >
-                <Icon
-                  icon={theme === 'light' ? 'moon' : 'sun'}
-                  size="sm"
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="flex size-9 items-center justify-center rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
+                  aria-label={
+                    theme === 'light'
+                      ? 'Switch to dark theme'
+                      : 'Switch to light theme'
+                  }
+                  onClick={() => toggleTheme()}
+                >
+                  <Icon
+                    icon={theme === 'light' ? 'moon' : 'sun'}
+                    size="sm"
+                    color="neutral"
+                  />
+                </button>
+                <LanguageSwitcher
+                  variant="text"
                   color="neutral"
+                  role="menuitem"
+                  className="h-9 rounded-lg px-2 text-body-s font-medium text-text hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 />
-              </button>
+              </div>
               <button
                 type="button"
                 role="menuitem"
