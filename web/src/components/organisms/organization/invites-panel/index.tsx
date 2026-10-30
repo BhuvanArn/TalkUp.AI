@@ -117,11 +117,14 @@ export const InvitesPanel = ({
                 <td className="px-4 py-3">
                   <span
                     className={cn(
-                      'inline-flex rounded-full px-2.5 py-0.5 text-label-m capitalize',
+                      'inline-flex rounded-full px-2.5 py-0.5 text-label-m',
                       STATUS_STYLES[invite.status],
                     )}
                   >
-                    {t(`invitesPanel.statuses.${invite.status}`)}
+                    {/* First letter only: `capitalize` would give "En Attente". */}
+                    <span className="inline-block first-letter:uppercase">
+                      {t(`invitesPanel.statuses.${invite.status}`)}
+                    </span>
                   </span>
                 </td>
                 <td className="px-4 py-3 text-text-weak">
