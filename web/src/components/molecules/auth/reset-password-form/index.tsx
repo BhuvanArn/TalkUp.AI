@@ -95,9 +95,12 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
             <Trans
               t={t}
               i18nKey="resetPasswordForm.description"
-              values={{ email: emailTrimmed }}
               components={{
-                email: <span className="font-medium text-active" />,
+                email: (
+                  <span className="font-medium text-active">
+                    {emailTrimmed}
+                  </span>
+                ),
               }}
             />
           </p>

@@ -26,6 +26,8 @@ export const OrganizationCreated = ({
   const { t } = useTranslation('auth');
   const navigate = useNavigate();
 
+  // Both come from the URL. `<Trans>` gets them as component children, not
+  // `values`: interpolation is not escaped, so tags in them would render.
   const orgNameTrimmed = organizationName.trim();
   const emailTrimmed = email.trim();
   const hasContext = orgNameTrimmed.length > 0 && emailTrimmed.length > 0;
@@ -62,8 +64,13 @@ export const OrganizationCreated = ({
           <Trans
             t={t}
             i18nKey="organizationCreated.ready"
-            values={{ organizationName: orgNameTrimmed }}
-            components={{ org: <span className="font-medium text-active" /> }}
+            components={{
+              org: (
+                <span className="font-medium text-active">
+                  {orgNameTrimmed}
+                </span>
+              ),
+            }}
           />
         </p>
       </header>
@@ -91,10 +98,13 @@ export const OrganizationCreated = ({
         <Trans
           t={t}
           i18nKey="organizationCreated.nextSteps"
-          values={{ organizationName: orgNameTrimmed, email: emailTrimmed }}
           components={{
-            org: <span className="font-medium text-active" />,
-            email: <span className="font-medium text-active" />,
+            org: (
+              <span className="font-medium text-active">{orgNameTrimmed}</span>
+            ),
+            email: (
+              <span className="font-medium text-active">{emailTrimmed}</span>
+            ),
           }}
         />
       </p>

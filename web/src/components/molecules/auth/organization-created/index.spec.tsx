@@ -43,6 +43,35 @@ describe('OrganizationCreated', () => {
     expect(screen.getAllByText('admin@acme.io').length).toBeGreaterThan(0);
   });
 
+  it('highlights the org name and email inside the sentences', () => {
+    render(
+      <OrganizationCreated organizationName="Acme" email="admin@acme.io" />,
+    );
+
+    expect(screen.getByText(/is ready\./).innerHTML).toBe(
+      '<span class="font-medium text-active">Acme</span> is ready. We\'ve created an administrator account for it.',
+    );
+    expect(screen.getByText(/To manage/).innerHTML).toBe(
+      'To manage <span class="font-medium text-active">Acme</span>, verify the admin email and sign in as this administrator. A verification code was sent to <span class="font-medium text-active">admin@acme.io</span>.',
+    );
+  });
+
+  it('renders markup in the org name and email as text', () => {
+    const organizationName = '<strong>Evil</strong> & <br/>Co';
+    const email = '<i>admin</i>@evil.test';
+    const { container } = render(
+      <OrganizationCreated organizationName={organizationName} email={email} />,
+    );
+
+    expect(container.querySelector('strong, br, i')).toBeNull();
+    expect(screen.getByText(/is ready\./).textContent).toBe(
+      `${organizationName} is ready. We've created an administrator account for it.`,
+    );
+    expect(screen.getByText(/To manage/).textContent).toBe(
+      `To manage ${organizationName}, verify the admin email and sign in as this administrator. A verification code was sent to ${email}.`,
+    );
+  });
+
   it('derives the username the way the backend does (drops spaces/punctuation)', () => {
     render(
       <OrganizationCreated organizationName="Acme Corp!" email="a@acme.io" />,

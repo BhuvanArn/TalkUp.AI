@@ -83,9 +83,12 @@ export const VerifyEmailForm = ({
             <Trans
               t={t}
               i18nKey="verifyEmailForm.description"
-              values={{ email: emailTrimmed }}
               components={{
-                email: <span className="font-medium text-active" />,
+                email: (
+                  <span className="font-medium text-active">
+                    {emailTrimmed}
+                  </span>
+                ),
               }}
             />
           </p>
