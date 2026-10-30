@@ -1,6 +1,7 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import Logo from '@/components/molecules/logo';
+import { APP_HOME } from '@/config/routes.config';
 import { Link, useRouter } from '@tanstack/react-router';
 
 interface NotFoundPageProps {
@@ -49,7 +50,7 @@ const NotFoundPage = ({ isAuthenticated = false }: NotFoundPageProps) => {
 
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button variant="contained" color="accent" asChild>
-          <Link to={isAuthenticated ? '/applications' : '/'}>Go home</Link>
+          <Link to={isAuthenticated ? APP_HOME : '/'}>Go home</Link>
         </Button>
 
         {isAuthenticated ? (

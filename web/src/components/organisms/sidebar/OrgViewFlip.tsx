@@ -1,4 +1,5 @@
 import { Icon } from '@/components/atoms/icon';
+import { APP_HOME } from '@/config/routes.config';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useAuthStatus } from '@/hooks/auth/useServices';
 import { useNavigate } from '@tanstack/react-router';
@@ -44,7 +45,7 @@ export const OrgViewFlip = ({ isCollapsed = false }: NavigationProps) => {
   const isOrgView = contextType === 'organization';
   const label = 'Organization view';
   const flip = () =>
-    navigate({ to: isOrgView ? '/applications' : '/organization/members' });
+    navigate({ to: isOrgView ? APP_HOME : '/organization/members' });
 
   // Visual toggle pill (the surrounding button carries role="switch" +
   // aria-checked, so this is purely decorative — no nested interactive control).

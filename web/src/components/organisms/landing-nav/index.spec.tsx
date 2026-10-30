@@ -1,9 +1,24 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import LandingNav from './index';
 
-const { ctaClicks } = vi.hoisted(() => ({ ctaClicks: [] as string[][] }));
+const { ctaClicks, useAuthStatusMock } = vi.hoisted(() => ({
+  ctaClicks: [] as string[][],
+  useAuthStatusMock: vi.fn(),
+}));
+
+vi.mock('@/hooks/auth/useServices', () => ({
+  useAuthStatus: (options?: unknown) => useAuthStatusMock(options),
+}));
+
+const authState = (isAuthenticated: boolean | undefined) => ({
+  data:
+    isAuthenticated === undefined
+      ? undefined
+      : { isAuthenticated, role: null, organizationId: null },
+  isLoading: isAuthenticated === undefined,
+});
 
 vi.mock('@/utils/analytics', () => ({
   trackCtaClick: (location: string, target: string) => () =>
@@ -41,7 +56,20 @@ vi.mock('@/components/molecules/logo', () => ({
   default: () => <span data-testid="logo">Logo</span>,
 }));
 
+/** jsdom can't navigate: tests that click real hrefs add this listener. */
+const stayOnPage = (e: Event) => e.preventDefault();
+
 describe('LandingNav', () => {
+  beforeEach(() => {
+    useAuthStatusMock.mockReset();
+    useAuthStatusMock.mockReturnValue(authState(false));
+  });
+
+  // Removed even when an assertion fails, so it can't leak into later tests.
+  afterEach(() => {
+    document.removeEventListener('click', stayOnPage);
+  });
+
   it('renders the four nav links and no removed sections', () => {
     render(<LandingNav />);
     for (const name of ['How it works', 'For schools', 'Pricing', 'About']) {
@@ -79,7 +107,6 @@ describe('LandingNav', () => {
 
   it('tracks the register CTA from the desktop nav and the mobile menu', () => {
     ctaClicks.length = 0;
-    const stayOnPage = (e: Event) => e.preventDefault(); // jsdom can't navigate
     document.addEventListener('click', stayOnPage);
     render(<LandingNav />);
     fireEvent.click(screen.getByRole('link', { name: 'Create an account' }));
@@ -90,7 +117,6 @@ describe('LandingNav', () => {
       ['nav', '/register'],
       ['nav', '/register'],
     ]);
-    document.removeEventListener('click', stayOnPage);
   });
 
   it('renders login + register CTAs', () => {
@@ -151,5 +177,100 @@ describe('LandingNav', () => {
     fireEvent.scroll(window);
     expect(header?.className).toContain('backdrop-blur');
     Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+  });
+
+  describe('auth-aware CTAs', () => {
+    it('reads the shared auth status query, not the anonymous variant', () => {
+      render(<LandingNav />);
+      expect(useAuthStatusMock).toHaveBeenCalled();
+      for (const [options] of useAuthStatusMock.mock.calls) {
+        expect(options?.anonymousAllowed).not.toBe(true);
+      }
+    });
+
+    it('signed out: shows Log in / Create an account, not Open the app', () => {
+      render(<LandingNav />);
+      fireEvent.click(screen.getByRole('button', { name: /toggle menu/i }));
+      expect(screen.getAllByRole('link', { name: 'Log in' })).toHaveLength(2);
+      expect(
+        screen.getAllByRole('link', { name: 'Create an account' }),
+      ).toHaveLength(2);
+      expect(screen.queryByRole('link', { name: 'Open the app' })).toBeNull();
+    });
+
+    it('signed in: shows Open the app to the app home on desktop and mobile', () => {
+      useAuthStatusMock.mockReturnValue(authState(true));
+      render(<LandingNav />);
+      expect(
+        screen.getByRole('link', { name: 'Open the app' }),
+      ).toHaveAttribute('href', '/applications');
+      fireEvent.click(screen.getByRole('button', { name: /toggle menu/i }));
+      const links = screen.getAllByRole('link', { name: 'Open the app' });
+      expect(links).toHaveLength(2);
+      for (const link of links) {
+        expect(link).toHaveAttribute('href', '/applications');
+      }
+      expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+      expect(
+        screen.queryByRole('link', { name: 'Create an account' }),
+      ).toBeNull();
+    });
+
+    it('signed in: the mobile Open the app link closes the menu', () => {
+      useAuthStatusMock.mockReturnValue(authState(true));
+      document.addEventListener('click', stayOnPage);
+      render(<LandingNav />);
+      const toggle = screen.getByRole('button', { name: /toggle menu/i });
+      fireEvent.click(toggle);
+      const links = screen.getAllByRole('link', { name: 'Open the app' });
+      fireEvent.click(links[links.length - 1]);
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('offline (query paused, no data, not loading): shows the guest CTAs', () => {
+      useAuthStatusMock.mockReturnValue({ data: undefined, isLoading: false });
+      render(<LandingNav />);
+      expect(screen.getByRole('link', { name: 'Log in' })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Open the app' })).toBeNull();
+    });
+
+    it('switches the open mobile menu to Open the app when the status arrives', () => {
+      useAuthStatusMock.mockReturnValue(authState(undefined));
+      const { rerender } = render(<LandingNav />);
+      const toggle = screen.getByRole('button', { name: /toggle menu/i });
+      fireEvent.click(toggle);
+      useAuthStatusMock.mockReturnValue(authState(true));
+      rerender(<LandingNav />);
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(
+        screen.getAllByRole('link', { name: 'Open the app' }),
+      ).toHaveLength(2);
+      expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+    });
+
+    it('while loading: shows the guest CTAs (the landing never waits for them)', () => {
+      useAuthStatusMock.mockReturnValue(authState(undefined));
+      render(<LandingNav />);
+      fireEvent.click(screen.getByRole('button', { name: /toggle menu/i }));
+      expect(screen.getAllByRole('link', { name: 'Log in' })).toHaveLength(2);
+      expect(
+        screen.getAllByRole('link', { name: 'Create an account' }),
+      ).toHaveLength(2);
+      expect(screen.queryByText('Open the app')).toBeNull();
+    });
+
+    it('switches the desktop CTAs to Open the app when the status arrives', () => {
+      useAuthStatusMock.mockReturnValue(authState(undefined));
+      const { rerender } = render(<LandingNav />);
+      expect(screen.getByRole('link', { name: 'Log in' })).toBeInTheDocument();
+      useAuthStatusMock.mockReturnValue(authState(true));
+      rerender(<LandingNav />);
+      expect(
+        screen.getByRole('link', { name: 'Open the app' }),
+      ).toHaveAttribute('href', '/applications');
+      // Unmounted, not kept hidden: nothing reserves the guest CTAs' width.
+      expect(screen.queryByText('Log in')).toBeNull();
+      expect(screen.queryByText('Create an account')).toBeNull();
+    });
   });
 });

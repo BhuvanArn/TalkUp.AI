@@ -1,6 +1,8 @@
 import { Button } from '@/components/atoms/button';
 import Logo from '@/components/molecules/logo';
 import ThemeToggle from '@/components/molecules/theme-toggle';
+import { APP_HOME } from '@/config/routes.config';
+import { useAuthStatus } from '@/hooks/auth/useServices';
 import { trackCtaClick } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -23,6 +25,12 @@ const LandingNav = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Same query (and cache key) the root layout already runs on every public
+  // page, so this adds no request. Guest CTAs show until the user is known to
+  // be signed in: on `/` (signed-in users are redirected away) they never wait.
+  const { data: authStatus } = useAuthStatus();
+  const isAuthenticated = authStatus?.isAuthenticated ?? false;
 
   const close = () => setOpen(false);
 
@@ -69,26 +77,47 @@ const LandingNav = () => {
 
         <div className="hidden items-center gap-3 lg:flex">
           <ThemeToggle />
-          <Button
-            asChild
-            variant="text"
-            color="neutral"
-            size="sm"
-            className={FOCUS_RING}
-          >
-            <Link to="/login">Log in</Link>
-          </Button>
-          <Button
-            asChild
-            variant="contained"
-            color="accent"
-            size="sm"
-            className={FOCUS_RING}
-          >
-            <Link to="/register" onClick={trackCtaClick('nav', '/register')}>
-              Create an account
-            </Link>
-          </Button>
+          {/* Sized to what it shows, so signed-in users get no gap next to
+              Open the app. A signed-in user reloading /about or /privacy sees
+              the links shift once when the status arrives: accepted, rather
+              than a permanent gap for every signed-in visitor. */}
+          {isAuthenticated ? (
+            <Button
+              asChild
+              variant="contained"
+              color="accent"
+              size="sm"
+              className={FOCUS_RING}
+            >
+              <Link to={APP_HOME}>Open the app</Link>
+            </Button>
+          ) : (
+            <>
+              <Button
+                asChild
+                variant="text"
+                color="neutral"
+                size="sm"
+                className={FOCUS_RING}
+              >
+                <Link to="/login">Log in</Link>
+              </Button>
+              <Button
+                asChild
+                variant="contained"
+                color="accent"
+                size="sm"
+                className={FOCUS_RING}
+              >
+                <Link
+                  to="/register"
+                  onClick={trackCtaClick('nav', '/register')}
+                >
+                  Create an account
+                </Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button
@@ -135,34 +164,53 @@ const LandingNav = () => {
             </li>
             <li className="mt-2 flex flex-col gap-2">
               <ThemeToggle />
-              <Button
-                asChild
-                variant="outlined"
-                color="neutral"
-                size="md"
-                className={`w-full ${FOCUS_RING}`}
-              >
-                <Link to="/login" onClick={close}>
-                  Log in
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="contained"
-                color="accent"
-                size="md"
-                className={`w-full ${FOCUS_RING}`}
-              >
-                <Link
-                  to="/register"
-                  onClick={() => {
-                    trackCtaClick('nav', '/register')();
-                    close();
-                  }}
+              {/* As on desktop, nothing is reserved: if the status arrives while
+                  the menu is open (slow network), the two guest buttons become one.
+                  Accepted: the menu usually opens after the status is known. */}
+              {isAuthenticated ? (
+                <Button
+                  asChild
+                  variant="contained"
+                  color="accent"
+                  size="md"
+                  className={`w-full ${FOCUS_RING}`}
                 >
-                  Create an account
-                </Link>
-              </Button>
+                  <Link to={APP_HOME} onClick={close}>
+                    Open the app
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    asChild
+                    variant="outlined"
+                    color="neutral"
+                    size="md"
+                    className={`w-full ${FOCUS_RING}`}
+                  >
+                    <Link to="/login" onClick={close}>
+                      Log in
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="contained"
+                    color="accent"
+                    size="md"
+                    className={`w-full ${FOCUS_RING}`}
+                  >
+                    <Link
+                      to="/register"
+                      onClick={() => {
+                        trackCtaClick('nav', '/register')();
+                        close();
+                      }}
+                    >
+                      Create an account
+                    </Link>
+                  </Button>
+                </>
+              )}
             </li>
           </ul>
         </div>
