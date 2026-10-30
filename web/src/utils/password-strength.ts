@@ -2,6 +2,10 @@ import { PASSWORD_SYMBOL_REGEX } from './validators';
 
 /** Advisory strength score. NOT the validation gate — passwordSchema is. */
 export type StrengthScore = 0 | 1 | 2 | 3 | 4;
+/**
+ * Label id, not display text: `PasswordField` maps it to an `auth` key
+ * (`passwordField.strengthLabels.*`).
+ */
 export type StrengthLabel = 'Empty' | 'Weak' | 'Fair' | 'Good' | 'Strong';
 export interface PasswordStrength {
   score: StrengthScore;

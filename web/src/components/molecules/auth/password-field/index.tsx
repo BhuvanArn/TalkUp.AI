@@ -1,10 +1,24 @@
 import { BaseInput } from '@/components/atoms/base-input';
 import { Icon } from '@/components/atoms/icon';
 import { cn } from '@/utils/cn';
-import { type StrengthScore, scorePassword } from '@/utils/password-strength';
+import {
+  type StrengthLabel,
+  type StrengthScore,
+  scorePassword,
+} from '@/utils/password-strength';
+import type { ParseKeys } from 'i18next';
 import React, { useId, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { PasswordFieldProps } from './types';
+
+/** Displayed strength label, keyed by the scorer's label id. */
+const STRENGTH_LABEL_KEYS = {
+  Weak: 'passwordField.strengthLabels.weak',
+  Fair: 'passwordField.strengthLabels.fair',
+  Good: 'passwordField.strengthLabels.good',
+  Strong: 'passwordField.strengthLabels.strong',
+} as const satisfies Record<Exclude<StrengthLabel, 'Empty'>, ParseKeys<'auth'>>;
 
 /** Semantic Tailwind fill per segment index, keyed by score. */
 const SEGMENT_FILL: Record<Exclude<StrengthScore, 0>, string> = {
@@ -35,6 +49,7 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
   className,
   ...rest
 }) => {
+  const { t } = useTranslation('auth');
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const [revealed, setRevealed] = useState(false);
@@ -66,7 +81,9 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
             type="button"
             onClick={() => setRevealed((r) => !r)}
             aria-pressed={revealed}
-            aria-label={revealed ? 'Hide password' : 'Show password'}
+            aria-label={
+              revealed ? t('passwordField.hide') : t('passwordField.show')
+            }
             className="absolute inset-y-0 right-0 flex items-center px-3 text-text-weaker hover:text-text focus:outline-none focus:ring-2 focus:ring-accent rounded-sm"
           >
             <Icon
@@ -104,7 +121,11 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
                 : 'text-idle',
             )}
           >
-            {strValue.length > 0 ? `Strength: ${strengthLabel}` : ''}
+            {strengthLabel !== 'Empty'
+              ? t('passwordField.strength', {
+                  label: t(STRENGTH_LABEL_KEYS[strengthLabel]),
+                })
+              : ''}
           </p>
         </div>
       )}

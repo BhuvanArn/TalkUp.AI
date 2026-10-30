@@ -1,30 +1,131 @@
 import { cn } from '@/utils/cn';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Country, PhoneNumberInputProps } from './types';
 import { usePhoneNumber } from './usePhoneNumber';
 
 const countries: Country[] = [
-  { name: 'United States', code: 'US', flag: '🇺🇸', dialCode: '+1' },
-  { name: 'Canada', code: 'CA', flag: '🇨🇦', dialCode: '+1' },
-  { name: 'United Kingdom', code: 'GB', flag: '🇬🇧', dialCode: '+44' },
-  { name: 'Germany', code: 'DE', flag: '🇩🇪', dialCode: '+49' },
-  { name: 'France', code: 'FR', flag: '🇫🇷', dialCode: '+33' },
-  { name: 'Australia', code: 'AU', flag: '🇦🇺', dialCode: '+61' },
-  { name: 'Japan', code: 'JP', flag: '🇯🇵', dialCode: '+81' },
-  { name: 'China', code: 'CN', flag: '🇨🇳', dialCode: '+86' },
-  { name: 'India', code: 'IN', flag: '🇮🇳', dialCode: '+91' },
-  { name: 'Brazil', code: 'BR', flag: '🇧🇷', dialCode: '+55' },
-  { name: 'Russia', code: 'RU', flag: '🇷🇺', dialCode: '+7' },
-  { name: 'South Africa', code: 'ZA', flag: '🇿🇦', dialCode: '+27' },
-  { name: 'Mexico', code: 'MX', flag: '🇲🇽', dialCode: '+52' },
-  { name: 'South Korea', code: 'KR', flag: '🇰🇷', dialCode: '+82' },
-  { name: 'Italy', code: 'IT', flag: '🇮🇹', dialCode: '+39' },
-  { name: 'Spain', code: 'ES', flag: '🇪🇸', dialCode: '+34' },
-  { name: 'Netherlands', code: 'NL', flag: '🇳🇱', dialCode: '+31' },
-  { name: 'Sweden', code: 'SE', flag: '🇸🇪', dialCode: '+46' },
-  { name: 'Switzerland', code: 'CH', flag: '🇨🇭', dialCode: '+41' },
-  { name: 'Argentina', code: 'AR', flag: '🇦🇷', dialCode: '+54' },
+  {
+    nameKey: 'phoneNumber.countries.US',
+    code: 'US',
+    flag: '🇺🇸',
+    dialCode: '+1',
+  },
+  {
+    nameKey: 'phoneNumber.countries.CA',
+    code: 'CA',
+    flag: '🇨🇦',
+    dialCode: '+1',
+  },
+  {
+    nameKey: 'phoneNumber.countries.GB',
+    code: 'GB',
+    flag: '🇬🇧',
+    dialCode: '+44',
+  },
+  {
+    nameKey: 'phoneNumber.countries.DE',
+    code: 'DE',
+    flag: '🇩🇪',
+    dialCode: '+49',
+  },
+  {
+    nameKey: 'phoneNumber.countries.FR',
+    code: 'FR',
+    flag: '🇫🇷',
+    dialCode: '+33',
+  },
+  {
+    nameKey: 'phoneNumber.countries.AU',
+    code: 'AU',
+    flag: '🇦🇺',
+    dialCode: '+61',
+  },
+  {
+    nameKey: 'phoneNumber.countries.JP',
+    code: 'JP',
+    flag: '🇯🇵',
+    dialCode: '+81',
+  },
+  {
+    nameKey: 'phoneNumber.countries.CN',
+    code: 'CN',
+    flag: '🇨🇳',
+    dialCode: '+86',
+  },
+  {
+    nameKey: 'phoneNumber.countries.IN',
+    code: 'IN',
+    flag: '🇮🇳',
+    dialCode: '+91',
+  },
+  {
+    nameKey: 'phoneNumber.countries.BR',
+    code: 'BR',
+    flag: '🇧🇷',
+    dialCode: '+55',
+  },
+  {
+    nameKey: 'phoneNumber.countries.RU',
+    code: 'RU',
+    flag: '🇷🇺',
+    dialCode: '+7',
+  },
+  {
+    nameKey: 'phoneNumber.countries.ZA',
+    code: 'ZA',
+    flag: '🇿🇦',
+    dialCode: '+27',
+  },
+  {
+    nameKey: 'phoneNumber.countries.MX',
+    code: 'MX',
+    flag: '🇲🇽',
+    dialCode: '+52',
+  },
+  {
+    nameKey: 'phoneNumber.countries.KR',
+    code: 'KR',
+    flag: '🇰🇷',
+    dialCode: '+82',
+  },
+  {
+    nameKey: 'phoneNumber.countries.IT',
+    code: 'IT',
+    flag: '🇮🇹',
+    dialCode: '+39',
+  },
+  {
+    nameKey: 'phoneNumber.countries.ES',
+    code: 'ES',
+    flag: '🇪🇸',
+    dialCode: '+34',
+  },
+  {
+    nameKey: 'phoneNumber.countries.NL',
+    code: 'NL',
+    flag: '🇳🇱',
+    dialCode: '+31',
+  },
+  {
+    nameKey: 'phoneNumber.countries.SE',
+    code: 'SE',
+    flag: '🇸🇪',
+    dialCode: '+46',
+  },
+  {
+    nameKey: 'phoneNumber.countries.CH',
+    code: 'CH',
+    flag: '🇨🇭',
+    dialCode: '+41',
+  },
+  {
+    nameKey: 'phoneNumber.countries.AR',
+    code: 'AR',
+    flag: '🇦🇷',
+    dialCode: '+54',
+  },
 ];
 // TODO: Replace the native <select> with the new custom selector component from create-input-molecule-component
 /**
@@ -40,7 +141,7 @@ const countries: Country[] = [
  * @param {string} [props.value.phoneNumber] - The phone number part without the dial code.
  * @param {(value: { countryCode: string; phoneNumber: string }) => void} [props.onChange] - Callback for when the value changes.
  * @param {string} [props.defaultCountryCode='US'] - The default country code to pre-select.
- * @param {string} [props.placeholder='Phone Number'] - The placeholder text for the phone number input.
+ * @param {string} [props.placeholder] - The placeholder text (translated 'Phone Number' by default) for the phone number input.
  * @param {string} [props.className=''] - Additional CSS classes for the main container div.
  * @param {string} [props.inputClassName=''] - Additional CSS classes for the phone number input field.
  * @param {string} [props.selectClassName=''] - Additional CSS classes for the country selector dropdown.
@@ -52,13 +153,14 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
   value,
   onChange,
   defaultCountryCode = 'US',
-  placeholder = 'Phone Number',
+  placeholder,
   className = '',
   inputClassName = '',
   selectClassName = '',
   readOnly = false,
   disabled = false,
 }) => {
+  const { t } = useTranslation('auth');
   const {
     selectedCountry,
     phoneNumber,
@@ -76,7 +178,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
       >
         {countries.map((country) => (
           <option key={country.code} value={country.code}>
-            {country.flag} {country.name} ({country.dialCode})
+            {country.flag} {t(country.nameKey)} ({country.dialCode})
           </option>
         ))}
       </select>
@@ -85,11 +187,11 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
         type="tel"
         value={phoneNumber}
         onChange={(e) => handlePhoneNumberChange(e.target.value)}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('phoneNumber.placeholder')}
         readOnly={readOnly}
         disabled={disabled}
         className={cn('h-10 flex-1 rounded-md border px-3', inputClassName)}
-        aria-label="Phone Number"
+        aria-label={t('phoneNumber.label')}
       />
     </div>
   );

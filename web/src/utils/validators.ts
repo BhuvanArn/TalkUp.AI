@@ -1,12 +1,20 @@
+import type { ParseKeys } from 'i18next';
 import { z } from 'zod';
+
+/**
+ * i18n key of a validation message. Schemas hold keys, not text: translate the
+ * error where it is displayed, with `t(error as ValidationKey)` from
+ * `useTranslation(['auth', 'common'])`.
+ */
+export type ValidationKey = ParseKeys<['auth', 'common']>;
 
 /**
  * Email validation schema
  */
 export const emailSchema = z
   .string()
-  .min(1, 'Email is required')
-  .email('Invalid email address');
+  .min(1, 'auth:validation.emailRequired' satisfies ValidationKey)
+  .email('auth:validation.emailInvalid' satisfies ValidationKey);
 
 /**
  * Allowlisted "symbol" character class for password validation. Shared with
@@ -20,35 +28,43 @@ export const PASSWORD_SYMBOL_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
  */
 export const passwordSchema = z
   .string()
-  .min(1, 'Password is required')
-  .min(8, 'Password must be at least 8 characters')
-  .max(50, 'Password must be less than 50 characters')
-  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(PASSWORD_SYMBOL_REGEX, 'Password must contain at least one symbol');
+  .min(1, 'auth:validation.passwordRequired' satisfies ValidationKey)
+  .min(8, 'auth:validation.passwordMinLength' satisfies ValidationKey)
+  .max(50, 'auth:validation.passwordMaxLength' satisfies ValidationKey)
+  .regex(/[a-z]/, 'auth:validation.passwordLowercase' satisfies ValidationKey)
+  .regex(/[A-Z]/, 'auth:validation.passwordUppercase' satisfies ValidationKey)
+  .regex(/[0-9]/, 'auth:validation.passwordNumber' satisfies ValidationKey)
+  .regex(
+    PASSWORD_SYMBOL_REGEX,
+    'auth:validation.passwordSymbol' satisfies ValidationKey,
+  );
 
 /**
  * Password validation schema for login
  */
-export const loginPasswordSchema = z.string().min(1, 'Password is required');
+export const loginPasswordSchema = z
+  .string()
+  .min(1, 'auth:validation.passwordRequired' satisfies ValidationKey);
 
 /**
  * Username validation schema
  */
 export const usernameSchema = z
   .string()
-  .min(1, 'Username is required')
-  .min(3, 'Username must be at least 3 characters')
-  .max(20, 'Username must be at most 20 characters')
-  .regex(/^[a-zA-Z0-9]+$/, 'Username must contain only letters and numbers');
+  .min(1, 'auth:validation.usernameRequired' satisfies ValidationKey)
+  .min(3, 'auth:validation.usernameMinLength' satisfies ValidationKey)
+  .max(20, 'auth:validation.usernameMaxLength' satisfies ValidationKey)
+  .regex(
+    /^[a-zA-Z0-9]+$/,
+    'auth:validation.usernameAlphanumeric' satisfies ValidationKey,
+  );
 
 /** 6-digit email verification / OTP code */
 export const otpCodeSchema = z
   .string()
-  .min(1, 'Code is required')
-  .length(6, 'Code must be 6 digits')
-  .regex(/^\d{6}$/, 'Code must be 6 digits');
+  .min(1, 'auth:validation.codeRequired' satisfies ValidationKey)
+  .length(6, 'auth:validation.codeLength' satisfies ValidationKey)
+  .regex(/^\d{6}$/, 'auth:validation.codeLength' satisfies ValidationKey);
 
 /**
  * Protocols allowed for a user-provided job-offer URL.
@@ -85,7 +101,8 @@ export const isAllowedJobUrl = (value: string): boolean => {
 
 /**
  * Helper function to validate a field with a Zod schema
- * Returns the first error message or undefined if valid
+ * Returns the first error message (a {@link ValidationKey} for the schemas
+ * above) or undefined if valid
  */
 export const validateWithSchema = <T>(
   value: T,

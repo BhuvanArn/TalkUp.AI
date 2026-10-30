@@ -5,6 +5,7 @@ import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostRegisterOrganization } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
 import {
+  type ValidationKey,
   emailSchema,
   passwordSchema,
   validateWithSchema,
@@ -12,12 +13,13 @@ import {
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
 const organizationNameSchema = z
   .string()
-  .min(2, 'Organization name must be at least 2 characters')
-  .max(40, 'Organization name must be at most 40 characters');
+  .min(2, 'auth:validation.organizationNameMinLength' satisfies ValidationKey)
+  .max(40, 'auth:validation.organizationNameMaxLength' satisfies ValidationKey);
 
 /**
  * F12: self-serve organization signup — org name + admin email/password.
@@ -25,6 +27,7 @@ const organizationNameSchema = z
  * the standard email verification (the endpoint returns no tokens).
  */
 export const RegisterOrganizationForm = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const postRegisterOrganization = usePostRegisterOrganization();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -43,7 +46,7 @@ export const RegisterOrganizationForm = () => {
             setServerError(
               extractErrorMessage(
                 error,
-                'Organization signup failed. Please try again.',
+                t('registerOrganizationForm.errors.failed'),
               ),
             );
           },
@@ -56,8 +59,12 @@ export const RegisterOrganizationForm = () => {
   return (
     <div className="flex flex-col w-full gap-3 max-w-96">
       <header className="flex items-center justify-start gap-4">
-        <h2 className="text-h3 text-idle">Create your organization</h2>
-        <p className="text-body-l text-idle mt-1">Start your 30-day trial</p>
+        <h2 className="text-h3 text-idle">
+          {t('registerOrganizationForm.title')}
+        </h2>
+        <p className="text-body-l text-idle mt-1">
+          {t('registerOrganizationForm.subtitle')}
+        </p>
       </header>
       <form
         className="flex flex-col gap-3"
@@ -83,11 +90,15 @@ export const RegisterOrganizationForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Organization name"
+                placeholder={t(
+                  'registerOrganizationForm.organizationNamePlaceholder',
+                )}
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
+                  {field.state.meta.errors.map((error) =>
+                    t(error as ValidationKey),
+                  )}
                 </span>
               )}
             </div>
@@ -108,11 +119,13 @@ export const RegisterOrganizationForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Admin email address"
+                placeholder={t('registerOrganizationForm.emailPlaceholder')}
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
+                  {field.state.meta.errors.map((error) =>
+                    t(error as ValidationKey),
+                  )}
                 </span>
               )}
             </div>
@@ -131,13 +144,15 @@ export const RegisterOrganizationForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Create a secure password"
+                placeholder={t('registerOrganizationForm.passwordPlaceholder')}
                 autoComplete="new-password"
                 showStrength
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
+                  {field.state.meta.errors.map((error) =>
+                    t(error as ValidationKey),
+                  )}
                 </span>
               )}
             </div>
@@ -151,16 +166,21 @@ export const RegisterOrganizationForm = () => {
         )}
         <Button color="accent" type="submit">
           <Icon icon="register" color="white" />
-          Create organization
+          {t('registerOrganizationForm.submit')}
         </Button>
         <p className="text-idle text-label-m">
-          Joining with an invite code?{' '}
-          <Link
-            to="/register"
-            className="underline hover:text-active cursor-pointer"
-          >
-            Register as a member instead.
-          </Link>
+          <Trans
+            t={t}
+            i18nKey="registerOrganizationForm.memberSignup"
+            components={{
+              member: (
+                <Link
+                  to="/register"
+                  className="underline hover:text-active cursor-pointer"
+                />
+              ),
+            }}
+          />
         </p>
       </form>
     </div>

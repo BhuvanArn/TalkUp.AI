@@ -1,9 +1,11 @@
+import type { ParseKeys } from 'i18next';
+
 /**
  * Represents a country with its details for phone number input.
  */
 export interface Country {
-  /** Country name. */
-  name: string;
+  /** i18n key of the country name (`auth` namespace). */
+  nameKey: ParseKeys<'auth'>;
   /** ISO 2-letter country code (e.g., 'US'). */
   code: string;
   /** Emoji flag. */

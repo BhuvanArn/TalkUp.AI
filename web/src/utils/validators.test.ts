@@ -1,6 +1,8 @@
+import i18next from 'i18next';
 import { describe, expect, it } from 'vitest';
 
 import {
+  type ValidationKey,
   emailSchema,
   isAllowedJobUrl,
   loginPasswordSchema,
@@ -21,7 +23,9 @@ describe('validators', () => {
       const result = emailSchema.safeParse('');
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0]?.message).toBe('Email is required');
+        expect(result.error.errors[0]?.message).toBe(
+          'auth:validation.emailRequired',
+        );
       }
     });
 
@@ -29,7 +33,9 @@ describe('validators', () => {
       const result = emailSchema.safeParse('not-an-email');
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0]?.message).toBe('Invalid email address');
+        expect(result.error.errors[0]?.message).toBe(
+          'auth:validation.emailInvalid',
+        );
       }
     });
 
@@ -54,7 +60,9 @@ describe('validators', () => {
       const result = passwordSchema.safeParse('');
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0]?.message).toBe('Password is required');
+        expect(result.error.errors[0]?.message).toBe(
+          'auth:validation.passwordRequired',
+        );
       }
     });
 
@@ -63,7 +71,7 @@ describe('validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errors[0]?.message).toBe(
-          'Password must be at least 8 characters',
+          'auth:validation.passwordMinLength',
         );
       }
     });
@@ -75,7 +83,7 @@ describe('validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errors[0]?.message).toBe(
-          'Password must be less than 50 characters',
+          'auth:validation.passwordMaxLength',
         );
       }
     });
@@ -85,7 +93,7 @@ describe('validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errors[0]?.message).toBe(
-          'Password must contain at least one lowercase letter',
+          'auth:validation.passwordLowercase',
         );
       }
     });
@@ -95,7 +103,7 @@ describe('validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errors[0]?.message).toBe(
-          'Password must contain at least one uppercase letter',
+          'auth:validation.passwordUppercase',
         );
       }
     });
@@ -105,7 +113,7 @@ describe('validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errors[0]?.message).toBe(
-          'Password must contain at least one number',
+          'auth:validation.passwordNumber',
         );
       }
     });
@@ -115,7 +123,7 @@ describe('validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errors[0]?.message).toBe(
-          'Password must contain at least one symbol',
+          'auth:validation.passwordSymbol',
         );
       }
     });
@@ -138,7 +146,7 @@ describe('validators', () => {
         expect(result.success).toBe(false);
         if (!result.success) {
           expect(result.error.errors[0]?.message).toBe(
-            'Password must contain at least one symbol',
+            'auth:validation.passwordSymbol',
           );
         }
       }
@@ -160,7 +168,9 @@ describe('validators', () => {
       const result = loginPasswordSchema.safeParse('');
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0]?.message).toBe('Password is required');
+        expect(result.error.errors[0]?.message).toBe(
+          'auth:validation.passwordRequired',
+        );
       }
     });
 
@@ -185,7 +195,9 @@ describe('validators', () => {
       const result = usernameSchema.safeParse('');
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0]?.message).toBe('Username is required');
+        expect(result.error.errors[0]?.message).toBe(
+          'auth:validation.usernameRequired',
+        );
       }
     });
 
@@ -194,7 +206,7 @@ describe('validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errors[0]?.message).toBe(
-          'Username must be at least 3 characters',
+          'auth:validation.usernameMinLength',
         );
       }
     });
@@ -204,7 +216,7 @@ describe('validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errors[0]?.message).toBe(
-          'Username must be at most 20 characters',
+          'auth:validation.usernameMaxLength',
         );
       }
     });
@@ -214,7 +226,7 @@ describe('validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errors[0]?.message).toBe(
-          'Username must contain only letters and numbers',
+          'auth:validation.usernameAlphanumeric',
         );
       }
     });
@@ -224,7 +236,7 @@ describe('validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.errors[0]?.message).toBe(
-          'Username must contain only letters and numbers',
+          'auth:validation.usernameAlphanumeric',
         );
       }
     });
@@ -263,23 +275,39 @@ describe('validators', () => {
 
     it('should return first error message for invalid input', () => {
       const result = validateWithSchema('', emailSchema);
-      expect(result).toBe('Email is required');
+      expect(result).toBe('auth:validation.emailRequired');
     });
 
     it('should work with different schema types', () => {
       const result = validateWithSchema('ab', usernameSchema);
-      expect(result).toBe('Username must be at least 3 characters');
+      expect(result).toBe('auth:validation.usernameMinLength');
     });
 
     it('should return first error when multiple errors exist', () => {
       const result = validateWithSchema('', passwordSchema);
-      expect(result).toBe('Password is required');
+      expect(result).toBe('auth:validation.passwordRequired');
     });
 
     it('should handle complex validation failures', () => {
       const result = validateWithSchema('weakpassword', passwordSchema);
       expect(result).toBeTruthy();
       expect(typeof result).toBe('string');
+    });
+
+    it('returns keys that resolve to the English message', () => {
+      const result = validateWithSchema('ab', usernameSchema);
+      const t = i18next.getFixedT('en', ['auth', 'common']);
+      expect(t(result as ValidationKey)).toBe(
+        'Username must be at least 3 characters',
+      );
+    });
+
+    it('returns keys that resolve to the French message', () => {
+      const result = validateWithSchema('', emailSchema);
+      const t = i18next.getFixedT('fr', ['auth', 'common']);
+      expect(t(result as ValidationKey)).toBe(
+        'L’adresse e-mail est obligatoire',
+      );
     });
   });
 

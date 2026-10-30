@@ -5,6 +5,7 @@ import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostRegister } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
 import {
+  type ValidationKey,
   emailSchema,
   passwordSchema,
   usernameSchema,
@@ -13,6 +14,7 @@ import {
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 /**
  * A component that renders a registration form with username, email, and password fields.
@@ -37,6 +39,7 @@ import { useState } from 'react';
 export const RegisterForm = ({
   initialCode,
 }: { initialCode?: string } = {}) => {
+  const { t } = useTranslation(['auth', 'common']);
   const postRegister = usePostRegister();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -59,10 +62,7 @@ export const RegisterForm = ({
         {
           onError: (error: unknown) => {
             setServerError(
-              extractErrorMessage(
-                error,
-                'Registration failed. Please try again.',
-              ),
+              extractErrorMessage(error, t('registerForm.errors.failed')),
             );
           },
           onSuccess: () => setServerError(null),
@@ -74,8 +74,10 @@ export const RegisterForm = ({
   return (
     <div className="flex flex-col w-full gap-3 max-w-96">
       <header className="flex items-center justify-start gap-4">
-        <h2 className="text-h3 text-idle">Register</h2>
-        <p className="text-body-l text-idle mt-1">Create your account</p>
+        <h2 className="text-h3 text-idle">{t('registerForm.title')}</h2>
+        <p className="text-body-l text-idle mt-1">
+          {t('registerForm.subtitle')}
+        </p>
       </header>
       <form
         className="flex flex-col gap-3"
@@ -100,11 +102,13 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Choose a username"
+                placeholder={t('registerForm.usernamePlaceholder')}
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
+                  {field.state.meta.errors.map((error) =>
+                    t(error as ValidationKey),
+                  )}
                 </span>
               )}
             </div>
@@ -125,11 +129,13 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Your email address"
+                placeholder={t('registerForm.emailPlaceholder')}
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
+                  {field.state.meta.errors.map((error) =>
+                    t(error as ValidationKey),
+                  )}
                 </span>
               )}
             </div>
@@ -148,13 +154,15 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Create a secure password"
+                placeholder={t('registerForm.passwordPlaceholder')}
                 autoComplete="new-password"
                 showStrength
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
+                  {field.state.meta.errors.map((error) =>
+                    t(error as ValidationKey),
+                  )}
                 </span>
               )}
             </div>
@@ -165,7 +173,7 @@ export const RegisterForm = ({
           validators={{
             onChange: ({ value }) =>
               value && value.trim().length > 32
-                ? 'Organization code is too long'
+                ? ('auth:validation.organizationCodeTooLong' satisfies ValidationKey)
                 : undefined,
           }}
         >
@@ -178,11 +186,13 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Organization code (optional)"
+                placeholder={t('registerForm.organizationCodePlaceholder')}
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
+                  {field.state.meta.errors.map((error) =>
+                    t(error as ValidationKey),
+                  )}
                 </span>
               )}
             </div>
@@ -205,20 +215,25 @@ export const RegisterForm = ({
           to="/about"
           className="text-idle text-label-m underline hover:text-active cursor-pointer"
         >
-          Learn about our Terms of Service
+          {t('registerForm.terms')}
         </Link>
         <Button color="accent" type="submit">
           <Icon icon="register" color="white" />
-          Register
+          {t('registerForm.submit')}
         </Button>
         <p className="text-idle text-label-m">
-          Already have an account?{' '}
-          <Link
-            to="/login"
-            className="underline hover:text-active cursor-pointer"
-          >
-            Let's get you back in!
-          </Link>
+          <Trans
+            t={t}
+            i18nKey="registerForm.hasAccount"
+            components={{
+              signin: (
+                <Link
+                  to="/login"
+                  className="underline hover:text-active cursor-pointer"
+                />
+              ),
+            }}
+          />
         </p>
       </form>
     </div>
