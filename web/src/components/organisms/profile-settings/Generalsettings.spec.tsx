@@ -261,11 +261,37 @@ describe('GeneralSettings', () => {
       ).toBeInTheDocument();
     });
 
-    it('has Product Manager Candidate as default option', () => {
-      render(<GeneralSettings {...defaultProps} />);
+    it('always offers a "No job title" option, so a title can be cleared', () => {
+      const onJobTitleChange = vi.fn();
+      render(
+        <GeneralSettings
+          {...defaultProps}
+          onJobTitleChange={onJobTitleChange}
+        />,
+      );
       expect(screen.getByLabelText('Job title')).toHaveValue(
         'Product Manager Candidate',
       );
+      expect(screen.getByRole('option', { name: 'No job title' })).toHaveValue(
+        '',
+      );
+      fireEvent.change(screen.getByLabelText('Job title'), {
+        target: { value: '' },
+      });
+      expect(onJobTitleChange).toHaveBeenCalledWith('');
+    });
+
+    it('selects "No job title" when no title is stored', () => {
+      render(<GeneralSettings {...defaultProps} jobTitle="" />);
+      expect(screen.getByLabelText('Job title')).toHaveValue('');
+    });
+
+    it('keeps a custom stored title as an option, shown as typed', () => {
+      render(<GeneralSettings {...defaultProps} jobTitle="Data Analyst" />);
+      expect(screen.getByLabelText('Job title')).toHaveValue('Data Analyst');
+      expect(
+        screen.getByRole('option', { name: 'Data Analyst' }),
+      ).toBeInTheDocument();
     });
   });
 });

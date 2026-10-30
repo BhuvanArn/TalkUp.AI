@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { changeLanguage } from '@/i18n';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { type AccountSession, SecuritySettings } from './SecuritySettings';
 
@@ -133,5 +134,29 @@ describe('SecuritySettings', () => {
     expect(
       screen.getByRole('button', { name: 'Log out everywhere' }),
     ).toBeDisabled();
+  });
+});
+
+describe('SecuritySettings in French', () => {
+  afterEach(async () => {
+    await act(() => changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders the sections and the delete confirmation in French', async () => {
+    await act(() => changeLanguage('fr'));
+    render(<SecuritySettings onDeleteAccount={vi.fn()} />);
+    expect(screen.getByText('Mot de passe')).toBeInTheDocument();
+    expect(screen.getByText('Zone sensible')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Supprimer mon compte' }),
+    );
+    // Trim only: the default normalizer would turn the no-break space before
+    // "?" into a plain space and hide a regression.
+    expect(
+      screen.getByText(/^Supprimer votre compte \?$/, {
+        normalizer: (text) => text.trim(),
+      }),
+    ).toBeInTheDocument();
   });
 });

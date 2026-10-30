@@ -1,6 +1,7 @@
+import { changeLanguage } from '@/i18n';
 import type { OrganizationInvite } from '@/services/organization/types';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import InvitesPanel from './index';
 
@@ -146,5 +147,34 @@ describe('InvitesPanel', () => {
     expect(
       screen.queryByRole('button', { name: /create invite/i }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('InvitesPanel in French', () => {
+  afterEach(async () => {
+    await act(() => changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('translates statuses, roles and the empty email', async () => {
+    await act(() => changeLanguage('fr'));
+    render(
+      <InvitesPanel
+        invites={invites}
+        isAdmin={true}
+        callerRole="admin"
+        onCreate={vi.fn()}
+        onRevoke={vi.fn()}
+        isCreating={false}
+      />,
+    );
+    expect(screen.getByText('Invitations')).toBeInTheDocument();
+    expect(screen.getByText('en attente')).toBeInTheDocument();
+    expect(screen.getByText('acceptée')).toBeInTheDocument();
+    expect(screen.getByText('toute adresse')).toBeInTheDocument();
+    expect(screen.getAllByText('utilisateur')).toHaveLength(2);
+    expect(
+      screen.getByRole('button', { name: 'Révoquer' }),
+    ).toBeInTheDocument();
   });
 });
