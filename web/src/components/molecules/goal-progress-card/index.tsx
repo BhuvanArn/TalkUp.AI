@@ -32,7 +32,8 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
   const { intlLocale } = useLocale();
   const radius = 30;
   const circumference = 2 * Math.PI * radius;
-  const normalizedProgress = Math.min(100, Math.max(0, progress));
+  // Rounded and clamped like the match gauge, so the label matches the ring.
+  const normalizedProgress = Math.round(Math.min(100, Math.max(0, progress)));
   const strokeDashoffset =
     circumference - (normalizedProgress / 100) * circumference;
 
@@ -91,7 +92,7 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
         {/* Progress text in the center */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
           <p className="text-h5 text-active">
-            {formatPercent(progress, intlLocale)}
+            {formatPercent(normalizedProgress, intlLocale)}
           </p>
         </div>
       </div>
