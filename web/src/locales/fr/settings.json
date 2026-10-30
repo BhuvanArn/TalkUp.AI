@@ -75,25 +75,25 @@
     "linkedin": "URL LinkedIn",
     "jobTitle": "Poste",
     "jobOptions": {
-      "productManagerCandidate": "Candidat Product Manager",
       "productDesigner": "Product Designer",
       "softwareEngineer": "Ingénieur logiciel"
-    }
+    },
+    "jobTitlePlaceholder": "Choisissez un poste"
   },
   "appearanceSettings": {
     "color": {
       "title": "Couleur du profil",
-      "desc": "Choisissez la couleur de votre avatar et la couleur d’accent",
+      "desc": "Choisissez la couleur de votre avatar et la couleur d’accentuation",
       "use": "Utiliser la couleur {{name}}",
       "custom": "Couleur personnalisée",
       "names": {
-        "blue": "bleu",
-        "green": "vert",
+        "blue": "bleue",
+        "green": "verte",
         "orange": "orange",
         "pink": "rose",
         "yellow": "jaune",
-        "purple": "violet",
-        "gray": "gris"
+        "purple": "violette",
+        "gray": "grise"
       }
     },
     "preview": {
@@ -160,13 +160,13 @@
       "request": "Demander une copie de mes données"
     },
     "danger": {
-      "title": "Zone de danger",
+      "title": "Zone sensible",
       "desc": "La suppression de votre compte efface votre profil, vos préférences et votre accès à TalkUp. Cette action est irréversible.",
       "delete": "Supprimer mon compte"
     },
     "logoutModal": {
       "title": "Se déconnecter des autres appareils ?",
-      "message": "Vous serez déconnecté partout, sauf sur ce navigateur. Les autres appareils devront se reconnecter.",
+      "message": "Votre session sera fermée partout, sauf sur ce navigateur. Les autres appareils devront se reconnecter.",
       "confirm": "Déconnecter les autres appareils"
     },
     "deleteModal": {
@@ -211,12 +211,24 @@
       "avgScore": "Score moyen",
       "lastActivity": "Dernière activité"
     },
-    "adminOnly": "Seuls les administrateurs de l’organisation peuvent modifier ses paramètres."
+    "adminOnly": "Seuls les administrateurs de l’organisation peuvent modifier ses paramètres.",
+    "toasts": {
+      "inviteCreated": "Code d’invitation généré",
+      "inviteCreateError": "Impossible de créer l’invitation",
+      "inviteRevoked": "Invitation révoquée",
+      "inviteRevokeError": "Impossible de révoquer l’invitation",
+      "roleUpdated": "Rôle du membre mis à jour",
+      "roleUpdateError": "Impossible de modifier le rôle",
+      "memberRemoved": "Membre retiré",
+      "memberRemoveError": "Impossible de retirer le membre",
+      "orgUpdated": "Organisation mise à jour",
+      "orgUpdateError": "Impossible de modifier l’organisation"
+    }
   },
   "orgViewLayout": {
     "loading": "Chargement de l’organisation…",
     "loadError": "Impossible de charger votre organisation. Veuillez réessayer dans un instant.",
-    "notAffiliated": "Vous n’êtes rattaché à aucune organisation."
+    "notAffiliated": "Votre compte n’est rattaché à aucune organisation."
   },
   "invitesPanel": {
     "title": "Invitations",
@@ -304,15 +316,15 @@
       "tooShort": "Saisissez au moins deux caractères.",
       "hint": "Ce nom s’affiche dans tout l’espace de l’organisation."
     },
-    "discard": "Abandonner",
+    "discard": "Annuler les modifications",
     "save": "Enregistrer les modifications",
     "glance": {
       "title": "En bref",
       "members": "Membres",
       "employees": "Employés",
       "users": "Utilisateurs",
-      "created": "Création",
-      "id": "ID de l’organisation",
+      "created": "Date de création",
+      "id": "Identifiant de l’organisation",
       "memberCount_one": "{{count}} membre",
       "memberCount_other": "{{count}} membres",
       "employeeCount_one": "{{count}} employé",
@@ -320,17 +332,5 @@
       "userCount_one": "{{count}} utilisateur",
       "userCount_other": "{{count}} utilisateurs"
     }
-  },
-  "organizationToasts": {
-    "inviteCreated": "Code d’invitation généré",
-    "inviteCreateError": "Impossible de créer l’invitation",
-    "inviteRevoked": "Invitation révoquée",
-    "inviteRevokeError": "Impossible de révoquer l’invitation",
-    "roleUpdated": "Rôle du membre mis à jour",
-    "roleUpdateError": "Impossible de modifier le rôle",
-    "memberRemoved": "Membre retiré",
-    "memberRemoveError": "Impossible de retirer le membre",
-    "orgUpdated": "Organisation mise à jour",
-    "orgUpdateError": "Impossible de modifier l’organisation"
   }
 }

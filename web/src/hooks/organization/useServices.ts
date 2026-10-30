@@ -48,11 +48,11 @@ export const useCreateInvite = (orgId: string) => {
     mutationFn: (body: { email?: string; role?: 'user' | 'employee' }) =>
       organizationService.createInvite(orgId, body),
     onSuccess: () => {
-      toast.success(i18next.t('settings:organizationToasts.inviteCreated'));
+      toast.success(i18next.t('settings:organization.toasts.inviteCreated'));
       invalidate();
     },
     onError: () =>
-      toast.error(i18next.t('settings:organizationToasts.inviteCreateError')),
+      toast.error(i18next.t('settings:organization.toasts.inviteCreateError')),
   });
 };
 
@@ -62,11 +62,11 @@ export const useRevokeInvite = (orgId: string) => {
     mutationFn: (inviteId: string) =>
       organizationService.revokeInvite(orgId, inviteId),
     onSuccess: () => {
-      toast.success(i18next.t('settings:organizationToasts.inviteRevoked'));
+      toast.success(i18next.t('settings:organization.toasts.inviteRevoked'));
       invalidate();
     },
     onError: () =>
-      toast.error(i18next.t('settings:organizationToasts.inviteRevokeError')),
+      toast.error(i18next.t('settings:organization.toasts.inviteRevokeError')),
   });
 };
 
@@ -81,11 +81,11 @@ export const useUpdateMemberRole = (orgId: string) => {
       role: 'user' | 'employee';
     }) => organizationService.updateMemberRole(orgId, userId, role),
     onSuccess: () => {
-      toast.success(i18next.t('settings:organizationToasts.roleUpdated'));
+      toast.success(i18next.t('settings:organization.toasts.roleUpdated'));
       invalidate();
     },
     onError: () =>
-      toast.error(i18next.t('settings:organizationToasts.roleUpdateError')),
+      toast.error(i18next.t('settings:organization.toasts.roleUpdateError')),
   });
 };
 
@@ -95,11 +95,11 @@ export const useRemoveMember = (orgId: string) => {
     mutationFn: (userId: string) =>
       organizationService.removeMember(orgId, userId),
     onSuccess: () => {
-      toast.success(i18next.t('settings:organizationToasts.memberRemoved'));
+      toast.success(i18next.t('settings:organization.toasts.memberRemoved'));
       invalidate();
     },
     onError: () =>
-      toast.error(i18next.t('settings:organizationToasts.memberRemoveError')),
+      toast.error(i18next.t('settings:organization.toasts.memberRemoveError')),
   });
 };
 
@@ -111,10 +111,10 @@ export const useUpdateOrganization = (orgId: string) => {
       OrganizationProfilePicture?: string;
     }) => organizationService.updateOrganization(orgId, body),
     onSuccess: () => {
-      toast.success(i18next.t('settings:organizationToasts.orgUpdated'));
+      toast.success(i18next.t('settings:organization.toasts.orgUpdated'));
       invalidate();
     },
     onError: () =>
-      toast.error(i18next.t('settings:organizationToasts.orgUpdateError')),
+      toast.error(i18next.t('settings:organization.toasts.orgUpdateError')),
   });
 };

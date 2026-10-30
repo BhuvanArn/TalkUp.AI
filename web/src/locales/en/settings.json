@@ -75,10 +75,10 @@
     "linkedin": "LinkedIn URL",
     "jobTitle": "Job title",
     "jobOptions": {
-      "productManagerCandidate": "Product Manager Candidate",
       "productDesigner": "Product Designer",
       "softwareEngineer": "Software Engineer"
-    }
+    },
+    "jobTitlePlaceholder": "Select a job title"
   },
   "appearanceSettings": {
     "color": {
@@ -211,7 +211,19 @@
       "avgScore": "Average score",
       "lastActivity": "Last activity"
     },
-    "adminOnly": "Only organization admins can edit organization settings."
+    "adminOnly": "Only organization admins can edit organization settings.",
+    "toasts": {
+      "inviteCreated": "Invite code generated",
+      "inviteCreateError": "Could not create the invite",
+      "inviteRevoked": "Invite revoked",
+      "inviteRevokeError": "Could not revoke the invite",
+      "roleUpdated": "Member role updated",
+      "roleUpdateError": "Could not update the role",
+      "memberRemoved": "Member removed",
+      "memberRemoveError": "Could not remove the member",
+      "orgUpdated": "Organization updated",
+      "orgUpdateError": "Could not update the organization"
+    }
   },
   "orgViewLayout": {
     "loading": "Loading organization…",
@@ -320,17 +332,5 @@
       "userCount_one": "{{count}} user",
       "userCount_other": "{{count}} users"
     }
-  },
-  "organizationToasts": {
-    "inviteCreated": "Invite code generated",
-    "inviteCreateError": "Could not create the invite",
-    "inviteRevoked": "Invite revoked",
-    "inviteRevokeError": "Could not revoke the invite",
-    "roleUpdated": "Member role updated",
-    "roleUpdateError": "Could not update the role",
-    "memberRemoved": "Member removed",
-    "memberRemoveError": "Could not remove the member",
-    "orgUpdated": "Organization updated",
-    "orgUpdateError": "Could not update the organization"
   }
 }

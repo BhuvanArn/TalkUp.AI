@@ -147,7 +147,7 @@ describe('SecuritySettings in French', () => {
     await act(() => changeLanguage('fr'));
     render(<SecuritySettings onDeleteAccount={vi.fn()} />);
     expect(screen.getByText('Mot de passe')).toBeInTheDocument();
-    expect(screen.getByText('Zone de danger')).toBeInTheDocument();
+    expect(screen.getByText('Zone sensible')).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole('button', { name: 'Supprimer mon compte' }),
     );
