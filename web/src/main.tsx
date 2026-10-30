@@ -1,6 +1,7 @@
 import ToasterConfig from '@/components/atoms/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { initI18n } from '@/i18n';
 import '@/styles/index';
 import { initAnalytics, trackPageview } from '@/utils/analytics';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -12,6 +13,8 @@ import ReactDOM from 'react-dom/client';
 import { routeTree } from './routeTree.gen';
 
 initAnalytics();
+// Synchronous (bundled resources): the language is set before the first render.
+initI18n();
 
 const queryClient = new QueryClient();
 
