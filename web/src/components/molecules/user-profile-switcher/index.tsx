@@ -20,6 +20,10 @@ const menuPanelClass =
 
 const menuItemClass =
   'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-body-s font-medium text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
+// Shared by the compact theme and language buttons of the menu's bottom row.
+const menuIconButtonClass =
+  'h-9 rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer';
 // Falls back to the live brand accent token so the avatar follows the active
 // view (blue normally, emerald in the organization view). A user's explicit
 // avatarAccentColor still overrides it.
@@ -272,7 +276,10 @@ export const UserProfileSwitcher = ({
                 <button
                   type="button"
                   role="menuitem"
-                  className="flex size-9 items-center justify-center rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
+                  className={cn(
+                    menuIconButtonClass,
+                    'flex w-9 items-center justify-center',
+                  )}
                   aria-label={
                     theme === 'light'
                       ? 'Switch to dark theme'
@@ -290,7 +297,10 @@ export const UserProfileSwitcher = ({
                   variant="text"
                   color="neutral"
                   role="menuitem"
-                  className="h-9 rounded-lg px-2 text-body-s font-medium text-text hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className={cn(
+                    menuIconButtonClass,
+                    'px-2 text-body-s font-medium',
+                  )}
                 />
               </div>
               <button
