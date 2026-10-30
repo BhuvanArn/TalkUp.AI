@@ -1,6 +1,7 @@
 import { BaseInput } from '@/components/atoms/base-input';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { PasswordField } from '@/components/molecules/auth/password-field';
 import {
   usePasswordResetComplete,
@@ -8,6 +9,7 @@ import {
 } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
 import {
+  type ValidationKey,
   emailSchema,
   otpCodeSchema,
   passwordSchema,
@@ -16,17 +18,27 @@ import {
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 const RESEND_COOLDOWN_SEC = 60;
+
+/** An i18n key, translated at render, or a server message shown as is. */
+type FormError = { key: ValidationKey } | { raw: string };
+
+const toFormError = (error: unknown, fallback: ValidationKey): FormError => {
+  const message = extractErrorMessage(error, '');
+  return message ? { raw: message } : { key: fallback };
+};
 
 type ResetPasswordFormProps = {
   initialEmail: string;
 };
 
 export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
+  const { t } = useTranslation(['auth', 'common']);
   const completeReset = usePasswordResetComplete();
   const resendOtp = usePostResendOtp();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<FormError | null>(null);
   const [resendSecondsLeft, setResendSecondsLeft] = useState(0);
 
   const emailTrimmed = initialEmail.trim();
@@ -35,10 +47,10 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
 
   useEffect(() => {
     if (resendSecondsLeft <= 0) return;
-    const t = window.setInterval(() => {
+    const timer = window.setInterval(() => {
       setResendSecondsLeft((s) => (s <= 1 ? 0 : s - 1));
     }, 1000);
-    return () => window.clearInterval(t);
+    return () => window.clearInterval(timer);
   }, [resendSecondsLeft]);
 
   const startCooldown = () => {
@@ -54,18 +66,16 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
     onSubmit: ({ value }) => {
       setServerError(null);
       if (emailMissingOrInvalid) {
-        setServerError(
-          'Missing email. Start from forgot password and enter your email.',
-        );
+        setServerError({ key: 'resetPasswordForm.errors.missingEmail' });
         return;
       }
       const pwdErr = validateWithSchema(value.newPassword, passwordSchema);
       if (pwdErr) {
-        setServerError(pwdErr);
+        setServerError({ key: pwdErr });
         return;
       }
       if (value.newPassword !== value.confirmPassword) {
-        setServerError('Passwords do not match');
+        setServerError({ key: 'resetPasswordForm.errors.passwordMismatch' });
         return;
       }
       completeReset.mutate(
@@ -77,10 +87,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
         {
           onError: (error: unknown) => {
             setServerError(
-              extractErrorMessage(
-                error,
-                'Could not reset password. Check the code and try again.',
-              ),
+              toFormError(error, 'resetPasswordForm.errors.failed'),
             );
           },
         },
@@ -91,23 +98,35 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
   return (
     <div className="flex flex-col w-full gap-3 max-w-96">
       <header className="flex flex-col gap-1 items-start">
-        <h2 className="text-h3 text-idle">Reset your password</h2>
+        <h2 className="text-h3 text-idle">{t('resetPasswordForm.title')}</h2>
         {emailTrimmed && !emailMissingOrInvalid ? (
           <p className="text-body-l text-idle">
-            Enter the 6-digit code we sent to{' '}
-            <span className="font-medium text-active">{emailTrimmed}</span>,
-            then choose a new password.
+            <Trans
+              t={t}
+              i18nKey="resetPasswordForm.description"
+              components={{
+                email: (
+                  <span className="font-medium text-active">
+                    {emailTrimmed}
+                  </span>
+                ),
+              }}
+            />
           </p>
         ) : (
           <p className="text-body-l text-idle">
-            We need your email to finish resetting your password.{' '}
-            <Link
-              to="/forgot-password"
-              className="underline hover:text-active cursor-pointer"
-            >
-              Go back
-            </Link>{' '}
-            and request a code first.
+            <Trans
+              t={t}
+              i18nKey="resetPasswordForm.missingEmailDescription"
+              components={{
+                back: (
+                  <Link
+                    to="/forgot-password"
+                    className="underline hover:text-active cursor-pointer"
+                  />
+                ),
+              }}
+            />
           </p>
         )}
       </header>
@@ -131,7 +150,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
                 htmlFor="reset-otp"
                 className="text-label-m text-idle sr-only"
               >
-                Verification code
+                {t('otpCode.label')}
               </label>
               <BaseInput
                 id="reset-otp"
@@ -151,11 +170,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
                 aria-invalid={field.state.meta.errors.length > 0}
                 className="text-center font-mono text-h3 tabular-nums tracking-[0.35em] placeholder:tracking-[0.35em] py-3"
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -173,15 +188,11 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="New password"
+                placeholder={t('resetPasswordForm.newPasswordPlaceholder')}
                 autoComplete="new-password"
                 showStrength
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -194,24 +205,16 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Confirm new password"
+                placeholder={t('resetPasswordForm.confirmPasswordPlaceholder')}
                 autoComplete="new-password"
               />
             </div>
           )}
         </form.Field>
 
-        <form.Subscribe selector={(state) => state.errors}>
-          {(errors) =>
-            errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">{errors}</span>
-            )
-          }
-        </form.Subscribe>
-
         {serverError && (
           <div className="text-sm text-red-600 text-center" role="alert">
-            {serverError}
+            {'key' in serverError ? t(serverError.key) : serverError.raw}
           </div>
         )}
 
@@ -221,7 +224,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
           disabled={completeReset.isPending || emailMissingOrInvalid}
         >
           <Icon icon="register" color="white" />
-          Update password
+          {t('resetPasswordForm.submit')}
         </Button>
       </form>
 
@@ -237,9 +240,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
           onClick={() => {
             setServerError(null);
             if (emailMissingOrInvalid) {
-              setServerError(
-                'Missing email. Start from forgot password and enter your email.',
-              );
+              setServerError({ key: 'resetPasswordForm.errors.missingEmail' });
               return;
             }
             resendOtp.mutate(
@@ -249,11 +250,9 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
                   startCooldown();
                 },
                 onError: (error: unknown) => {
-                  const msg = extractErrorMessage(
-                    error,
-                    'Could not resend code. Please try again.',
+                  setServerError(
+                    toFormError(error, 'otpCode.errors.resendFailed'),
                   );
-                  setServerError(msg);
                   if (
                     typeof error === 'object' &&
                     error !== null &&
@@ -272,8 +271,8 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
         >
           <Icon icon="arrow-right" color="white" />
           {resendSecondsLeft > 0
-            ? `Resend code (${resendSecondsLeft}s)`
-            : 'Resend code'}
+            ? t('otpCode.resendCountdown', { seconds: resendSecondsLeft })
+            : t('otpCode.resend')}
         </Button>
       </div>
 
@@ -282,7 +281,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
           to="/login"
           className="underline hover:text-active cursor-pointer"
         >
-          Back to login
+          {t('resetPasswordForm.backToLogin')}
         </Link>
       </p>
     </div>

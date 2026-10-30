@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostPasswordResetRequest } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
@@ -8,6 +9,7 @@ import { useForm } from '@tanstack/react-form';
 import { Link, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Step 1 of password reset: request OTP; then navigate to /reset-password.
@@ -19,6 +21,7 @@ type ForgotPasswordFormProps = {
 export const ForgotPasswordForm = ({
   initialEmail = '',
 }: ForgotPasswordFormProps) => {
+  const { t } = useTranslation(['auth', 'common']);
   const router = useRouter();
   const passwordResetRequest = usePostPasswordResetRequest();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -34,9 +37,7 @@ export const ForgotPasswordForm = ({
         { email },
         {
           onSuccess: () => {
-            toast.success(
-              'If an account exists for this email, check your inbox for a 6-digit code.',
-            );
+            toast.success(t('forgotPasswordForm.codeSent'));
             router.navigate({
               to: '/reset-password',
               search: { email },
@@ -44,10 +45,7 @@ export const ForgotPasswordForm = ({
           },
           onError: (error: unknown) => {
             setServerError(
-              extractErrorMessage(
-                error,
-                'Could not send reset instructions. Please try again.',
-              ),
+              extractErrorMessage(error, t('forgotPasswordForm.errors.failed')),
             );
           },
         },
@@ -58,10 +56,9 @@ export const ForgotPasswordForm = ({
   return (
     <div className="flex flex-col w-full gap-3 max-w-96">
       <header className="flex flex-col gap-1 items-start">
-        <h2 className="text-h3 text-idle">Forgot password?</h2>
+        <h2 className="text-h3 text-idle">{t('forgotPasswordForm.title')}</h2>
         <p className="text-body-l text-idle">
-          Enter your email and we&apos;ll send you a 6-digit code to reset your
-          password.
+          {t('forgotPasswordForm.description')}
         </p>
       </header>
       <form
@@ -90,24 +87,12 @@ export const ForgotPasswordForm = ({
                   setServerError(null);
                 }}
                 onBlur={field.handleBlur}
-                placeholder="What email did you use?"
+                placeholder={t('forgotPasswordForm.emailPlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
-        <form.Subscribe selector={(state) => state.errors}>
-          {(errors) =>
-            errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">{errors}</span>
-            )
-          }
-        </form.Subscribe>
-
         {serverError && (
           <div className="text-sm text-red-600 text-center" role="alert">
             {serverError}
@@ -120,7 +105,7 @@ export const ForgotPasswordForm = ({
           disabled={passwordResetRequest.isPending}
         >
           <Icon icon="arrow-right" color="white" />
-          Continue
+          {t('forgotPasswordForm.submit')}
         </Button>
 
         <p className="text-idle text-label-m">
@@ -128,7 +113,7 @@ export const ForgotPasswordForm = ({
             to="/login"
             className="underline hover:text-active cursor-pointer"
           >
-            Back to login.
+            {t('forgotPasswordForm.backToLogin')}
           </Link>
         </p>
       </form>

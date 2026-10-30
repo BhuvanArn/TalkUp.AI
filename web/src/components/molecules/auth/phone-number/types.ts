@@ -1,11 +1,21 @@
+import type { ParseKeys } from 'i18next';
+
+type CountryCodeOf<K> = K extends `phoneNumber.countries.${infer C}`
+  ? C
+  : never;
+
+/**
+ * ISO 2-letter code of a country named under `phoneNumber.countries` in the
+ * `auth` namespace. A code without a translated name fails to type-check.
+ */
+export type CountryCode = CountryCodeOf<ParseKeys<'auth'>>;
+
 /**
  * Represents a country with its details for phone number input.
  */
 export interface Country {
-  /** Country name. */
-  name: string;
-  /** ISO 2-letter country code (e.g., 'US'). */
-  code: string;
+  /** ISO 2-letter code (e.g., 'US'), named by `phoneNumber.countries.<code>`. */
+  code: CountryCode;
   /** Emoji flag. */
   flag: string;
   /** International dial code (e.g., '+1'). */

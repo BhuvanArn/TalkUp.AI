@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { PasswordField } from '@/components/molecules/auth/password-field';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostLogin } from '@/hooks/auth/useServices';
@@ -12,6 +13,7 @@ import {
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 /**
  * A component that renders a login form with username and password fields.
@@ -23,7 +25,6 @@ import { useState } from 'react';
  * The form includes:
  * - Email input field with validation
  * - Password input field with validation
- * - Form-level error messages
  * - Loading indicators during validation
  * - Submit button
  *
@@ -33,6 +34,7 @@ import { useState } from 'react';
  * @returns A login form component with validation and styling
  */
 export const LoginForm = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const postLogin = usePostLogin();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -51,7 +53,7 @@ export const LoginForm = () => {
         {
           onError: (error: unknown) => {
             setServerError(
-              extractErrorMessage(error, 'Login failed. Please try again.'),
+              extractErrorMessage(error, t('loginForm.errors.failed')),
             );
           },
           onSuccess: () => setServerError(null),
@@ -63,8 +65,8 @@ export const LoginForm = () => {
   return (
     <div className="flex flex-col w-full gap-3 max-w-96">
       <header className="flex items-center justify-start gap-4">
-        <h2 className="text-h3 text-idle">Login</h2>
-        <p className="text-body-l text-idle mt-1">Get back to your account</p>
+        <h2 className="text-h3 text-idle">{t('loginForm.title')}</h2>
+        <p className="text-body-l text-idle mt-1">{t('loginForm.subtitle')}</p>
       </header>
       <form
         className="flex flex-col gap-3"
@@ -89,13 +91,9 @@ export const LoginForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="What email did you use?"
+                placeholder={t('loginForm.emailPlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -113,25 +111,13 @@ export const LoginForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Please type your password"
+                placeholder={t('loginForm.passwordPlaceholder')}
                 autoComplete="current-password"
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
-        <form.Subscribe selector={(state) => state.errors}>
-          {(errors) =>
-            errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">{errors}</span>
-            )
-          }
-        </form.Subscribe>
-
         {serverError && (
           <div className="text-sm text-red-600 text-center" role="alert">
             {serverError}
@@ -141,20 +127,25 @@ export const LoginForm = () => {
           to="/forgot-password"
           className="text-idle text-label-m underline hover:text-active cursor-pointer"
         >
-          Forgot your password?
+          {t('loginForm.forgotPassword')}
         </Link>
         <Button color="accent" type="submit">
           <Icon icon="login" color="white" />
-          Log In
+          {t('loginForm.submit')}
         </Button>
         <p className="text-idle text-label-m">
-          You do not have an account?{' '}
-          <Link
-            to="/register"
-            className="underline hover:text-active cursor-pointer"
-          >
-            Create one
-          </Link>
+          <Trans
+            t={t}
+            i18nKey="loginForm.noAccount"
+            components={{
+              signup: (
+                <Link
+                  to="/register"
+                  className="underline hover:text-active cursor-pointer"
+                />
+              ),
+            }}
+          />
         </p>
       </form>
     </div>

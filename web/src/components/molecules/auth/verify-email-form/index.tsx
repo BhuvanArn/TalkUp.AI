@@ -1,6 +1,7 @@
 import { BaseInput } from '@/components/atoms/base-input';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { usePostResendOtp, usePostVerifyEmail } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
 import {
@@ -11,6 +12,7 @@ import {
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 const RESEND_COOLDOWN_SEC = 60;
 
@@ -23,6 +25,7 @@ export const VerifyEmailForm = ({
   initialEmail,
   redirectTo,
 }: VerifyEmailFormProps) => {
+  const { t } = useTranslation(['auth', 'common']);
   const verifyEmail = usePostVerifyEmail();
   const resendOtp = usePostResendOtp();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -34,10 +37,10 @@ export const VerifyEmailForm = ({
 
   useEffect(() => {
     if (resendSecondsLeft <= 0) return;
-    const t = window.setInterval(() => {
+    const timer = window.setInterval(() => {
       setResendSecondsLeft((s) => (s <= 1 ? 0 : s - 1));
     }, 1000);
-    return () => window.clearInterval(t);
+    return () => window.clearInterval(timer);
   }, [resendSecondsLeft]);
 
   const startCooldown = () => {
@@ -51,9 +54,7 @@ export const VerifyEmailForm = ({
     onSubmit: ({ value }) => {
       setServerError(null);
       if (emailMissingOrInvalid) {
-        setServerError(
-          'Missing email. Open this page from the link after registering.',
-        );
+        setServerError(t('verifyEmailForm.errors.missingEmail'));
         return;
       }
       verifyEmail.mutate(
@@ -65,10 +66,7 @@ export const VerifyEmailForm = ({
         {
           onError: (error: unknown) => {
             setServerError(
-              extractErrorMessage(
-                error,
-                'Verification failed. Please try again.',
-              ),
+              extractErrorMessage(error, t('verifyEmailForm.errors.failed')),
             );
           },
         },
@@ -79,24 +77,35 @@ export const VerifyEmailForm = ({
   return (
     <div className="flex flex-col w-full gap-3 max-w-96">
       <header className="flex flex-col gap-1 items-start">
-        <h2 className="text-h3 text-idle">Verify your email</h2>
+        <h2 className="text-h3 text-idle">{t('verifyEmailForm.title')}</h2>
         {emailTrimmed && !emailMissingOrInvalid ? (
           <p className="text-body-l text-idle">
-            Enter the 6-digit code we sent to{' '}
-            <span className="font-medium text-active">{emailTrimmed}</span>. If
-            you don&apos;t see it, check spam or request a new code.
+            <Trans
+              t={t}
+              i18nKey="verifyEmailForm.description"
+              components={{
+                email: (
+                  <span className="font-medium text-active">
+                    {emailTrimmed}
+                  </span>
+                ),
+              }}
+            />
           </p>
         ) : (
           <p className="text-body-l text-idle">
-            Enter the 6-digit code from your email. If you landed here without
-            registering first,{' '}
-            <Link
-              to="/register"
-              className="underline hover:text-active cursor-pointer"
-            >
-              create an account
-            </Link>
-            .
+            <Trans
+              t={t}
+              i18nKey="verifyEmailForm.missingEmailDescription"
+              components={{
+                signup: (
+                  <Link
+                    to="/register"
+                    className="underline hover:text-active cursor-pointer"
+                  />
+                ),
+              }}
+            />
           </p>
         )}
       </header>
@@ -120,7 +129,7 @@ export const VerifyEmailForm = ({
                 htmlFor="verify-otp"
                 className="text-label-m text-idle sr-only"
               >
-                Verification code
+                {t('otpCode.label')}
               </label>
               <BaseInput
                 id="verify-otp"
@@ -140,22 +149,10 @@ export const VerifyEmailForm = ({
                 aria-invalid={field.state.meta.errors.length > 0}
                 className="text-center font-mono text-h3 tabular-nums tracking-[0.35em] placeholder:tracking-[0.35em] py-3"
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
-        <form.Subscribe selector={(state) => state.errors}>
-          {(errors) =>
-            errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">{errors}</span>
-            )
-          }
-        </form.Subscribe>
-
         {serverError && (
           <div className="text-sm text-red-600 text-center" role="alert">
             {serverError}
@@ -167,7 +164,7 @@ export const VerifyEmailForm = ({
           disabled={verifyEmail.isPending || emailMissingOrInvalid}
         >
           <Icon icon="register" color="white" />
-          Verify and continue
+          {t('verifyEmailForm.submit')}
         </Button>
       </form>
 
@@ -183,9 +180,7 @@ export const VerifyEmailForm = ({
           onClick={() => {
             setServerError(null);
             if (emailMissingOrInvalid) {
-              setServerError(
-                'Missing email. Open this page from the link after registering.',
-              );
+              setServerError(t('verifyEmailForm.errors.missingEmail'));
               return;
             }
             resendOtp.mutate(
@@ -197,7 +192,7 @@ export const VerifyEmailForm = ({
                 onError: (error: unknown) => {
                   const msg = extractErrorMessage(
                     error,
-                    'Could not resend code. Please try again.',
+                    t('otpCode.errors.resendFailed'),
                   );
                   setServerError(msg);
                   if (
@@ -218,8 +213,8 @@ export const VerifyEmailForm = ({
         >
           <Icon icon="arrow-right" color="white" />
           {resendSecondsLeft > 0
-            ? `Resend code (${resendSecondsLeft}s)`
-            : 'Resend code'}
+            ? t('otpCode.resendCountdown', { seconds: resendSecondsLeft })
+            : t('otpCode.resend')}
         </Button>
       </div>
 
@@ -228,7 +223,7 @@ export const VerifyEmailForm = ({
           to="/login"
           className="underline hover:text-active cursor-pointer"
         >
-          Back to login
+          {t('verifyEmailForm.backToLogin')}
         </Link>
       </p>
     </div>

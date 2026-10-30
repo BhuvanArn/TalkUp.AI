@@ -2,6 +2,7 @@ import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import { buildAdminUsername } from '@/utils/buildAdminUsername';
 import { Link, useNavigate } from '@tanstack/react-router';
+import { Trans, useTranslation } from 'react-i18next';
 
 type OrganizationCreatedProps = {
   organizationName: string;
@@ -22,8 +23,11 @@ export const OrganizationCreated = ({
   organizationName,
   email,
 }: OrganizationCreatedProps) => {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
 
+  // Both come from the URL. `<Trans>` gets them as component children, not
+  // `values`: interpolation is not escaped, so tags in them would render.
   const orgNameTrimmed = organizationName.trim();
   const emailTrimmed = email.trim();
   const hasContext = orgNameTrimmed.length > 0 && emailTrimmed.length > 0;
@@ -35,17 +39,18 @@ export const OrganizationCreated = ({
     return (
       <div className="flex flex-col w-full gap-4 max-w-96">
         <header className="flex flex-col gap-1 items-start">
-          <h2 className="text-h3 text-idle">Organization created</h2>
+          <h2 className="text-h3 text-idle">
+            {t('organizationCreated.title')}
+          </h2>
           <p className="text-body-l text-idle">
-            Your organization was created. To manage it, verify the admin email
-            and sign in.
+            {t('organizationCreated.fallbackDescription')}
           </p>
         </header>
         <Link
           to="/login"
           className="underline text-label-m text-idle hover:text-active cursor-pointer"
         >
-          Go to login
+          {t('organizationCreated.goToLogin')}
         </Link>
       </div>
     );
@@ -54,22 +59,35 @@ export const OrganizationCreated = ({
   return (
     <div className="flex flex-col w-full gap-5 max-w-96">
       <header className="flex flex-col gap-1 items-start">
-        <h2 className="text-h3 text-idle">Organization created</h2>
+        <h2 className="text-h3 text-idle">{t('organizationCreated.title')}</h2>
         <p className="text-body-l text-idle">
-          <span className="font-medium text-active">{orgNameTrimmed}</span> is
-          ready. We&apos;ve created an administrator account for it.
+          <Trans
+            t={t}
+            i18nKey="organizationCreated.ready"
+            components={{
+              org: (
+                <span className="font-medium text-active">
+                  {orgNameTrimmed}
+                </span>
+              ),
+            }}
+          />
         </p>
       </header>
 
       <dl className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
         <div className="flex flex-col gap-1">
-          <dt className="text-label-m text-text-weak">Admin username</dt>
+          <dt className="text-label-m text-text-weak">
+            {t('organizationCreated.adminUsername')}
+          </dt>
           <dd className="text-body-l font-medium text-text break-all">
             {adminUsername}
           </dd>
         </div>
         <div className="flex flex-col gap-1">
-          <dt className="text-label-m text-text-weak">Admin email</dt>
+          <dt className="text-label-m text-text-weak">
+            {t('organizationCreated.adminEmail')}
+          </dt>
           <dd className="text-body-l font-medium text-text break-all">
             {emailTrimmed}
           </dd>
@@ -77,11 +95,18 @@ export const OrganizationCreated = ({
       </dl>
 
       <p className="text-body-m text-idle">
-        To manage{' '}
-        <span className="font-medium text-active">{orgNameTrimmed}</span>,
-        verify the admin email and sign in as this administrator. A verification
-        code was sent to{' '}
-        <span className="font-medium text-active">{emailTrimmed}</span>.
+        <Trans
+          t={t}
+          i18nKey="organizationCreated.nextSteps"
+          components={{
+            org: (
+              <span className="font-medium text-active">{orgNameTrimmed}</span>
+            ),
+            email: (
+              <span className="font-medium text-active">{emailTrimmed}</span>
+            ),
+          }}
+        />
       </p>
 
       <div className="flex flex-col gap-2">
@@ -96,13 +121,13 @@ export const OrganizationCreated = ({
           }
         >
           <Icon icon="arrow-right" color="white" />
-          Verify admin email & continue
+          {t('organizationCreated.verifyCta')}
         </Button>
         <Link
           to="/login"
           className="text-center underline text-label-m text-idle hover:text-active cursor-pointer"
         >
-          I&apos;ll verify later — back to login
+          {t('organizationCreated.verifyLater')}
         </Link>
       </div>
     </div>
