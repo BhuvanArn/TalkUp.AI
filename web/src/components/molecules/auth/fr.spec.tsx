@@ -263,7 +263,7 @@ describe('auth flows in French', () => {
       ).toBeInTheDocument();
       expect(
         screen.getByRole('button', {
-          name: 'Vérifier l’e-mail de l’administrateur et continuer',
+          name: 'Vérifier l’adresse e-mail et continuer',
         }),
       ).toBeInTheDocument();
     });
@@ -307,7 +307,7 @@ describe('auth flows in French', () => {
         screen.getByRole('heading', { name: 'Nos utilisateurs nous adorent' }),
       ).toBeInTheDocument();
       expect(
-        screen.getByText(`Florent a récemment laissé cet avis à 5${SP}étoiles`),
+        screen.getByText(`Florent a récemment laissé cet avis 5${SP}étoiles`),
       ).toBeInTheDocument();
       expect(
         screen.getByRole('button', { name: 'Afficher l’avis 3' }),
@@ -321,9 +321,7 @@ describe('auth flows in French', () => {
         screen.getByRole('button', { name: 'Afficher l’avis 3' }),
       );
       expect(
-        screen.getByText(
-          `Agathe a récemment laissé cet avis à 4,5${SP}étoiles`,
-        ),
+        screen.getByText(`Agathe a récemment laissé cet avis 4,5${SP}étoiles`),
       ).toBeInTheDocument();
     });
   });
