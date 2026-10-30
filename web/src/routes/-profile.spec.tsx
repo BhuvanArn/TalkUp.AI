@@ -633,7 +633,17 @@ describe('Profile page in French', () => {
     expect(
       screen.getByRole('button', { name: 'Changer le style de la bannière' }),
     ).toBeInTheDocument();
-    // fr-FR puts a narrow no-break space before the percent sign.
-    expect(screen.getByText(/^78\s%$/)).toBeInTheDocument();
+    // fr-FR puts a no-break space before the percent sign (U+00A0 or U+202F
+    // depending on the ICU version). Trim only: the default normalizer would
+    // turn it into a plain space and hide a regression.
+    expect(
+      screen.getByText(/^78[  ]%$/, {
+        normalizer: (text) => text.trim(),
+      }),
+    ).toBeInTheDocument();
+    // A listed job title is stored in English and shown translated.
+    expect(
+      screen.getByText('Candidat Product Manager · TalkUp Pro'),
+    ).toBeInTheDocument();
   });
 });

@@ -107,7 +107,11 @@ export const MemberDetail = ({
                   {t('organization.stats.avgScore')}
                 </dt>
                 <dd className="text-h5 text-text">
-                  {detail.stats.avgScore ?? EMPTY}
+                  {detail.stats.avgScore != null
+                    ? new Intl.NumberFormat(intlLocale).format(
+                        detail.stats.avgScore,
+                      )
+                    : EMPTY}
                 </dd>
               </div>
               <div>

@@ -164,7 +164,11 @@ export const MembersTable = ({
                   </td>
                   <td className={tdNum}>{m.interviewCount}</td>
                   <td className={tdNum}>{m.completedCount}</td>
-                  <td className={tdNum}>{m.avgScore ?? EMPTY}</td>
+                  <td className={tdNum}>
+                    {m.avgScore != null
+                      ? new Intl.NumberFormat(intlLocale).format(m.avgScore)
+                      : EMPTY}
+                  </td>
                   <td className="px-4 py-3 text-text-weak">
                     {formatDate(m.lastActivityAt, intlLocale)}
                   </td>

@@ -75,10 +75,11 @@
     "linkedin": "LinkedIn URL",
     "jobTitle": "Job title",
     "jobOptions": {
+      "productManagerCandidate": "Product Manager Candidate",
       "productDesigner": "Product Designer",
       "softwareEngineer": "Software Engineer"
     },
-    "jobTitlePlaceholder": "Select a job title"
+    "jobTitleNone": "No job title"
   },
   "appearanceSettings": {
     "color": {

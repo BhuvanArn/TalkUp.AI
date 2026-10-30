@@ -151,9 +151,12 @@ describe('SecuritySettings in French', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Supprimer mon compte' }),
     );
-    // The default text normalizer turns the no-break space into a space.
+    // Trim only: the default normalizer would turn the no-break space before
+    // "?" into a plain space and hide a regression.
     expect(
-      screen.getByText(/^Supprimer votre compte\s\?$/),
+      screen.getByText(/^Supprimer votre compte \?$/, {
+        normalizer: (text) => text.trim(),
+      }),
     ).toBeInTheDocument();
   });
 });

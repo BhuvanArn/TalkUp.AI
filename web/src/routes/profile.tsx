@@ -13,7 +13,10 @@ import {
   // "Devices & sessions" state below is re-enabled.
   SecuritySettings,
 } from '@/components/organisms/profile-settings/SecuritySettings';
-import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
+import {
+  BANNER_PRESETS,
+  JOB_OPTIONS,
+} from '@/components/organisms/profile-settings/constants';
 import { useAuthStatus } from '@/hooks/auth/useServices';
 import { useLocale } from '@/hooks/i18n/useLocale';
 import AuthService from '@/services/auth/http';
@@ -236,6 +239,12 @@ function Profile() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [jobTitle, setJobTitle] = useState('');
+  // The profile stores English titles: show the translated label of a listed
+  // title, a custom title as typed, and "Member" when there is none.
+  const jobOption = JOB_OPTIONS.find((option) => option.value === jobTitle);
+  const jobTitleLabel = jobOption
+    ? t(jobOption.labelKey)
+    : jobTitle || t('profile.header.defaultJobTitle');
   const [accountUsername, setAccountUsername] = useState('');
   const [avatarColor, setAvatarColor] = useState(THEME_ACCENT);
   const [bannerGradient, setBanner] = useState<string>(BANNER_PRESETS[0].value);
@@ -247,7 +256,10 @@ function Profile() {
   // TODO(sessions-api): session state for the hidden "Devices & sessions" UI.
   // const [sessions, setSessions] = useState<AccountSession[]>(DEFAULT_SESSIONS);
   const [saved, setSaved] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  // Keys, not text: a banner already shown follows a language switch.
+  const [saveError, setSaveError] = useState<ParseKeys<'settings'> | null>(
+    null,
+  );
   const [ctaAttentionTick, setCtaAttentionTick] = useState(0);
   const [ctaAnchorRect, setCtaAnchorRect] =
     useState<UnsavedChangesCtaAnchorRect | null>(null);
@@ -255,7 +267,8 @@ function Profile() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [emailOnNewDevice, setEmailOnNewDevice] = useState(true);
-  const [avatarImageError, setAvatarImageError] = useState<string | null>(null);
+  const [avatarImageError, setAvatarImageError] =
+    useState<ParseKeys<'settings'> | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
   const profileColumnRef = useRef<HTMLDivElement>(null);
@@ -334,7 +347,7 @@ function Profile() {
       saveTimeoutRef.current = setTimeout(() => setSaved(false), 2000);
     },
     onError: () => {
-      setSaveError(t('profile.saveError'));
+      setSaveError('profile.saveError');
     },
   });
   const deleteAccountMutation = useMutation({
@@ -351,7 +364,7 @@ function Profile() {
       );
     },
     onError: () => {
-      setSaveError(t('profile.passwordResetError'));
+      setSaveError('profile.passwordResetError');
     },
   });
 
@@ -512,7 +525,7 @@ function Profile() {
       setProfilePicture(dataUrl);
       setShowAvatarMenu(false);
     } catch {
-      setAvatarImageError(t('profile.avatar.imageError'));
+      setAvatarImageError('profile.avatar.imageError');
     }
   };
 
@@ -711,7 +724,7 @@ function Profile() {
                     className="mt-2 text-center text-body-s text-error"
                     role="alert"
                   >
-                    {avatarImageError}
+                    {t(avatarImageError)}
                   </p>
                 ) : null}
 
@@ -733,7 +746,7 @@ function Profile() {
                   }}
                 >
                   {t('profile.header.subtitle', {
-                    jobTitle: jobTitle || t('profile.header.defaultJobTitle'),
+                    jobTitle: jobTitleLabel,
                   })}
                 </div>
               </div>
@@ -917,7 +930,7 @@ function Profile() {
           className="fixed bottom-28 left-1/2 z-[121] max-w-md -translate-x-1/2 rounded-lg border border-error bg-background px-4 py-2 text-center text-body-s text-error shadow-lg"
           role="alert"
         >
-          {saveError}
+          {t(saveError)}
         </div>
       ) : null}
       <UnsavedChangesCta

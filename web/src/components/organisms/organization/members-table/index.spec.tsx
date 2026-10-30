@@ -268,7 +268,7 @@ describe('MembersTable in French', () => {
     expect(screen.getByText('Membres')).toBeInTheDocument();
     expect(screen.getByText('Dernière activité')).toBeInTheDocument();
     expect(screen.getByLabelText('Filtrer par rôle')).toBeInTheDocument();
-    expect(screen.getByLabelText('Rôle de alice')).toBeInTheDocument();
+    expect(screen.getByLabelText('Rôle du membre alice')).toBeInTheDocument();
     expect(screen.getByText('01/07/2026')).toBeInTheDocument();
   });
 });

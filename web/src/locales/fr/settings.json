@@ -75,10 +75,11 @@
     "linkedin": "URL LinkedIn",
     "jobTitle": "Poste",
     "jobOptions": {
+      "productManagerCandidate": "Candidat Product Manager",
       "productDesigner": "Product Designer",
       "softwareEngineer": "Ingénieur logiciel"
     },
-    "jobTitlePlaceholder": "Choisissez un poste"
+    "jobTitleNone": "Aucun poste"
   },
   "appearanceSettings": {
     "color": {
@@ -199,7 +200,7 @@
   },
   "organization": {
     "label": "Organisation",
-    "logoAlt": "Logo de {{name}}",
+    "logoAlt": "Logo de l’organisation {{name}}",
     "roleNames": {
       "admin": "administrateur",
       "employee": "employé",
@@ -288,7 +289,7 @@
       "lastActivity": "Dernière activité",
       "actions": "Actions"
     },
-    "roleFor": "Rôle de {{username}}",
+    "roleFor": "Rôle du membre {{username}}",
     "remove": "Retirer",
     "view": "Voir",
     "empty": {

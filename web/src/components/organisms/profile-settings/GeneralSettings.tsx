@@ -2,24 +2,10 @@ import { BaseInput } from '@/components/atoms/base-input';
 import type { SelectorOption } from '@/components/atoms/selector-input';
 import { TextArea } from '@/components/atoms/text-area';
 import { InputMolecule } from '@/components/molecules/input-molecule';
-import type { ParseKeys } from 'i18next';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** Job titles offered in the selector. `value` is what the profile stores. */
-const JOB_OPTIONS = [
-  {
-    value: 'Product Designer',
-    labelKey: 'generalSettings.jobOptions.productDesigner',
-  },
-  {
-    value: 'Software Engineer',
-    labelKey: 'generalSettings.jobOptions.softwareEngineer',
-  },
-] as const satisfies readonly {
-  value: string;
-  labelKey: ParseKeys<'settings'>;
-}[];
+import { JOB_OPTIONS } from './constants';
 
 /**
  * @interface GeneralSettingsProps
@@ -77,18 +63,13 @@ export function GeneralSettings({
       value,
       label: t(labelKey),
     }));
-    // No title yet: an empty first option, so the selector does not show (and
-    // a save does not store) a title the user never picked.
-    if (!jobTitle) {
-      return [
-        { value: '', label: t('generalSettings.jobTitlePlaceholder') },
-        ...options,
-      ];
+    // Always offer "no title": the selector never shows (and a save never
+    // stores) a title the user did not pick, and a picked title can be cleared.
+    const none = { value: '', label: t('generalSettings.jobTitleNone') };
+    if (!jobTitle || options.some((o) => o.value === jobTitle)) {
+      return [none, ...options];
     }
-    if (options.some((o) => o.value === jobTitle)) {
-      return options;
-    }
-    return [{ value: jobTitle, label: jobTitle }, ...options];
+    return [none, { value: jobTitle, label: jobTitle }, ...options];
   }, [jobTitle, t]);
 
   return (

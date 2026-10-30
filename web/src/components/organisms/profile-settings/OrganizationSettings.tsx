@@ -171,7 +171,9 @@ export function OrganizationSettings({
                 {t('organization.stats.avgScore')}
               </dt>
               <dd className="text-h5 text-text" data-testid="stat-avg-score">
-                {avgScore ?? EMPTY}
+                {avgScore !== null
+                  ? new Intl.NumberFormat(intlLocale).format(avgScore)
+                  : EMPTY}
               </dd>
             </div>
             <div>
