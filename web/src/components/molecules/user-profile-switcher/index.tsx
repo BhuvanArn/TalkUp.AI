@@ -8,6 +8,7 @@ import { cn } from '@/utils/cn';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ConfirmModal } from '../confirm-modal';
 import { UserProfileSwitcherProps } from './types';
@@ -30,14 +31,15 @@ const menuIconButtonClass =
 const DEFAULT_AVATAR_COLOR = 'var(--color-accent)';
 
 function getDisplayName(
-  firstName?: string | null,
-  lastName?: string | null,
-  username?: string | null,
+  firstName: string | null | undefined,
+  lastName: string | null | undefined,
+  username: string | null | undefined,
+  fallback: string,
 ) {
   const fullName = [firstName?.trim(), lastName?.trim()]
     .filter(Boolean)
     .join(' ');
-  return fullName || username?.trim() || 'User';
+  return fullName || username?.trim() || fallback;
 }
 
 function namesFromUsername(username?: string | null): {
@@ -99,6 +101,7 @@ function namesFromUsername(username?: string | null): {
 export const UserProfileSwitcher = ({
   isCollapsed,
 }: UserProfileSwitcherProps) => {
+  const { t } = useTranslation(['app', 'common']);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { logout } = useLogout();
@@ -114,13 +117,14 @@ export const UserProfileSwitcher = ({
     profile?.firstName,
     profile?.lastName,
     profile?.username,
+    t('userMenu.defaultName'),
   );
   const guessedNames = namesFromUsername(profile?.username);
   const resolvedFirstName =
     (profile?.firstName ?? '').trim() || guessedNames.first;
   const resolvedLastName =
     (profile?.lastName ?? '').trim() || guessedNames.last;
-  const displayEmail = profile?.email ?? 'No email set';
+  const displayEmail = profile?.email ?? t('userMenu.noEmail');
   const avatarSrc = profile?.profilePicture ?? undefined;
   const avatarColor = profile?.avatarAccentColor ?? DEFAULT_AVATAR_COLOR;
   const initials =
@@ -171,7 +175,7 @@ export const UserProfileSwitcher = ({
       {isCollapsed ? (
         <Avatar
           src={avatarSrc}
-          alt="User Avatar"
+          alt={t('userMenu.avatarAlt')}
           fallback={initials}
           size="sm"
           className="!h-8 !w-8 !border border-border text-white font-semibold"
@@ -183,7 +187,7 @@ export const UserProfileSwitcher = ({
           className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg py-0.5 pl-0.5 pr-1 text-left transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          aria-label={`Open account menu, ${displayName}`}
+          aria-label={t('userMenu.open', { name: displayName })}
           onClick={toggleMenu}
         >
           <span className="flex min-w-0 flex-1 items-center gap-2">
@@ -223,7 +227,7 @@ export const UserProfileSwitcher = ({
               : 'bottom-full right-0 mb-1',
           )}
           role="menu"
-          aria-label="Account"
+          aria-label={t('userMenu.label')}
         >
           <div className={menuPanelClass}>
             <Link
@@ -238,7 +242,7 @@ export const UserProfileSwitcher = ({
                 color="neutral"
                 className="shrink-0"
               />
-              Profile
+              {t('userMenu.profile')}
             </Link>
             <button
               type="button"
@@ -252,7 +256,7 @@ export const UserProfileSwitcher = ({
                 color="neutral"
                 className="shrink-0"
               />
-              Documentation
+              {t('userMenu.documentation')}
             </button>
             <Link
               to="/about"
@@ -266,7 +270,7 @@ export const UserProfileSwitcher = ({
                 color="neutral"
                 className="shrink-0"
               />
-              Help Center
+              {t('userMenu.helpCenter')}
             </Link>
 
             <hr className="my-1 border-border" />
@@ -282,8 +286,8 @@ export const UserProfileSwitcher = ({
                   )}
                   aria-label={
                     theme === 'light'
-                      ? 'Switch to dark theme'
-                      : 'Switch to light theme'
+                      ? t('userMenu.darkTheme')
+                      : t('userMenu.lightTheme')
                   }
                   onClick={() => toggleTheme()}
                 >
@@ -311,7 +315,7 @@ export const UserProfileSwitcher = ({
                   setShowLogoutModal(true);
                 }}
               >
-                <span>Log out</span>
+                <span>{t('userMenu.logout')}</span>
                 <Icon
                   icon="power"
                   size="sm"
@@ -326,10 +330,10 @@ export const UserProfileSwitcher = ({
 
       <ConfirmModal
         isOpen={showLogoutModal}
-        title="Logout"
-        message="Are you sure you want to logout?"
-        confirmLabel="Logout"
-        cancelLabel="Cancel"
+        title={t('userMenu.logoutModal.title')}
+        message={t('userMenu.logoutModal.message')}
+        confirmLabel={t('userMenu.logoutModal.confirm')}
+        cancelLabel={t('common:actions.cancel')}
         icon="warning"
         onConfirm={() => {
           logout();

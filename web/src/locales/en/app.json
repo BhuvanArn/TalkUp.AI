@@ -1,1 +1,53 @@
-{}
+{
+  "navigation": {
+    "applications": "Applications",
+    "cvAnalysis": "CV Analysis",
+    "agenda": "Agenda",
+    "notes": "Notes",
+    "assistant": "Assistant",
+    "roadmap": "Roadmap",
+    "simulations": "Simulations",
+    "analytics": "Analytics",
+    "home": "Home",
+    "about": "About",
+    "login": "Login",
+    "register": "Register",
+    "profile": "Profile",
+    "billing": "Billing",
+    "integrations": "Integrations",
+    "security": "Security",
+    "members": "Members",
+    "invites": "Invites",
+    "settings": "Settings"
+  },
+  "sidebar": {
+    "applicationFallback": "Application",
+    "banner": {
+      "badge": "New",
+      "title": "TalkUp new AI content",
+      "description": "Explore the new AI content we have prepared for you in 2026",
+      "cta": "Try it out"
+    },
+    "linkIntegrations": "Link Integrations",
+    "loading": "Loading...",
+    "orgView": "Organization view"
+  },
+  "userMenu": {
+    "avatarAlt": "User Avatar",
+    "darkTheme": "Switch to dark theme",
+    "defaultName": "User",
+    "documentation": "Documentation",
+    "helpCenter": "Help Center",
+    "label": "Account",
+    "lightTheme": "Switch to light theme",
+    "logout": "Log out",
+    "logoutModal": {
+      "title": "Logout",
+      "message": "Are you sure you want to logout?",
+      "confirm": "Logout"
+    },
+    "noEmail": "No email set",
+    "open": "Open account menu, {{name}}",
+    "profile": "Profile"
+  }
+}

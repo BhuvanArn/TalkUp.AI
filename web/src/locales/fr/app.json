@@ -1,1 +1,53 @@
-{}
+{
+  "navigation": {
+    "applications": "Candidatures",
+    "cvAnalysis": "Analyse de CV",
+    "agenda": "Agenda",
+    "notes": "Notes",
+    "assistant": "Assistant",
+    "roadmap": "Feuille de route",
+    "simulations": "Simulations",
+    "analytics": "Statistiques",
+    "home": "Accueil",
+    "about": "À propos",
+    "login": "Connexion",
+    "register": "Inscription",
+    "profile": "Profil",
+    "billing": "Facturation",
+    "integrations": "Intégrations",
+    "security": "Sécurité",
+    "members": "Membres",
+    "invites": "Invitations",
+    "settings": "Paramètres"
+  },
+  "sidebar": {
+    "applicationFallback": "Candidature",
+    "banner": {
+      "badge": "Nouveau",
+      "title": "Nouveaux contenus IA sur TalkUp",
+      "description": "Découvrez les nouveaux contenus IA que nous vous avons préparés pour 2026",
+      "cta": "Essayer"
+    },
+    "linkIntegrations": "Connecter des comptes",
+    "loading": "Chargement…",
+    "orgView": "Vue organisation"
+  },
+  "userMenu": {
+    "avatarAlt": "Avatar de l’utilisateur",
+    "darkTheme": "Passer au thème sombre",
+    "defaultName": "Utilisateur",
+    "documentation": "Documentation",
+    "helpCenter": "Centre d’aide",
+    "label": "Compte",
+    "lightTheme": "Passer au thème clair",
+    "logout": "Se déconnecter",
+    "logoutModal": {
+      "title": "Déconnexion",
+      "message": "Voulez-vous vraiment vous déconnecter ?",
+      "confirm": "Se déconnecter"
+    },
+    "noEmail": "Aucune adresse e-mail",
+    "open": "Ouvrir le menu du compte, {{name}}",
+    "profile": "Profil"
+  }
+}

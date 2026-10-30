@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -9,6 +10,8 @@ import {
   settingsNavigationContext,
 } from './navigation-contexts';
 
+const tApp = i18next.getFixedT(null, 'app');
+
 describe('navigation-contexts', () => {
   describe('rootNavigationContext', () => {
     it('should have type "root"', () => {
@@ -18,7 +21,9 @@ describe('navigation-contexts', () => {
     it('should contain all expected navigation items', () => {
       expect(rootNavigationContext.items).toHaveLength(5);
 
-      const labels = rootNavigationContext.items.map((item) => item.label);
+      const labels = rootNavigationContext.items.map((item) =>
+        tApp(item.labelKey),
+      );
       expect(labels).toContain('Applications');
       expect(labels).toContain('CV Analysis');
       expect(labels).toContain('Agenda');
@@ -64,8 +69,8 @@ describe('navigation-contexts', () => {
     it('should contain all expected navigation items', () => {
       expect(applicationNavigationContext.items).toHaveLength(3);
 
-      const labels = applicationNavigationContext.items.map(
-        (item) => item.label,
+      const labels = applicationNavigationContext.items.map((item) =>
+        tApp(item.labelKey),
       );
       expect(labels).toContain('Roadmap');
       expect(labels).toContain('Simulations');
@@ -105,7 +110,9 @@ describe('navigation-contexts', () => {
     it('should contain all expected navigation items', () => {
       expect(publicNavigationContext.items).toHaveLength(4);
 
-      const labels = publicNavigationContext.items.map((item) => item.label);
+      const labels = publicNavigationContext.items.map((item) =>
+        tApp(item.labelKey),
+      );
       expect(labels).toContain('Home');
       expect(labels).toContain('About');
       expect(labels).toContain('Login');
@@ -135,7 +142,9 @@ describe('navigation-contexts', () => {
     it('should contain all expected navigation items', () => {
       expect(settingsNavigationContext.items).toHaveLength(4);
 
-      const labels = settingsNavigationContext.items.map((item) => item.label);
+      const labels = settingsNavigationContext.items.map((item) =>
+        tApp(item.labelKey),
+      );
       expect(labels).toContain('Profile');
       expect(labels).toContain('Billing');
       expect(labels).toContain('Integrations');
@@ -171,8 +180,8 @@ describe('navigation-contexts', () => {
     it('should contain all expected navigation items', () => {
       expect(organizationNavigationContext.items).toHaveLength(3);
 
-      const labels = organizationNavigationContext.items.map(
-        (item) => item.label,
+      const labels = organizationNavigationContext.items.map((item) =>
+        tApp(item.labelKey),
       );
       expect(labels).toContain('Members');
       expect(labels).toContain('Invites');

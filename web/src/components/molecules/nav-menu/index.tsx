@@ -1,6 +1,7 @@
 import NavLink from '@/components/molecules/nav-link';
 import { organizeNavigation } from '@/utils/navigation';
 import { useRouterState } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 import { NavMenuProps } from './types';
 
@@ -26,6 +27,7 @@ export const NavMenu = ({
   className = '',
   isCollapsed = false,
 }: NavMenuProps & { isCollapsed?: boolean }) => {
+  const { t } = useTranslation('app');
   const currentPath = useRouterState().location.pathname;
 
   const sortedItems = organizeNavigation(items);
@@ -37,7 +39,7 @@ export const NavMenu = ({
           <li key={item.to}>
             <NavLink
               to={item.to}
-              label={item.label}
+              label={t(item.labelKey)}
               icon={item.icon}
               isActive={
                 currentPath === item.to || currentPath.startsWith(`${item.to}/`)
