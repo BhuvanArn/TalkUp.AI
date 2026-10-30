@@ -141,7 +141,7 @@ export function Notes() {
         navigateToNote(newNote.note_id);
       }
     } catch {
-      setError(t('notes.errors.create'));
+      setError('notes.errors.create');
     }
   };
 
@@ -221,7 +221,7 @@ export function Notes() {
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-error mb-4">{error}</p>
+            <p className="text-error mb-4">{t(error)}</p>
             <Button
               variant="contained"
               color="accent"

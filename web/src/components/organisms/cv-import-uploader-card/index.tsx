@@ -55,7 +55,9 @@ export const UploaderCard = ({
 }: UploaderCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const { t } = useTranslation('app');
-  const [error, setError] = useState<string | null>(null);
+  // Which validation failed, translated at render so it follows a language
+  // switch.
+  const [error, setError] = useState<'format' | 'size' | null>(null);
 
   /**
    * Validates file size and format before calling onFileSelect.
@@ -74,18 +76,18 @@ export const UploaderCard = ({
         ALLOWED_EXTENSIONS.includes(fileExtension);
 
       if (!isValidType) {
-        setError(t('cv.uploader.errors.format'));
+        setError('format');
         return;
       }
 
       if (file.size > MAX_SIZE_BYTES) {
-        setError(t('cv.uploader.errors.size', { max: MAX_SIZE_MB }));
+        setError('size');
         return;
       }
 
       onFileSelect(file);
     },
-    [onFileSelect, t],
+    [onFileSelect],
   );
 
   /**
@@ -224,7 +226,9 @@ export const UploaderCard = ({
 
           {error && (
             <p role="alert" className="text-body-m text-error mt-4 font-medium">
-              {error}
+              {error === 'format'
+                ? t('cv.uploader.errors.format')
+                : t('cv.uploader.errors.size', { max: MAX_SIZE_MB })}
             </p>
           )}
         </div>

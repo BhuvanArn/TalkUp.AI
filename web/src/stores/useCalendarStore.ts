@@ -18,7 +18,7 @@ import {
   startOfWeek,
   subDays,
 } from 'date-fns';
-import i18next from 'i18next';
+import type { ParseKeys } from 'i18next';
 import { create } from 'zustand';
 
 /**
@@ -37,7 +37,8 @@ interface CalendarState {
   weekStart: Date;
   events: CalendarEvent[];
   isLoading: boolean;
-  error: string | null;
+  /** Translation key of the last error; translated at render. */
+  error: ParseKeys<'app'> | null;
 
   calendarViewMode: 'week' | 'day';
   calendarLayoutMode: 'list' | 'table';
@@ -141,7 +142,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
     } catch (error) {
       console.error('Failed to fetch events:', error);
       set({
-        error: i18next.t('app:agenda.errors.fetch'),
+        error: 'agenda.errors.fetch',
         isLoading: false,
       });
     }
@@ -185,7 +186,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
       // Revert on failure
       set({
         events: previousEvents,
-        error: i18next.t('app:agenda.errors.create'),
+        error: 'agenda.errors.create',
         isLoading: false,
       });
     }
@@ -227,7 +228,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
       // Revert to previous state on failure
       set({
         events: previousEvents,
-        error: i18next.t('app:agenda.errors.update'),
+        error: 'agenda.errors.update',
         isLoading: false,
       });
     }
@@ -246,7 +247,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
     } catch (error) {
       console.error('Failed to delete event:', error);
       set({
-        error: i18next.t('app:agenda.errors.delete'),
+        error: 'agenda.errors.delete',
         isLoading: false,
       });
     }

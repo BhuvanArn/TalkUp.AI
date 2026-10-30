@@ -1,6 +1,6 @@
 import { getUserNotes } from '@/services/notes/http';
 import type { Note } from '@/services/notes/types';
-import i18next from 'i18next';
+import type { ParseKeys } from 'i18next';
 import { useEffect, useState } from 'react';
 
 const sortNotes = (notes: Note[]) => {
@@ -21,7 +21,9 @@ const sortNotes = (notes: Note[]) => {
 export const useNotesList = (applicationId?: string) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // A translation key, not text: the route translates it at render so it
+  // follows a language switch.
+  const [error, setError] = useState<ParseKeys<'app'> | null>(null);
 
   useEffect(() => {
     // Guard against out-of-order responses when applicationId changes while a
@@ -41,7 +43,7 @@ export const useNotesList = (applicationId?: string) => {
       } catch (err) {
         if (ignore) return;
         console.error('Error fetching notes:', err);
-        setError(i18next.t('app:notes.errors.load'));
+        setError('notes.errors.load');
       } finally {
         if (!ignore) setIsLoading(false);
       }

@@ -89,7 +89,7 @@ const ExternalAppConnector = ({
  * Displays the main calendar view, a mini-calendar, and the next upcoming event.
  * @returns {JSX.Element} The Agenda page component.
  */
-function Agenda() {
+export function Agenda() {
   const { t } = useTranslation('app');
   const { fetchEvents, isLoading, error } = useCalendarStore();
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
@@ -151,7 +151,7 @@ function Agenda() {
               {t('agenda.loading')}
             </p>
           )}
-          {error && <p className="text-body-s text-red-500">{error}</p>}
+          {error && <p className="text-body-s text-red-500">{t(error)}</p>}
           <div className="flex-1 min-h-0">
             {/* CalendarContainer will eventually receive isGoogleConnected to fetch external events */}
             <CalendarContainer />

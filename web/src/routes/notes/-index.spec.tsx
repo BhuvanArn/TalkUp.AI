@@ -104,10 +104,12 @@ describe('Notes Route', () => {
     (useNotesList as any).mockReturnValue({
       notes: [],
       isLoading: false,
-      error: 'Failed to load',
+      error: 'notes.errors.load',
     });
     render(<Notes />);
-    expect(screen.getByText('Failed to load')).toBeInTheDocument();
+    expect(
+      screen.getByText('Failed to load notes. Please try again.'),
+    ).toBeInTheDocument();
   });
 
   it('renders empty state', () => {
