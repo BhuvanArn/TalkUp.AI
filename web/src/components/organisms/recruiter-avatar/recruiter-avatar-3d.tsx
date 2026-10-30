@@ -6,7 +6,7 @@ import {
 import type { AiSpeechTurn } from '@/hooks/simulation/useAudioPlayback';
 import { buildWordTimings, decodeAudioChunks } from '@/utils/aiSpeechPayload';
 import { TalkingHead } from '@met4citizen/talkinghead';
-import type { ParseKeys } from 'i18next';
+import i18next, { type ParseKeys } from 'i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -147,7 +147,7 @@ export function RecruiterAvatar3D({
             setLoadProgress(pct);
           }),
           AVATAR_LOAD_TIMEOUT_MS,
-          t('recruiter.fallback.downloadTimeout'),
+          i18next.t('app:recruiter.fallback.downloadTimeout'),
         );
 
         if (generation !== loadGenerationRef.current) return;
@@ -162,7 +162,7 @@ export function RecruiterAvatar3D({
             ...RECRUITER_AVATAR_SHOW_OPTIONS,
           }),
           AVATAR_LOAD_TIMEOUT_MS,
-          t('recruiter.fallback.parseTimeout'),
+          i18next.t('app:recruiter.fallback.parseTimeout'),
         );
 
         if (generation !== loadGenerationRef.current) return;
@@ -191,7 +191,7 @@ export function RecruiterAvatar3D({
         const message =
           error instanceof Error
             ? error.message
-            : t('recruiter.fallback.loadFailed');
+            : i18next.t('app:recruiter.fallback.loadFailed');
         setInitState('error');
         callbacksRef.current.onLoadError(message);
         disposeHead();

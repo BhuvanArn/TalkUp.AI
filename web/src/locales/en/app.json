@@ -1,307 +1,12 @@
 {
-  "navigation": {
-    "applications": "Applications",
-    "cvAnalysis": "CV Analysis",
-    "agenda": "Agenda",
-    "notes": "Notes",
-    "assistant": "Assistant",
-    "roadmap": "Roadmap",
-    "simulations": "Simulations",
-    "analytics": "Analytics",
-    "home": "Home",
-    "about": "About",
-    "login": "Login",
-    "register": "Register",
-    "profile": "Profile",
-    "billing": "Billing",
-    "integrations": "Integrations",
-    "security": "Security",
-    "members": "Members",
-    "invites": "Invites",
-    "settings": "Settings"
-  },
-  "sidebar": {
-    "applicationFallback": "Application",
-    "banner": {
-      "badge": "New",
-      "title": "TalkUp new AI content",
-      "description": "Explore the new AI content we have prepared for you in 2026",
-      "cta": "Try it out"
-    },
-    "linkIntegrations": "Link Integrations",
-    "loading": "Loading...",
-    "orgView": "Organization view"
-  },
-  "userMenu": {
-    "avatarAlt": "User Avatar",
-    "darkTheme": "Switch to dark theme",
-    "defaultName": "User",
-    "documentation": "Documentation",
-    "helpCenter": "Help Center",
-    "label": "Account",
-    "lightTheme": "Switch to light theme",
-    "logout": "Log out",
-    "logoutModal": {
-      "title": "Logout",
-      "message": "Are you sure you want to logout?",
-      "confirm": "Logout"
-    },
-    "noEmail": "No email set",
-    "open": "Open account menu, {{name}}",
-    "profile": "Profile"
-  },
-  "recruiter": {
-    "fallback": {
-      "contextLost": "WebGL context lost — using static avatar.",
-      "downloadTimeout": "Avatar model download timed out.",
-      "forced": "3D avatar disabled for this session.",
-      "loadFailed": "Failed to load 3D avatar.",
-      "noWebgl": "WebGL is not available in this browser.",
-      "parseTimeout": "Avatar model parsing timed out.",
-      "unavailable": "3D avatar unavailable."
-    },
-    "loadSteps": {
-      "downloading": "Downloading model…",
-      "initializing": "Initializing…",
-      "preparing": "Preparing avatar…",
-      "starting": "Starting 3D engine…",
-      "viewport": "Preparing viewport…"
-    },
-    "loading3d": "Loading 3D avatar…",
-    "role": "IT Recruiter",
-    "speaking": "Speaking…",
+  "activity": {
     "status": {
-      "interactive": "Interactive 3D avatar active.",
-      "static": "Static interviewer image active."
+      "away": "away",
+      "busy": "busy",
+      "offline": "offline",
+      "online": "online"
     },
-    "thinking": "Thinking…",
-    "unavailable": "3D avatar unavailable"
-  },
-  "simulations": {
-    "applicationDescription": "Practice with the AI recruiter for this job offer.",
-    "backToRoadmap": "Back to roadmap",
-    "description": "Practice interview scenarios in a safe environment.",
-    "history": {
-      "action": "Action",
-      "date": "Date",
-      "finalScore": "Final Score",
-      "loadMore": "Load more...",
-      "showing": "Showing 1 to {{to}} of {{total}} results",
-      "status": {
-        "cancelled": "Cancelled",
-        "completed": "Completed",
-        "inProgress": "In Progress"
-      },
-      "statusHeader": "Status",
-      "time": "Time",
-      "title": "Title",
-      "viewAnalysis": "View Analysis"
-    },
-    "interviewContext": "Interview context: {{label}}",
-    "loadingContext": "Loading application context…",
-    "queue": {
-      "estimatedWait": "— estimated wait ~<strong>{{minutes}}</strong> min",
-      "position": "Position: <strong>{{position}}</strong>",
-      "slots": "{{active}}/{{max}} GPU slots in use. Your session will start automatically.",
-      "title": "Simulation queue"
-    },
-    "speakers": {
-      "ai": "AI",
-      "you": "You"
-    },
-    "title": "Simulations",
-    "toasts": {
-      "interviewEnded": "Interview finished. Thank you for taking part!",
-      "queueResuming": "Resuming your place in the queue…",
-      "queued": "Waiting in the queue…",
-      "resumeFailed": "Unable to resume the simulation right now. Reload the page to try again.",
-      "resumed": "Simulation resumed",
-      "sessionExpired": "The previous session has expired. You can start a new interview.",
-      "startFailed": "Failed to start interview. Please try again.",
-      "transcriptionError": "An error occurred during transcription.",
-      "yourTurn": "It's your turn — starting the simulation"
-    },
-    "transcriptions": {
-      "empty": "Transcriptions will appear here once the interview starts.",
-      "title": "Transcriptions"
-    }
-  },
-  "verbalAnalysis": {
-    "adviceFallback": "Keep structuring your answers.",
-    "clarity": "Clarity",
-    "empty": "The analysis will appear after you first speak.",
-    "liveAdvice": "Live advice",
-    "politeness": "Politeness",
-    "register": "Register: <strong>{{register}}</strong> · Turn {{turn}}",
-    "registers": {
-      "inappropriate": "Inappropriate",
-      "informal": "Informal",
-      "mixed": "Mixed",
-      "neutral": "Neutral",
-      "professional": "Professional"
-    },
-    "sessionScore": "/ 100 session",
-    "title": "Verbal analysis",
-    "topTics": "Frequent tics: {{tics}}",
-    "vocabulary": "Vocabulary",
-    "warnings": "Alerts"
-  },
-  "videoControls": {
-    "cameraOff": "Turn off camera",
-    "cameraOn": "Turn on camera",
-    "endCall": "End call",
-    "muteMic": "Mute microphone",
-    "muteSpeaker": "Mute speaker",
-    "startCall": "Start new call",
-    "unmuteMic": "Unmute microphone",
-    "unmuteSpeaker": "Unmute speaker"
-  },
-  "wsDebug": {
-    "altServers": "Alternative test servers",
-    "attempts_one": "Connection attempts: {{count}}",
-    "attempts_other": "Connection attempts: {{count}}",
-    "audio": "Audio:",
-    "audioError": "Audio Error:",
-    "audioStates": {
-      "idle": "Idle",
-      "listening": "Listening",
-      "recording": "Recording utterance",
-      "speaking": "Speaking"
-    },
-    "connection": "WebSocket Connection",
-    "format": "Format: {{format}}",
-    "lastJson": "Last JSON:",
-    "lastMessage": "Last Message:",
-    "messages": "WebSocket Messages",
-    "packetsSent_one": "Packets sent: {{count}}",
-    "packetsSent_other": "Packets sent: {{count}}",
-    "sendJson": "Send JSON Message",
-    "sendMessage": "Send Message",
-    "sendPing": "Send Ping",
-    "socketUrl": "Socket URL",
-    "startsWithCall": "Connection starts when call begins",
-    "states": {
-      "closed": "Closed",
-      "closing": "Closing",
-      "connecting": "Connecting",
-      "open": "Connected",
-      "uninstantiated": "Uninstantiated"
-    },
-    "status": "Status:",
-    "wsError": "WebSocket Error:"
-  },
-  "applications": {
-    "board": {
-      "emptyHints": {
-        "accepted": "Drop a card here when it's a win 🎉",
-        "interview": "Drop a card here when an interview is scheduled",
-        "rejected": "Rejections archive here. The training stays yours",
-        "sent": "Drop a card here, or start a new analysis"
-      }
-    },
-    "card": {
-      "actions": "Application actions",
-      "clearInterviewDate": "Clear interview date",
-      "interviewDate": "Interview date",
-      "interviewOn": "Interview on {{date}}",
-      "moveTo": "Move to",
-      "noInterview": "No interview scheduled",
-      "resumeTraining": "Resume training",
-      "sentAgo": "Sent {{distance}}",
-      "unknownCompany": "Unknown company",
-      "unknownRole": "Role not specified"
-    },
-    "count_one": "{{count}} application",
-    "count_other": "{{count}} applications",
-    "deleteModal": {
-      "message": "This removes {{company}} and its training progress. This action cannot be undone.",
-      "messageUnnamed": "This removes this application and its training progress. This action cannot be undone.",
-      "title": "Delete this application?"
-    },
-    "empty": {
-      "cta": "Start a CV + offer analysis",
-      "description": "Import your CV and a job offer that interests you, and TalkUp creates your application with a tailored training path.",
-      "title": "No applications yet"
-    },
-    "interviewPill": {
-      "add": "Add interview date",
-      "date": "Interview {{date}}",
-      "daysLeft_one": "{{count}} day left",
-      "daysLeft_other": "{{count}} days left",
-      "edit": "Edit",
-      "pace_one": "≈{{count}} topic/week",
-      "pace_other": "≈{{count}} topics/week"
-    },
-    "jobAtCompany": "{{jobTitle}} at {{companyName}}",
-    "loadError": "Couldn't load your applications. Please try again in a moment.",
-    "loading": "Loading…",
-    "new": "New application",
-    "status": {
-      "accepted": "Accepted",
-      "interview": "Interview",
-      "rejected": "Rejected",
-      "sent": "Sent"
-    },
-    "title": "Applications",
-    "upcomingInterviews_one": "{{count}} interview coming up",
-    "upcomingInterviews_other": "{{count}} interviews coming up",
-    "analyticsTitle": "Analytics"
-  },
-  "roadmap": {
-    "defaultHeading": "Preparation path",
-    "emptyNoOffer": "No preparation path yet. Analyze an offer first.",
-    "emptyWithOffer": "Couldn't build a path from this offer yet — try Regenerate.",
-    "goToCvAnalysis": "Go to CV analysis",
-    "loadError": "Could not load your preparation path.",
-    "loading": "Building your preparation path…",
-    "myNotes": "My notes",
-    "priority": {
-      "high": "HIGH",
-      "low": "LOW",
-      "med": "MED"
-    },
-    "regenerate": "Regenerate",
-    "regenerateError": "Couldn't regenerate — try again in a minute.",
-    "regenerating": "Regenerating…",
-    "retrying": "Retrying…",
-    "sources": "Sources",
-    "sourcesModal": {
-      "close": "Close sources",
-      "cvSnapshotNote": "Parsed from your CV at analysis time — the original file isn't stored.",
-      "cvUsed": "CV used",
-      "dismiss": "Dismiss sources",
-      "education_one": "Education ({{count}})",
-      "education_other": "Education ({{count}})",
-      "experiences_one": "Experiences ({{count}})",
-      "experiences_other": "Experiences ({{count}})",
-      "jobOffer": "Job offer",
-      "noCv": "No CV snapshot stored for this application.",
-      "noUrl": "URL not available",
-      "openJobOffer": "Open job offer",
-      "title": "Sources used"
-    },
-    "startSimulation": "Start simulation",
-    "tabs": {
-      "label": "Roadmap views",
-      "path": "Preparation path",
-      "talking": "Interview talking points"
-    },
-    "talkingPoints": {
-      "description": "Talking points from the role's responsibilities, matched to your experience.",
-      "title": "Bring these to your interview"
-    },
-    "timeline": {
-      "goal": "Job-ready goal",
-      "goalBy": "Job-ready by {{date}}",
-      "matchScore": "Match score",
-      "matchScoreValue": "Match score {{score}}%"
-    },
-    "topic": {
-      "details": "{{title}} details",
-      "gap": "Gap to close",
-      "readMore": "Read more",
-      "step": "Step {{step}}"
-    }
+    "title": "Status: {{status}}"
   },
   "agenda": {
     "addEvent": "Add Event",
@@ -367,159 +72,62 @@
     "timeRange": "{{start}} to {{end}}",
     "title": "Agenda TalkUp"
   },
-  "time": {
-    "daysAgo": "{{days}}d ago",
-    "hoursAgo": "{{hours}}h ago",
-    "justNow": "Just now"
-  },
-  "diary": {
-    "description": "This page demonstrates the versatile `InputMolecule` component, capable of rendering various input types with labels and helper text.",
-    "disabled": {
-      "helper": "This field is disabled and cannot be edited.",
-      "label": "Disabled Field",
-      "value": "You cannot edit this"
-    },
-    "feedback": {
-      "label": "Your Feedback",
-      "placeholder": "Share your thoughts..."
-    },
-    "fruit": {
-      "apple": "Apple",
-      "banana": "Banana",
-      "cherry": "Cherry",
-      "helper": "Select one option from the dropdown list.",
-      "label": "Choose Your Favorite Fruit"
-    },
-    "name": {
-      "helper": "Please enter your full name.",
-      "label": "Your Name",
-      "placeholder": "John Doe"
-    },
-    "newsletter": {
-      "helper": "Tick this box to receive email updates and promotions.",
-      "label": "Subscribe to our Newsletter"
-    },
-    "phone": {
-      "helper": "Your phone number, including country code (e.g., +1234567890)."
-    },
-    "project": {
-      "helper": "Provide a brief description of your project (max 200 characters).",
-      "label": "Project Description",
-      "placeholder": "Start typing here..."
-    },
-    "readOnly": {
-      "helper": "This field can be selected but not edited.",
-      "label": "Read-Only Field",
-      "value": "This text is read-only"
-    },
-    "title": "Input Molecule Showcase"
-  },
-  "editor": {
-    "additionalOptions": "Additional formatting options",
-    "alignCenter": "Align Center",
-    "alignLeft": "Align Left",
-    "alignRight": "Align Right",
-    "bold": "Bold (Ctrl+B)",
-    "bulletedList": "Bulleted List",
-    "checklist": "Checklist",
-    "decreaseFontSize": "Decrease font size",
-    "defaultFont": "Default (Inter)",
-    "fontFamily": "Font Family",
-    "fontSize": "Font Size",
-    "groups": {
-      "alignment": "Alignment",
-      "formatting": "Formatting",
-      "lists": "Lists",
-      "styling": "Styling"
-    },
-    "highlightColor": "Highlight Color",
-    "increaseFontSize": "Increase font size",
-    "italic": "Italic (Ctrl+I)",
-    "justify": "Justify",
-    "mixed": "Mixed",
-    "moreOptions": "More formatting options",
-    "numberedList": "Numbered List",
-    "placeholder": "Start writing your note...",
-    "redo": "Redo",
-    "removeFormat": "Remove Format",
-    "strikethrough": "Strikethrough",
-    "textColor": "Text Color",
-    "toggleCase": "Toggle Case",
-    "toolbar": "Text formatting toolbar",
-    "underline": "Underline (Ctrl+U)",
-    "undo": "Undo"
-  },
-  "notes": {
-    "addNote": "Add new note",
-    "backToAll": "Back to all notes",
-    "badges": {
-      "application": "Application",
-      "simulation": "Taken during simulation"
+  "applications": {
+    "analyticsTitle": "Analytics",
+    "board": {
+      "emptyHints": {
+        "accepted": "Drop a card here when it's a win 🎉",
+        "interview": "Drop a card here when an interview is scheduled",
+        "rejected": "Rejections archive here. The training stays yours",
+        "sent": "Drop a card here, or start a new analysis"
+      }
     },
     "card": {
-      "updated": "Updated {{date}}"
+      "actions": "Application actions",
+      "clearInterviewDate": "Clear interview date",
+      "interviewDate": "Interview date",
+      "interviewOn": "Interview on {{date}}",
+      "moveTo": "Move to",
+      "noInterview": "No interview scheduled",
+      "resumeTraining": "Resume training",
+      "sentAgo": "Sent {{distance}}",
+      "unknownCompany": "Unknown company",
+      "unknownRole": "Role not specified"
     },
+    "count_one": "{{count}} application",
+    "count_other": "{{count}} applications",
     "deleteModal": {
-      "message": "Are you sure you want to delete this note? This action cannot be undone.",
-      "title": "Delete Note"
-    },
-    "editor": {
-      "changeColor": "Change note color",
-      "delete": "Delete note",
-      "editTitle": "Edit note name",
-      "lastUpdated": "Last updated {{date}}",
-      "loading": "Loading note...",
-      "saveTitle": "Save title",
-      "share": "Share note",
-      "shareLabel": "Share"
+      "message": "This removes {{company}} and its training progress. This action cannot be undone.",
+      "messageUnnamed": "This removes this application and its training progress. This action cannot be undone.",
+      "title": "Delete this application?"
     },
     "empty": {
-      "cta": "Create your first note",
-      "description": "Create your first note to get started. Notes help you organize your thoughts and prepare for practice sessions.",
-      "title": "No notes yet"
+      "cta": "Start a CV + offer analysis",
+      "description": "Import your CV and a job offer that interests you, and TalkUp creates your application with a tailored training path.",
+      "title": "No applications yet"
     },
-    "emptyFilter": {
-      "cta": "Show all notes",
-      "description": "Nothing matches this filter yet. Pick another kind or create a new note.",
-      "title": "No notes of this kind"
+    "interviewPill": {
+      "add": "Add interview date",
+      "date": "Interview {{date}}",
+      "daysLeft_one": "{{count}} day left",
+      "daysLeft_other": "{{count}} days left",
+      "edit": "Edit",
+      "pace_one": "≈{{count}} topic/week",
+      "pace_other": "≈{{count}} topics/week"
     },
-    "errors": {
-      "create": "Failed to create note. Please try again.",
-      "load": "Failed to load notes. Please try again."
-    },
-    "favorites": {
-      "add": "Add to favorites",
-      "favorite": "Favorite",
-      "favorited": "Favorited",
-      "remove": "Remove from favorites"
-    },
-    "filters": {
-      "all": "All",
-      "application": "Application",
-      "general": "General",
-      "simulation": "Simulation"
-    },
-    "floating": {
-      "placeholder": "Type here...",
-      "save": "Save",
-      "title": "Notes"
-    },
-    "loading": "Loading notes...",
-    "showingFor": "Showing notes for <strong>{{application}}</strong>",
-    "simulationTitle": "Simulation notes",
-    "subtitle": "Add Notes, Share them and Access them during Practice !",
-    "thisApplication": "this application",
-    "title": "My Notes",
-    "untitled": "Untitled Note"
-  },
-  "activity": {
+    "jobAtCompany": "{{jobTitle}} at {{companyName}}",
+    "loadError": "Couldn't load your applications. Please try again in a moment.",
+    "loading": "Loading…",
+    "new": "New application",
     "status": {
-      "away": "away",
-      "busy": "busy",
-      "offline": "offline",
-      "online": "online"
+      "accepted": "Accepted",
+      "interview": "Interview",
+      "rejected": "Rejected",
+      "sent": "Sent"
     },
-    "title": "Status: {{status}}"
+    "title": "Applications",
+    "upcomingInterviews_one": "{{count}} interview coming up",
+    "upcomingInterviews_other": "{{count}} interviews coming up"
   },
   "chat": {
     "close": "Close chat",
@@ -609,6 +217,167 @@
       }
     }
   },
+  "diary": {
+    "description": "This page demonstrates the versatile `InputMolecule` component, capable of rendering various input types with labels and helper text.",
+    "disabled": {
+      "helper": "This field is disabled and cannot be edited.",
+      "label": "Disabled Field",
+      "value": "You cannot edit this"
+    },
+    "feedback": {
+      "label": "Your Feedback",
+      "placeholder": "Share your thoughts..."
+    },
+    "fruit": {
+      "apple": "Apple",
+      "banana": "Banana",
+      "cherry": "Cherry",
+      "helper": "Select one option from the dropdown list.",
+      "label": "Choose Your Favorite Fruit"
+    },
+    "name": {
+      "helper": "Please enter your full name.",
+      "label": "Your Name",
+      "placeholder": "John Doe"
+    },
+    "newsletter": {
+      "helper": "Tick this box to receive email updates and promotions.",
+      "label": "Subscribe to our Newsletter"
+    },
+    "phone": {
+      "helper": "Your phone number, including country code (e.g., +1234567890)."
+    },
+    "project": {
+      "helper": "Provide a brief description of your project (max 200 characters).",
+      "label": "Project Description",
+      "placeholder": "Start typing here..."
+    },
+    "readOnly": {
+      "helper": "This field can be selected but not edited.",
+      "label": "Read-Only Field",
+      "value": "This text is read-only"
+    },
+    "title": "Input Molecule Showcase"
+  },
+  "editor": {
+    "additionalOptions": "Additional formatting options",
+    "alignCenter": "Align Center",
+    "alignLeft": "Align Left",
+    "alignRight": "Align Right",
+    "bold": "Bold (Ctrl+B)",
+    "bulletedList": "Bulleted List",
+    "checklist": "Checklist",
+    "decreaseFontSize": "Decrease font size",
+    "defaultFont": "Default (Inter)",
+    "fontFamily": "Font Family",
+    "fontSize": "Font Size",
+    "groups": {
+      "alignment": "Alignment",
+      "formatting": "Formatting",
+      "lists": "Lists",
+      "styling": "Styling"
+    },
+    "highlightColor": "Highlight Color",
+    "increaseFontSize": "Increase font size",
+    "italic": "Italic (Ctrl+I)",
+    "justify": "Justify",
+    "mixed": "Mixed",
+    "moreOptions": "More formatting options",
+    "numberedList": "Numbered List",
+    "placeholder": "Start writing your note...",
+    "redo": "Redo",
+    "removeFormat": "Remove Format",
+    "strikethrough": "Strikethrough",
+    "textColor": "Text Color",
+    "toggleCase": "Toggle Case",
+    "toolbar": "Text formatting toolbar",
+    "underline": "Underline (Ctrl+U)",
+    "undo": "Undo"
+  },
+  "navigation": {
+    "about": "About",
+    "agenda": "Agenda",
+    "analytics": "Analytics",
+    "applications": "Applications",
+    "assistant": "Assistant",
+    "billing": "Billing",
+    "cvAnalysis": "CV Analysis",
+    "home": "Home",
+    "integrations": "Integrations",
+    "invites": "Invites",
+    "login": "Login",
+    "members": "Members",
+    "notes": "Notes",
+    "profile": "Profile",
+    "register": "Register",
+    "roadmap": "Roadmap",
+    "security": "Security",
+    "settings": "Settings",
+    "simulations": "Simulations"
+  },
+  "notes": {
+    "addNote": "Add new note",
+    "backToAll": "Back to all notes",
+    "badges": {
+      "application": "Application",
+      "simulation": "Taken during simulation"
+    },
+    "card": {
+      "updated": "Updated {{date}}"
+    },
+    "deleteModal": {
+      "message": "Are you sure you want to delete this note? This action cannot be undone.",
+      "title": "Delete Note"
+    },
+    "editor": {
+      "changeColor": "Change note color",
+      "delete": "Delete note",
+      "editTitle": "Edit note name",
+      "lastUpdated": "Last updated {{date}}",
+      "loading": "Loading note...",
+      "saveTitle": "Save title",
+      "share": "Share note",
+      "shareLabel": "Share"
+    },
+    "empty": {
+      "cta": "Create your first note",
+      "description": "Create your first note to get started. Notes help you organize your thoughts and prepare for practice sessions.",
+      "title": "No notes yet"
+    },
+    "emptyFilter": {
+      "cta": "Show all notes",
+      "description": "Nothing matches this filter yet. Pick another kind or create a new note.",
+      "title": "No notes of this kind"
+    },
+    "errors": {
+      "create": "Failed to create note. Please try again.",
+      "load": "Failed to load notes. Please try again."
+    },
+    "favorites": {
+      "add": "Add to favorites",
+      "favorite": "Favorite",
+      "favorited": "Favorited",
+      "remove": "Remove from favorites"
+    },
+    "filters": {
+      "all": "All",
+      "application": "Application",
+      "general": "General",
+      "simulation": "Simulation"
+    },
+    "floating": {
+      "placeholder": "Type here...",
+      "save": "Save",
+      "title": "Notes"
+    },
+    "loading": "Loading notes...",
+    "showingFor": "Showing notes for <strong>{{application}}</strong>",
+    "simulationTitle": "Simulation notes",
+    "subtitle": "Add Notes, Share them and Access them during Practice !",
+    "thisApplication": "this application",
+    "title": "My Notes",
+    "untitled": "Untitled Note"
+  },
   "profile": {
     "avatarAlt": "{{name}}'s avatar"
   },
@@ -633,5 +402,236 @@
     },
     "subtitle": "Visualize your evolution and identify your strengths",
     "title": "Progression and Statistics"
+  },
+  "recruiter": {
+    "fallback": {
+      "contextLost": "WebGL context lost — using static avatar.",
+      "downloadTimeout": "Avatar model download timed out.",
+      "forced": "3D avatar disabled for this session.",
+      "loadFailed": "Failed to load 3D avatar.",
+      "noWebgl": "WebGL is not available in this browser.",
+      "parseTimeout": "Avatar model parsing timed out.",
+      "unavailable": "3D avatar unavailable."
+    },
+    "loading3d": "Loading 3D avatar…",
+    "loadSteps": {
+      "downloading": "Downloading model…",
+      "initializing": "Initializing…",
+      "preparing": "Preparing avatar…",
+      "starting": "Starting 3D engine…",
+      "viewport": "Preparing viewport…"
+    },
+    "role": "IT Recruiter",
+    "speaking": "Speaking…",
+    "status": {
+      "interactive": "Interactive 3D avatar active.",
+      "static": "Static interviewer image active."
+    },
+    "thinking": "Thinking…",
+    "unavailable": "3D avatar unavailable"
+  },
+  "roadmap": {
+    "defaultHeading": "Preparation path",
+    "emptyNoOffer": "No preparation path yet. Analyze an offer first.",
+    "emptyWithOffer": "Couldn't build a path from this offer yet — try Regenerate.",
+    "goToCvAnalysis": "Go to CV analysis",
+    "loadError": "Could not load your preparation path.",
+    "loading": "Building your preparation path…",
+    "myNotes": "My notes",
+    "priority": {
+      "high": "HIGH",
+      "low": "LOW",
+      "med": "MED"
+    },
+    "regenerate": "Regenerate",
+    "regenerateError": "Couldn't regenerate — try again in a minute.",
+    "regenerating": "Regenerating…",
+    "retrying": "Retrying…",
+    "sources": "Sources",
+    "sourcesModal": {
+      "close": "Close sources",
+      "cvSnapshotNote": "Parsed from your CV at analysis time — the original file isn't stored.",
+      "cvUsed": "CV used",
+      "dismiss": "Dismiss sources",
+      "education_one": "Education ({{count}})",
+      "education_other": "Education ({{count}})",
+      "experiences_one": "Experiences ({{count}})",
+      "experiences_other": "Experiences ({{count}})",
+      "jobOffer": "Job offer",
+      "noCv": "No CV snapshot stored for this application.",
+      "noUrl": "URL not available",
+      "openJobOffer": "Open job offer",
+      "title": "Sources used"
+    },
+    "startSimulation": "Start simulation",
+    "tabs": {
+      "label": "Roadmap views",
+      "path": "Preparation path",
+      "talking": "Interview talking points"
+    },
+    "talkingPoints": {
+      "description": "Talking points from the role's responsibilities, matched to your experience.",
+      "title": "Bring these to your interview"
+    },
+    "timeline": {
+      "goal": "Job-ready goal",
+      "goalBy": "Job-ready by {{date}}",
+      "matchScore": "Match score",
+      "matchScoreValue": "Match score {{score}}%"
+    },
+    "topic": {
+      "details": "{{title}} details",
+      "gap": "Gap to close",
+      "readMore": "Read more",
+      "step": "Step {{step}}"
+    }
+  },
+  "sidebar": {
+    "applicationFallback": "Application",
+    "banner": {
+      "badge": "New",
+      "cta": "Try it out",
+      "description": "Explore the new AI content we have prepared for you in 2026",
+      "title": "TalkUp new AI content"
+    },
+    "linkIntegrations": "Link Integrations",
+    "loading": "Loading...",
+    "orgView": "Organization view"
+  },
+  "simulations": {
+    "applicationDescription": "Practice with the AI recruiter for this job offer.",
+    "backToRoadmap": "Back to roadmap",
+    "description": "Practice interview scenarios in a safe environment.",
+    "history": {
+      "action": "Action",
+      "date": "Date",
+      "finalScore": "Final Score",
+      "loadMore": "Load more...",
+      "showing": "Showing 1 to {{to}} of {{total}} results",
+      "status": {
+        "cancelled": "Cancelled",
+        "completed": "Completed",
+        "inProgress": "In Progress"
+      },
+      "statusHeader": "Status",
+      "time": "Time",
+      "title": "Title",
+      "viewAnalysis": "View Analysis"
+    },
+    "interviewContext": "Interview context: {{label}}",
+    "loadingContext": "Loading application context…",
+    "queue": {
+      "estimatedWait": "— estimated wait ~<strong>{{minutes}}</strong> min",
+      "position": "Position: <strong>{{position}}</strong>",
+      "slots": "{{active}}/{{max}} GPU slots in use. Your session will start automatically.",
+      "title": "Simulation queue"
+    },
+    "speakers": {
+      "ai": "AI",
+      "you": "You"
+    },
+    "title": "Simulations",
+    "toasts": {
+      "interviewEnded": "Interview finished. Thank you for taking part!",
+      "queued": "Waiting in the queue…",
+      "queueResuming": "Resuming your place in the queue…",
+      "resumed": "Simulation resumed",
+      "resumeFailed": "Unable to resume the simulation right now. Reload the page to try again.",
+      "sessionExpired": "The previous session has expired. You can start a new interview.",
+      "startFailed": "Failed to start interview. Please try again.",
+      "transcriptionError": "An error occurred during transcription.",
+      "yourTurn": "It's your turn — starting the simulation"
+    },
+    "transcriptions": {
+      "empty": "Transcriptions will appear here once the interview starts.",
+      "title": "Transcriptions"
+    }
+  },
+  "time": {
+    "daysAgo": "{{days}}d ago",
+    "hoursAgo": "{{hours}}h ago",
+    "justNow": "Just now"
+  },
+  "userMenu": {
+    "avatarAlt": "User Avatar",
+    "darkTheme": "Switch to dark theme",
+    "defaultName": "User",
+    "documentation": "Documentation",
+    "helpCenter": "Help Center",
+    "label": "Account",
+    "lightTheme": "Switch to light theme",
+    "logout": "Log out",
+    "logoutModal": {
+      "confirm": "Logout",
+      "message": "Are you sure you want to logout?",
+      "title": "Logout"
+    },
+    "noEmail": "No email set",
+    "open": "Open account menu, {{name}}",
+    "profile": "Profile"
+  },
+  "verbalAnalysis": {
+    "adviceFallback": "Keep structuring your answers.",
+    "clarity": "Clarity",
+    "empty": "The analysis will appear after you first speak.",
+    "liveAdvice": "Live advice",
+    "politeness": "Politeness",
+    "register": "Register: <strong>{{register}}</strong> · Turn {{turn}}",
+    "registers": {
+      "inappropriate": "Inappropriate",
+      "informal": "Informal",
+      "mixed": "Mixed",
+      "neutral": "Neutral",
+      "professional": "Professional"
+    },
+    "sessionScore": "/ 100 session",
+    "title": "Verbal analysis",
+    "topTics": "Frequent tics: {{tics}}",
+    "vocabulary": "Vocabulary",
+    "warnings": "Alerts"
+  },
+  "videoControls": {
+    "cameraOff": "Turn off camera",
+    "cameraOn": "Turn on camera",
+    "endCall": "End call",
+    "muteMic": "Mute microphone",
+    "muteSpeaker": "Mute speaker",
+    "startCall": "Start new call",
+    "unmuteMic": "Unmute microphone",
+    "unmuteSpeaker": "Unmute speaker"
+  },
+  "wsDebug": {
+    "altServers": "Alternative test servers",
+    "attempts_one": "Connection attempts: {{count}}",
+    "attempts_other": "Connection attempts: {{count}}",
+    "audio": "Audio:",
+    "audioError": "Audio Error:",
+    "audioStates": {
+      "idle": "Idle",
+      "listening": "Listening",
+      "recording": "Recording utterance",
+      "speaking": "Speaking"
+    },
+    "connection": "WebSocket Connection",
+    "format": "Format: {{format}}",
+    "lastJson": "Last JSON:",
+    "lastMessage": "Last Message:",
+    "messages": "WebSocket Messages",
+    "packetsSent_one": "Packets sent: {{count}}",
+    "packetsSent_other": "Packets sent: {{count}}",
+    "sendJson": "Send JSON Message",
+    "sendMessage": "Send Message",
+    "sendPing": "Send Ping",
+    "socketUrl": "Socket URL",
+    "startsWithCall": "Connection starts when call begins",
+    "states": {
+      "closed": "Closed",
+      "closing": "Closing",
+      "connecting": "Connecting",
+      "open": "Connected",
+      "uninstantiated": "Uninstantiated"
+    },
+    "status": "Status:",
+    "wsError": "WebSocket Error:"
   }
 }

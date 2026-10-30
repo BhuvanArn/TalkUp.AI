@@ -7,6 +7,16 @@ import { iconMap } from '../../atoms/icon/icon-map';
 import { Stepper } from '../../molecules/cv-import-stepper';
 
 const UploadIcon = iconMap.upload;
+
+/** File-input label; `<Trans>` fills in its translated text. */
+const BrowseLabel = ({ children }: { children?: React.ReactNode }) => (
+  <label
+    htmlFor="cv-input"
+    className="text-text-link cursor-pointer font-semibold underline"
+  >
+    {children}
+  </label>
+);
 const CalendarIcon = iconMap.schedule;
 
 /**
@@ -75,7 +85,7 @@ export const UploaderCard = ({
 
       onFileSelect(file);
     },
-    [onFileSelect],
+    [onFileSelect, t],
   );
 
   /**
@@ -185,12 +195,7 @@ export const UploaderCard = ({
               ns="app"
               i18nKey="cv.uploader.browse"
               components={{
-                browse: (
-                  <label
-                    htmlFor="cv-input"
-                    className="text-text-link cursor-pointer font-semibold underline"
-                  />
-                ),
+                browse: <BrowseLabel />,
               }}
             />
           </p>

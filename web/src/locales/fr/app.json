@@ -1,307 +1,12 @@
 {
-  "navigation": {
-    "applications": "Candidatures",
-    "cvAnalysis": "Analyse de CV",
-    "agenda": "Agenda",
-    "notes": "Notes",
-    "assistant": "Assistant",
-    "roadmap": "Feuille de route",
-    "simulations": "Simulations",
-    "analytics": "Statistiques",
-    "home": "Accueil",
-    "about": "À propos",
-    "login": "Connexion",
-    "register": "Inscription",
-    "profile": "Profil",
-    "billing": "Facturation",
-    "integrations": "Intégrations",
-    "security": "Sécurité",
-    "members": "Membres",
-    "invites": "Invitations",
-    "settings": "Paramètres"
-  },
-  "sidebar": {
-    "applicationFallback": "Candidature",
-    "banner": {
-      "badge": "Nouveau",
-      "title": "Nouveaux contenus IA sur TalkUp",
-      "description": "Découvrez les nouveaux contenus IA que nous vous avons préparés pour 2026",
-      "cta": "Essayer"
-    },
-    "linkIntegrations": "Connecter des comptes",
-    "loading": "Chargement…",
-    "orgView": "Vue organisation"
-  },
-  "userMenu": {
-    "avatarAlt": "Avatar de l’utilisateur",
-    "darkTheme": "Passer au thème sombre",
-    "defaultName": "Utilisateur",
-    "documentation": "Documentation",
-    "helpCenter": "Centre d’aide",
-    "label": "Compte",
-    "lightTheme": "Passer au thème clair",
-    "logout": "Se déconnecter",
-    "logoutModal": {
-      "title": "Déconnexion",
-      "message": "Voulez-vous vraiment vous déconnecter ?",
-      "confirm": "Se déconnecter"
-    },
-    "noEmail": "Aucune adresse e-mail",
-    "open": "Ouvrir le menu du compte, {{name}}",
-    "profile": "Profil"
-  },
-  "recruiter": {
-    "fallback": {
-      "contextLost": "Contexte WebGL perdu : passage à l’avatar statique.",
-      "downloadTimeout": "Le téléchargement du modèle d’avatar a expiré.",
-      "forced": "Avatar 3D désactivé pour cette session.",
-      "loadFailed": "Impossible de charger l’avatar 3D.",
-      "noWebgl": "WebGL n’est pas disponible dans ce navigateur.",
-      "parseTimeout": "L’analyse du modèle d’avatar a expiré.",
-      "unavailable": "Avatar 3D indisponible."
-    },
-    "loadSteps": {
-      "downloading": "Téléchargement du modèle…",
-      "initializing": "Initialisation…",
-      "preparing": "Préparation de l’avatar…",
-      "starting": "Démarrage du moteur 3D…",
-      "viewport": "Préparation de l’affichage…"
-    },
-    "loading3d": "Chargement de l’avatar 3D…",
-    "role": "Recruteuse IT",
-    "speaking": "Parle…",
+  "activity": {
     "status": {
-      "interactive": "Avatar 3D interactif activé.",
-      "static": "Image statique de la recruteuse affichée."
+      "away": "absent",
+      "busy": "occupé",
+      "offline": "hors ligne",
+      "online": "en ligne"
     },
-    "thinking": "Réfléchit…",
-    "unavailable": "Avatar 3D indisponible"
-  },
-  "simulations": {
-    "applicationDescription": "Entraînez-vous avec la recruteuse IA sur cette offre d’emploi.",
-    "backToRoadmap": "Retour à la feuille de route",
-    "description": "Entraînez-vous à des entretiens dans un cadre sans risque.",
-    "history": {
-      "action": "Action",
-      "date": "Date",
-      "finalScore": "Score final",
-      "loadMore": "Afficher plus…",
-      "showing": "Affichage de 1 à {{to}} sur {{total}} résultats",
-      "status": {
-        "cancelled": "Annulé",
-        "completed": "Terminé",
-        "inProgress": "En cours"
-      },
-      "statusHeader": "Statut",
-      "time": "Heure",
-      "title": "Titre",
-      "viewAnalysis": "Voir l’analyse"
-    },
-    "interviewContext": "Contexte de l’entretien : {{label}}",
-    "loadingContext": "Chargement du contexte de la candidature…",
-    "queue": {
-      "estimatedWait": "— attente estimée ~<strong>{{minutes}}</strong> min",
-      "position": "Position : <strong>{{position}}</strong>",
-      "slots": "{{active}}/{{max}} créneaux GPU utilisés. Votre session démarrera automatiquement.",
-      "title": "File d’attente de la simulation"
-    },
-    "speakers": {
-      "ai": "IA",
-      "you": "Vous"
-    },
-    "title": "Simulations",
-    "toasts": {
-      "interviewEnded": "Entretien terminé. Merci pour votre participation !",
-      "queueResuming": "Reprise de la file d’attente…",
-      "queued": "En file d’attente…",
-      "resumeFailed": "Impossible de reprendre la simulation pour le moment. Rechargez la page pour réessayer.",
-      "resumed": "Simulation reprise",
-      "sessionExpired": "La session précédente a expiré. Vous pouvez démarrer un nouvel entretien.",
-      "startFailed": "Impossible de démarrer l’entretien. Veuillez réessayer.",
-      "transcriptionError": "Une erreur est survenue pendant la transcription.",
-      "yourTurn": "C’est votre tour — démarrage de la simulation"
-    },
-    "transcriptions": {
-      "empty": "Les transcriptions apparaîtront ici dès le début de l’entretien.",
-      "title": "Transcriptions"
-    }
-  },
-  "verbalAnalysis": {
-    "adviceFallback": "Continuez à structurer vos réponses.",
-    "clarity": "Clarté",
-    "empty": "L’analyse apparaîtra après votre première prise de parole.",
-    "liveAdvice": "Conseil en direct",
-    "politeness": "Politesse",
-    "register": "Registre : <strong>{{register}}</strong> · Tour {{turn}}",
-    "registers": {
-      "inappropriate": "Inadapté",
-      "informal": "Familier",
-      "mixed": "Mixte",
-      "neutral": "Neutre",
-      "professional": "Professionnel"
-    },
-    "sessionScore": "/ 100 sur la session",
-    "title": "Analyse verbale",
-    "topTics": "Tics fréquents : {{tics}}",
-    "vocabulary": "Vocabulaire",
-    "warnings": "Alertes"
-  },
-  "videoControls": {
-    "cameraOff": "Désactiver la caméra",
-    "cameraOn": "Activer la caméra",
-    "endCall": "Raccrocher",
-    "muteMic": "Couper le micro",
-    "muteSpeaker": "Couper le son",
-    "startCall": "Démarrer un nouvel appel",
-    "unmuteMic": "Réactiver le micro",
-    "unmuteSpeaker": "Réactiver le son"
-  },
-  "wsDebug": {
-    "altServers": "Autres serveurs de test",
-    "attempts_one": "Tentative de connexion : {{count}}",
-    "attempts_other": "Tentatives de connexion : {{count}}",
-    "audio": "Audio :",
-    "audioError": "Erreur audio :",
-    "audioStates": {
-      "idle": "Inactif",
-      "listening": "À l’écoute",
-      "recording": "Enregistrement de la prise de parole",
-      "speaking": "Parole détectée"
-    },
-    "connection": "Connexion WebSocket",
-    "format": "Format : {{format}}",
-    "lastJson": "Dernier JSON :",
-    "lastMessage": "Dernier message :",
-    "messages": "Messages WebSocket",
-    "packetsSent_one": "Paquet envoyé : {{count}}",
-    "packetsSent_other": "Paquets envoyés : {{count}}",
-    "sendJson": "Envoyer un message JSON",
-    "sendMessage": "Envoyer un message",
-    "sendPing": "Envoyer un ping",
-    "socketUrl": "URL du socket",
-    "startsWithCall": "La connexion démarre avec l’appel",
-    "states": {
-      "closed": "Fermée",
-      "closing": "Fermeture",
-      "connecting": "Connexion…",
-      "open": "Connectée",
-      "uninstantiated": "Non initialisée"
-    },
-    "status": "Statut :",
-    "wsError": "Erreur WebSocket :"
-  },
-  "applications": {
-    "board": {
-      "emptyHints": {
-        "accepted": "Déposez une carte ici quand c’est gagné 🎉",
-        "interview": "Déposez une carte ici quand un entretien est prévu",
-        "rejected": "Les refus sont archivés ici. L’entraînement, lui, vous reste acquis",
-        "sent": "Déposez une carte ici, ou lancez une nouvelle analyse"
-      }
-    },
-    "card": {
-      "actions": "Actions sur la candidature",
-      "clearInterviewDate": "Effacer la date d’entretien",
-      "interviewDate": "Date d’entretien",
-      "interviewOn": "Entretien le {{date}}",
-      "moveTo": "Déplacer vers",
-      "noInterview": "Aucun entretien prévu",
-      "resumeTraining": "Reprendre l’entraînement",
-      "sentAgo": "Envoyée {{distance}}",
-      "unknownCompany": "Entreprise inconnue",
-      "unknownRole": "Poste non précisé"
-    },
-    "count_one": "{{count}} candidature",
-    "count_other": "{{count}} candidatures",
-    "deleteModal": {
-      "message": "Cette action supprime {{company}} et votre progression d’entraînement. Elle est irréversible.",
-      "messageUnnamed": "Cette action supprime cette candidature et votre progression d’entraînement. Elle est irréversible.",
-      "title": "Supprimer cette candidature ?"
-    },
-    "empty": {
-      "cta": "Lancer une analyse CV + offre",
-      "description": "Importez votre CV et une offre d’emploi qui vous intéresse : TalkUp crée votre candidature avec un parcours d’entraînement sur mesure.",
-      "title": "Aucune candidature pour l’instant"
-    },
-    "interviewPill": {
-      "add": "Ajouter une date d’entretien",
-      "date": "Entretien le {{date}}",
-      "daysLeft_one": "{{count}} jour restant",
-      "daysLeft_other": "{{count}} jours restants",
-      "edit": "Modifier",
-      "pace_one": "≈{{count}} sujet/semaine",
-      "pace_other": "≈{{count}} sujets/semaine"
-    },
-    "jobAtCompany": "{{jobTitle}} chez {{companyName}}",
-    "loadError": "Impossible de charger vos candidatures. Veuillez réessayer dans un instant.",
-    "loading": "Chargement…",
-    "new": "Nouvelle candidature",
-    "status": {
-      "accepted": "Acceptée",
-      "interview": "Entretien",
-      "rejected": "Refusée",
-      "sent": "Envoyée"
-    },
-    "title": "Candidatures",
-    "upcomingInterviews_one": "{{count}} entretien à venir",
-    "upcomingInterviews_other": "{{count}} entretiens à venir",
-    "analyticsTitle": "Statistiques"
-  },
-  "roadmap": {
-    "defaultHeading": "Parcours de préparation",
-    "emptyNoOffer": "Pas encore de parcours de préparation. Analysez d’abord une offre.",
-    "emptyWithOffer": "Impossible de créer un parcours à partir de cette offre pour l’instant : essayez « Régénérer ».",
-    "goToCvAnalysis": "Aller à l’analyse de CV",
-    "loadError": "Impossible de charger votre parcours de préparation.",
-    "loading": "Création de votre parcours de préparation…",
-    "myNotes": "Mes notes",
-    "priority": {
-      "high": "HAUTE",
-      "low": "BASSE",
-      "med": "MOYENNE"
-    },
-    "regenerate": "Régénérer",
-    "regenerateError": "Impossible de régénérer : réessayez dans une minute.",
-    "regenerating": "Régénération…",
-    "retrying": "Nouvelle tentative…",
-    "sources": "Sources",
-    "sourcesModal": {
-      "close": "Fermer les sources",
-      "cvSnapshotNote": "Extrait de votre CV au moment de l’analyse : le fichier d’origine n’est pas conservé.",
-      "cvUsed": "CV utilisé",
-      "dismiss": "Masquer les sources",
-      "education_one": "Formation ({{count}})",
-      "education_other": "Formations ({{count}})",
-      "experiences_one": "Expérience ({{count}})",
-      "experiences_other": "Expériences ({{count}})",
-      "jobOffer": "Offre d’emploi",
-      "noCv": "Aucun instantané de CV enregistré pour cette candidature.",
-      "noUrl": "URL indisponible",
-      "openJobOffer": "Ouvrir l’offre d’emploi",
-      "title": "Sources utilisées"
-    },
-    "startSimulation": "Lancer la simulation",
-    "tabs": {
-      "label": "Vues de la feuille de route",
-      "path": "Parcours de préparation",
-      "talking": "Points à aborder en entretien"
-    },
-    "talkingPoints": {
-      "description": "Des points à aborder tirés des missions du poste et rapprochés de votre expérience.",
-      "title": "À aborder pendant votre entretien"
-    },
-    "timeline": {
-      "goal": "Objectif : prêt pour le poste",
-      "goalBy": "Prêt pour le poste d’ici le {{date}}",
-      "matchScore": "Score de correspondance",
-      "matchScoreValue": "Score de correspondance {{score}} %"
-    },
-    "topic": {
-      "details": "Détails : {{title}}",
-      "gap": "Lacune à combler",
-      "readMore": "Lire la suite",
-      "step": "Étape {{step}}"
-    }
+    "title": "Statut : {{status}}"
   },
   "agenda": {
     "addEvent": "Ajouter un événement",
@@ -367,10 +72,150 @@
     "timeRange": "{{start}} – {{end}}",
     "title": "Agenda TalkUp"
   },
-  "time": {
-    "daysAgo": "il y a {{days}} j",
-    "hoursAgo": "il y a {{hours}} h",
-    "justNow": "À l’instant"
+  "applications": {
+    "analyticsTitle": "Statistiques",
+    "board": {
+      "emptyHints": {
+        "accepted": "Déposez une carte ici quand c’est gagné 🎉",
+        "interview": "Déposez une carte ici quand un entretien est prévu",
+        "rejected": "Les refus sont archivés ici. L’entraînement, lui, vous reste acquis",
+        "sent": "Déposez une carte ici, ou lancez une nouvelle analyse"
+      }
+    },
+    "card": {
+      "actions": "Actions sur la candidature",
+      "clearInterviewDate": "Effacer la date d’entretien",
+      "interviewDate": "Date d’entretien",
+      "interviewOn": "Entretien le {{date}}",
+      "moveTo": "Déplacer vers",
+      "noInterview": "Aucun entretien prévu",
+      "resumeTraining": "Reprendre l’entraînement",
+      "sentAgo": "Envoyée {{distance}}",
+      "unknownCompany": "Entreprise inconnue",
+      "unknownRole": "Poste non précisé"
+    },
+    "count_one": "{{count}} candidature",
+    "count_other": "{{count}} candidatures",
+    "deleteModal": {
+      "message": "Cette action supprime {{company}} et votre progression d’entraînement. Elle est irréversible.",
+      "messageUnnamed": "Cette action supprime cette candidature et votre progression d’entraînement. Elle est irréversible.",
+      "title": "Supprimer cette candidature ?"
+    },
+    "empty": {
+      "cta": "Lancer une analyse CV + offre",
+      "description": "Importez votre CV et une offre d’emploi qui vous intéresse : TalkUp crée votre candidature avec un parcours d’entraînement sur mesure.",
+      "title": "Aucune candidature pour l’instant"
+    },
+    "interviewPill": {
+      "add": "Ajouter une date d’entretien",
+      "date": "Entretien le {{date}}",
+      "daysLeft_one": "{{count}} jour restant",
+      "daysLeft_other": "{{count}} jours restants",
+      "edit": "Modifier",
+      "pace_one": "≈{{count}} sujet/semaine",
+      "pace_other": "≈{{count}} sujets/semaine"
+    },
+    "jobAtCompany": "{{jobTitle}} chez {{companyName}}",
+    "loadError": "Impossible de charger vos candidatures. Veuillez réessayer dans un instant.",
+    "loading": "Chargement…",
+    "new": "Nouvelle candidature",
+    "status": {
+      "accepted": "Acceptée",
+      "interview": "Entretien",
+      "rejected": "Refusée",
+      "sent": "Envoyée"
+    },
+    "title": "Candidatures",
+    "upcomingInterviews_one": "{{count}} entretien à venir",
+    "upcomingInterviews_other": "{{count}} entretiens à venir"
+  },
+  "chat": {
+    "close": "Fermer le chat",
+    "error": "Désolé, impossible de joindre l’assistant pour le moment. Veuillez réessayer.",
+    "input": {
+      "label": "Saisie du message",
+      "placeholder": "Posez une question…",
+      "send": "Envoyer le message"
+    },
+    "open": "Ouvrir le chat TalkUp",
+    "page": {
+      "description": "L’assistant est disponible en bas à droite de chaque page. Ouvrez-le où que vous soyez et posez-lui vos questions sur ce que vous consultez : votre feuille de route, une simulation, votre agenda ou vos notes.",
+      "title": "Assistant TalkUp AI"
+    },
+    "typing": "TalkUp AI est en train d’écrire",
+    "welcome": "Bonjour, je suis TalkUp AI. Posez-moi vos questions pour préparer votre entretien 🎯",
+    "window": {
+      "label": "Chat TalkUp AI",
+      "messages": "Messages du chat",
+      "poweredBy": "Propulsé par TalkUp AI",
+      "status": "En ligne, prêt à vous aider"
+    }
+  },
+  "cv": {
+    "consent": {
+      "helper": "Vos données sont stockées de façon sécurisée. Vous pouvez y accéder, les exporter ou les supprimer à tout moment.",
+      "label": "J’accepte que TalkUp traite mes données personnelles (y compris mon CV) pour réaliser cette analyse de compatibilité."
+    },
+    "file": {
+      "ready": "{{size}} Mo • Prêt",
+      "remove": "Retirer"
+    },
+    "offer": {
+      "helper": "TalkUp extraira automatiquement les informations de l’annonce.",
+      "label": "Lien de l’offre d’emploi",
+      "placeholder": "Collez un lien LinkedIn, WTTJ…"
+    },
+    "processing": {
+      "cv": "Analyse de votre CV…",
+      "offer": "Extraction de l’offre d’emploi…",
+      "title": "Analyse TalkUp.AI en cours"
+    },
+    "result": {
+      "description": "Votre profil a été entièrement analysé. TalkUp a préparé un plan d’action personnalisé à partir de vos points forts et des attentes des recruteurs.",
+      "ready": "Votre entraînement sur mesure est prêt.",
+      "retry": "Analyser un autre profil",
+      "start": "Commencer mon entraînement",
+      "targetRole": "Votre poste visé",
+      "title": "Analyse terminée !"
+    },
+    "start": "Lancer l’analyse TalkUp",
+    "stepper": {
+      "analysis": "Analyse",
+      "confirmation": "Confirmation",
+      "upload": "Import"
+    },
+    "steps": {
+      "cv": "1. Votre CV",
+      "offer": "2. Offre d’emploi (lien)"
+    },
+    "subtitle": "Importez votre CV et collez le lien de l’offre d’emploi pour commencer.",
+    "title": "Analyse de compatibilité",
+    "toasts": {
+      "cvSaved": "Votre CV a été enregistré dans votre profil.",
+      "offerFailed": "L’analyse de l’offre a échoué. Vérifiez le lien et réessayez.",
+      "throttled": "Trop de tentatives. Réessayez dans une minute.",
+      "uploadFailed": "L’import du CV a échoué. Réessayez avec un PDF de meilleure qualité (texte sélectionnable)."
+    },
+    "uploader": {
+      "browse": "ou <browse>parcourez vos fichiers</browse>",
+      "clearDate": "Effacer la date",
+      "dateHelper": "Facultatif : quand avez-vous votre entretien avec cette entreprise ?",
+      "dropTitle": "Glissez-déposez votre CV ici",
+      "errors": {
+        "format": "Format de fichier non pris en charge. Utilisez un fichier PDF, DOC ou DOCX.",
+        "size": "Fichier trop volumineux. Taille maximale : {{max}} Mo."
+      },
+      "interviewDate": "Date de l’entretien",
+      "maxSize": "Taille maximale : {{max}} Mo",
+      "pastDate": "Cette date est déjà passée.",
+      "urgency": {
+        "daysLeft_one": "{{count}} jour restant",
+        "daysLeft_other": "{{count}} jours restants",
+        "overdue": "Dépassée",
+        "today": "Aujourd’hui !",
+        "tomorrow": "Demain !"
+      }
+    }
   },
   "diary": {
     "description": "Cette page présente le composant polyvalent `InputMolecule`, capable d’afficher différents types de champs avec libellés et textes d’aide.",
@@ -449,6 +294,27 @@
     "underline": "Souligné (Ctrl+U)",
     "undo": "Annuler"
   },
+  "navigation": {
+    "about": "À propos",
+    "agenda": "Agenda",
+    "analytics": "Statistiques",
+    "applications": "Candidatures",
+    "assistant": "Assistant",
+    "billing": "Facturation",
+    "cvAnalysis": "Analyse de CV",
+    "home": "Accueil",
+    "integrations": "Intégrations",
+    "invites": "Invitations",
+    "login": "Connexion",
+    "members": "Membres",
+    "notes": "Notes",
+    "profile": "Profil",
+    "register": "Inscription",
+    "roadmap": "Feuille de route",
+    "security": "Sécurité",
+    "settings": "Paramètres",
+    "simulations": "Simulations"
+  },
   "notes": {
     "addNote": "Ajouter une note",
     "backToAll": "Retour à toutes les notes",
@@ -512,103 +378,6 @@
     "title": "Mes notes",
     "untitled": "Note sans titre"
   },
-  "activity": {
-    "status": {
-      "away": "absent",
-      "busy": "occupé",
-      "offline": "hors ligne",
-      "online": "en ligne"
-    },
-    "title": "Statut : {{status}}"
-  },
-  "chat": {
-    "close": "Fermer le chat",
-    "error": "Désolé, impossible de joindre l’assistant pour le moment. Veuillez réessayer.",
-    "input": {
-      "label": "Saisie du message",
-      "placeholder": "Posez une question…",
-      "send": "Envoyer le message"
-    },
-    "open": "Ouvrir le chat TalkUp",
-    "page": {
-      "description": "L’assistant est disponible en bas à droite de chaque page. Ouvrez-le où que vous soyez et posez-lui vos questions sur ce que vous consultez : votre feuille de route, une simulation, votre agenda ou vos notes.",
-      "title": "Assistant TalkUp AI"
-    },
-    "typing": "TalkUp AI est en train d’écrire",
-    "welcome": "Bonjour, je suis TalkUp AI. Posez-moi vos questions pour préparer votre entretien 🎯",
-    "window": {
-      "label": "Chat TalkUp AI",
-      "messages": "Messages du chat",
-      "poweredBy": "Propulsé par TalkUp AI",
-      "status": "En ligne, prêt à vous aider"
-    }
-  },
-  "cv": {
-    "consent": {
-      "helper": "Vos données sont stockées de façon sécurisée. Vous pouvez y accéder, les exporter ou les supprimer à tout moment.",
-      "label": "J’accepte que TalkUp traite mes données personnelles (y compris mon CV) pour réaliser cette analyse de compatibilité."
-    },
-    "file": {
-      "ready": "{{size}} Mo • Prêt",
-      "remove": "Retirer"
-    },
-    "offer": {
-      "helper": "TalkUp extraira automatiquement les informations de l’annonce.",
-      "label": "Lien de l’offre d’emploi",
-      "placeholder": "Collez un lien LinkedIn, WTTJ…"
-    },
-    "processing": {
-      "cv": "Analyse de votre CV…",
-      "offer": "Extraction de l’offre d’emploi…",
-      "title": "Analyse TalkUp.AI en cours"
-    },
-    "result": {
-      "description": "Votre profil a été entièrement analysé. TalkUp a préparé un plan d’action personnalisé à partir de vos points forts et des attentes des recruteurs.",
-      "ready": "Votre entraînement sur mesure est prêt.",
-      "retry": "Analyser un autre profil",
-      "start": "Commencer mon entraînement",
-      "targetRole": "Votre poste visé",
-      "title": "Analyse terminée !"
-    },
-    "start": "Lancer l’analyse TalkUp",
-    "stepper": {
-      "analysis": "Analyse",
-      "confirmation": "Confirmation",
-      "upload": "Import"
-    },
-    "steps": {
-      "cv": "1. Votre CV",
-      "offer": "2. Offre d’emploi (lien)"
-    },
-    "subtitle": "Importez votre CV et collez le lien de l’offre d’emploi pour commencer.",
-    "title": "Analyse de compatibilité",
-    "toasts": {
-      "cvSaved": "Votre CV a été enregistré dans votre profil.",
-      "offerFailed": "L’analyse de l’offre a échoué. Vérifiez le lien et réessayez.",
-      "throttled": "Trop de tentatives. Réessayez dans une minute.",
-      "uploadFailed": "L’import du CV a échoué. Réessayez avec un PDF de meilleure qualité (texte sélectionnable)."
-    },
-    "uploader": {
-      "browse": "ou <browse>parcourez vos fichiers</browse>",
-      "clearDate": "Effacer la date",
-      "dateHelper": "Facultatif : quand avez-vous votre entretien avec cette entreprise ?",
-      "dropTitle": "Glissez-déposez votre CV ici",
-      "errors": {
-        "format": "Format de fichier non pris en charge. Utilisez un fichier PDF, DOC ou DOCX.",
-        "size": "Fichier trop volumineux. Taille maximale : {{max}} Mo."
-      },
-      "interviewDate": "Date de l’entretien",
-      "maxSize": "Taille maximale : {{max}} Mo",
-      "pastDate": "Cette date est déjà passée.",
-      "urgency": {
-        "daysLeft_one": "{{count}} jour restant",
-        "daysLeft_other": "{{count}} jours restants",
-        "overdue": "Dépassée",
-        "today": "Aujourd’hui !",
-        "tomorrow": "Demain !"
-      }
-    }
-  },
   "profile": {
     "avatarAlt": "Avatar de {{name}}"
   },
@@ -633,5 +402,236 @@
     },
     "subtitle": "Visualisez votre évolution et identifiez vos points forts",
     "title": "Progression et statistiques"
+  },
+  "recruiter": {
+    "fallback": {
+      "contextLost": "Contexte WebGL perdu : passage à l’avatar statique.",
+      "downloadTimeout": "Le téléchargement du modèle d’avatar a expiré.",
+      "forced": "Avatar 3D désactivé pour cette session.",
+      "loadFailed": "Impossible de charger l’avatar 3D.",
+      "noWebgl": "WebGL n’est pas disponible dans ce navigateur.",
+      "parseTimeout": "L’analyse du modèle d’avatar a expiré.",
+      "unavailable": "Avatar 3D indisponible."
+    },
+    "loading3d": "Chargement de l’avatar 3D…",
+    "loadSteps": {
+      "downloading": "Téléchargement du modèle…",
+      "initializing": "Initialisation…",
+      "preparing": "Préparation de l’avatar…",
+      "starting": "Démarrage du moteur 3D…",
+      "viewport": "Préparation de l’affichage…"
+    },
+    "role": "Recruteuse IT",
+    "speaking": "Parle…",
+    "status": {
+      "interactive": "Avatar 3D interactif activé.",
+      "static": "Image statique de la recruteuse affichée."
+    },
+    "thinking": "Réfléchit…",
+    "unavailable": "Avatar 3D indisponible"
+  },
+  "roadmap": {
+    "defaultHeading": "Parcours de préparation",
+    "emptyNoOffer": "Pas encore de parcours de préparation. Analysez d’abord une offre.",
+    "emptyWithOffer": "Impossible de créer un parcours à partir de cette offre pour l’instant : essayez « Régénérer ».",
+    "goToCvAnalysis": "Aller à l’analyse de CV",
+    "loadError": "Impossible de charger votre parcours de préparation.",
+    "loading": "Création de votre parcours de préparation…",
+    "myNotes": "Mes notes",
+    "priority": {
+      "high": "HAUTE",
+      "low": "BASSE",
+      "med": "MOYENNE"
+    },
+    "regenerate": "Régénérer",
+    "regenerateError": "Impossible de régénérer : réessayez dans une minute.",
+    "regenerating": "Régénération…",
+    "retrying": "Nouvelle tentative…",
+    "sources": "Sources",
+    "sourcesModal": {
+      "close": "Fermer les sources",
+      "cvSnapshotNote": "Extrait de votre CV au moment de l’analyse : le fichier d’origine n’est pas conservé.",
+      "cvUsed": "CV utilisé",
+      "dismiss": "Masquer les sources",
+      "education_one": "Formation ({{count}})",
+      "education_other": "Formations ({{count}})",
+      "experiences_one": "Expérience ({{count}})",
+      "experiences_other": "Expériences ({{count}})",
+      "jobOffer": "Offre d’emploi",
+      "noCv": "Aucun instantané de CV enregistré pour cette candidature.",
+      "noUrl": "URL indisponible",
+      "openJobOffer": "Ouvrir l’offre d’emploi",
+      "title": "Sources utilisées"
+    },
+    "startSimulation": "Lancer la simulation",
+    "tabs": {
+      "label": "Vues de la feuille de route",
+      "path": "Parcours de préparation",
+      "talking": "Points à aborder en entretien"
+    },
+    "talkingPoints": {
+      "description": "Des points à aborder tirés des missions du poste et rapprochés de votre expérience.",
+      "title": "À aborder pendant votre entretien"
+    },
+    "timeline": {
+      "goal": "Objectif : prêt pour le poste",
+      "goalBy": "Prêt pour le poste d’ici le {{date}}",
+      "matchScore": "Score de correspondance",
+      "matchScoreValue": "Score de correspondance {{score}} %"
+    },
+    "topic": {
+      "details": "Détails : {{title}}",
+      "gap": "Lacune à combler",
+      "readMore": "Lire la suite",
+      "step": "Étape {{step}}"
+    }
+  },
+  "sidebar": {
+    "applicationFallback": "Candidature",
+    "banner": {
+      "badge": "Nouveau",
+      "cta": "Essayer",
+      "description": "Découvrez les nouveaux contenus IA que nous vous avons préparés pour 2026",
+      "title": "Nouveaux contenus IA sur TalkUp"
+    },
+    "linkIntegrations": "Connecter des comptes",
+    "loading": "Chargement…",
+    "orgView": "Vue organisation"
+  },
+  "simulations": {
+    "applicationDescription": "Entraînez-vous avec la recruteuse IA sur cette offre d’emploi.",
+    "backToRoadmap": "Retour à la feuille de route",
+    "description": "Entraînez-vous à des entretiens dans un cadre sans risque.",
+    "history": {
+      "action": "Action",
+      "date": "Date",
+      "finalScore": "Score final",
+      "loadMore": "Afficher plus…",
+      "showing": "Affichage de 1 à {{to}} sur {{total}} résultats",
+      "status": {
+        "cancelled": "Annulé",
+        "completed": "Terminé",
+        "inProgress": "En cours"
+      },
+      "statusHeader": "Statut",
+      "time": "Heure",
+      "title": "Titre",
+      "viewAnalysis": "Voir l’analyse"
+    },
+    "interviewContext": "Contexte de l’entretien : {{label}}",
+    "loadingContext": "Chargement du contexte de la candidature…",
+    "queue": {
+      "estimatedWait": "— attente estimée ~<strong>{{minutes}}</strong> min",
+      "position": "Position : <strong>{{position}}</strong>",
+      "slots": "{{active}}/{{max}} créneaux GPU utilisés. Votre session démarrera automatiquement.",
+      "title": "File d’attente de la simulation"
+    },
+    "speakers": {
+      "ai": "IA",
+      "you": "Vous"
+    },
+    "title": "Simulations",
+    "toasts": {
+      "interviewEnded": "Entretien terminé. Merci pour votre participation !",
+      "queued": "En file d’attente…",
+      "queueResuming": "Reprise de la file d’attente…",
+      "resumed": "Simulation reprise",
+      "resumeFailed": "Impossible de reprendre la simulation pour le moment. Rechargez la page pour réessayer.",
+      "sessionExpired": "La session précédente a expiré. Vous pouvez démarrer un nouvel entretien.",
+      "startFailed": "Impossible de démarrer l’entretien. Veuillez réessayer.",
+      "transcriptionError": "Une erreur est survenue pendant la transcription.",
+      "yourTurn": "C’est votre tour — démarrage de la simulation"
+    },
+    "transcriptions": {
+      "empty": "Les transcriptions apparaîtront ici dès le début de l’entretien.",
+      "title": "Transcriptions"
+    }
+  },
+  "time": {
+    "daysAgo": "il y a {{days}} j",
+    "hoursAgo": "il y a {{hours}} h",
+    "justNow": "À l’instant"
+  },
+  "userMenu": {
+    "avatarAlt": "Avatar de l’utilisateur",
+    "darkTheme": "Passer au thème sombre",
+    "defaultName": "Utilisateur",
+    "documentation": "Documentation",
+    "helpCenter": "Centre d’aide",
+    "label": "Compte",
+    "lightTheme": "Passer au thème clair",
+    "logout": "Se déconnecter",
+    "logoutModal": {
+      "confirm": "Se déconnecter",
+      "message": "Voulez-vous vraiment vous déconnecter ?",
+      "title": "Déconnexion"
+    },
+    "noEmail": "Aucune adresse e-mail",
+    "open": "Ouvrir le menu du compte, {{name}}",
+    "profile": "Profil"
+  },
+  "verbalAnalysis": {
+    "adviceFallback": "Continuez à structurer vos réponses.",
+    "clarity": "Clarté",
+    "empty": "L’analyse apparaîtra après votre première prise de parole.",
+    "liveAdvice": "Conseil en direct",
+    "politeness": "Politesse",
+    "register": "Registre : <strong>{{register}}</strong> · Tour {{turn}}",
+    "registers": {
+      "inappropriate": "Inadapté",
+      "informal": "Familier",
+      "mixed": "Mixte",
+      "neutral": "Neutre",
+      "professional": "Professionnel"
+    },
+    "sessionScore": "/ 100 sur la session",
+    "title": "Analyse verbale",
+    "topTics": "Tics fréquents : {{tics}}",
+    "vocabulary": "Vocabulaire",
+    "warnings": "Alertes"
+  },
+  "videoControls": {
+    "cameraOff": "Désactiver la caméra",
+    "cameraOn": "Activer la caméra",
+    "endCall": "Raccrocher",
+    "muteMic": "Couper le micro",
+    "muteSpeaker": "Couper le son",
+    "startCall": "Démarrer un nouvel appel",
+    "unmuteMic": "Réactiver le micro",
+    "unmuteSpeaker": "Réactiver le son"
+  },
+  "wsDebug": {
+    "altServers": "Autres serveurs de test",
+    "attempts_one": "Tentative de connexion : {{count}}",
+    "attempts_other": "Tentatives de connexion : {{count}}",
+    "audio": "Audio :",
+    "audioError": "Erreur audio :",
+    "audioStates": {
+      "idle": "Inactif",
+      "listening": "À l’écoute",
+      "recording": "Enregistrement de la prise de parole",
+      "speaking": "Parole détectée"
+    },
+    "connection": "Connexion WebSocket",
+    "format": "Format : {{format}}",
+    "lastJson": "Dernier JSON :",
+    "lastMessage": "Dernier message :",
+    "messages": "Messages WebSocket",
+    "packetsSent_one": "Paquet envoyé : {{count}}",
+    "packetsSent_other": "Paquets envoyés : {{count}}",
+    "sendJson": "Envoyer un message JSON",
+    "sendMessage": "Envoyer un message",
+    "sendPing": "Envoyer un ping",
+    "socketUrl": "URL du socket",
+    "startsWithCall": "La connexion démarre avec l’appel",
+    "states": {
+      "closed": "Fermée",
+      "closing": "Fermeture",
+      "connecting": "Connexion…",
+      "open": "Connectée",
+      "uninstantiated": "Non initialisée"
+    },
+    "status": "Statut :",
+    "wsError": "Erreur WebSocket :"
   }
 }
