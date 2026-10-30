@@ -15,7 +15,7 @@ export const INTL_LOCALES: Record<Language, string> = {
   fr: 'fr-FR',
 };
 
-export interface DateLocale {
+export interface AppLocale {
   /** Active UI language */
   language: Language;
   /** Pass as `{ locale }` to `date-fns` `format()` and friends */
@@ -27,16 +27,16 @@ export interface DateLocale {
 /**
  * Locale settings for formatting dates and numbers in a given language.
  * Outside React (utils, stores), call it with `getLanguage()`; in components,
- * use the `useDateLocale()` hook, which re-renders on language change.
+ * use the `useLocale()` hook, which re-renders on language change.
  *
  * @example
  * ```ts
- * const { dateFnsLocale, intlLocale } = getDateLocale(getLanguage());
+ * const { dateFnsLocale, intlLocale } = getLocale(getLanguage());
  * format(date, 'd MMM yyyy', { locale: dateFnsLocale });
  * new Intl.NumberFormat(intlLocale).format(1234);
  * ```
  */
-export const getDateLocale = (language: Language): DateLocale => ({
+export const getLocale = (language: Language): AppLocale => ({
   language,
   dateFnsLocale: DATE_FNS_LOCALES[language],
   intlLocale: INTL_LOCALES[language],

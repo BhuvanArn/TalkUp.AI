@@ -1,5 +1,5 @@
 import { getLanguage } from '@/i18n';
-import { type DateLocale, getDateLocale } from '@/i18n/date-locale';
+import { type AppLocale, getLocale } from '@/i18n/locale';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -9,12 +9,12 @@ import { useTranslation } from 'react-i18next';
  *
  * @example
  * ```tsx
- * const { dateFnsLocale, intlLocale } = useDateLocale();
+ * const { dateFnsLocale, intlLocale } = useLocale();
  * format(date, 'd MMM yyyy', { locale: dateFnsLocale });
  * date.toLocaleDateString(intlLocale, { weekday: 'long' });
  * ```
  */
-export const useDateLocale = (): DateLocale => {
+export const useLocale = (): AppLocale => {
   const { i18n } = useTranslation();
-  return getDateLocale(getLanguage(i18n));
+  return getLocale(getLanguage(i18n));
 };
