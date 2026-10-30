@@ -3,6 +3,8 @@ import { Icon } from '@/components/atoms/icon';
 import GoalProgressCard from '@/components/molecules/goal-progress-card';
 import StatsCard from '@/components/molecules/stats-card';
 import SimulationHistoryTable from '@/components/organisms/simulation-history-table';
+import { useLocale } from '@/hooks/i18n/useLocale';
+import { formatPercent } from '@/utils/formatPercent';
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
@@ -41,6 +43,7 @@ export const Route = createFileRoute('/progression')({
  */
 function Progression() {
   const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
 
   return (
     <div className="grid grid-rows-[96px_minmax(0,1fr)] px-4 sm:px-8 md:px-16 pt-11 pb-12 gap-11 h-screen w-full min-w-0">
@@ -78,7 +81,7 @@ function Progression() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <StatsCard
               title={t('progression.stats.averageScore')}
-              value={`${MOCK_STATS.averageScore}%`}
+              value={formatPercent(MOCK_STATS.averageScore, intlLocale)}
               detail={t('progression.stats.averageScoreDetail', {
                 change: MOCK_STATS.averageScoreChange,
               })}
@@ -98,7 +101,7 @@ function Progression() {
             />
             <StatsCard
               title={t('progression.stats.improvement')}
-              value={`${MOCK_STATS.overallImprovement}%`}
+              value={formatPercent(MOCK_STATS.overallImprovement, intlLocale)}
               detail={t('progression.stats.improvementDetail')}
               color="teal"
             />

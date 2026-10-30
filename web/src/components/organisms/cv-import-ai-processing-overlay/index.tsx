@@ -1,3 +1,5 @@
+import { useLocale } from '@/hooks/i18n/useLocale';
+import { formatPercent } from '@/utils/formatPercent';
 import type { ParseKeys } from 'i18next';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -35,6 +37,7 @@ const STEP_DISPLAY: Record<
  */
 export const AIProcessingOverlay = ({ step }: AIProcessingOverlayProps) => {
   const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
   const dialogRef = useRef<HTMLDivElement>(null);
   const { messageKey, progress } = STEP_DISPLAY[step];
 
@@ -65,7 +68,7 @@ export const AIProcessingOverlay = ({ step }: AIProcessingOverlayProps) => {
         <div className="mt-6">
           <ProgressBar progress={progress} />
           <p className="text-body-s text-text-weaker mt-2 text-right">
-            {progress}%
+            {formatPercent(progress, intlLocale)}
           </p>
         </div>
       </div>

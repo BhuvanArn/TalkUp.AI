@@ -3,8 +3,10 @@ import {
   RECRUITER_DISPLAY_NAME,
   RECRUITER_DISPLAY_ROLE_KEY,
 } from '@/config/recruiter-avatar';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import type { AiSpeechTurn } from '@/hooks/simulation/useAudioPlayback';
 import { buildWordTimings, decodeAudioChunks } from '@/utils/aiSpeechPayload';
+import { formatPercent } from '@/utils/formatPercent';
 import { TalkingHead } from '@met4citizen/talkinghead';
 import type { ParseKeys } from 'i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -64,6 +66,7 @@ export function RecruiterAvatar3D({
   const [initState, setInitState] = useState<InitState>('idle');
   const [loadProgress, setLoadProgress] = useState(0);
   const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
   const [loadDetail, setLoadDetail] = useState<ParseKeys<'app'> | null>(
     'recruiter.loadSteps.initializing',
   );
@@ -296,7 +299,9 @@ export function RecruiterAvatar3D({
             {loadDetail ? t(loadDetail) : null}
           </p>
           {loadProgress > 0 ? (
-            <p className="text-xs text-white/70">{loadProgress}%</p>
+            <p className="text-xs text-white/70">
+              {formatPercent(loadProgress, intlLocale)}
+            </p>
           ) : null}
         </div>
       ) : null}

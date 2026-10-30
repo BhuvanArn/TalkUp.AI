@@ -1,3 +1,5 @@
+import { useLocale } from '@/hooks/i18n/useLocale';
+import { formatPercent } from '@/utils/formatPercent';
 import { useTranslation } from 'react-i18next';
 
 interface MatchGaugeProps {
@@ -13,6 +15,7 @@ interface MatchGaugeProps {
  */
 export const MatchGauge = ({ score }: MatchGaugeProps) => {
   const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
   const radius = 30;
   const circumference = 2 * Math.PI * radius;
   const normalized = Math.round(Math.min(100, Math.max(0, score)));
@@ -50,7 +53,9 @@ export const MatchGauge = ({ score }: MatchGaugeProps) => {
           cy="40"
         />
       </svg>
-      <p className="text-h5 text-text absolute">{normalized}%</p>
+      <p className="text-h5 text-text absolute">
+        {formatPercent(normalized, intlLocale)}
+      </p>
     </div>
   );
 };

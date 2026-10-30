@@ -1,3 +1,5 @@
+import { useLocale } from '@/hooks/i18n/useLocale';
+import { formatPercent } from '@/utils/formatPercent';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -27,6 +29,7 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
   target,
 }) => {
   const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
   const radius = 30;
   const circumference = 2 * Math.PI * radius;
   const normalizedProgress = Math.min(100, Math.max(0, progress));
@@ -87,7 +90,9 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
         {/* Progress text in the center */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-          <p className="text-h5 text-active">{progress}%</p>
+          <p className="text-h5 text-active">
+            {formatPercent(progress, intlLocale)}
+          </p>
         </div>
       </div>
 

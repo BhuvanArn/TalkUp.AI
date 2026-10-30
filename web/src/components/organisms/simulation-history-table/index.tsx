@@ -1,3 +1,5 @@
+import { useLocale } from '@/hooks/i18n/useLocale';
+import { formatPercent } from '@/utils/formatPercent';
 import type { ParseKeys } from 'i18next';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -70,6 +72,7 @@ const STATUS_KEYS = {
  */
 const SimulationHistoryTable: React.FC = () => {
   const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
 
   return (
     <div className="bg-white overflow-hidden">
@@ -137,7 +140,7 @@ const SimulationHistoryTable: React.FC = () => {
                         : 'bg-error-weaker text-error'
                   }`}
                 >
-                  {simulation.scoreFinal}%
+                  {formatPercent(simulation.scoreFinal, intlLocale)}
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-body-m text-idle">
