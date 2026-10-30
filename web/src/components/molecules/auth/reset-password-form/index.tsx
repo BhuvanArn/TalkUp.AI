@@ -215,7 +215,9 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
         <form.Subscribe selector={(state) => state.errors}>
           {(errors) =>
             errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">{errors}</span>
+              <span className="text-sm text-red-500 text-center">
+                {errors.map((error) => t(String(error) as ValidationKey))}
+              </span>
             )
           }
         </form.Subscribe>
