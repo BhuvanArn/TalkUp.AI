@@ -27,8 +27,21 @@ const PUBLIC_SHELL_PATHS = new Set<string>([
   '/verify-email',
 ]);
 
-const RootComponent = () => {
+/** Its own component so only it, not the root, re-renders on a language switch. */
+const NotFoundPending = () => {
   const { t } = useTranslation('landing');
+  return (
+    <div
+      className="min-h-screen w-full bg-background"
+      role="status"
+      aria-busy="true"
+      aria-label={t('notFound.loading')}
+      data-testid="not-found-pending"
+    />
+  );
+};
+
+const RootComponent = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = useRouterState({
     select: (s) => s.resolvedLocation?.pathname ?? s.location.pathname,
@@ -69,15 +82,7 @@ const RootComponent = () => {
     // Only a real in-flight fetch waits — an offline/paused query falls through and
     // renders the anonymous variant rather than hanging on a blank page.
     if (authLoading) {
-      return (
-        <div
-          className="min-h-screen w-full bg-background"
-          role="status"
-          aria-busy="true"
-          aria-label={t('notFound.loading')}
-          data-testid="not-found-pending"
-        />
-      );
+      return <NotFoundPending />;
     }
 
     if (!isAuthed) {

@@ -1,9 +1,15 @@
 import { changeLanguage } from '@/i18n';
 import { act, render, screen } from '@testing-library/react';
 import i18next from 'i18next';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import PrivacyPage, { Route } from './privacy';
+import { Route } from './privacy';
+
+// The router plugin code-splits this route in tests too, so the component is a
+// lazy wrapper that suspends until its chunk is loaded.
+const PrivacyPage = Route.options.component!;
+
+beforeAll(() => PrivacyPage.preload?.());
 
 vi.mock('@/components/organisms/landing-nav', () => ({
   default: () => <nav data-testid="landing-nav" />,
@@ -38,6 +44,11 @@ describe('Privacy route', () => {
     expect(sections[13]).toHaveTextContent('14. Contact');
     expect(
       screen.getByText('Create and manage your account.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Questions about this Privacy Policy or your personal data? Email us at contact.talkup.ai@gmail.com.',
+      ),
     ).toBeInTheDocument();
   });
 

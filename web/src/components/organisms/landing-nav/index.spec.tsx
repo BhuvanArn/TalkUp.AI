@@ -286,6 +286,7 @@ describe('LandingNav in French', () => {
 
   // setupTests pins English for every other test.
   afterEach(async () => {
+    document.removeEventListener('click', stayOnPage);
     await act(() => i18next.changeLanguage('en'));
     localStorage.clear();
   });
@@ -317,6 +318,5 @@ describe('LandingNav in French', () => {
     render(<LandingNav />);
     fireEvent.click(screen.getByRole('link', { name: 'Créer un compte' }));
     expect(ctaClicks).toEqual([['nav', '/register']]);
-    document.removeEventListener('click', stayOnPage);
   });
 });

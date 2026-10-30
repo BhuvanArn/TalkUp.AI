@@ -1,13 +1,9 @@
 import { useLocale } from '@/hooks/i18n/useLocale';
 import { usePublicStats } from '@/hooks/stats/usePublicStats';
+import { useMemo } from 'react';
 import { Trans } from 'react-i18next';
 
 type Variant = 'hero' | 'final';
-
-const PHRASES = {
-  hero: 'accountCounter.hero',
-  final: 'accountCounter.final',
-} as const;
 
 interface AccountCounterProps {
   variant: Variant;
@@ -23,6 +19,10 @@ interface AccountCounterProps {
 const AccountCounter = ({ variant, className = '' }: AccountCounterProps) => {
   const { data } = usePublicStats();
   const { intlLocale } = useLocale();
+  const numberFormat = useMemo(
+    () => new Intl.NumberFormat(intlLocale),
+    [intlLocale],
+  );
   const count = data?.totalAccounts;
   const visible = typeof count === 'number' && count > 0;
 
@@ -34,10 +34,10 @@ const AccountCounter = ({ variant, className = '' }: AccountCounterProps) => {
       {visible && (
         <Trans
           ns="landing"
-          i18nKey={PHRASES[variant]}
+          i18nKey={`accountCounter.${variant}`}
           count={count}
           values={{
-            formatted: new Intl.NumberFormat(intlLocale).format(count),
+            formatted: numberFormat.format(count),
           }}
           components={{
             number: <span className="font-semibold text-text" />,

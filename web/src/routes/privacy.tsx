@@ -1,5 +1,6 @@
 import LandingFooter from '@/components/organisms/landing-footer';
 import LandingNav from '@/components/organisms/landing-nav';
+import { CONTACT_EMAIL } from '@/components/organisms/landing-nav/landing-links';
 import { useLocale } from '@/hooks/i18n/useLocale';
 import { createFileRoute } from '@tanstack/react-router';
 import type { ParseKeys } from 'i18next';
@@ -152,7 +153,7 @@ function PrivacyPage() {
                       key={paragraph}
                       className="text-body-m text-text-weaker leading-relaxed"
                     >
-                      {t(paragraph)}
+                      {t(paragraph, { email: CONTACT_EMAIL })}
                     </p>
                   ))}
                   {section.listKeys && (
@@ -172,5 +173,3 @@ function PrivacyPage() {
     </div>
   );
 }
-
-export default PrivacyPage;

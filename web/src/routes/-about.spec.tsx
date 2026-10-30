@@ -1,9 +1,15 @@
 import { changeLanguage } from '@/i18n';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import i18next from 'i18next';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import About, { Route } from './about';
+import { Route } from './about';
+
+// The router plugin code-splits this route in tests too, so the component is a
+// lazy wrapper that suspends until its chunk is loaded.
+const About = Route.options.component!;
+
+beforeAll(() => About.preload?.());
 
 vi.mock('@/components/organisms/landing-nav', () => ({
   default: () => <nav data-testid="landing-nav" />,

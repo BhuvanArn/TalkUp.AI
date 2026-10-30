@@ -303,7 +303,7 @@
       "controller": {
         "title": "2. Data controller",
         "p1": "TalkUp.AI is the data controller for the personal data processed through our platform.",
-        "p2": "For privacy-related requests, contact us at contact.talkup.ai@gmail.com. We are based in Paris, France."
+        "p2": "For privacy-related requests, contact us at {{email}}. We are based in Paris, France."
       },
       "collected": {
         "title": "3. Personal data we collect",
@@ -357,7 +357,7 @@
       "rights": {
         "title": "9. Your rights",
         "p1": "Depending on your location, you may have the right to access, rectify, erase, restrict, or object to certain processing of your personal data, as well as the right to data portability.",
-        "p2": "You can update much of your information directly in your account settings. To exercise other rights, email contact.talkup.ai@gmail.com. You may also lodge a complaint with your local supervisory authority."
+        "p2": "You can update much of your information directly in your account settings. To exercise other rights, email {{email}}. You may also lodge a complaint with your local supervisory authority."
       },
       "security": {
         "title": "10. Security",
@@ -380,7 +380,7 @@
       },
       "contact": {
         "title": "14. Contact",
-        "p1": "Questions about this Privacy Policy or your personal data? Email us at contact.talkup.ai@gmail.com."
+        "p1": "Questions about this Privacy Policy or your personal data? Email us at {{email}}."
       }
     }
   }

@@ -303,7 +303,7 @@
       "controller": {
         "title": "2. Responsable du traitement",
         "p1": "TalkUp.AI est le responsable du traitement des données personnelles traitées sur notre plateforme.",
-        "p2": "Pour toute demande relative à la confidentialité, contactez-nous à contact.talkup.ai@gmail.com. Nous sommes basés à Paris, en France."
+        "p2": "Pour toute demande relative à la confidentialité, contactez-nous à {{email}}. Nous sommes basés à Paris, en France."
       },
       "collected": {
         "title": "3. Données personnelles collectées",
@@ -357,7 +357,7 @@
       "rights": {
         "title": "9. Vos droits",
         "p1": "Selon l’endroit où vous vous trouvez, vous pouvez disposer d’un droit d’accès, de rectification, d’effacement, de limitation ou d’opposition à certains traitements de vos données personnelles, ainsi que d’un droit à la portabilité des données.",
-        "p2": "Vous pouvez mettre à jour une grande partie de vos informations directement dans les paramètres de votre compte. Pour exercer vos autres droits, écrivez à contact.talkup.ai@gmail.com. Vous pouvez également introduire une réclamation auprès de votre autorité de contrôle locale."
+        "p2": "Vous pouvez mettre à jour une grande partie de vos informations directement dans les paramètres de votre compte. Pour exercer vos autres droits, écrivez à {{email}}. Vous pouvez également introduire une réclamation auprès de votre autorité de contrôle locale."
       },
       "security": {
         "title": "10. Sécurité",
@@ -380,7 +380,7 @@
       },
       "contact": {
         "title": "14. Contact",
-        "p1": "Des questions sur cette politique de confidentialité ou sur vos données personnelles ? Écrivez-nous à contact.talkup.ai@gmail.com."
+        "p1": "Des questions sur cette politique de confidentialité ou sur vos données personnelles ? Écrivez-nous à {{email}}."
       }
     }
   }

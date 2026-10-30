@@ -330,19 +330,22 @@ describe('LandingPage in French', () => {
   it('keeps the CTA tracking locations and targets', () => {
     const stayOnPage = (e: Event) => e.preventDefault(); // jsdom can't navigate
     document.addEventListener('click', stayOnPage);
-    render(<LandingPage />);
-    const [hero] = screen.getAllByRole('link', {
-      name: 'Analyser mon CV et une offre',
-    });
-    hero.click();
-    screen.getByRole('link', { name: 'Voir comment ça marche' }).click();
-    expect(
-      trackEventMock.mock.calls.filter(([name]) => name === 'cta_click'),
-    ).toEqual([
-      ['cta_click', { location: 'hero', target: '/register' }],
-      ['cta_click', { location: 'hero', target: '#how' }],
-    ]);
-    document.removeEventListener('click', stayOnPage);
+    try {
+      render(<LandingPage />);
+      const [hero] = screen.getAllByRole('link', {
+        name: 'Analyser mon CV et une offre',
+      });
+      hero.click();
+      screen.getByRole('link', { name: 'Voir comment ça marche' }).click();
+      expect(
+        trackEventMock.mock.calls.filter(([name]) => name === 'cta_click'),
+      ).toEqual([
+        ['cta_click', { location: 'hero', target: '/register' }],
+        ['cta_click', { location: 'hero', target: '#how' }],
+      ]);
+    } finally {
+      document.removeEventListener('click', stayOnPage);
+    }
   });
 
   it('renders the sections and the pricing in French', () => {
