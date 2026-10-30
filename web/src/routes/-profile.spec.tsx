@@ -68,11 +68,11 @@ vi.mock('@tanstack/react-router', () => ({
     options,
 }));
 
-function renderProfile() {
+function renderProfile(overrides: Partial<UserProfile> = {}) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  client.setQueryData(['user-profile'], { ...mockProfile });
+  client.setQueryData(['user-profile'], { ...mockProfile, ...overrides });
   return render(
     <QueryClientProvider client={client}>
       <Profile />
@@ -86,19 +86,23 @@ vi.mock('@/components/organisms/profile-settings/GeneralSettings', () => ({
     lastName,
     bio,
     phoneNumber,
+    jobTitle,
     onFirstNameChange,
     onLastNameChange,
     onBioChange,
     onPhoneNumberChange,
+    onJobTitleChange,
   }: {
     firstName: string;
     lastName: string;
     bio: string;
     phoneNumber: string;
+    jobTitle: string;
     onFirstNameChange: (v: string) => void;
     onLastNameChange: (v: string) => void;
     onBioChange: (v: string) => void;
     onPhoneNumberChange: (v: string) => void;
+    onJobTitleChange: (v: string) => void;
   }) => (
     <div data-testid="general-settings">
       <input
@@ -121,6 +125,16 @@ vi.mock('@/components/organisms/profile-settings/GeneralSettings', () => ({
         value={phoneNumber}
         onChange={(e) => onPhoneNumberChange(e.target.value)}
       />
+      <select
+        data-testid="input-jobtitle"
+        value={jobTitle}
+        onChange={(e) => onJobTitleChange(e.target.value)}
+      >
+        <option value="">No job title</option>
+        <option value="Product Manager Candidate">
+          Product Manager Candidate
+        </option>
+      </select>
     </div>
   ),
 }));
@@ -225,6 +239,12 @@ describe('Profile page', () => {
       expect(
         screen.getByText('Product Manager Candidate · TalkUp Pro'),
       ).toBeInTheDocument();
+    });
+
+    it('falls back to "Member" in the subtitle when no job title is stored', () => {
+      fetchMyProfile.mockResolvedValue({ ...mockProfile, jobTitle: null });
+      renderProfile({ jobTitle: null });
+      expect(screen.getByText('Member · TalkUp Pro')).toBeInTheDocument();
     });
 
     it('renders the General tab as active by default', () => {
@@ -574,6 +594,22 @@ describe('Profile page', () => {
       });
     });
 
+    it('sends an empty job title when saving after choosing "No job title"', async () => {
+      renderProfile();
+      fireEvent.change(screen.getByTestId('input-jobtitle'), {
+        target: { value: '' },
+      });
+      expect(screen.getByText('Member · TalkUp Pro')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('save-button'));
+      });
+      await waitFor(() => {
+        expect(updateMyProfile).toHaveBeenCalledWith(
+          expect.objectContaining({ jobTitle: '' }),
+        );
+      });
+    });
+
     it('reset reverts unsaved form value', () => {
       renderProfile();
       fireEvent.change(screen.getByTestId('input-firstname'), {
@@ -645,5 +681,25 @@ describe('Profile page in French', () => {
     expect(
       screen.getByText('Candidat Product Manager · TalkUp Pro'),
     ).toBeInTheDocument();
+  });
+
+  it('translates a save error banner already shown when switching to French', async () => {
+    vi.useRealTimers();
+    updateMyProfile.mockRejectedValueOnce(new Error('network'));
+    renderProfile();
+    fireEvent.change(screen.getByTestId('input-firstname'), {
+      target: { value: 'Marie' },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('save-button'));
+    });
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not save your profile. Please try again.',
+    );
+
+    await act(() => changeLanguage('fr'));
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Impossible d’enregistrer votre profil. Veuillez réessayer.',
+    );
   });
 });

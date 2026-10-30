@@ -262,13 +262,23 @@ describe('GeneralSettings', () => {
     });
 
     it('always offers a "No job title" option, so a title can be cleared', () => {
-      render(<GeneralSettings {...defaultProps} />);
+      const onJobTitleChange = vi.fn();
+      render(
+        <GeneralSettings
+          {...defaultProps}
+          onJobTitleChange={onJobTitleChange}
+        />,
+      );
       expect(screen.getByLabelText('Job title')).toHaveValue(
         'Product Manager Candidate',
       );
       expect(screen.getByRole('option', { name: 'No job title' })).toHaveValue(
         '',
       );
+      fireEvent.change(screen.getByLabelText('Job title'), {
+        target: { value: '' },
+      });
+      expect(onJobTitleChange).toHaveBeenCalledWith('');
     });
 
     it('selects "No job title" when no title is stored', () => {

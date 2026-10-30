@@ -271,4 +271,20 @@ describe('MembersTable in French', () => {
     expect(screen.getByLabelText('Rôle du membre alice')).toBeInTheDocument();
     expect(screen.getByText('01/07/2026')).toBeInTheDocument();
   });
+
+  it('formats a decimal average score with the French separator', async () => {
+    await act(() => changeLanguage('fr'));
+    render(
+      <MembersTable
+        members={members}
+        isAdmin={false}
+        selectedUserId={null}
+        onSelect={vi.fn()}
+        onChangeRole={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('72,5')).toBeInTheDocument();
+    expect(screen.queryByText('72.5')).not.toBeInTheDocument();
+  });
 });
