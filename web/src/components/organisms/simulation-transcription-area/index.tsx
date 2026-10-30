@@ -41,7 +41,9 @@ const SimulationTranscriptionArea = ({
               >
                 <p className="text-sm">
                   <span className="font-semibold bg-accent/80 text-white px-2 py-0.5 rounded-full mr-2">
-                    {turn.speaker}
+                    {turn.isIA
+                      ? t('simulations.speakers.ai')
+                      : t('simulations.speakers.you')}
                   </span>
                   {turn.text}
                 </p>

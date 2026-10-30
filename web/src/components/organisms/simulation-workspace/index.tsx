@@ -22,6 +22,7 @@ import {
   useVerbalAnalysis,
 } from '@/hooks/simulation';
 import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
+import i18next from 'i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -209,33 +210,29 @@ export function SimulationWorkspace({
     setAvatarRuntimeFallbackReason(null);
   }, [interviewID]);
 
+  // These effects must not depend on `t`: its identity changes on every
+  // language switch, which would replay the last turn and the toasts. Turns
+  // keep only `isIA` (the speaker is translated at render) and the toasts
+  // translate with `i18next.t` when they fire.
   useEffect(() => {
     if (!transcript) return;
     const turns: TranscriptionProps[] = [];
     if (transcript.transcription) {
-      turns.push({
-        isIA: false,
-        speaker: t('simulations.speakers.you'),
-        text: transcript.transcription,
-      });
+      turns.push({ isIA: false, text: transcript.transcription });
     }
     if (transcript.response) {
-      turns.push({
-        isIA: true,
-        speaker: t('simulations.speakers.ai'),
-        text: transcript.response,
-      });
+      turns.push({ isIA: true, text: transcript.response });
     }
     if (turns.length > 0) {
       setTranscriptions((prev) => [...prev, ...turns]);
     }
-  }, [transcript, t]);
+  }, [transcript]);
 
   useEffect(() => {
     if (!simulationComplete || isAiSpeaking) return;
-    toast.success(t('simulations.toasts.interviewEnded'));
+    toast.success(i18next.t('app:simulations.toasts.interviewEnded'));
     void handleStreamToggle(false);
-  }, [simulationComplete, isAiSpeaking, handleStreamToggle, t]);
+  }, [simulationComplete, isAiSpeaking, handleStreamToggle]);
 
   useEffect(() => {
     if (!lastJsonMessage || typeof lastJsonMessage !== 'object') return;
@@ -247,9 +244,9 @@ export function SimulationWorkspace({
     const text =
       typeof packet.text === 'string' && packet.text.trim()
         ? packet.text
-        : t('simulations.toasts.transcriptionError');
+        : i18next.t('app:simulations.toasts.transcriptionError');
     toast.error(text);
-  }, [lastJsonMessage, t]);
+  }, [lastJsonMessage]);
 
   const {
     isListening,
