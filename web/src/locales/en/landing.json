@@ -57,9 +57,9 @@
     "pathTab": "Preparation path",
     "talkingPointsTab": "Interview talking points",
     "priority": {
-      "HIGH": "HIGH",
-      "MED": "MED",
-      "LOW": "LOW"
+      "high": "HIGH",
+      "med": "MED",
+      "low": "LOW"
     },
     "gap": "Gap",
     "path": {
@@ -209,8 +209,8 @@
     "lastActivity": {
       "today": "Today",
       "yesterday": "Yesterday",
-      "oct12": "Oct 12",
-      "oct17": "Oct 17"
+      "earlier": "Oct 12",
+      "recent": "Oct 17"
     },
     "noScore": "No score yet"
   },

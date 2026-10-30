@@ -29,7 +29,7 @@
     "loading": "Chargement",
     "title": "Page introuvable",
     "description": "Cette page n’existe pas, ou elle a été déplacée. Vérifiez l’adresse, ou revenez en terrain connu.",
-    "goHome": "Retour à l’accueil",
+    "goHome": "Revenir à l’accueil",
     "goBack": "Revenir en arrière"
   },
   "hero": {
@@ -37,7 +37,7 @@
       "a": "L’entretien avant l’entretien.",
       "b": "Parlez juste. Décrochez le poste."
     },
-    "lead": "Ajoutez votre CV et le lien de l’offre. Talkup construit un parcours de préparation pour ce poste précis, puis vous fait passer un entretien à voix haute avec un recruteur IA qui a lu les deux.",
+    "lead": "Ajoutez votre CV et le lien de l’offre. Talkup construit un parcours de préparation pour ce poste précis, puis vous fait passer un entretien à voix haute avec une recruteuse IA qui a lu les deux.",
     "secondaryCta": "Voir comment ça marche",
     "fine": "CV au format PDF. Les simulations se déroulent en français pour l’instant."
   },
@@ -53,13 +53,13 @@
     "role": "Développeur backend junior",
     "interviewDate": "Entretien le 23 oct.",
     "daysLeft": "Plus que 5 jours",
-    "pace": "≈ 4 sujets/semaine",
+    "pace": "≈ 4 sujets/semaine",
     "pathTab": "Parcours de préparation",
     "talkingPointsTab": "Points à aborder en entretien",
     "priority": {
-      "HIGH": "HAUTE",
-      "MED": "MOYENNE",
-      "LOW": "BASSE"
+      "high": "HAUTE",
+      "med": "MOYENNE",
+      "low": "BASSE"
     },
     "gap": "Lacune",
     "path": {
@@ -76,7 +76,7 @@
         "detail": "L’offre insiste sur l’intégration durable dans l’équipe."
       }
     },
-    "jobReady": "Prêt pour le 23 oct.",
+    "jobReady": "Prêt pour le poste d’ici le 23 oct.",
     "startSimulation": "Lancer la simulation",
     "notes": "Mes notes",
     "sources": "Sources"
@@ -116,7 +116,7 @@
     },
     "adjust": {
       "title": "Ajuster",
-      "body": "Suivez l’évolution de vos scores pendant que vous parlez, prenez des notes pendant l’appel et demandez à l’assistant sur quoi travailler ensuite.",
+      "body": "Suivez l’évolution de vos scores pendant que vous parlez, prenez des notes en cours d’appel et demandez à l’assistant sur quoi travailler ensuite.",
       "where": "Analyse en direct, notes, assistant"
     }
   },
@@ -131,15 +131,15 @@
     }
   },
   "verbalMock": {
-    "label": "Exemple du panneau d’analyse verbale en direct : score de séance de 74 sur 100, clarté 68, politesse 91, vocabulaire 63, une alerte sur les mots de remplissage et un conseil en direct.",
+    "label": "Exemple du panneau d’analyse verbale en direct : score de session de 74 sur 100, clarté 68, politesse 91, vocabulaire 63, une alerte sur les mots de remplissage et un conseil en direct.",
     "title": "Analyse verbale",
-    "outOf": "/ 100 sur la séance",
+    "outOf": "/ 100 sur la session",
     "scores": {
       "clarity": "Clarté",
       "politeness": "Politesse",
       "vocabulary": "Vocabulaire"
     },
-    "register": "Registre : professionnel · <turn>Tour 6</turn>",
+    "register": "Registre : Professionnel · <turn>Tour 6</turn>",
     "alertTitle": "Alerte",
     "alert": "Beaucoup de mots de remplissage détectés.",
     "tipTitle": "Conseil en direct",
@@ -209,8 +209,8 @@
     "lastActivity": {
       "today": "Aujourd’hui",
       "yesterday": "Hier",
-      "oct12": "12 oct.",
-      "oct17": "17 oct."
+      "earlier": "12 oct.",
+      "recent": "17 oct."
     },
     "noScore": "Pas encore de score"
   },
@@ -236,7 +236,7 @@
         "stats": "Statistiques de progression pour chaque membre"
       }
     },
-    "queue": "Les simulations tournent sur des serveurs partagés. Aux heures de pointe, vous patienterez peut-être un court moment dans une file d’attente avant le début de votre séance."
+    "queue": "Les simulations tournent sur des serveurs partagés. Aux heures de pointe, vous patienterez peut-être un court moment dans une file d’attente avant le début de votre session."
   },
   "finalCta": {
     "title": "Parlez avec assurance. Décrochez le poste."
@@ -282,7 +282,7 @@
       "upcoming": {
         "report": "Un bilan après chaque simulation, et le suivi de votre progression",
         "english": "Des simulations en anglais",
-        "reliability": "Des séances IA plus rapides et plus fiables"
+        "reliability": "Des sessions IA plus rapides et plus fiables"
       }
     },
     "contact": {
@@ -335,7 +335,7 @@
         "list": {
           "contract": "L’exécution d’un contrat — pour fournir les services TalkUp auxquels vous vous inscrivez.",
           "consent": "Le consentement — par exemple, lorsque vous importez un CV pour analyse ou activez des fonctionnalités facultatives.",
-          "legitimateInterests": "L’intérêt légitime — pour sécuriser notre plateforme, prévenir les abus et améliorer notre produit, dans le respect de vos droits.",
+          "legitimateInterests": "L’intérêt légitime — pour sécuriser notre plateforme, prévenir les abus et améliorer notre produit, après mise en balance avec vos droits.",
           "legalObligation": "L’obligation légale — lorsque nous devons conserver ou communiquer des données pour respecter la loi applicable."
         }
       },
@@ -352,11 +352,11 @@
       "retention": {
         "title": "8. Conservation des données",
         "p1": "Nous conservons les données personnelles uniquement pendant la durée nécessaire pour fournir le service, respecter nos obligations légales ou résoudre des litiges.",
-        "p2": "Vous pouvez supprimer votre compte à tout moment. Dans ce cas, nous supprimons ou anonymisons vos données personnelles dans un délai raisonnable, sauf lorsque leur conservation est exigée par la loi ou nécessaire à des fins légitimes de sauvegarde et de sécurité."
+        "p2": "Vous pouvez supprimer votre compte à tout moment. Dans ce cas, nous supprimons ou anonymisons vos données personnelles dans un délai raisonnable, sauf lorsque leur conservation est exigée par la loi ou justifiée par des fins légitimes de sauvegarde et de sécurité."
       },
       "rights": {
         "title": "9. Vos droits",
-        "p1": "Selon votre lieu de résidence, vous pouvez disposer d’un droit d’accès, de rectification, d’effacement, de limitation ou d’opposition à certains traitements de vos données personnelles, ainsi que d’un droit à la portabilité des données.",
+        "p1": "Selon l’endroit où vous vous trouvez, vous pouvez disposer d’un droit d’accès, de rectification, d’effacement, de limitation ou d’opposition à certains traitements de vos données personnelles, ainsi que d’un droit à la portabilité des données.",
         "p2": "Vous pouvez mettre à jour une grande partie de vos informations directement dans les paramètres de votre compte. Pour exercer vos autres droits, écrivez à contact.talkup.ai@gmail.com. Vous pouvez également introduire une réclamation auprès de votre autorité de contrôle locale."
       },
       "security": {

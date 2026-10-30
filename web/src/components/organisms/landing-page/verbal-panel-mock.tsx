@@ -7,7 +7,8 @@ const SCORES: { labelKey: ParseKeys<'landing'>; value: number }[] = [
   { labelKey: 'verbalMock.scores.vocabulary', value: 63 },
 ];
 
-const TICS = ['"du coup"', '"en fait"', '"voilà"'];
+/** Unquoted, like the tics listed by the real panel. */
+const TICS = ['du coup', 'en fait', 'voilà'];
 
 /**
  * Static picture of the live verbal analysis panel shown during a voice
@@ -97,7 +98,7 @@ const VerbalPanelMock = () => {
             {t('verbalMock.ai')}
           </span>
           <span lang="fr">
-            Parlez-moi d&apos;une erreur que vous avez commise en projet.
+            Parlez-moi d’une erreur que vous avez commise en projet.
           </span>
         </div>
         <div className="grid grid-cols-[28px_minmax(0,1fr)] gap-2">
@@ -105,8 +106,7 @@ const VerbalPanelMock = () => {
             {t('verbalMock.you')}
           </span>
           <span lang="fr">
-            Alors en fait, sur mon projet de fin d&apos;année, du coup
-            l&apos;API tombait…
+            Alors en fait, sur mon projet de fin d’année, du coup l’API tombait…
           </span>
         </div>
       </div>

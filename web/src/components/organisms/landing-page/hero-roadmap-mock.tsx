@@ -30,6 +30,12 @@ const PATH: PathItem[] = [
   },
 ];
 
+const PRIORITY_KEYS = {
+  HIGH: 'roadmapMock.priority.high',
+  MED: 'roadmapMock.priority.med',
+  LOW: 'roadmapMock.priority.low',
+} as const satisfies Record<RoadmapTopic['priority'], ParseKeys<'landing'>>;
+
 const MATCH_SCORE = 72;
 
 const MockButton = ({
@@ -109,7 +115,7 @@ const HeroRoadmapMock = () => {
                 <span
                   className={`rounded px-1.5 py-[3px] text-[11px] font-semibold leading-none ${PRIORITY_STYLES[item.priority]}`}
                 >
-                  {t(`roadmapMock.priority.${item.priority}`)}
+                  {t(PRIORITY_KEYS[item.priority])}
                 </span>
                 {item.gap && (
                   <span className="rounded border border-border px-1.5 py-0.5 text-[11px] leading-none text-text-weaker">

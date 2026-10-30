@@ -36,7 +36,7 @@ const MEMBERS: MemberRow[] = [
     interviews: 1,
     completed: 0,
     avgScore: null,
-    lastActivityKey: 'membersMock.lastActivity.oct12',
+    lastActivityKey: 'membersMock.lastActivity.earlier',
   },
   {
     name: 'M. Laurent',
@@ -44,7 +44,7 @@ const MEMBERS: MemberRow[] = [
     interviews: 0,
     completed: 0,
     avgScore: null,
-    lastActivityKey: 'membersMock.lastActivity.oct17',
+    lastActivityKey: 'membersMock.lastActivity.recent',
   },
 ];
 
