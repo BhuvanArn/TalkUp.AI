@@ -1,8 +1,12 @@
 import { Suspense, lazy, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import RecruiterAvatarFallback from './recruiter-avatar-fallback';
 import RecruiterAvatarLoading from './recruiter-avatar-loading';
-import type { RecruiterAvatarPanelProps } from './types';
+import type {
+  RecruiterAvatarPanelProps,
+  RecruiterFallbackReasonKey,
+} from './types';
 
 const RecruiterAvatar3D = lazy(() =>
   import('./recruiter-avatar-3d').then((module) => ({
@@ -23,12 +27,14 @@ export function RecruiterAvatarPanel({
   capabilityFallbackReason,
   onFallbackRequest,
 }: RecruiterAvatarPanelProps) {
-  const [runtimeFallback, setRuntimeFallback] = useState<string | null>(null);
+  const { t } = useTranslation('app');
+  const [runtimeFallback, setRuntimeFallback] =
+    useState<RecruiterFallbackReasonKey | null>(null);
 
   const handleRuntimeFallback = useCallback(
-    (reason: string) => {
-      setRuntimeFallback(reason);
-      onFallbackRequest(reason);
+    (reasonKey: RecruiterFallbackReasonKey) => {
+      setRuntimeFallback(reasonKey);
+      onFallbackRequest(reasonKey);
     },
     [onFallbackRequest],
   );
@@ -45,7 +51,9 @@ export function RecruiterAvatarPanel({
       <RecruiterAvatarFallback
         isAiSpeaking={isAiSpeaking}
         isAwaitingAiResponse={isAwaitingAiResponse}
-        fallbackReason={runtimeFallback ?? capabilityFallbackReason}
+        fallbackReason={
+          runtimeFallback ? t(runtimeFallback) : capabilityFallbackReason
+        }
       />
     );
   }
@@ -60,7 +68,7 @@ export function RecruiterAvatarPanel({
         speechTurn={speechTurn}
         onLoadError={handleRuntimeFallback}
         onContextLost={() =>
-          handleRuntimeFallback('WebGL context lost — using static avatar.')
+          handleRuntimeFallback('recruiter.fallback.contextLost')
         }
       />
     </Suspense>

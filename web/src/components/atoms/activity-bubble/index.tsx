@@ -1,5 +1,6 @@
 import { cn } from '@/utils/cn';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ActivityBubbleProps } from './types';
 import { activityBubbleVariants } from './variants';
@@ -20,11 +21,15 @@ export const ActivityBubble = React.forwardRef<
   HTMLDivElement,
   ActivityBubbleProps
 >(({ status, size, className, ...props }, ref) => {
+  const { t } = useTranslation('app');
+
   return (
     <div
       ref={ref}
       className={cn(activityBubbleVariants({ status, size }), className)}
-      title={`Status: ${status}`}
+      title={t('activity.title', {
+        status: status ? t(`activity.status.${status}`) : '',
+      })}
       {...props}
     />
   );

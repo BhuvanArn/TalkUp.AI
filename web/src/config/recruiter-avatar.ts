@@ -1,3 +1,5 @@
+import type { ParseKeys } from 'i18next';
+
 /**
  * Default bundled avatar: Avaturn character in blazer + dress shirt (`avaturn_look_0`).
  * TalkingHead demo asset (Avaturn, non-commercial — see TalkingHead README).
@@ -47,7 +49,9 @@ export const RECRUITER_AVATAR_SHOW_OPTIONS = {
 };
 
 export const RECRUITER_DISPLAY_NAME = 'Sophie Martin';
-export const RECRUITER_DISPLAY_ROLE = 'Recruteuse IT';
+/** `app` translation key of the recruiter's job title. */
+export const RECRUITER_DISPLAY_ROLE_KEY =
+  'recruiter.role' as const satisfies ParseKeys<'app'>;
 
 const FORCE_FALLBACK_STORAGE_KEY = 'talkup.avatar.forceFallback';
 

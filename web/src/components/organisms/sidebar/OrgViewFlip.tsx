@@ -4,6 +4,7 @@ import { useNavigation } from '@/contexts/NavigationContext';
 import { useAuthStatus } from '@/hooks/auth/useServices';
 import { useNavigate } from '@tanstack/react-router';
 import type { CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { NavigationProps } from './types';
 
@@ -28,6 +29,7 @@ const ORG_TOGGLE_ACCENT = 'var(--color-accent)';
  * navigation context); it does not alter any permission.
  */
 export const OrgViewFlip = ({ isCollapsed = false }: NavigationProps) => {
+  const { t } = useTranslation('app');
   const { data: auth } = useAuthStatus();
   const { contextType } = useNavigation();
   const navigate = useNavigate();
@@ -43,7 +45,7 @@ export const OrgViewFlip = ({ isCollapsed = false }: NavigationProps) => {
   }
 
   const isOrgView = contextType === 'organization';
-  const label = 'Organization view';
+  const label = t('sidebar.orgView');
   const flip = () =>
     navigate({ to: isOrgView ? APP_HOME : '/organization/members' });
 

@@ -4,6 +4,7 @@ import {
   useAudioStreaming,
   useInterviewSession,
 } from '@/hooks/simulation';
+import { changeLanguage } from '@/i18n';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   RouterProvider,
@@ -17,6 +18,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import i18next from 'i18next';
 import { ReadyState } from 'react-use-websocket';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -218,8 +220,29 @@ describe('Simulations', () => {
     renderWithProviders(<RouterProvider router={router} />);
     expect(await screen.findByText(/Sophie Martin/i)).toBeInTheDocument();
     // The old "Real time advice" info box was replaced by the verbal-analysis
-    // panel, which shows its "Analyse verbale" placeholder until the first turn.
-    expect(screen.getByText(/Analyse verbale/i)).toBeInTheDocument();
+    // panel, which shows its "Verbal analysis" placeholder until the first turn.
+    expect(screen.getByText(/Verbal analysis/i)).toBeInTheDocument();
+    expect(screen.getByText(/IT Recruiter/)).toBeInTheDocument();
+  });
+
+  describe('in French', () => {
+    afterEach(async () => {
+      await act(() => i18next.changeLanguage('en'));
+      localStorage.clear();
+    });
+
+    it('renders the workspace and the verbal analysis panel in French', async () => {
+      await act(() => changeLanguage('fr'));
+      renderWithProviders(<RouterProvider router={router} />);
+
+      expect(
+        await screen.findByText(
+          'Entraînez-vous à des entretiens dans un cadre sans risque.',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Analyse verbale')).toBeInTheDocument();
+      expect(screen.getByText(/Recruteuse IT/)).toBeInTheDocument();
+    });
   });
 
   it('calls handleStreamToggle when stream is toggled on', async () => {

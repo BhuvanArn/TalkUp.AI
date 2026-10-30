@@ -1,11 +1,11 @@
 import type { SaveStatusType } from '@/components/molecules/save-status';
 import { htmlToText, textToHtml } from '@/services/notes/htmlText';
 import { createNote, getUserNotes, updateNote } from '@/services/notes/http';
+import i18next from 'i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const MAX_CONSECUTIVE_FAILURES = 3;
 const AUTOSAVE_INTERVAL_MS = 1000;
-const IN_SIM_TITLE = 'Simulation notes';
 
 /**
  * Owns the in-simulation note lifecycle: one note per interview, loaded on
@@ -78,7 +78,7 @@ export const useInterviewNotes = (interviewID: string | null) => {
               await updateNote(prevNoteId, { content: textToHtml(snapshot) });
             } else {
               await createNote({
-                title: IN_SIM_TITLE,
+                title: i18next.t('app:notes.simulationTitle'),
                 content: textToHtml(snapshot),
                 interviewId: prevInterviewID,
               });
@@ -107,7 +107,7 @@ export const useInterviewNotes = (interviewID: string | null) => {
         await updateNote(noteIdRef.current, { content: textToHtml(snapshot) });
       } else {
         const created = await createNote({
-          title: IN_SIM_TITLE,
+          title: i18next.t('app:notes.simulationTitle'),
           content: textToHtml(snapshot),
           interviewId: interviewID,
         });

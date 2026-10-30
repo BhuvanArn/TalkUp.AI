@@ -6,6 +6,7 @@ import { ColorPicker } from '@/components/molecules/color-picker';
 import { ConfirmModal } from '@/components/molecules/confirm-modal';
 import { SaveStatus } from '@/components/molecules/save-status';
 import { EditorToolbar } from '@/components/organisms/editor-toolbar';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import { useNoteActions } from '@/hooks/notes/useNoteActions';
 import { useNoteAutoSave } from '@/hooks/notes/useNoteAutoSave';
 import { useNoteData } from '@/hooks/notes/useNoteData';
@@ -16,6 +17,7 @@ import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 import { EditorContent } from '@tiptap/react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/notes/$noteId')({
   beforeLoad: createAuthGuard('/notes/$noteId'),
@@ -30,6 +32,8 @@ function RouteComponent() {
   const editorData = useRichTextEditor();
 
   const { note, setNote, isLoading } = useNoteData(noteId, !!editorData.editor);
+  const { t } = useTranslation(['app', 'common']);
+  const { intlLocale } = useLocale();
 
   const { toggleFavorite } = useNoteFavorite();
   const { navigateToNotesList } = useNoteNavigation();
@@ -113,7 +117,7 @@ function RouteComponent() {
               margin: '0 auto 16px',
             }}
           />
-          <p className="text-text-idle">Loading note...</p>
+          <p className="text-text-idle">{t('notes.editor.loading')}</p>
         </div>
       </div>
     );
@@ -128,7 +132,7 @@ function RouteComponent() {
               <button
                 onClick={() => setShowColorPicker(!showColorPicker)}
                 className="hover:opacity-80 transition-opacity cursor-pointer"
-                title="Change note color"
+                title={t('notes.editor.changeColor')}
               >
                 <Bubble size="md" color={note.color as BubbleProps['color']} />
               </button>
@@ -160,7 +164,7 @@ function RouteComponent() {
                   color="accent"
                   className="p-2"
                   onClick={handleTitleSave}
-                  title="Save title"
+                  title={t('notes.editor.saveTitle')}
                 >
                   <Icon icon="check" />
                 </Button>
@@ -174,7 +178,7 @@ function RouteComponent() {
                   variant="text"
                   color="black"
                   className="p-2"
-                  title="Edit note name"
+                  title={t('notes.editor.editTitle')}
                   onClick={handleTitleEdit}
                 >
                   <Icon icon="pencil" />
@@ -185,36 +189,50 @@ function RouteComponent() {
           <div className="flex gap-2 items-center">
             <SaveStatus status={saveStatus} />
             <div className="h-6 w-px bg-border mx-2" />
-            <Button variant="text" color="black" title="Share note">
+            <Button
+              variant="text"
+              color="black"
+              title={t('notes.editor.share')}
+            >
               <Icon icon="share" />
-              <span className="hidden sm:inline">Share</span>
+              <span className="hidden sm:inline">
+                {t('notes.editor.shareLabel')}
+              </span>
             </Button>
             <Button
               variant="text"
               color={note.is_favorite ? 'accent' : 'black'}
               title={
-                note.is_favorite ? 'Remove from favorites' : 'Add to favorites'
+                note.is_favorite
+                  ? t('notes.favorites.remove')
+                  : t('notes.favorites.add')
               }
               onClick={handleToggleFavorite}
             >
               <Icon icon={note.is_favorite ? 'bookmark-filled' : 'bookmark'} />
               <span className="hidden sm:inline">
-                {note.is_favorite ? 'Favorited' : 'Favorite'}
+                {note.is_favorite
+                  ? t('notes.favorites.favorited')
+                  : t('notes.favorites.favorite')}
               </span>
             </Button>
             <Button
               variant="text"
               color="error"
-              title="Delete note"
+              title={t('notes.editor.delete')}
               onClick={() => setShowDeleteModal(true)}
             >
               <Icon icon="delete" />
-              <span className="hidden sm:inline">Delete</span>
+              <span className="hidden sm:inline">
+                {t('common:actions.delete')}
+              </span>
             </Button>
           </div>
         </div>
         <p className="text-text-idle text-body-md mt-2">
-          Last updated {new Date(note.updated_at).toLocaleString()}
+          {t('notes.editor.lastUpdated', {
+            date: new Date(note.updated_at).toLocaleString(intlLocale),
+          })}
         </p>
       </div>
       <div className="grid grid-rows-[40px_1fr] bg-note-card rounded-t-[20px] px-6 pt-4 pb-0 gap-3 w-full min-w-0 h-full overflow-hidden">
@@ -228,10 +246,10 @@ function RouteComponent() {
 
       <ConfirmModal
         isOpen={showDeleteModal}
-        title="Delete Note"
-        message="Are you sure you want to delete this note? This action cannot be undone."
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title={t('notes.deleteModal.title')}
+        message={t('notes.deleteModal.message')}
+        confirmLabel={t('common:actions.delete')}
+        cancelLabel={t('common:actions.cancel')}
         confirmColor="error"
         icon="trash"
         onConfirm={() => {

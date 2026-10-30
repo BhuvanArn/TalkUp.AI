@@ -2,6 +2,7 @@ import { Badge } from '@/components/atoms/badge';
 import { IconAction } from '@/components/atoms/icon-action';
 import LinkButton from '@/components/atoms/link-button';
 import useThemeStore from '@/stores/useThemeStore';
+import { useTranslation } from 'react-i18next';
 
 import { NotificationBannerProps } from './types';
 
@@ -37,6 +38,7 @@ export const NotificationBanner = ({
   onCtaClick,
   onDismiss,
 }: NotificationBannerProps) => {
+  const { t } = useTranslation();
   const { theme } = useThemeStore();
 
   return (
@@ -51,7 +53,7 @@ export const NotificationBanner = ({
             icon="times"
             size="xs"
             onClick={onDismiss}
-            ariaLabel="Dismiss notification"
+            ariaLabel={t('notificationBanner.dismiss')}
           />
         )}
       </div>

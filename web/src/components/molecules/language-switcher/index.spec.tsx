@@ -6,7 +6,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import LanguageSwitcher from './index';
 
 const EN_NAME = 'FR Switch to Français (current language: English)';
-const FR_NAME = 'EN Passer en English (langue actuelle : Français)';
+// No-break space before the colon, as in the French translation.
+const FR_NAME = 'EN Passer en English (langue actuelle : Français)';
 
 describe('LanguageSwitcher', () => {
   afterEach(async () => {

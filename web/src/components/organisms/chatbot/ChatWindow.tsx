@@ -1,7 +1,10 @@
 import { ChatAvatar } from '@/components/atoms/chatbot/ChatAvatar';
 import { ChatInputBar } from '@/components/molecules/chatbot/ChatInputBar';
 import { ChatMessage } from '@/components/molecules/chatbot/ChatMessage';
+import { useLocale } from '@/hooks/i18n/useLocale';
+import type { ParseKeys } from 'i18next';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ChatWindow
@@ -25,16 +28,26 @@ import { useEffect, useRef } from 'react';
  * />
  */
 
+/**
+ * Message content: a translation key for the app's own messages (welcome,
+ * error), or raw text typed by the user or returned by the API. Keys are
+ * translated at render so they follow a language switch.
+ */
+export type MessageText = { key: ParseKeys<'app'> } | { raw: string };
+
 export interface Message {
   /** Unique identifier for the message */
   id: string;
   /** Text content */
-  text: string;
+  text: MessageText;
   /** 'ai' for assistant messages, 'user' for user messages */
   variant: 'ai' | 'user';
-  /** Formatted time string */
-  timestamp: string;
+  /** When the message was sent; formatted in the active locale at render */
+  sentAt: Date;
 }
+
+const formatTime = (date: Date, intlLocale: string) =>
+  date.toLocaleTimeString(intlLocale, { hour: '2-digit', minute: '2-digit' });
 
 interface ChatWindowProps {
   /** List of messages to display */
@@ -59,6 +72,8 @@ export const ChatWindow = ({
   isTyping = false,
   inputRef,
 }: ChatWindowProps) => {
+  const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,7 +83,7 @@ export const ChatWindow = ({
   return (
     <div
       role="complementary"
-      aria-label="TalkUp AI chat"
+      aria-label={t('chat.window.label')}
       className="flex flex-col w-[340px] bg-background rounded-[20px] border border-border shadow-2xl overflow-hidden"
     >
       {/* ── Header ── */}
@@ -80,7 +95,7 @@ export const ChatWindow = ({
           </p>
           <p className="text-white/80 text-body-s flex items-center gap-1 mt-0.5">
             <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
-            Online, ready to help
+            {t('chat.window.status')}
           </p>
         </div>
       </div>
@@ -91,14 +106,14 @@ export const ChatWindow = ({
         style={{ minHeight: '280px', maxHeight: '280px' }}
         role="log"
         aria-live="polite"
-        aria-label="Chat messages"
+        aria-label={t('chat.window.messages')}
       >
         {messages.map((msg) => (
           <ChatMessage
             key={msg.id}
             variant={msg.variant}
-            message={msg.text}
-            timestamp={msg.timestamp}
+            message={'key' in msg.text ? t(msg.text.key) : msg.text.raw}
+            timestamp={formatTime(msg.sentAt, intlLocale)}
           />
         ))}
 
@@ -118,7 +133,7 @@ export const ChatWindow = ({
 
       {/* ── Footer ── */}
       <div className="py-1.5 text-center text-body-s text-text-weaker bg-surface">
-        Powered by TalkUp AI
+        {t('chat.window.poweredBy')}
       </div>
     </div>
   );

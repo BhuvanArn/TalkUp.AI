@@ -1,16 +1,21 @@
 import {
   RECRUITER_AVATAR_SHOW_OPTIONS,
   RECRUITER_DISPLAY_NAME,
-  RECRUITER_DISPLAY_ROLE,
+  RECRUITER_DISPLAY_ROLE_KEY,
 } from '@/config/recruiter-avatar';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import type { AiSpeechTurn } from '@/hooks/simulation/useAudioPlayback';
 import { buildWordTimings, decodeAudioChunks } from '@/utils/aiSpeechPayload';
+import { formatPercent } from '@/utils/formatPercent';
 import { TalkingHead } from '@met4citizen/talkinghead';
+import type { ParseKeys } from 'i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   AVATAR_LOAD_TIMEOUT_MS,
   fetchAvatarBlob,
+  toFallbackReasonKey,
   waitForElementSize,
   withTimeout,
 } from './avatar-loader';
@@ -60,7 +65,11 @@ export function RecruiterAvatar3D({
   const lastSpeechTurnIdRef = useRef<number | null>(null);
   const [initState, setInitState] = useState<InitState>('idle');
   const [loadProgress, setLoadProgress] = useState(0);
-  const [loadDetail, setLoadDetail] = useState('Initializing…');
+  const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
+  const [loadDetail, setLoadDetail] = useState<ParseKeys<'app'> | null>(
+    'recruiter.loadSteps.initializing',
+  );
 
   const callbacksRef = useRef({ onLoadError, onContextLost });
 
@@ -106,12 +115,12 @@ export function RecruiterAvatar3D({
 
     setInitState('loading');
     setLoadProgress(0);
-    setLoadDetail('Starting 3D engine…');
+    setLoadDetail('recruiter.loadSteps.starting');
     disposeHead();
 
     const init = async () => {
       try {
-        setLoadDetail('Preparing viewport…');
+        setLoadDetail('recruiter.loadSteps.viewport');
         await waitForElementSize(container);
 
         if (generation !== loadGenerationRef.current) return;
@@ -135,14 +144,14 @@ export function RecruiterAvatar3D({
         applyCanvasStyles(container);
         head.onResize();
 
-        setLoadDetail('Downloading model…');
+        setLoadDetail('recruiter.loadSteps.downloading');
         const blob = await withTimeout(
           fetchAvatarBlob(avatarUrl, (pct) => {
             if (generation !== loadGenerationRef.current) return;
             setLoadProgress(pct);
           }),
           AVATAR_LOAD_TIMEOUT_MS,
-          'Avatar model download timed out.',
+          'recruiter.fallback.downloadTimeout',
         );
 
         if (generation !== loadGenerationRef.current) return;
@@ -150,14 +159,14 @@ export function RecruiterAvatar3D({
         const objectUrl = URL.createObjectURL(blob);
         objectUrlRef.current = objectUrl;
 
-        setLoadDetail('Preparing avatar…');
+        setLoadDetail('recruiter.loadSteps.preparing');
         await withTimeout(
           head.showAvatar({
             url: objectUrl,
             ...RECRUITER_AVATAR_SHOW_OPTIONS,
           }),
           AVATAR_LOAD_TIMEOUT_MS,
-          'Avatar model parsing timed out.',
+          'recruiter.fallback.parseTimeout',
         );
 
         if (generation !== loadGenerationRef.current) return;
@@ -179,14 +188,13 @@ export function RecruiterAvatar3D({
         resizeObserver.observe(container);
 
         setLoadProgress(100);
-        setLoadDetail('');
+        setLoadDetail(null);
         setInitState('ready');
       } catch (error) {
         if (generation !== loadGenerationRef.current) return;
-        const message =
-          error instanceof Error ? error.message : 'Failed to load 3D avatar.';
         setInitState('error');
-        callbacksRef.current.onLoadError(message);
+        console.warn('3D avatar failed to load:', error);
+        callbacksRef.current.onLoadError(toFallbackReasonKey(error));
         disposeHead();
       }
     };
@@ -281,22 +289,26 @@ export function RecruiterAvatar3D({
         <p className="text-sm font-semibold text-white">
           {RECRUITER_DISPLAY_NAME}
         </p>
-        <p className="text-xs text-white/80">{RECRUITER_DISPLAY_ROLE}</p>
+        <p className="text-xs text-white/80">{t(RECRUITER_DISPLAY_ROLE_KEY)}</p>
       </div>
 
       {initState === 'loading' ? (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-black/40 backdrop-blur-[2px]">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-          <p className="text-sm font-medium text-white">{loadDetail}</p>
+          <p className="text-sm font-medium text-white">
+            {loadDetail ? t(loadDetail) : null}
+          </p>
           {loadProgress > 0 ? (
-            <p className="text-xs text-white/70">{loadProgress}%</p>
+            <p className="text-xs text-white/70">
+              {formatPercent(loadProgress, intlLocale)}
+            </p>
           ) : null}
         </div>
       ) : null}
 
       {initState === 'error' ? (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 backdrop-blur-[2px]">
-          <p className="text-sm text-white/70">3D avatar unavailable</p>
+          <p className="text-sm text-white/70">{t('recruiter.unavailable')}</p>
         </div>
       ) : null}
     </div>

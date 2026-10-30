@@ -4,6 +4,7 @@ import { SaveStatus } from '@/components/molecules/save-status';
 import { useInterviewNotes } from '@/hooks/notes/useInterviewNotes';
 import { useEffect, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
+import { useTranslation } from 'react-i18next';
 
 interface NotesEditorProps {
   /** The active interview id, or null/undefined when no simulation is running. */
@@ -15,6 +16,7 @@ interface NotesEditorProps {
  * Persists one note per interview via useInterviewNotes.
  */
 const NotesEditor = ({ interviewID }: NotesEditorProps) => {
+  const { t } = useTranslation('app');
   const [isOpen, setIsOpen] = useState(false);
   const { content, setContent, saveStatus, saveNow } = useInterviewNotes(
     interviewID ?? null,
@@ -52,7 +54,7 @@ const NotesEditor = ({ interviewID }: NotesEditorProps) => {
                 <div className="flex items-center gap-2 pointer-events-none">
                   <Icon icon="pencil" className="text-primary" />
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 select-none">
-                    Notes
+                    {t('notes.floating.title')}
                   </h3>
                 </div>
                 <Button
@@ -68,7 +70,7 @@ const NotesEditor = ({ interviewID }: NotesEditorProps) => {
               <textarea
                 ref={textareaRef}
                 className="flex-1 p-4 text-sm text-idle focus:outline-none resize-none leading-relaxed"
-                placeholder="Type here..."
+                placeholder={t('notes.floating.placeholder')}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
@@ -92,7 +94,7 @@ const NotesEditor = ({ interviewID }: NotesEditorProps) => {
                     onClick={() => void saveNow()}
                   >
                     <Icon icon="check" className="mr-2" />
-                    Save
+                    {t('notes.floating.save')}
                   </Button>
                 </div>
               </div>

@@ -1,4 +1,8 @@
+import { useLocale } from '@/hooks/i18n/useLocale';
+import { formatPercent } from '@/utils/formatPercent';
+import type { ParseKeys } from 'i18next';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ProgressBar } from '../../atoms/cv-import-progress-bar';
 import { AnalysisStatus } from '../../molecules/cv-import-analysis-status';
@@ -15,10 +19,10 @@ interface AIProcessingOverlayProps {
 /** Message + progress shown for each real pipeline step. */
 const STEP_DISPLAY: Record<
   AIProcessingOverlayProps['step'],
-  { message: string; progress: number }
+  { messageKey: ParseKeys<'app'>; progress: number }
 > = {
-  cv: { message: 'Analyzing your CV...', progress: 35 },
-  offer: { message: 'Extracting the job offer...', progress: 75 },
+  cv: { messageKey: 'cv.processing.cv', progress: 35 },
+  offer: { messageKey: 'cv.processing.offer', progress: 75 },
 };
 
 /**
@@ -32,8 +36,10 @@ const STEP_DISPLAY: Record<
  * @returns {JSX.Element} A full-screen fixed overlay with a progress indicator.
  */
 export const AIProcessingOverlay = ({ step }: AIProcessingOverlayProps) => {
+  const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { message, progress } = STEP_DISPLAY[step];
+  const { messageKey, progress } = STEP_DISPLAY[step];
 
   // Move focus into the dialog on mount so keyboard / screen-reader users are
   // anchored to the processing state rather than the now-inert page behind it.
@@ -52,17 +58,17 @@ export const AIProcessingOverlay = ({ step }: AIProcessingOverlayProps) => {
         className="bg-background w-full max-w-[500px] rounded-3xl p-10 text-center shadow-xl outline-none"
       >
         <h2 id="ai-processing-title" className="text-h5 text-text mb-6">
-          TalkUp.AI analysis in progress
+          {t('cv.processing.title')}
         </h2>
 
         <div aria-live="polite">
-          <AnalysisStatus message={message} />
+          <AnalysisStatus message={t(messageKey)} />
         </div>
 
         <div className="mt-6">
           <ProgressBar progress={progress} />
           <p className="text-body-s text-text-weaker mt-2 text-right">
-            {progress}%
+            {formatPercent(progress, intlLocale)}
           </p>
         </div>
       </div>

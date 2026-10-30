@@ -6,6 +6,7 @@ import {
   updateInterview,
 } from '@/services/ai/http';
 import axios from 'axios';
+import i18next from 'i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -177,7 +178,9 @@ export function useInterviewSession({
           setIsQueued(true);
           setQueuePosition(session.queuePosition);
           setEstimatedWaitSec(session.estimatedWaitSec);
-          toast.loading("Reprise de la file d'attente…", { id: 'sim-queue' });
+          toast.loading(i18next.t('app:simulations.toasts.queueResuming'), {
+            id: 'sim-queue',
+          });
 
           queueAbortRef.current?.abort();
           queueAbortRef.current = new AbortController();
@@ -199,7 +202,7 @@ export function useInterviewSession({
           setInterviewID(savedInterviewID);
           onConnect(entrypoint);
           setIsCallActive(true);
-          toast.success('Simulation reprise');
+          toast.success(i18next.t('app:simulations.toasts.resumed'));
           return;
         }
 
@@ -222,7 +225,7 @@ export function useInterviewSession({
           }, STREAM_RESUME_DELAY_MS);
         }
 
-        toast.success('Simulation reprise');
+        toast.success(i18next.t('app:simulations.toasts.resumed'));
       } catch (error) {
         console.warn('Failed to restore simulation session:', error);
 
@@ -233,15 +236,11 @@ export function useInterviewSession({
             /* ignore cleanup errors */
           }
           clearInterviewStorage();
-          toast.error(
-            'La session précédente a expiré. Vous pouvez démarrer un nouvel entretien.',
-          );
+          toast.error(i18next.t('app:simulations.toasts.sessionExpired'));
           return;
         }
 
-        toast.error(
-          'Impossible de reprendre la simulation pour le moment. Rechargez la page pour réessayer.',
-        );
+        toast.error(i18next.t('app:simulations.toasts.resumeFailed'));
         toast.dismiss('sim-queue');
         setIsCallActive(false);
         setIsQueued(false);
@@ -322,7 +321,9 @@ export function useInterviewSession({
             setIsQueued(true);
             setQueuePosition(created.queuePosition);
             setEstimatedWaitSec(created.estimatedWaitSec);
-            toast.loading("En file d'attente…", { id: 'sim-queue' });
+            toast.loading(i18next.t('app:simulations.toasts.queued'), {
+              id: 'sim-queue',
+            });
 
             queueAbortRef.current?.abort();
             queueAbortRef.current = new AbortController();
@@ -339,7 +340,7 @@ export function useInterviewSession({
             toast.dismiss('sim-queue');
             setIsQueued(false);
             setQueuePosition(0);
-            toast.success("C'est votre tour — démarrage de la simulation");
+            toast.success(i18next.t('app:simulations.toasts.yourTurn'));
           }
 
           if (!entrypoint) {
@@ -368,7 +369,7 @@ export function useInterviewSession({
           localStorage.removeItem(STORAGE_KEYS.INTERVIEW_ID);
           localStorage.removeItem(STORAGE_KEYS.INTERVIEW_URL);
           localStorage.removeItem(STORAGE_KEYS.IS_STREAMING);
-          toast.error('Failed to start interview. Please try again.');
+          toast.error(i18next.t('app:simulations.toasts.startFailed'));
         } finally {
           processingRef.current = false;
         }

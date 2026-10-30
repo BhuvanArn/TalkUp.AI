@@ -1,4 +1,7 @@
+import { useLocale } from '@/hooks/i18n/useLocale';
+import { formatPercent } from '@/utils/formatPercent';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * @interface GoalProgressCardProps
@@ -25,15 +28,20 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
   progress,
   target,
 }) => {
+  const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
   const radius = 30;
   const circumference = 2 * Math.PI * radius;
-  const normalizedProgress = Math.min(100, Math.max(0, progress));
+  // Rounded and clamped like the match gauge, so the label matches the ring.
+  const normalizedProgress = Math.round(Math.min(100, Math.max(0, progress)));
   const strokeDashoffset =
     circumference - (normalizedProgress / 100) * circumference;
 
   const isGoalReached = progress >= target;
   const ringColor = isGoalReached ? 'text-success' : 'text-accent';
-  const targetText = isGoalReached ? 'Goal Reached' : `→ ${target}% Target`;
+  const targetText = isGoalReached
+    ? t('progression.goal.reached')
+    : t('progression.goal.target', { target });
 
   const cardStyle = {
     backgroundColor: '#f9fbfd',
@@ -83,7 +91,9 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
         {/* Progress text in the center */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-          <p className="text-h5 text-active">{progress}%</p>
+          <p className="text-h5 text-active">
+            {formatPercent(normalizedProgress, intlLocale)}
+          </p>
         </div>
       </div>
 

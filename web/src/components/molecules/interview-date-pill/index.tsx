@@ -1,7 +1,9 @@
 import { iconMap } from '@/components/atoms/icon/icon-map';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import { useUpdateApplicationInterviewAt } from '@/services/applications/hooks';
 import { format } from 'date-fns';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const PlusIcon = iconMap.plus;
 
@@ -46,6 +48,8 @@ export const InterviewDatePill = ({
   interviewAt,
   topicsCount,
 }: InterviewDatePillProps) => {
+  const { t } = useTranslation('app');
+  const { dateFnsLocale } = useLocale();
   const inputRef = useRef<HTMLInputElement>(null);
   const updateInterviewAt = useUpdateApplicationInterviewAt();
 
@@ -77,18 +81,30 @@ export const InterviewDatePill = ({
     content = (
       <>
         <span className="text-label-m">
-          Interview {format(new Date(interviewAt), 'd MMM yyyy')}
+          {t('applications.interviewPill.date', {
+            date: format(new Date(interviewAt), 'd MMM yyyy', {
+              locale: dateFnsLocale,
+            }),
+          })}
         </span>
-        <span className="text-body-s">• {daysLeft} days left</span>
-        {pace > 0 && <span className="text-body-s">• ≈{pace} topics/week</span>}
-        <span className="text-body-s underline">• Edit</span>
+        <span className="text-body-s">
+          • {t('applications.interviewPill.daysLeft', { count: daysLeft })}
+        </span>
+        {pace > 0 && (
+          <span className="text-body-s">
+            • {t('applications.interviewPill.pace', { count: pace })}
+          </span>
+        )}
+        <span className="text-body-s underline">
+          • {t('applications.interviewPill.edit')}
+        </span>
       </>
     );
   } else {
     content = (
       <span className="text-label-m flex items-center gap-1.5">
         <PlusIcon size={14} aria-hidden="true" />
-        Add interview date
+        {t('applications.interviewPill.add')}
       </span>
     );
   }
@@ -102,7 +118,7 @@ export const InterviewDatePill = ({
       <input
         ref={inputRef}
         type="date"
-        aria-label="Interview date"
+        aria-label={t('applications.card.interviewDate')}
         // Seed with the current value so editing opens on the set date; keyed so
         // a fresh value from a successful write re-seeds the input.
         defaultValue={interviewAt ? isoToDateInput(interviewAt) : undefined}

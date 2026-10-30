@@ -2,7 +2,9 @@ import { iconMap } from '@/components/atoms/icon/icon-map';
 import { SimulationWorkspace } from '@/components/organisms/simulation-workspace';
 import { useApplications } from '@/services/applications/hooks';
 import { createAuthGuard } from '@/utils/auth.guards';
+import { formatJobAtCompany } from '@/utils/jobAtCompany';
 import { Link, createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 const BackIcon = iconMap['arrow-left'];
 
@@ -20,6 +22,7 @@ export const Route = createFileRoute(
  * uses and has no roadmap to return to).
  */
 function BackToRoadmap({ applicationId }: { applicationId: string }) {
+  const { t } = useTranslation('app');
   // Sits above the workspace, which carries its own `p-6`; only add the matching
   // left/top padding here so the link aligns with the workspace edge without
   // doubling the horizontal padding.
@@ -30,12 +33,13 @@ function BackToRoadmap({ applicationId }: { applicationId: string }) {
       className="text-button-m text-text-weak hover:text-text inline-flex items-center gap-2 px-6 pt-6 transition-colors"
     >
       <BackIcon size={18} aria-hidden="true" />
-      Back to roadmap
+      {t('simulations.backToRoadmap')}
     </Link>
   );
 }
 
 function ApplicationSimulations() {
+  const { t } = useTranslation('app');
   const { applicationId } = Route.useParams();
   const { data: applications, isLoading } = useApplications();
   const application = applications?.find(
@@ -43,16 +47,16 @@ function ApplicationSimulations() {
   );
 
   const contextLabel = application
-    ? [application.jobTitle, application.companyName]
-        .filter(Boolean)
-        .join(' at ')
+    ? formatJobAtCompany(application.jobTitle, application.companyName)
     : undefined;
 
   if (isLoading) {
     return (
       <div>
         <BackToRoadmap applicationId={applicationId} />
-        <p className="text-text-weak px-6 pt-4">Loading application context…</p>
+        <p className="text-text-weak px-6 pt-4">
+          {t('simulations.loadingContext')}
+        </p>
       </div>
     );
   }
@@ -71,7 +75,7 @@ function ApplicationSimulations() {
         // No page title here: arriving from the roadmap already sets the
         // context, and the interview-context line below identifies the offer.
         title=""
-        description="Practice with the AI recruiter for this job offer."
+        description={t('simulations.applicationDescription')}
         contextLabel={contextLabel}
       />
     </div>

@@ -1,5 +1,6 @@
 import { iconMap } from '@/components/atoms/icon/icon-map';
 import { ConfirmModal } from '@/components/molecules/confirm-modal';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import type {
   Application,
   ApplicationStatus,
@@ -7,14 +8,16 @@ import type {
 import { useDraggable } from '@dnd-kit/core';
 import { format } from 'date-fns/format';
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
-import { enUS } from 'date-fns/locale';
+import type { ParseKeys } from 'i18next';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-export const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  sent: 'Sent',
-  interview: 'Interview',
-  accepted: 'Accepted',
-  rejected: 'Rejected',
+/** `app` translation keys of the status labels, in board order. */
+export const STATUS_LABEL_KEYS: Record<ApplicationStatus, ParseKeys<'app'>> = {
+  sent: 'applications.status.sent',
+  interview: 'applications.status.interview',
+  accepted: 'applications.status.accepted',
+  rejected: 'applications.status.rejected',
 };
 
 /** Same glyph vocabulary as the kanban column headers, so a status reads the
@@ -77,6 +80,8 @@ export const ApplicationCard = ({
   onInterviewAtChange,
   onOpenTraining,
 }: ApplicationCardProps) => {
+  const { t } = useTranslation(['app', 'common']);
+  const { dateFnsLocale } = useLocale();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const menuContainerRef = useRef<HTMLDivElement>(null);
@@ -157,10 +162,10 @@ export const ApplicationCard = ({
           </span>
           <span className="min-w-0 flex-1">
             <span className="text-body-m text-text block truncate font-bold font-display">
-              {application.companyName ?? 'Unknown company'}
+              {application.companyName ?? t('applications.card.unknownCompany')}
             </span>
             <span className="text-body-s text-text-idle block truncate">
-              {application.jobTitle ?? 'Role not specified'}
+              {application.jobTitle ?? t('applications.card.unknownRole')}
             </span>
           </span>
           <DragIcon
@@ -174,7 +179,7 @@ export const ApplicationCard = ({
           <button
             ref={triggerRef}
             type="button"
-            aria-label="Application actions"
+            aria-label={t('applications.card.actions')}
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
             disabled={isPending}
@@ -197,9 +202,9 @@ export const ApplicationCard = ({
               className="bg-background border-border absolute right-0 z-20 mt-1.5 w-56 overflow-hidden rounded-xl border py-1.5 shadow-xl"
             >
               <p className="text-body-s text-text-weakest px-3 pt-1 pb-1.5 font-semibold tracking-wide uppercase">
-                Move to
+                {t('applications.card.moveTo')}
               </p>
-              {(Object.keys(STATUS_LABELS) as ApplicationStatus[])
+              {(Object.keys(STATUS_LABEL_KEYS) as ApplicationStatus[])
                 .filter((status) => status !== application.status)
                 .map((status) => {
                   const StatusIcon = STATUS_ICONS[status];
@@ -219,7 +224,7 @@ export const ApplicationCard = ({
                         aria-hidden="true"
                         className="text-text-weak shrink-0"
                       />
-                      {STATUS_LABELS[status]}
+                      {t(STATUS_LABEL_KEYS[status])}
                     </button>
                   );
                 })}
@@ -233,7 +238,7 @@ export const ApplicationCard = ({
                 />
                 <input
                   type="date"
-                  aria-label="Interview date"
+                  aria-label={t('applications.card.interviewDate')}
                   value={toDateInputValue(application.interviewAt)}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -247,8 +252,8 @@ export const ApplicationCard = ({
                 {application.interviewAt && (
                   <button
                     type="button"
-                    aria-label="Clear interview date"
-                    title="Clear interview date"
+                    aria-label={t('applications.card.clearInterviewDate')}
+                    title={t('applications.card.clearInterviewDate')}
                     onClick={() =>
                       onInterviewAtChange(application.applicationId, null)
                     }
@@ -270,7 +275,7 @@ export const ApplicationCard = ({
                 className="text-body-s text-error hover:bg-error-weaker flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left"
               >
                 <TrashIcon size={15} aria-hidden="true" className="shrink-0" />
-                Delete
+                {t('common:actions.delete')}
               </button>
             </div>
           )}
@@ -279,12 +284,16 @@ export const ApplicationCard = ({
 
       <ConfirmModal
         isOpen={isDeleteModalOpen}
-        title="Delete this application?"
-        message={`This removes ${
-          application.companyName ?? 'this application'
-        } and its training progress. This action cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title={t('applications.deleteModal.title')}
+        message={
+          application.companyName
+            ? t('applications.deleteModal.message', {
+                company: application.companyName,
+              })
+            : t('applications.deleteModal.messageUnnamed')
+        }
+        confirmLabel={t('common:actions.delete')}
+        cancelLabel={t('common:actions.cancel')}
         confirmColor="error"
         icon="trash"
         onConfirm={() => {
@@ -306,14 +315,15 @@ export const ApplicationCard = ({
         />
         {application.interviewAt ? (
           <span className="text-body-s text-text-weak">
-            Interview on{' '}
-            {format(new Date(application.interviewAt), 'd MMM yyyy', {
-              locale: enUS,
+            {t('applications.card.interviewOn', {
+              date: format(new Date(application.interviewAt), 'd MMM yyyy', {
+                locale: dateFnsLocale,
+              }),
             })}
           </span>
         ) : (
           <span className="text-body-s text-text-weakest">
-            No interview scheduled
+            {t('applications.card.noInterview')}
           </span>
         )}
       </div>
@@ -324,13 +334,14 @@ export const ApplicationCard = ({
           onClick={() => onOpenTraining(application.applicationId)}
           className="text-body-s-strong text-accent hover:text-accent-hover cursor-pointer"
         >
-          Resume training
+          {t('applications.card.resumeTraining')}
         </button>
         <span className="text-body-s text-text-weakest">
-          Sent{' '}
-          {formatDistanceToNow(new Date(application.appliedAt), {
-            addSuffix: true,
-            locale: enUS,
+          {t('applications.card.sentAgo', {
+            distance: formatDistanceToNow(new Date(application.appliedAt), {
+              addSuffix: true,
+              locale: dateFnsLocale,
+            }),
           })}
         </span>
       </div>

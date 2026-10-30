@@ -1,4 +1,5 @@
 import { CheckboxInput } from '@/components/atoms/checkbox-input';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import { useCreateApplication } from '@/services/applications/hooks';
 import type { Application } from '@/services/applications/types';
 import { uploadMyCV } from '@/services/users/http';
@@ -9,6 +10,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import axios from 'axios';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 import { iconMap } from '../components/atoms/icon/icon-map';
 import { AIProcessingOverlay } from '../components/organisms/cv-import-ai-processing-overlay';
@@ -36,6 +38,8 @@ export const Route = createFileRoute('/cv-analysis')({
  * * @returns {JSX.Element} The rendered CV Analysis page.
  */
 function CVAnalysisPage() {
+  const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
   const navigate = Route.useNavigate();
   const CvIcon = iconMap.cv;
   const LinkIcon = iconMap.search;
@@ -84,20 +88,14 @@ function CVAnalysisPage() {
         axios.isAxiosError(error) && error.response?.status === 429;
 
       if (!cvUploaded) {
-        toast.error(
-          extractErrorMessage(
-            error,
-            'CV upload failed. Try again with a higher-quality PDF (selectable text).',
-          ),
-        );
+        toast.error(extractErrorMessage(error, t('cv.toasts.uploadFailed')));
         return;
       }
 
-      const cvNotice = ' Your CV has been saved to your profile.';
       toast.error(
-        (isThrottled
-          ? 'Too many attempts. Try again in a minute.'
-          : 'Offer analysis failed. Check the link and try again.') + cvNotice,
+        `${
+          isThrottled ? t('cv.toasts.throttled') : t('cv.toasts.offerFailed')
+        } ${t('cv.toasts.cvSaved')}`,
       );
     } finally {
       setAnalysisStep('idle');
@@ -138,9 +136,9 @@ function CVAnalysisPage() {
       {/* 1. HEADER - Hidden when results are shown */}
       {!isFinished && (
         <header className="mb-6 text-center">
-          <h1 className="text-h2 text-text">Compatibility Analysis</h1>
+          <h1 className="text-h2 text-text">{t('cv.title')}</h1>
           <p className="text-body-l text-text-weaker mt-2">
-            Upload your CV and paste the job offer link to begin.
+            {t('cv.subtitle')}
           </p>
         </header>
       )}
@@ -164,7 +162,7 @@ function CVAnalysisPage() {
           <div className="mx-auto grid max-w-[1100px] grid-cols-[repeat(auto-fit,minmax(350px,1fr))] gap-8">
             {/* Column 1: CV Upload & Deadline */}
             <section className="flex flex-col gap-4">
-              <h2 className="text-h6 text-text">1. Your CV</h2>
+              <h2 className="text-h6 text-text">{t('cv.steps.cv')}</h2>
               {!cvFile ? (
                 <UploaderCard
                   onFileSelect={(file: File) => setCvFile(file)}
@@ -181,7 +179,12 @@ function CVAnalysisPage() {
                       {cvFile.name}
                     </p>
                     <p className="text-body-s text-text-weaker">
-                      {(cvFile.size / 1024 / 1024).toFixed(2)} MB • Ready
+                      {t('cv.file.ready', {
+                        size: new Intl.NumberFormat(intlLocale, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }).format(cvFile.size / 1024 / 1024),
+                      })}
                     </p>
                   </div>
                   <button
@@ -190,7 +193,7 @@ function CVAnalysisPage() {
                     className="text-body-s text-error flex cursor-pointer items-center font-semibold"
                   >
                     <TrashIcon size={16} className="mr-1" />
-                    Remove
+                    {t('cv.file.remove')}
                   </button>
                 </div>
               )}
@@ -198,10 +201,10 @@ function CVAnalysisPage() {
 
             {/* Column 2: Job URL Input */}
             <section className="flex flex-col gap-4">
-              <h2 className="text-h6 text-text">2. Job Offer (Link)</h2>
+              <h2 className="text-h6 text-text">{t('cv.steps.offer')}</h2>
               <div className="bg-background border-border flex min-h-[110px] flex-col justify-center rounded-3xl border p-6">
                 <label htmlFor="job-url" className="sr-only">
-                  Job offer link
+                  {t('cv.offer.label')}
                 </label>
                 <div className="bg-surface border-border focus-within:border-accent flex items-center gap-3 rounded-xl border px-4 py-3">
                   <LinkIcon size={18} className="text-text-weakest" />
@@ -210,13 +213,13 @@ function CVAnalysisPage() {
                     name="jobUrl"
                     type="url"
                     className="text-body-m text-text flex-1 border-none bg-transparent outline-none"
-                    placeholder="Paste LinkedIn, WTTJ link..."
+                    placeholder={t('cv.offer.placeholder')}
                     value={jobUrl}
                     onChange={(e) => setJobUrl(e.target.value)}
                   />
                 </div>
                 <p className="text-body-s text-text-weakest mt-2.5 italic">
-                  TalkUp will automatically extract details from the listing.
+                  {t('cv.offer.helper')}
                 </p>
               </div>
             </section>
@@ -240,16 +243,14 @@ function CVAnalysisPage() {
                   htmlFor="data-consent"
                   className="text-body-s text-text cursor-pointer"
                 >
-                  I consent to TalkUp processing my personal data (including my
-                  CV) to perform this compatibility analysis.
+                  {t('cv.consent.label')}
                 </label>
               </div>
               <p
                 id="data-consent-helper"
                 className="text-body-s text-text-weaker mt-3 pl-7"
               >
-                Your data is stored securely. You can access, export, or delete
-                it at any time.
+                {t('cv.consent.helper')}
               </p>
             </div>
 
@@ -259,7 +260,7 @@ function CVAnalysisPage() {
               disabled={!canStart || isAnalyzing}
               className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent cursor-pointer rounded-2xl px-14 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled"
             >
-              Start TalkUp Analysis
+              {t('cv.start')}
             </button>
           </footer>
         </>

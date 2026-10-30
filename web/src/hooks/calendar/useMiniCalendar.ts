@@ -1,9 +1,16 @@
+import { useLocale } from '@/hooks/i18n/useLocale';
 import { useCalendarStore } from '@/stores/useCalendarStore';
 import { MiniCalendarDay, getMiniCalendarDays } from '@/utils/calendarUtils';
-import { endOfWeek, startOfWeek } from 'date-fns';
+import { addDays, endOfWeek, startOfWeek } from 'date-fns';
 import { useMemo, useState } from 'react';
 
-export const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+/** Short weekday names, Monday first (`Mon`…`Sun` in English). */
+export const getDaysOfWeek = (intlLocale: string): string[] => {
+  const monday = startOfWeek(new Date(2024, 0, 3), { weekStartsOn: 1 });
+  return Array.from({ length: 7 }, (_, index) =>
+    addDays(monday, index).toLocaleDateString(intlLocale, { weekday: 'short' }),
+  );
+};
 
 /**
  * Custom hook for the MiniCalendar component.
@@ -12,13 +19,15 @@ export const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export const useMiniCalendar = () => {
   const [displayDate, setDisplayDate] = useState(new Date());
   const { setCurrentDate, currentDate } = useCalendarStore();
+  const { intlLocale } = useLocale();
+  const daysOfWeek = useMemo(() => getDaysOfWeek(intlLocale), [intlLocale]);
 
   const days: MiniCalendarDay[] = useMemo(
     () => getMiniCalendarDays(displayDate),
     [displayDate],
   );
 
-  const monthYear = displayDate.toLocaleDateString('en-US', {
+  const monthYear = displayDate.toLocaleDateString(intlLocale, {
     month: 'long',
     year: 'numeric',
   });
@@ -62,6 +71,6 @@ export const useMiniCalendar = () => {
     handleDayClick,
     selectedWeekStart,
     selectedWeekEnd,
-    daysOfWeek: DAYS_OF_WEEK,
+    daysOfWeek,
   };
 };

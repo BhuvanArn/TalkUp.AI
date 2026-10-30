@@ -1,11 +1,22 @@
 import { cn } from '@/utils/cn';
 import React, { useCallback, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { FileBadge } from '../../atoms/cv-import-file-badge';
 import { iconMap } from '../../atoms/icon/icon-map';
 import { Stepper } from '../../molecules/cv-import-stepper';
 
 const UploadIcon = iconMap.upload;
+
+/** File-input label; `<Trans>` fills in its translated text. */
+const BrowseLabel = ({ children }: { children?: React.ReactNode }) => (
+  <label
+    htmlFor="cv-input"
+    className="text-text-link cursor-pointer font-semibold underline"
+  >
+    {children}
+  </label>
+);
 const CalendarIcon = iconMap.schedule;
 
 /**
@@ -43,7 +54,10 @@ export const UploaderCard = ({
   onDeadlineChange,
 }: UploaderCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation('app');
+  // Which validation failed, translated at render so it follows a language
+  // switch.
+  const [error, setError] = useState<'format' | 'size' | null>(null);
 
   /**
    * Validates file size and format before calling onFileSelect.
@@ -62,14 +76,12 @@ export const UploaderCard = ({
         ALLOWED_EXTENSIONS.includes(fileExtension);
 
       if (!isValidType) {
-        setError(
-          'Unsupported file format. Please use a PDF, DOC or DOCX file.',
-        );
+        setError('format');
         return;
       }
 
       if (file.size > MAX_SIZE_BYTES) {
-        setError(`File is too large. Maximum size: ${MAX_SIZE_MB} MB.`);
+        setError('size');
         return;
       }
 
@@ -146,10 +158,10 @@ export const UploaderCard = ({
    */
   const getUrgencyLabel = (): string => {
     if (daysRemaining === null) return '';
-    if (daysRemaining < 0) return 'Overdue';
-    if (daysRemaining === 0) return 'Today!';
-    if (daysRemaining === 1) return 'Tomorrow!';
-    return `${daysRemaining} days left`;
+    if (daysRemaining < 0) return t('cv.uploader.urgency.overdue');
+    if (daysRemaining === 0) return t('cv.uploader.urgency.today');
+    if (daysRemaining === 1) return t('cv.uploader.urgency.tomorrow');
+    return t('cv.uploader.urgency.daysLeft', { count: daysRemaining });
   };
 
   return (
@@ -178,16 +190,16 @@ export const UploaderCard = ({
           </div>
 
           <h3 className="text-body-xl-strong text-text mb-1">
-            Drag and drop your CV here
+            {t('cv.uploader.dropTitle')}
           </h3>
           <p className="text-body-m text-text-weaker m-0">
-            or{' '}
-            <label
-              htmlFor="cv-input"
-              className="text-text-link cursor-pointer font-semibold underline"
-            >
-              browse your files
-            </label>
+            <Trans
+              ns="app"
+              i18nKey="cv.uploader.browse"
+              components={{
+                browse: <BrowseLabel />,
+              }}
+            />
           </p>
 
           <input
@@ -208,11 +220,15 @@ export const UploaderCard = ({
             <FileBadge label="DOC" />
           </div>
 
-          <span className="text-body-s text-text-weakest">Max size: 5 MB</span>
+          <span className="text-body-s text-text-weakest">
+            {t('cv.uploader.maxSize', { max: MAX_SIZE_MB })}
+          </span>
 
           {error && (
             <p role="alert" className="text-body-m text-error mt-4 font-medium">
-              {error}
+              {error === 'format'
+                ? t('cv.uploader.errors.format')
+                : t('cv.uploader.errors.size', { max: MAX_SIZE_MB })}
             </p>
           )}
         </div>
@@ -223,7 +239,7 @@ export const UploaderCard = ({
         <div className="mb-3 flex items-center gap-2">
           <CalendarIcon size={16} className="text-accent" aria-hidden="true" />
           <span className="text-body-s-strong text-text flex-1">
-            Interview date
+            {t('cv.uploader.interviewDate')}
           </span>
 
           {deadline && daysRemaining !== null && (
@@ -240,7 +256,7 @@ export const UploaderCard = ({
 
         <div className="flex items-center gap-2">
           <label htmlFor="cv-deadline" className="sr-only">
-            Interview date
+            {t('cv.uploader.interviewDate')}
           </label>
           <input
             id="cv-deadline"
@@ -263,8 +279,8 @@ export const UploaderCard = ({
               type="button"
               className="text-text-weakest border-border hover:bg-surface-hover rounded-lg border px-3 py-2 transition-colors"
               onClick={() => onDeadlineChange?.(null)}
-              aria-label="Clear date"
-              title="Clear date"
+              aria-label={t('cv.uploader.clearDate')}
+              title={t('cv.uploader.clearDate')}
             >
               ✕
             </button>
@@ -273,12 +289,12 @@ export const UploaderCard = ({
 
         {!deadline && (
           <p className="text-body-s text-text-weakest mt-2">
-            Optional: when is your interview with this company?
+            {t('cv.uploader.dateHelper')}
           </p>
         )}
         {deadline && daysRemaining !== null && daysRemaining < 0 && (
           <p className="text-body-s text-error mt-2">
-            This date is in the past.
+            {t('cv.uploader.pastDate')}
           </p>
         )}
       </div>

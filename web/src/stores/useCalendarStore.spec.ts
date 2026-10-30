@@ -56,7 +56,7 @@ describe('useCalendarStore', () => {
       await result.current.fetchEvents();
     });
 
-    expect(result.current.error).toBe('Failed to fetch events');
+    expect(result.current.error).toBe('agenda.errors.fetch');
     expect(result.current.isLoading).toBe(false);
     expect(consoleSpy).toHaveBeenCalledWith(
       'Failed to fetch events:',

@@ -1,3 +1,5 @@
+import i18next from 'i18next';
+
 /**
  * Type representing various error shapes we might encounter
  */
@@ -58,7 +60,7 @@ const hasMessage = (error: unknown): error is ErrorWithMessage => {
  */
 export const extractErrorMessage = (
   error: ErrorInput,
-  fallback = 'An error occurred. Please try again.',
+  fallback: string = i18next.t('common:errors.generic'),
 ): string => {
   if (!error) return fallback;
 
@@ -109,8 +111,17 @@ export const extractErrorMessage = (
   // Only use error.message if it looks like a user-friendly message
   if (hasMessage(error) && error.message) {
     const message = error.message;
+    // Includes the English messages axios generates on the client (no server
+    // message to show), so non-English users get the translated fallback.
     const technicalPrefixes = [
       'Network Error',
+      'Request failed with status code',
+      'timeout of',
+      'Request aborted',
+      'canceled',
+      'maxContentLength size of',
+      'maxBodyLength size of',
+      'Unsupported protocol',
       'Failed to fetch',
       'TypeError:',
       'ReferenceError:',

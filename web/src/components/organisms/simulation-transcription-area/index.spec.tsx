@@ -16,12 +16,14 @@ describe('SimulationTranscriptionArea', () => {
     render(
       <SimulationTranscriptionArea
         transcriptions={[
-          { isIA: false, speaker: 'You', text: 'Hello there' },
-          { isIA: true, speaker: 'AI', text: 'Hi, welcome' },
+          { isIA: false, text: 'Hello there' },
+          { isIA: true, text: 'Hi, welcome' },
         ]}
       />,
     );
 
+    expect(screen.getByText('You')).toBeInTheDocument();
+    expect(screen.getByText('AI')).toBeInTheDocument();
     expect(screen.getByText('Hello there')).toBeInTheDocument();
     expect(screen.getByText('Hi, welcome')).toBeInTheDocument();
     expect(

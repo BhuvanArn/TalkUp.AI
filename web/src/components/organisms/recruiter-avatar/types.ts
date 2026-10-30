@@ -1,5 +1,12 @@
 import type { AiSpeechTurn } from '@/hooks/simulation/useAudioPlayback';
 import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
+import type { ParseKeys } from 'i18next';
+
+/** `app` translation key of why the 3D avatar fell back to the static image. */
+export type RecruiterFallbackReasonKey = Extract<
+  ParseKeys<'app'>,
+  `recruiter.fallback.${string}`
+>;
 
 export interface RecruiterAvatarPanelProps {
   /** Whether the simulation stream is active (user started the call). */
@@ -10,7 +17,7 @@ export interface RecruiterAvatarPanelProps {
   avatarUrl: string;
   avatarMode: RecruiterAvatarMode;
   capabilityFallbackReason: string | null;
-  onFallbackRequest: (reason: string) => void;
+  onFallbackRequest: (reasonKey: RecruiterFallbackReasonKey) => void;
 }
 
 export interface RecruiterAvatar3DProps {
@@ -19,6 +26,6 @@ export interface RecruiterAvatar3DProps {
   isAiSpeaking: boolean;
   isAwaitingAiResponse: boolean;
   speechTurn: AiSpeechTurn | null;
-  onLoadError: (reason: string) => void;
+  onLoadError: (reasonKey: RecruiterFallbackReasonKey) => void;
   onContextLost: () => void;
 }

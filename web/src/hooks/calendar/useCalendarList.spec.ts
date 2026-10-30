@@ -1,6 +1,8 @@
+import { changeLanguage } from '@/i18n';
 import { useCalendarStore } from '@/stores/useCalendarStore';
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import i18next from 'i18next';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useCalendarList } from './useCalendarList';
 
@@ -28,6 +30,20 @@ describe('useCalendarList', () => {
 
     expect(result.current.filteredDaysData).toHaveLength(7);
     expect(result.current.filteredDaysData[0].dayName).toBe('Monday');
+  });
+
+  describe('in French', () => {
+    afterEach(async () => {
+      await act(() => i18next.changeLanguage('en'));
+      localStorage.clear();
+    });
+
+    it('names the days in French', async () => {
+      await act(() => changeLanguage('fr'));
+      const { result } = renderHook(() => useCalendarList());
+
+      expect(result.current.filteredDaysData[0].dayName).toBe('lundi');
+    });
   });
 
   it('should handle add event click', () => {

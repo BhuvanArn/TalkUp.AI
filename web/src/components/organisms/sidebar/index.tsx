@@ -10,6 +10,7 @@ import { useNavigation } from '@/contexts/NavigationContext';
 import { useGetMyOrganization } from '@/hooks/organization/useServices';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ContextNavigation } from './ContextNavigation';
 import { OrgViewFlip } from './OrgViewFlip';
@@ -47,6 +48,7 @@ const orgInitials = (name: string) =>
  * @component
  */
 const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
+  const { t } = useTranslation('app');
   const { isLoading, contextType } = useNavigation();
   const { isAuthenticated } = useAuth();
   const [notificationVisible, setNotificationVisible] = useState(true);
@@ -88,7 +90,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
 
           {!isCollapsed && (
             <div className="flex w-full justify-between items-center">
-              <p className="text-label-s text-idle">Link Integrations</p>
+              <p className="text-label-s text-idle">
+                {t('sidebar.linkIntegrations')}
+              </p>
               <div className="flex gap-1 p-1 bg-surface-sidebar-active rounded-md">
                 <IconAction icon="google" size="sm" />
                 <IconAction icon="linkedin" size="sm" color="accent" />
@@ -133,7 +137,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
 
               {isLoading ? (
                 <div className="flex items-center justify-center h-20">
-                  <span className="text-idle text-label-s">Loading...</span>
+                  <span className="text-idle text-label-s">
+                    {t('sidebar.loading')}
+                  </span>
                 </div>
               ) : (
                 /* Context navigation (Application label + app-specific items) */
@@ -144,10 +150,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                   away instead of pushing the profile off-screen. */}
               {!isCollapsed && notificationVisible && (
                 <NotificationBanner
-                  badge="New"
-                  title="TalkUp new AI content"
-                  description="Explore the new AI content we have prepared for you in 2026"
-                  ctaText="Try it out"
+                  badge={t('sidebar.banner.badge')}
+                  title={t('sidebar.banner.title')}
+                  description={t('sidebar.banner.description')}
+                  ctaText={t('sidebar.banner.cta')}
                   ctaIcon="arrow-right-up"
                   onCtaClick={() => console.log('CTA clicked')}
                   onDismiss={() => setNotificationVisible(false)}

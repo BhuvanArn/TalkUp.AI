@@ -1,3 +1,5 @@
+import type { RecruiterFallbackReasonKey } from './types';
+
 /** Avaturn recruiter model is ~14 MB; allow time on slower connections. */
 const AVATAR_LOAD_TIMEOUT_MS = 45_000;
 
@@ -38,13 +40,35 @@ async function fetchAvatarBlob(
   return new Blob(chunks, { type: 'model/gltf-binary' });
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
+/** Rejection of `withTimeout`, carrying the fallback reason to show. */
+class TimeoutError extends Error {
+  readonly reasonKey: RecruiterFallbackReasonKey;
+
+  constructor(reasonKey: RecruiterFallbackReasonKey, ms: number) {
+    super(`Avatar load step timed out after ${ms} ms (${reasonKey})`);
+    this.name = 'TimeoutError';
+    this.reasonKey = reasonKey;
+  }
+}
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  reasonKey: RecruiterFallbackReasonKey,
+) {
   return Promise.race([
     promise,
     new Promise<T>((_, reject) => {
-      window.setTimeout(() => reject(new Error(message)), ms);
+      window.setTimeout(() => reject(new TimeoutError(reasonKey, ms)), ms);
     }),
   ]);
+}
+
+/** Fallback reason for a failed 3D load: the timeout's own, else a generic one. */
+function toFallbackReasonKey(error: unknown): RecruiterFallbackReasonKey {
+  return error instanceof TimeoutError
+    ? error.reasonKey
+    : 'recruiter.fallback.loadFailed';
 }
 
 /** Waits until the container has non-zero layout dimensions. */
@@ -78,7 +102,9 @@ function waitForElementSize(
 
 export {
   AVATAR_LOAD_TIMEOUT_MS,
+  TimeoutError,
   fetchAvatarBlob,
+  toFallbackReasonKey,
   waitForElementSize,
   withTimeout,
 };

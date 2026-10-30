@@ -1,4 +1,5 @@
 import IconAction from '@/components/atoms/icon-action';
+import { useTranslation } from 'react-i18next';
 
 import { CalendarListDayHeaderProps } from './types';
 
@@ -19,6 +20,8 @@ const CalendarListDayHeader = ({
   onDayClick,
   onCreateEvent,
 }: CalendarListDayHeaderProps) => {
+  const { t } = useTranslation('app');
+
   return (
     <div
       className={`relative flex items-center ${calendarViewMode === 'week' && 'hover:bg-surface'} rounded-[5px] justify-between`}
@@ -47,7 +50,7 @@ const CalendarListDayHeader = ({
               ? 'opacity-100'
               : 'group-hover:opacity-100 focus:opacity-100'
         }`}
-        title="Add event"
+        title={t('agenda.addEventTitle')}
         icon="plus"
       />
     </div>

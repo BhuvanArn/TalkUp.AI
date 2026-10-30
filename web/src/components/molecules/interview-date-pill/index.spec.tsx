@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { changeLanguage } from '@/i18n';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import i18next from 'i18next';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InterviewDatePill } from './index';
@@ -16,8 +18,37 @@ describe('InterviewDatePill', () => {
     vi.setSystemTime(new Date('2026-07-12T10:00:00.000Z'));
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.useRealTimers();
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('uses the singular for one day left and one topic a week', () => {
+    render(
+      <InterviewDatePill
+        applicationId="app-1"
+        interviewAt="2026-07-13T10:00:00.000Z"
+        topicsCount={1}
+      />,
+    );
+    expect(screen.getByText(/1 day left/)).toBeInTheDocument();
+    expect(screen.getByText(/≈1 topic\/week/)).toBeInTheDocument();
+  });
+
+  it('renders the date, countdown and pace in French', async () => {
+    await act(() => changeLanguage('fr'));
+    render(
+      <InterviewDatePill
+        applicationId="app-1"
+        interviewAt="2026-07-26T10:00:00.000Z"
+        topicsCount={4}
+      />,
+    );
+    expect(screen.getByText('Entretien le 26 juil. 2026')).toBeInTheDocument();
+    expect(screen.getByText(/14 jours restants/)).toBeInTheDocument();
+    expect(screen.getByText(/2 sujets\/semaine/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Date d’entretien')).toBeInTheDocument();
   });
 
   it('shows date, countdown and pace when the interview date is set', () => {

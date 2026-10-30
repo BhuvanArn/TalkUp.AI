@@ -5,7 +5,9 @@ import {
   getEventColorNameFromHex,
 } from '@/utils/eventColors';
 import { format } from 'date-fns';
+import type { ParseKeys } from 'i18next';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Interface representing the form data for the event modal.
@@ -65,7 +67,10 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
     endTime: '',
   });
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { t } = useTranslation('app');
+  // A translation key, translated below at render so the message follows a
+  // language switch.
+  const [errorKey, setErrorKey] = useState<ParseKeys<'app'> | null>(null);
 
   // Initialize form data when the modal opens or the event to edit changes
   useEffect(() => {
@@ -95,7 +100,7 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
         endTime: format(end, 'HH:mm'),
       });
     }
-    setErrorMessage(null);
+    setErrorKey(null);
   }, [modalEventToEdit, isModalOpen, modalInitialDate, modalInitialEndDate]);
 
   // Close modal on unmount
@@ -106,7 +111,7 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
   }, [closeModal]);
 
   const handleSubmit = async () => {
-    setErrorMessage(null);
+    setErrorKey(null);
     const {
       title,
       description,
@@ -118,7 +123,7 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
     } = formData;
 
     if (!title.trim()) {
-      setErrorMessage('Please provide a title for your event.');
+      setErrorKey('agenda.eventModal.errors.titleRequired');
       return;
     }
 
@@ -126,17 +131,17 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
     const endDateTime = new Date(`${endDate}T${endTime}`);
 
     if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-      setErrorMessage('Invalid date or time.');
+      setErrorKey('agenda.eventModal.errors.invalidDate');
       return;
     }
 
     if (endDateTime <= startDateTime) {
-      setErrorMessage('The end time must be after the start time.');
+      setErrorKey('agenda.eventModal.errors.endBeforeStart');
       return;
     }
 
     if (startDate !== endDate) {
-      setErrorMessage('Events cannot span multiple days.');
+      setErrorKey('agenda.eventModal.errors.multiDay');
       return;
     }
 
@@ -174,7 +179,7 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
     modalEventToEdit,
     formData,
     setFormData,
-    errorMessage,
+    errorMessage: errorKey ? t(errorKey) : null,
     handleSubmit,
     handleDelete,
     handleInputChange,

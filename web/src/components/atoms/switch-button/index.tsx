@@ -29,10 +29,10 @@ export const SwitchButton = ({
   };
 
   return (
-    <div className="flex items-center bg-surface border border-surface-raised rounded-[20px] transition-colors h-6">
+    <div className="flex shrink-0 items-center bg-surface border border-surface-raised rounded-[20px] transition-colors h-6">
       <button
         onClick={() => handleSwitch('left')}
-        className={`px-3 py-0.5 h-6 text-button-s cursor-pointer rounded-[20px] transition-colors ${
+        className={`px-3 py-0.5 h-6 text-button-s whitespace-nowrap cursor-pointer rounded-[20px] transition-colors ${
           active === 'left'
             ? 'text-active bg-surface-raised hover:bg-surface-raised-hover'
             : 'text-idle'
@@ -42,7 +42,7 @@ export const SwitchButton = ({
       </button>
       <button
         onClick={() => handleSwitch('right')}
-        className={`px-3 py-0.5 h-6 text-button-s cursor-pointer rounded-[20px] transition-colors ${
+        className={`px-3 py-0.5 h-6 text-button-s whitespace-nowrap cursor-pointer rounded-[20px] transition-colors ${
           active === 'right'
             ? 'text-active bg-surface-raised hover:bg-surface-raised-hover'
             : 'text-idle'

@@ -1,4 +1,5 @@
 import { getEventColorData } from '@/utils/eventColors';
+import { useTranslation } from 'react-i18next';
 
 import { ListEventBlockProps } from './types';
 
@@ -17,6 +18,7 @@ const ListEventBlock = ({
   startTime,
   endTime,
 }: ListEventBlockProps) => {
+  const { t } = useTranslation('app');
   const colors = getEventColorData(color);
 
   return (
@@ -28,7 +30,7 @@ const ListEventBlock = ({
       />
       <div className="py-3 pr-3 pl-6 flex flex-col justify-center">
         <p className="text-body-s text-idle/70 mb-1">
-          {startTime} to {endTime}
+          {t('agenda.timeRange', { start: startTime, end: endTime })}
         </p>
         <h4 className="text-body-s-strong text-idle">{title}</h4>
         {subtitle && (

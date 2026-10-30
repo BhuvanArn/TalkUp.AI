@@ -1,6 +1,7 @@
 import { Button } from '@/components/atoms/button';
 import { ChatInput } from '@/components/atoms/chatbot/ChatInput';
 import { Icon } from '@/components/atoms/icon';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ChatInputBar
@@ -41,6 +42,7 @@ export const ChatInputBar = ({
   isLoading = false,
   inputRef,
 }: ChatInputBarProps) => {
+  const { t } = useTranslation('app');
   const canSend = value.trim().length > 0 && !isLoading;
 
   // Keep the input enabled while the AI responds so keyboard focus and tab
@@ -56,7 +58,6 @@ export const ChatInputBar = ({
         value={value}
         onChange={onChange}
         onSend={handleSend}
-        placeholder="Ask a question..."
       />
 
       <Button
@@ -65,7 +66,7 @@ export const ChatInputBar = ({
         size="sm"
         onClick={handleSend}
         disabled={!canSend}
-        aria-label="Send message"
+        aria-label={t('chat.input.send')}
         // Only paint the brand gradient when enabled. The Button atom's disabled
         // compound variant sets `bg-gray-400` (a background-color); a gradient is
         // a background-image and would paint over it, making a disabled button
