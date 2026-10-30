@@ -1,5 +1,6 @@
 import { getUserNotes } from '@/services/notes/http';
 import type { Note } from '@/services/notes/types';
+import i18next from 'i18next';
 import { useEffect, useState } from 'react';
 
 const sortNotes = (notes: Note[]) => {
@@ -40,7 +41,7 @@ export const useNotesList = (applicationId?: string) => {
       } catch (err) {
         if (ignore) return;
         console.error('Error fetching notes:', err);
-        setError('Failed to load notes. Please try again.');
+        setError(i18next.t('app:notes.errors.load'));
       } finally {
         if (!ignore) setIsLoading(false);
       }

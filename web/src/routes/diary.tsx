@@ -7,6 +7,7 @@ import type {
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/diary')({
   beforeLoad: createAuthGuard('/diary'),
@@ -14,6 +15,7 @@ export const Route = createFileRoute('/diary')({
 });
 
 function Diary() {
+  const { t } = useTranslation('app');
   const [baseValue, setBaseValue] = useState('');
   const [textareaValue, setTextareaValue] = useState('');
   const [selectorValue, setSelectorValue] = useState('option1');
@@ -24,20 +26,17 @@ function Diary() {
   return (
     <div className="p-4 space-y-6">
       <h3 className="text-primary text-2xl font-bold font-display">
-        Input Molecule Showcase
+        {t('diary.title')}
       </h3>
-      <p className="text-gray-600">
-        This page demonstrates the versatile `InputMolecule` component, capable
-        of rendering various input types with labels and helper text.
-      </p>
+      <p className="text-gray-600">{t('diary.description')}</p>
 
       <InputMolecule
         inputType="base"
         name="baseInputExample"
         id="baseInputExample"
-        label="Your Name"
-        helperText="Please enter your full name."
-        placeholder="John Doe"
+        label={t('diary.name.label')}
+        helperText={t('diary.name.helper')}
+        placeholder={t('diary.name.placeholder')}
         type="text"
         value={baseValue}
         onChange={(e: InputChangeEvent) => setBaseValue(e.target.value)}
@@ -48,9 +47,9 @@ function Diary() {
         inputType="textarea"
         name="descriptionInput"
         id="descriptionInput"
-        label="Project Description"
-        helperText="Provide a brief description of your project (max 200 characters)."
-        placeholder="Start typing here..."
+        label={t('diary.project.label')}
+        helperText={t('diary.project.helper')}
+        placeholder={t('diary.project.placeholder')}
         value={textareaValue}
         onChange={(e: TextAreaChangeEvent) => setTextareaValue(e.target.value)}
         rows={5}
@@ -62,14 +61,14 @@ function Diary() {
         inputType="selector"
         name="favoriteFruitSelector"
         id="favoriteFruitSelector"
-        label="Choose Your Favorite Fruit"
-        helperText="Select one option from the dropdown list."
+        label={t('diary.fruit.label')}
+        helperText={t('diary.fruit.helper')}
         value={selectorValue}
         onChange={(e: SelectChangeEvent) => setSelectorValue(e.target.value)}
         options={[
-          { value: 'option1', label: 'Apple' },
-          { value: 'option2', label: 'Banana' },
-          { value: 'option3', label: 'Cherry' },
+          { value: 'option1', label: t('diary.fruit.apple') },
+          { value: 'option2', label: t('diary.fruit.banana') },
+          { value: 'option3', label: t('diary.fruit.cherry') },
         ]}
       />
 
@@ -77,8 +76,8 @@ function Diary() {
         inputType="checkbox"
         name="newsletterSubscription"
         id="newsletterSubscription"
-        label="Subscribe to our Newsletter"
-        helperText="Tick this box to receive email updates and promotions."
+        label={t('diary.newsletter.label')}
+        helperText={t('diary.newsletter.helper')}
         value={checkboxValue}
         onChange={(e: InputChangeEvent) => setCheckboxValue(e.target.checked)}
       />
@@ -87,7 +86,7 @@ function Diary() {
         inputType="base"
         name="phoneInput"
         id="phoneInput"
-        helperText="Your phone number, including country code (e.g., +1234567890)."
+        helperText={t('diary.phone.helper')}
         placeholder="+1234567890"
         type="tel"
         value={phoneValue}
@@ -98,8 +97,8 @@ function Diary() {
         inputType="textarea"
         name="feedbackInput"
         id="feedbackInput"
-        label="Your Feedback"
-        placeholder="Share your thoughts..."
+        label={t('diary.feedback.label')}
+        placeholder={t('diary.feedback.placeholder')}
         value={feedbackValue}
         onChange={(e: TextAreaChangeEvent) => setFeedbackValue(e.target.value)}
       />
@@ -108,10 +107,10 @@ function Diary() {
         inputType="base"
         name="disabledInput"
         id="disabledInput"
-        label="Disabled Field"
-        helperText="This field is disabled and cannot be edited."
+        label={t('diary.disabled.label')}
+        helperText={t('diary.disabled.helper')}
         type="text"
-        value="You cannot edit this"
+        value={t('diary.disabled.value')}
         disabled
       />
 
@@ -119,10 +118,10 @@ function Diary() {
         inputType="base"
         name="readOnlyInput"
         id="readOnlyInput"
-        label="Read-Only Field"
-        helperText="This field can be selected but not edited."
+        label={t('diary.readOnly.label')}
+        helperText={t('diary.readOnly.helper')}
         type="text"
-        value="This text is read-only"
+        value={t('diary.readOnly.value')}
         readOnly
       />
     </div>

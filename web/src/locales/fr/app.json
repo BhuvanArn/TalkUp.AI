@@ -371,5 +371,145 @@
     "daysAgo": "il y a {{days}} j",
     "hoursAgo": "il y a {{hours}} h",
     "justNow": "À l’instant"
+  },
+  "diary": {
+    "description": "Cette page présente le composant polyvalent `InputMolecule`, capable d’afficher différents types de champs avec libellés et textes d’aide.",
+    "disabled": {
+      "helper": "Ce champ est désactivé et ne peut pas être modifié.",
+      "label": "Champ désactivé",
+      "value": "Vous ne pouvez pas modifier ce texte"
+    },
+    "feedback": {
+      "label": "Votre avis",
+      "placeholder": "Partagez vos impressions…"
+    },
+    "fruit": {
+      "apple": "Pomme",
+      "banana": "Banane",
+      "cherry": "Cerise",
+      "helper": "Sélectionnez une option dans la liste déroulante.",
+      "label": "Choisissez votre fruit préféré"
+    },
+    "name": {
+      "helper": "Veuillez saisir votre nom complet.",
+      "label": "Votre nom",
+      "placeholder": "Jean Dupont"
+    },
+    "newsletter": {
+      "helper": "Cochez cette case pour recevoir nos actualités et nos offres par e-mail.",
+      "label": "S’abonner à notre newsletter"
+    },
+    "phone": {
+      "helper": "Votre numéro de téléphone, indicatif du pays compris (par exemple +33612345678)."
+    },
+    "project": {
+      "helper": "Décrivez brièvement votre projet (200 caractères maximum).",
+      "label": "Description du projet",
+      "placeholder": "Commencez à écrire ici…"
+    },
+    "readOnly": {
+      "helper": "Ce champ peut être sélectionné mais pas modifié.",
+      "label": "Champ en lecture seule",
+      "value": "Ce texte est en lecture seule"
+    },
+    "title": "Démonstration d’InputMolecule"
+  },
+  "editor": {
+    "additionalOptions": "Autres options de mise en forme",
+    "alignCenter": "Centrer",
+    "alignLeft": "Aligner à gauche",
+    "alignRight": "Aligner à droite",
+    "bold": "Gras (Ctrl+B)",
+    "bulletedList": "Liste à puces",
+    "checklist": "Liste de tâches",
+    "decreaseFontSize": "Réduire la taille du texte",
+    "defaultFont": "Par défaut (Inter)",
+    "fontFamily": "Police",
+    "fontSize": "Taille du texte",
+    "groups": {
+      "alignment": "Alignement",
+      "formatting": "Mise en forme",
+      "lists": "Listes",
+      "styling": "Style"
+    },
+    "highlightColor": "Couleur de surlignage",
+    "increaseFontSize": "Augmenter la taille du texte",
+    "italic": "Italique (Ctrl+I)",
+    "justify": "Justifier",
+    "mixed": "Mixte",
+    "moreOptions": "Plus d’options de mise en forme",
+    "numberedList": "Liste numérotée",
+    "placeholder": "Commencez à rédiger votre note…",
+    "redo": "Rétablir",
+    "removeFormat": "Effacer la mise en forme",
+    "strikethrough": "Barré",
+    "textColor": "Couleur du texte",
+    "toggleCase": "Changer la casse",
+    "toolbar": "Barre de mise en forme du texte",
+    "underline": "Souligné (Ctrl+U)",
+    "undo": "Annuler"
+  },
+  "notes": {
+    "addNote": "Ajouter une note",
+    "backToAll": "Retour à toutes les notes",
+    "badges": {
+      "application": "Candidature",
+      "simulation": "Prise pendant une simulation"
+    },
+    "card": {
+      "updated": "Mise à jour : {{date}}"
+    },
+    "deleteModal": {
+      "message": "Voulez-vous vraiment supprimer cette note ? Cette action est irréversible.",
+      "title": "Supprimer la note"
+    },
+    "editor": {
+      "changeColor": "Changer la couleur de la note",
+      "delete": "Supprimer la note",
+      "editTitle": "Renommer la note",
+      "lastUpdated": "Dernière modification : {{date}}",
+      "loading": "Chargement de la note…",
+      "saveTitle": "Enregistrer le titre",
+      "share": "Partager la note",
+      "shareLabel": "Partager"
+    },
+    "empty": {
+      "cta": "Créer votre première note",
+      "description": "Créez votre première note pour commencer. Les notes vous aident à organiser vos idées et à préparer vos séances d’entraînement.",
+      "title": "Aucune note pour l’instant"
+    },
+    "emptyFilter": {
+      "cta": "Afficher toutes les notes",
+      "description": "Aucune note ne correspond à ce filtre. Choisissez un autre type ou créez une note.",
+      "title": "Aucune note de ce type"
+    },
+    "errors": {
+      "create": "Impossible de créer la note. Veuillez réessayer.",
+      "load": "Impossible de charger les notes. Veuillez réessayer."
+    },
+    "favorites": {
+      "add": "Ajouter aux favoris",
+      "favorite": "Favori",
+      "favorited": "Dans vos favoris",
+      "remove": "Retirer des favoris"
+    },
+    "filters": {
+      "all": "Toutes",
+      "application": "Candidature",
+      "general": "Générales",
+      "simulation": "Simulation"
+    },
+    "floating": {
+      "placeholder": "Écrivez ici…",
+      "save": "Enregistrer",
+      "title": "Notes"
+    },
+    "loading": "Chargement des notes…",
+    "showingFor": "Notes de <strong>{{application}}</strong>",
+    "simulationTitle": "Notes de simulation",
+    "subtitle": "Ajoutez des notes, partagez-les et retrouvez-les pendant vos entraînements.",
+    "thisApplication": "cette candidature",
+    "title": "Mes notes",
+    "untitled": "Note sans titre"
   }
 }
