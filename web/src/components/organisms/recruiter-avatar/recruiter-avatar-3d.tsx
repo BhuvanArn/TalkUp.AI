@@ -13,30 +13,14 @@ import { useTranslation } from 'react-i18next';
 import {
   AVATAR_LOAD_TIMEOUT_MS,
   fetchAvatarBlob,
+  toFallbackReasonKey,
   waitForElementSize,
   withTimeout,
 } from './avatar-loader';
 import RecruiterAvatarBackdrop from './recruiter-avatar-backdrop';
-import type {
-  RecruiterAvatar3DProps,
-  RecruiterFallbackReasonKey,
-} from './types';
+import type { RecruiterAvatar3DProps } from './types';
 
 type InitState = 'idle' | 'loading' | 'ready' | 'error';
-
-/** Timeouts reject with their reason key as the error message. */
-const TIMEOUT_REASON_KEYS = [
-  'recruiter.fallback.downloadTimeout',
-  'recruiter.fallback.parseTimeout',
-] as const satisfies readonly RecruiterFallbackReasonKey[];
-
-function toFallbackReasonKey(error: unknown): RecruiterFallbackReasonKey {
-  const message = error instanceof Error ? error.message : null;
-  return (
-    TIMEOUT_REASON_KEYS.find((key) => key === message) ??
-    'recruiter.fallback.loadFailed'
-  );
-}
 
 function applyCanvasStyles(container: HTMLElement) {
   const canvas = container.querySelector('canvas');
@@ -206,6 +190,7 @@ export function RecruiterAvatar3D({
       } catch (error) {
         if (generation !== loadGenerationRef.current) return;
         setInitState('error');
+        console.warn('3D avatar failed to load:', error);
         callbacksRef.current.onLoadError(toFallbackReasonKey(error));
         disposeHead();
       }
