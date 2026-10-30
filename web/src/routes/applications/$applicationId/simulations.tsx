@@ -2,6 +2,7 @@ import { iconMap } from '@/components/atoms/icon/icon-map';
 import { SimulationWorkspace } from '@/components/organisms/simulation-workspace';
 import { useApplications } from '@/services/applications/hooks';
 import { createAuthGuard } from '@/utils/auth.guards';
+import { formatJobAtCompany } from '@/utils/jobAtCompany';
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
@@ -45,14 +46,9 @@ function ApplicationSimulations() {
     (item) => item.applicationId === applicationId,
   );
 
-  const contextLabel = !application
-    ? undefined
-    : application.jobTitle && application.companyName
-      ? t('simulations.jobAtCompany', {
-          jobTitle: application.jobTitle,
-          companyName: application.companyName,
-        })
-      : application.jobTitle || application.companyName || '';
+  const contextLabel = application
+    ? formatJobAtCompany(application.jobTitle, application.companyName)
+    : undefined;
 
   if (isLoading) {
     return (

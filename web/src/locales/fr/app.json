@@ -98,7 +98,6 @@
       "viewAnalysis": "Voir l’analyse"
     },
     "interviewContext": "Contexte de l’entretien : {{label}}",
-    "jobAtCompany": "{{jobTitle}} chez {{companyName}}",
     "loadingContext": "Chargement du contexte de la candidature…",
     "queue": {
       "estimatedWait": "— attente estimée ~<strong>{{minutes}}</strong> min",
@@ -190,5 +189,118 @@
     },
     "status": "Statut :",
     "wsError": "Erreur WebSocket :"
+  },
+  "applications": {
+    "board": {
+      "emptyHints": {
+        "accepted": "Déposez une carte ici quand c’est gagné 🎉",
+        "interview": "Déposez une carte ici quand un entretien est prévu",
+        "rejected": "Les refus sont archivés ici. L’entraînement, lui, vous reste acquis",
+        "sent": "Déposez une carte ici, ou lancez une nouvelle analyse"
+      }
+    },
+    "card": {
+      "actions": "Actions sur la candidature",
+      "clearInterviewDate": "Effacer la date d’entretien",
+      "interviewDate": "Date d’entretien",
+      "interviewOn": "Entretien le {{date}}",
+      "moveTo": "Déplacer vers",
+      "noInterview": "Aucun entretien prévu",
+      "resumeTraining": "Reprendre l’entraînement",
+      "sentAgo": "Envoyée {{distance}}",
+      "unknownCompany": "Entreprise inconnue",
+      "unknownRole": "Poste non précisé"
+    },
+    "count_one": "{{count}} candidature",
+    "count_other": "{{count}} candidatures",
+    "deleteModal": {
+      "message": "Cette action supprime {{company}} et votre progression d’entraînement. Elle est irréversible.",
+      "messageUnnamed": "Cette action supprime cette candidature et votre progression d’entraînement. Elle est irréversible.",
+      "title": "Supprimer cette candidature ?"
+    },
+    "empty": {
+      "cta": "Lancer une analyse CV + offre",
+      "description": "Importez votre CV et une offre d’emploi qui vous intéresse : TalkUp crée votre candidature avec un parcours d’entraînement sur mesure.",
+      "title": "Aucune candidature pour l’instant"
+    },
+    "interviewPill": {
+      "add": "Ajouter une date d’entretien",
+      "date": "Entretien le {{date}}",
+      "daysLeft_one": "{{count}} jour restant",
+      "daysLeft_other": "{{count}} jours restants",
+      "edit": "Modifier",
+      "pace_one": "≈{{count}} sujet/semaine",
+      "pace_other": "≈{{count}} sujets/semaine"
+    },
+    "jobAtCompany": "{{jobTitle}} chez {{companyName}}",
+    "loadError": "Impossible de charger vos candidatures. Veuillez réessayer dans un instant.",
+    "loading": "Chargement…",
+    "new": "Nouvelle candidature",
+    "status": {
+      "accepted": "Acceptée",
+      "interview": "Entretien",
+      "rejected": "Refusée",
+      "sent": "Envoyée"
+    },
+    "title": "Candidatures",
+    "upcomingInterviews_one": "{{count}} entretien à venir",
+    "upcomingInterviews_other": "{{count}} entretiens à venir",
+    "analyticsTitle": "Statistiques"
+  },
+  "roadmap": {
+    "defaultHeading": "Parcours de préparation",
+    "emptyNoOffer": "Pas encore de parcours de préparation. Analysez d’abord une offre.",
+    "emptyWithOffer": "Impossible de créer un parcours à partir de cette offre pour l’instant : essayez « Régénérer ».",
+    "goToCvAnalysis": "Aller à l’analyse de CV",
+    "loadError": "Impossible de charger votre parcours de préparation.",
+    "loading": "Création de votre parcours de préparation…",
+    "myNotes": "Mes notes",
+    "priority": {
+      "high": "HAUTE",
+      "low": "BASSE",
+      "med": "MOYENNE"
+    },
+    "regenerate": "Régénérer",
+    "regenerateError": "Impossible de régénérer : réessayez dans une minute.",
+    "regenerating": "Régénération…",
+    "retrying": "Nouvelle tentative…",
+    "sources": "Sources",
+    "sourcesModal": {
+      "close": "Fermer les sources",
+      "cvSnapshotNote": "Extrait de votre CV au moment de l’analyse : le fichier d’origine n’est pas conservé.",
+      "cvUsed": "CV utilisé",
+      "dismiss": "Masquer les sources",
+      "education_one": "Formation ({{count}})",
+      "education_other": "Formations ({{count}})",
+      "experiences_one": "Expérience ({{count}})",
+      "experiences_other": "Expériences ({{count}})",
+      "jobOffer": "Offre d’emploi",
+      "noCv": "Aucun instantané de CV enregistré pour cette candidature.",
+      "noUrl": "URL indisponible",
+      "openJobOffer": "Ouvrir l’offre d’emploi",
+      "title": "Sources utilisées"
+    },
+    "startSimulation": "Lancer la simulation",
+    "tabs": {
+      "label": "Vues de la feuille de route",
+      "path": "Parcours de préparation",
+      "talking": "Points à aborder en entretien"
+    },
+    "talkingPoints": {
+      "description": "Des points à aborder tirés des missions du poste et rapprochés de votre expérience.",
+      "title": "À aborder pendant votre entretien"
+    },
+    "timeline": {
+      "goal": "Objectif : prêt pour le poste",
+      "goalBy": "Prêt pour le poste d’ici le {{date}}",
+      "matchScore": "Score de correspondance",
+      "matchScoreValue": "Score de correspondance {{score}} %"
+    },
+    "topic": {
+      "details": "Détails : {{title}}",
+      "gap": "Lacune à combler",
+      "readMore": "Lire la suite",
+      "step": "Étape {{step}}"
+    }
   }
 }

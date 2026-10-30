@@ -98,7 +98,6 @@
       "viewAnalysis": "View Analysis"
     },
     "interviewContext": "Interview context: {{label}}",
-    "jobAtCompany": "{{jobTitle}} at {{companyName}}",
     "loadingContext": "Loading application context…",
     "queue": {
       "estimatedWait": "— estimated wait ~<strong>{{minutes}}</strong> min",
@@ -190,5 +189,118 @@
     },
     "status": "Status:",
     "wsError": "WebSocket Error:"
+  },
+  "applications": {
+    "board": {
+      "emptyHints": {
+        "accepted": "Drop a card here when it's a win 🎉",
+        "interview": "Drop a card here when an interview is scheduled",
+        "rejected": "Rejections archive here. The training stays yours",
+        "sent": "Drop a card here, or start a new analysis"
+      }
+    },
+    "card": {
+      "actions": "Application actions",
+      "clearInterviewDate": "Clear interview date",
+      "interviewDate": "Interview date",
+      "interviewOn": "Interview on {{date}}",
+      "moveTo": "Move to",
+      "noInterview": "No interview scheduled",
+      "resumeTraining": "Resume training",
+      "sentAgo": "Sent {{distance}}",
+      "unknownCompany": "Unknown company",
+      "unknownRole": "Role not specified"
+    },
+    "count_one": "{{count}} application",
+    "count_other": "{{count}} applications",
+    "deleteModal": {
+      "message": "This removes {{company}} and its training progress. This action cannot be undone.",
+      "messageUnnamed": "This removes this application and its training progress. This action cannot be undone.",
+      "title": "Delete this application?"
+    },
+    "empty": {
+      "cta": "Start a CV + offer analysis",
+      "description": "Import your CV and a job offer that interests you, and TalkUp creates your application with a tailored training path.",
+      "title": "No applications yet"
+    },
+    "interviewPill": {
+      "add": "Add interview date",
+      "date": "Interview {{date}}",
+      "daysLeft_one": "{{count}} day left",
+      "daysLeft_other": "{{count}} days left",
+      "edit": "Edit",
+      "pace_one": "≈{{count}} topic/week",
+      "pace_other": "≈{{count}} topics/week"
+    },
+    "jobAtCompany": "{{jobTitle}} at {{companyName}}",
+    "loadError": "Couldn't load your applications. Please try again in a moment.",
+    "loading": "Loading…",
+    "new": "New application",
+    "status": {
+      "accepted": "Accepted",
+      "interview": "Interview",
+      "rejected": "Rejected",
+      "sent": "Sent"
+    },
+    "title": "Applications",
+    "upcomingInterviews_one": "{{count}} interview coming up",
+    "upcomingInterviews_other": "{{count}} interviews coming up",
+    "analyticsTitle": "Analytics"
+  },
+  "roadmap": {
+    "defaultHeading": "Preparation path",
+    "emptyNoOffer": "No preparation path yet. Analyze an offer first.",
+    "emptyWithOffer": "Couldn't build a path from this offer yet — try Regenerate.",
+    "goToCvAnalysis": "Go to CV analysis",
+    "loadError": "Could not load your preparation path.",
+    "loading": "Building your preparation path…",
+    "myNotes": "My notes",
+    "priority": {
+      "high": "HIGH",
+      "low": "LOW",
+      "med": "MED"
+    },
+    "regenerate": "Regenerate",
+    "regenerateError": "Couldn't regenerate — try again in a minute.",
+    "regenerating": "Regenerating…",
+    "retrying": "Retrying…",
+    "sources": "Sources",
+    "sourcesModal": {
+      "close": "Close sources",
+      "cvSnapshotNote": "Parsed from your CV at analysis time — the original file isn't stored.",
+      "cvUsed": "CV used",
+      "dismiss": "Dismiss sources",
+      "education_one": "Education ({{count}})",
+      "education_other": "Education ({{count}})",
+      "experiences_one": "Experiences ({{count}})",
+      "experiences_other": "Experiences ({{count}})",
+      "jobOffer": "Job offer",
+      "noCv": "No CV snapshot stored for this application.",
+      "noUrl": "URL not available",
+      "openJobOffer": "Open job offer",
+      "title": "Sources used"
+    },
+    "startSimulation": "Start simulation",
+    "tabs": {
+      "label": "Roadmap views",
+      "path": "Preparation path",
+      "talking": "Interview talking points"
+    },
+    "talkingPoints": {
+      "description": "Talking points from the role's responsibilities, matched to your experience.",
+      "title": "Bring these to your interview"
+    },
+    "timeline": {
+      "goal": "Job-ready goal",
+      "goalBy": "Job-ready by {{date}}",
+      "matchScore": "Match score",
+      "matchScoreValue": "Match score {{score}}%"
+    },
+    "topic": {
+      "details": "{{title}} details",
+      "gap": "Gap to close",
+      "readMore": "Read more",
+      "step": "Step {{step}}"
+    }
   }
 }

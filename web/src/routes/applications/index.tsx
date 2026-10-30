@@ -8,6 +8,7 @@ import {
 } from '@/services/applications/hooks';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { Link, createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/applications/')({
   beforeLoad: createAuthGuard('/applications'),
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/applications/')({
  * flow (/cv-analysis).
  */
 function ApplicationsPage() {
+  const { t } = useTranslation('app');
   const navigate = Route.useNavigate();
   const { data: applications, isLoading, isError } = useApplications();
   const updateStatus = useUpdateApplicationStatus();
@@ -56,13 +58,12 @@ function ApplicationsPage() {
     <div className="flex min-h-full flex-col p-6">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-h4 text-text">Applications</h2>
+          <h2 className="text-h4 text-text">{t('applications.title')}</h2>
           {hasApplications && (
             <p className="text-body-s text-text-weaker mt-1">
-              {applications!.length} application
-              {applications!.length > 1 ? 's' : ''}
+              {t('applications.count', { count: applications!.length })}
               {interviewCount > 0
-                ? ` · ${interviewCount} interview${interviewCount > 1 ? 's' : ''} coming up`
+                ? ` · ${t('applications.upcomingInterviews', { count: interviewCount })}`
                 : ''}
             </p>
           )}
@@ -75,17 +76,19 @@ function ApplicationsPage() {
             className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-lg px-4 py-2 text-white transition-colors"
           >
             <PlusIcon size={18} aria-hidden="true" />
-            New application
+            {t('applications.new')}
           </Link>
         )}
       </div>
 
-      {isLoading && <p className="text-body-m text-text-weaker">Loading…</p>}
+      {isLoading && (
+        <p className="text-body-m text-text-weaker">
+          {t('applications.loading')}
+        </p>
+      )}
 
       {isError && (
-        <p className="text-body-m text-error">
-          Couldn&apos;t load your applications. Please try again in a moment.
-        </p>
+        <p className="text-body-m text-error">{t('applications.loadError')}</p>
       )}
 
       {isEmpty && (
@@ -131,17 +134,16 @@ function ApplicationsPage() {
                 <ApplicationsIcon size={28} />
               </span>
               <p className="text-body-l-strong text-text">
-                No applications yet
+                {t('applications.empty.title')}
               </p>
               <p className="text-body-m text-text-weaker mt-2">
-                Import your CV and a job offer that interests you, and TalkUp
-                creates your application with a tailored training path.
+                {t('applications.empty.description')}
               </p>
               <Link
                 to="/cv-analysis"
                 className="text-button-m bg-accent hover:bg-accent-hover mt-5 rounded-lg px-5 py-2.5 text-white transition-colors"
               >
-                Start a CV + offer analysis
+                {t('applications.empty.cta')}
               </Link>
             </div>
           </div>
