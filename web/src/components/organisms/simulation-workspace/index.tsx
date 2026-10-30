@@ -287,15 +287,14 @@ export function SimulationWorkspace({
       : (runtimeFallbackReason ??
         capabilityFallbackReason ??
         t('recruiter.status.static'));
+  const heading = title ?? t('simulations.title');
 
   return (
     <div className="p-6 h-full">
       <div className="flex justify-between items-start mb-6">
         <div>
-          {(title ?? t('simulations.title')) ? (
-            <h1 className="text-2xl font-bold text-text">
-              {title ?? t('simulations.title')}
-            </h1>
+          {heading ? (
+            <h1 className="text-2xl font-bold text-text">{heading}</h1>
           ) : null}
           <p className="text-text-weak">
             {description ?? t('simulations.description')}

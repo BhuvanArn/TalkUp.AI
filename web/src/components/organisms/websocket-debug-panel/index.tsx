@@ -8,6 +8,32 @@ import { ReadyState } from 'react-use-websocket';
 
 import { WebSocketDebugPanelProps } from './types';
 
+const READY_STATE_RECORD = {
+  [ReadyState.CONNECTING]: {
+    labelKey: 'wsDebug.states.connecting',
+    color: 'text-yellow-600',
+  },
+  [ReadyState.OPEN]: {
+    labelKey: 'wsDebug.states.open',
+    color: 'text-green-600',
+  },
+  [ReadyState.CLOSING]: {
+    labelKey: 'wsDebug.states.closing',
+    color: 'text-red-600',
+  },
+  [ReadyState.CLOSED]: {
+    labelKey: 'wsDebug.states.closed',
+    color: 'text-red-600',
+  },
+  [ReadyState.UNINSTANTIATED]: {
+    labelKey: 'wsDebug.states.uninstantiated',
+    color: 'text-gray-600',
+  },
+} as const satisfies Record<
+  ReadyState,
+  { labelKey: ParseKeys<'app'>; color: string }
+>;
+
 /**
  * WebSocket Debug Panel
  * Remove it from the page when not needed
@@ -32,31 +58,6 @@ export function WebSocketDebugPanel({
   connectionAttempts,
 }: WebSocketDebugPanelProps) {
   const { t } = useTranslation('app');
-  const readyStateRecord: Record<
-    ReadyState,
-    { labelKey: ParseKeys<'app'>; color: string }
-  > = {
-    [ReadyState.CONNECTING]: {
-      labelKey: 'wsDebug.states.connecting',
-      color: 'text-yellow-600',
-    },
-    [ReadyState.OPEN]: {
-      labelKey: 'wsDebug.states.open',
-      color: 'text-green-600',
-    },
-    [ReadyState.CLOSING]: {
-      labelKey: 'wsDebug.states.closing',
-      color: 'text-red-600',
-    },
-    [ReadyState.CLOSED]: {
-      labelKey: 'wsDebug.states.closed',
-      color: 'text-red-600',
-    },
-    [ReadyState.UNINSTANTIATED]: {
-      labelKey: 'wsDebug.states.uninstantiated',
-      color: 'text-gray-600',
-    },
-  };
 
   return (
     <div className="space-y-6">
@@ -75,9 +76,9 @@ export function WebSocketDebugPanel({
         <div className="flex items-center gap-2 text-sm">
           <span className="text-gray-600">{t('wsDebug.status')}</span>
           <span
-            className={cn('font-medium', readyStateRecord[readyState].color)}
+            className={cn('font-medium', READY_STATE_RECORD[readyState].color)}
           >
-            {t(readyStateRecord[readyState].labelKey)}
+            {t(READY_STATE_RECORD[readyState].labelKey)}
           </span>
         </div>
         <div className="flex items-center gap-2 text-sm">

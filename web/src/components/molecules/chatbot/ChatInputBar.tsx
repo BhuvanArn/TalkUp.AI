@@ -58,7 +58,6 @@ export const ChatInputBar = ({
         value={value}
         onChange={onChange}
         onSend={handleSend}
-        placeholder={t('chat.input.placeholder')}
       />
 
       <Button
