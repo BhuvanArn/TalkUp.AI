@@ -1,5 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { changeLanguage } from '@/i18n';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import i18next from 'i18next';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import About, { Route } from './about';
 
@@ -94,5 +96,35 @@ describe('About route', () => {
     );
     expect(contactClicks).toEqual(['about']);
     document.removeEventListener('click', stayOnPage);
+  });
+});
+
+describe('About route in French', () => {
+  // setupTests pins English for every other test.
+  afterEach(async () => {
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders the page in French around the contact link', async () => {
+    await act(() => changeLanguage('fr'));
+    render(<About />);
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Nous avons créé le coach d’entretien que nous ne pouvions pas nous offrir.',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'L’équipe' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Des simulations en anglais')).toBeInTheDocument();
+    const link = screen.getByRole('link', {
+      name: 'contact.talkup.ai@gmail.com',
+    });
+    expect(link).toHaveAttribute('href', 'mailto:contact.talkup.ai@gmail.com');
+    expect(link.parentElement).toHaveTextContent(
+      'Écrivez-nous à contact.talkup.ai@gmail.com',
+    );
   });
 });

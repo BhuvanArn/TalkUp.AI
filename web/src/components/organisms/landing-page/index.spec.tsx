@@ -1,6 +1,8 @@
-import { render, screen, within } from '@testing-library/react';
+import { changeLanguage } from '@/i18n';
+import { act, render, screen, within } from '@testing-library/react';
+import i18next from 'i18next';
 import { StrictMode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import LandingPage from './index';
 
@@ -291,5 +293,112 @@ describe('LandingPage', () => {
       ['cta_click', { location: 'final', target: '/register' }],
       ['cta_click', { location: 'pricing_candidates', target: '/register' }],
     ]);
+  });
+});
+
+describe('LandingPage in French', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    usePublicStatsMock.mockReturnValue(statsResult(1284));
+    heroVariantMock.mockReturnValue('a');
+    await act(() => changeLanguage('fr'));
+  });
+
+  // setupTests pins English for every other test.
+  afterEach(async () => {
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it.each([
+    ['a', 'L’entretien avant l’entretien.'],
+    ['b', 'Parlez juste. Décrochez le poste.'],
+  ])(
+    'renders hero variant %s in French with an unchanged variant id',
+    (variant, headline) => {
+      heroVariantMock.mockReturnValue(variant);
+      render(<LandingPage />);
+      expect(
+        screen.getByRole('heading', { level: 1, name: headline }),
+      ).toBeInTheDocument();
+      expect(trackEventMock).toHaveBeenCalledWith('hero_view', {
+        heroVariant: variant,
+      });
+    },
+  );
+
+  it('keeps the CTA tracking locations and targets', () => {
+    const stayOnPage = (e: Event) => e.preventDefault(); // jsdom can't navigate
+    document.addEventListener('click', stayOnPage);
+    render(<LandingPage />);
+    const [hero] = screen.getAllByRole('link', {
+      name: 'Analyser mon CV et une offre',
+    });
+    hero.click();
+    screen.getByRole('link', { name: 'Voir comment ça marche' }).click();
+    expect(
+      trackEventMock.mock.calls.filter(([name]) => name === 'cta_click'),
+    ).toEqual([
+      ['cta_click', { location: 'hero', target: '/register' }],
+      ['cta_click', { location: 'hero', target: '#how' }],
+    ]);
+    document.removeEventListener('click', stayOnPage);
+  });
+
+  it('renders the sections and the pricing in French', () => {
+    render(<LandingPage />);
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: 'De l’offre d’emploi à l’entretien',
+      }),
+    ).toBeInTheDocument();
+    const pricing = document.getElementById('pricing') as HTMLElement;
+    expect(within(pricing).getAllByText('pendant la bêta')).toHaveLength(2);
+    expect(
+      within(pricing).getByRole('link', { name: 'Créer un compte' }),
+    ).toHaveAttribute('href', '/register');
+  });
+
+  it('formats the account count with French plurals and separators', () => {
+    render(<LandingPage />);
+    // fr-FR groups thousands with a narrow no-break space.
+    expect(screen.getByTestId('account-counter-hero')).toHaveTextContent(
+      /^1\s284 comptes vérifiés à ce jour$/,
+    );
+    expect(
+      within(screen.getByTestId('account-counter-hero')).getByText(/^1\s284$/),
+    ).toHaveClass('font-semibold');
+    expect(screen.getByTestId('account-counter-final')).toHaveTextContent(
+      /^Rejoignez les 1\s284 personnes qui se préparent déjà avec Talkup\.$/,
+    );
+  });
+
+  it('uses the French singular for a single account', () => {
+    usePublicStatsMock.mockReturnValue(statsResult(1));
+    render(<LandingPage />);
+    expect(screen.getByTestId('account-counter-hero')).toHaveTextContent(
+      /^1 compte vérifié à ce jour$/,
+    );
+  });
+
+  it('translates the decorative mocks', () => {
+    render(<LandingPage />);
+    const roadmap = screen.getByRole('img', {
+      name: /exemple de feuille de route/i,
+    });
+    expect(
+      within(roadmap).getByText('Lancer la simulation'),
+    ).toBeInTheDocument();
+    expect(within(roadmap).getByText('HAUTE')).toBeInTheDocument();
+    const verbal = screen.getByRole('img', { name: /analyse verbale/i });
+    expect(within(verbal).getByText('Clarté')).toBeInTheDocument();
+    const table = screen.getByRole('table', {
+      name: 'Exemple de tableau des membres',
+    });
+    expect(
+      within(table).getByRole('columnheader', { name: 'Dernière activité' }),
+    ).toBeInTheDocument();
+    expect(within(table).getAllByText('utilisateur')).toHaveLength(3);
   });
 });

@@ -1,25 +1,13 @@
+import { useLocale } from '@/hooks/i18n/useLocale';
 import { usePublicStats } from '@/hooks/stats/usePublicStats';
-
-const NUMBER_FORMAT = new Intl.NumberFormat('en-US');
+import { Trans } from 'react-i18next';
 
 type Variant = 'hero' | 'final';
 
-const PHRASES: Record<
-  Variant,
-  (count: number, number: React.ReactNode) => React.ReactNode
-> = {
-  hero: (count, number) => (
-    <>
-      {number} verified {count === 1 ? 'account' : 'accounts'} so far
-    </>
-  ),
-  final: (count, number) => (
-    <>
-      Join {number} {count === 1 ? 'person' : 'people'} already preparing with
-      Talkup.
-    </>
-  ),
-};
+const PHRASES = {
+  hero: 'accountCounter.hero',
+  final: 'accountCounter.final',
+} as const;
 
 interface AccountCounterProps {
   variant: Variant;
@@ -34,6 +22,7 @@ interface AccountCounterProps {
  */
 const AccountCounter = ({ variant, className = '' }: AccountCounterProps) => {
   const { data } = usePublicStats();
+  const { intlLocale } = useLocale();
   const count = data?.totalAccounts;
   const visible = typeof count === 'number' && count > 0;
 
@@ -42,13 +31,19 @@ const AccountCounter = ({ variant, className = '' }: AccountCounterProps) => {
       data-testid={`account-counter-${variant}`}
       className={`min-h-5 text-sm leading-5 text-text-weaker tabular-nums ${className}`}
     >
-      {visible &&
-        PHRASES[variant](
-          count,
-          <span className="font-semibold text-text">
-            {NUMBER_FORMAT.format(count)}
-          </span>,
-        )}
+      {visible && (
+        <Trans
+          ns="landing"
+          i18nKey={PHRASES[variant]}
+          count={count}
+          values={{
+            formatted: new Intl.NumberFormat(intlLocale).format(count),
+          }}
+          components={{
+            number: <span className="font-semibold text-text" />,
+          }}
+        />
+      )}
     </p>
   );
 };

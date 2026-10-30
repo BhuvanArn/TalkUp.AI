@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import NotFoundPage from './-not-found';
 
@@ -27,6 +28,7 @@ const PUBLIC_SHELL_PATHS = new Set<string>([
 ]);
 
 const RootComponent = () => {
+  const { t } = useTranslation('landing');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = useRouterState({
     select: (s) => s.resolvedLocation?.pathname ?? s.location.pathname,
@@ -72,7 +74,7 @@ const RootComponent = () => {
           className="min-h-screen w-full bg-background"
           role="status"
           aria-busy="true"
-          aria-label="Loading"
+          aria-label={t('notFound.loading')}
           data-testid="not-found-pending"
         />
       );

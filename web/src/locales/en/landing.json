@@ -1,1 +1,387 @@
-{}
+{
+  "links": {
+    "howItWorks": "How it works",
+    "forSchools": "For schools",
+    "pricing": "Pricing",
+    "about": "About",
+    "privacy": "Privacy"
+  },
+  "actions": {
+    "logIn": "Log in",
+    "createAccount": "Create an account",
+    "createOrganization": "Create an organization",
+    "analyzeCv": "Analyze my CV and an offer",
+    "openApp": "Open the app"
+  },
+  "nav": {
+    "label": "Main",
+    "home": "TalkUp home",
+    "toggleMenu": "Toggle menu",
+    "menu": "Menu"
+  },
+  "footer": {
+    "tagline": "Interview preparation built by four Epitech students. © {{year}} Talkup.",
+    "socialLinks": "Social links",
+    "product": "Product",
+    "company": "Company"
+  },
+  "notFound": {
+    "loading": "Loading",
+    "title": "Page not found",
+    "description": "This page doesn't exist, or it moved somewhere else. Check the address, or head back to familiar ground.",
+    "goHome": "Go home",
+    "goBack": "Go back"
+  },
+  "hero": {
+    "headline": {
+      "a": "The interview before the interview.",
+      "b": "Speak right. Land the job."
+    },
+    "lead": "Add your CV and the link to the job offer. Talkup builds a prep path for that exact role, then interviews you out loud with an AI recruiter who has read both.",
+    "secondaryCta": "See how it works",
+    "fine": "CV in PDF. Simulations are held in French for now."
+  },
+  "accountCounter": {
+    "hero_one": "<number>{{formatted}}</number> verified account so far",
+    "hero_other": "<number>{{formatted}}</number> verified accounts so far",
+    "final_one": "Join <number>{{formatted}}</number> person already preparing with Talkup.",
+    "final_other": "Join <number>{{formatted}}</number> people already preparing with Talkup."
+  },
+  "roadmapMock": {
+    "label": "Example roadmap for a Junior Backend Developer apprenticeship: match score 72, interview on October 23, three preparation topics ranked by priority.",
+    "company": "Atelier Nord · Lyon · Apprenticeship",
+    "role": "Junior Backend Developer",
+    "interviewDate": "Interview Oct 23",
+    "daysLeft": "5 days left",
+    "pace": "≈4 topics/week",
+    "pathTab": "Preparation path",
+    "talkingPointsTab": "Interview talking points",
+    "priority": {
+      "HIGH": "HIGH",
+      "MED": "MED",
+      "LOW": "LOW"
+    },
+    "gap": "Gap",
+    "path": {
+      "postgres": {
+        "title": "PostgreSQL indexing and queries",
+        "detail": "Listed as required. Your CV only mentions MongoDB."
+      },
+      "unitTests": {
+        "title": "Writing unit tests in Node.js",
+        "detail": "You used Jest on one school project. Prepare a concrete example."
+      },
+      "apprenticeship": {
+        "title": "Why an apprenticeship",
+        "detail": "The offer stresses long-term team fit."
+      }
+    },
+    "jobReady": "Job-ready by Oct 23",
+    "startSimulation": "Start simulation",
+    "notes": "My notes",
+    "sources": "Sources"
+  },
+  "problem": {
+    "statement": "A strong profile can still lose the job in a bad interview.",
+    "stress": {
+      "term": "Stress",
+      "detail": "You know your background by heart, then lose your footing at the second question."
+    },
+    "improvising": {
+      "term": "Improvising",
+      "detail": "\"Tell me about a mistake you made.\" Without preparation, the answer goes everywhere."
+    },
+    "noFeedback": {
+      "term": "No feedback",
+      "detail": "After a rejection, nobody tells you what went wrong, so you repeat it at the next one."
+    }
+  },
+  "howItWorks": {
+    "title": "From job offer to interview",
+    "lead": "Each application gets its own preparation, built from the offer and your CV.",
+    "analyze": {
+      "title": "Analyze",
+      "body": "Drop your CV and paste the offer link from LinkedIn or Welcome to the Jungle. Talkup compares them and gives you a match score.",
+      "where": "Compatibility analysis"
+    },
+    "prepare": {
+      "title": "Prepare",
+      "body": "Get a preparation path ranked by priority, with the gaps flagged, and talking points that pair each mission with something from your CV.",
+      "where": "Roadmap"
+    },
+    "rehearse": {
+      "title": "Rehearse",
+      "body": "Talk with Sophie, the AI recruiter. She asks about this role and your background, out loud, and follows up on your answers.",
+      "where": "Voice simulation"
+    },
+    "adjust": {
+      "title": "Adjust",
+      "body": "See your scores move as you speak, take notes during the call, and ask the assistant what to work on next.",
+      "where": "Live analysis, notes, assistant"
+    }
+  },
+  "liveFeedback": {
+    "title": "Feedback while you speak",
+    "lead": "Each answer is scored as soon as you finish it. You see which habits to drop before the next question.",
+    "facts": {
+      "scores": "Clarity, politeness and vocabulary scores for every answer",
+      "register": "Register detection: professional, neutral or too casual",
+      "tics": "Your most frequent verbal tics, named",
+      "tip": "One concrete tip after each answer"
+    }
+  },
+  "verbalMock": {
+    "label": "Example of the live verbal analysis panel: session score 74 out of 100, clarity 68, politeness 91, vocabulary 63, an alert about filler words and a live tip.",
+    "title": "Verbal analysis",
+    "outOf": "/ 100 session",
+    "scores": {
+      "clarity": "Clarity",
+      "politeness": "Politeness",
+      "vocabulary": "Vocabulary"
+    },
+    "register": "Register: Professional · <turn>Turn 6</turn>",
+    "alertTitle": "Alert",
+    "alert": "Many filler words detected.",
+    "tipTitle": "Live tip",
+    "tip": "Pause briefly instead of saying “euh” or “genre”.",
+    "frequentTics": "Frequent tics",
+    "ai": "AI",
+    "you": "You"
+  },
+  "talkingPoints": {
+    "title": "Know what to bring up",
+    "lead": "For every mission in the offer, Talkup suggests the part of your experience that answers it. Check the sources it used at any time.",
+    "listLabel": "Example interview talking points",
+    "mission": "Mission · {{mission}}",
+    "api": {
+      "mission": "Maintain and extend our REST API",
+      "answer": "Your end-of-year project: a Node.js API used by 40 students, which you deployed and monitored."
+    },
+    "pairing": {
+      "mission": "Work in pairs with a senior developer",
+      "answer": "Your hackathon team of four, where you handled code reviews."
+    },
+    "tests": {
+      "mission": "Write automated tests",
+      "answer": "The Jest suite you added to your school project. Say what it caught."
+    }
+  },
+  "audiences": {
+    "title": "Built for people with everything to prove out loud",
+    "students": {
+      "title": "Students",
+      "body": "First internship or apprenticeship. You've never done a real interview."
+    },
+    "graduates": {
+      "title": "Recent graduates",
+      "body": "First job. Interviews keep coming and you want to know why they stall."
+    },
+    "careerChangers": {
+      "title": "Career changers",
+      "body": "New field, new vocabulary. You need to tell your story differently."
+    }
+  },
+  "organizations": {
+    "title": "For schools, bootcamps and career services",
+    "lead": "Create an organization, send invite codes, and follow how each member is preparing.",
+    "features": {
+      "invites": "Invite codes by email, with a role for each person",
+      "roles": "Admin, employee and user roles",
+      "stats": "Interviews, completion and average score per member"
+    },
+    "inviteCode": "I have an invite code"
+  },
+  "membersMock": {
+    "regionLabel": "Example members table, scrollable",
+    "tableLabel": "Example members table",
+    "headers": {
+      "member": "Member",
+      "role": "Role",
+      "interviews": "Interviews",
+      "completed": "Completed",
+      "avgScore": "Avg score",
+      "lastActivity": "Last activity"
+    },
+    "roles": {
+      "user": "user",
+      "employee": "employee"
+    },
+    "lastActivity": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "oct12": "Oct 12",
+      "oct17": "Oct 17"
+    },
+    "noScore": "No score yet"
+  },
+  "pricing": {
+    "title": "Pricing",
+    "lead": "Talkup is free while in beta. Paid plans will come later, and we'll announce them before anything changes.",
+    "free": "Free",
+    "duringBeta": "during the beta",
+    "candidates": {
+      "name": "Candidates",
+      "features": {
+        "analysis": "CV and job offer analysis",
+        "path": "Preparation path and talking points",
+        "simulations": "Voice simulations with live analysis",
+        "tools": "Notes, agenda and assistant"
+      }
+    },
+    "orgs": {
+      "name": "Organizations",
+      "features": {
+        "invites": "Organization with invite codes",
+        "roles": "Admin, employee and user roles",
+        "stats": "Progress stats for each member"
+      }
+    },
+    "queue": "Simulations run on shared servers. At busy times you may wait in a short queue before your session starts."
+  },
+  "finalCta": {
+    "title": "Speak with confidence. Land the job."
+  },
+  "about": {
+    "title": "We built the interview coach we couldn't afford.",
+    "lead": "Talkup started as our Epitech Innovative Project. We kept seeing friends with good profiles lose internships at the interview stage, with no idea what went wrong. Coaching exists, but it's expensive and rarely tied to the job you're applying for.",
+    "valuesLabel": "Our values",
+    "values": {
+      "accessible": {
+        "title": "Accessible",
+        "body": "Practice shouldn't depend on paying a coach. Talkup is free while in beta."
+      },
+      "personal": {
+        "title": "Personal",
+        "body": "Every preparation starts from your CV and a real job offer, not a generic question list."
+      },
+      "concrete": {
+        "title": "Concrete",
+        "body": "Feedback names the habit to change: a verbal tic, a casual register, too many filler words."
+      }
+    },
+    "team": {
+      "title": "The team",
+      "roles": {
+        "ziane": "Frontend developer, communication lead",
+        "toavina": "AI engineer, data analyst, DevOps",
+        "regine": "Backend, server lead",
+        "bhuvan": "Frontend, backend, DevOps"
+      }
+    },
+    "status": {
+      "title": "Where we are",
+      "workingToday": "Working today",
+      "next": "Next",
+      "working": {
+        "analysis": "CV and job offer analysis with a match score",
+        "path": "Preparation path and interview talking points",
+        "simulations": "Voice simulations in French with live verbal analysis",
+        "board": "Application board, notes, agenda and assistant",
+        "orgs": "Organizations with invite codes and member stats"
+      },
+      "upcoming": {
+        "report": "A report after each simulation, and progress over time",
+        "english": "Simulations in English",
+        "reliability": "Faster, more reliable AI sessions"
+      }
+    },
+    "contact": {
+      "question": "Questions, a school partnership, or feedback on the beta?",
+      "writeTo": "Write to us at <email>{{email}}</email>"
+    }
+  },
+  "privacy": {
+    "eyebrow": "Legal",
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: {{date}}",
+    "sections": {
+      "introduction": {
+        "title": "1. Introduction",
+        "p1": "TalkUp.AI (\"TalkUp\", \"we\", \"us\") helps candidates prepare for interviews through AI-powered simulations, CV analysis, coaching tools, and related career features.",
+        "p2": "This Privacy Policy explains what personal data we collect, why we use it, how long we keep it, and what rights you have. By creating an account or using TalkUp, you acknowledge that you have read this policy."
+      },
+      "controller": {
+        "title": "2. Data controller",
+        "p1": "TalkUp.AI is the data controller for the personal data processed through our platform.",
+        "p2": "For privacy-related requests, contact us at contact.talkup.ai@gmail.com. We are based in Paris, France."
+      },
+      "collected": {
+        "title": "3. Personal data we collect",
+        "p1": "Depending on how you use TalkUp, we may process the following categories of data:",
+        "list": {
+          "account": "Account information: name, email address, password hash, and profile details you choose to provide.",
+          "career": "Career data: CV or résumé files, parsed CV content, job applications, target roles, notes, and interview preparation history.",
+          "simulation": "Simulation data: audio, video, transcripts, and behavioral feedback generated during mock interviews.",
+          "usage": "Usage data: pages visited, features used, device and browser information, and approximate log timestamps.",
+          "communication": "Communication data: messages you send to our support team or through in-app coaching features."
+        }
+      },
+      "use": {
+        "title": "4. How we use your data",
+        "p1": "We use personal data to:",
+        "list": {
+          "account": "Create and manage your account.",
+          "analysis": "Analyze your CV against job offers and generate compatibility insights.",
+          "simulations": "Run interview simulations and provide personalized feedback.",
+          "history": "Save your notes, applications, agenda items, and progression over time.",
+          "improvement": "Improve product reliability, security, and user experience.",
+          "support": "Respond to support requests and send essential service communications.",
+          "legal": "Comply with legal obligations and enforce our terms."
+        }
+      },
+      "legalBasis": {
+        "title": "5. Legal basis for processing",
+        "p1": "Where applicable under the GDPR, we rely on one or more of the following legal bases:",
+        "list": {
+          "contract": "Performance of a contract — to provide the TalkUp services you sign up for.",
+          "consent": "Consent — for example, when you upload a CV for analysis or enable optional features.",
+          "legitimateInterests": "Legitimate interests — to secure our platform, prevent abuse, and improve our product, balanced against your rights.",
+          "legalObligation": "Legal obligation — when we must retain or disclose data to comply with applicable law."
+        }
+      },
+      "ai": {
+        "title": "6. AI processing",
+        "p1": "TalkUp uses artificial intelligence to parse CVs, extract job-offer details, generate interview questions, analyze responses, and produce coaching feedback.",
+        "p2": "Your content may be processed by automated systems to deliver these features. We do not use your personal data to train public third-party models unless we explicitly tell you otherwise and obtain your consent where required."
+      },
+      "sharing": {
+        "title": "7. Sharing and subprocessors",
+        "p1": "We do not sell your personal data. We may share data with trusted service providers that help us host the platform, send emails, process AI workloads, or provide analytics — only under contracts that require appropriate safeguards.",
+        "p2": "We may also disclose data if required by law, to protect the rights and safety of TalkUp and its users, or in connection with a merger, acquisition, or asset sale subject to continued protection of your information."
+      },
+      "retention": {
+        "title": "8. Data retention",
+        "p1": "We keep personal data only for as long as necessary to provide the service, meet legal requirements, or resolve disputes.",
+        "p2": "You may delete your account at any time. When you do, we delete or anonymize your personal data within a reasonable period, except where retention is required by law or for legitimate backup and security purposes."
+      },
+      "rights": {
+        "title": "9. Your rights",
+        "p1": "Depending on your location, you may have the right to access, rectify, erase, restrict, or object to certain processing of your personal data, as well as the right to data portability.",
+        "p2": "You can update much of your information directly in your account settings. To exercise other rights, email contact.talkup.ai@gmail.com. You may also lodge a complaint with your local supervisory authority."
+      },
+      "security": {
+        "title": "10. Security",
+        "p1": "We implement technical and organizational measures designed to protect personal data against unauthorized access, loss, or misuse. No online service can guarantee absolute security, but we work continuously to reduce risk."
+      },
+      "cookies": {
+        "title": "11. Cookies and similar technologies",
+        "p1": "TalkUp uses cookies and similar technologies to keep you signed in, remember preferences, and understand how the product is used.",
+        "p2": "For more detail on the cookies we use and how to manage them, see our Cookies policy (coming soon).",
+        "p3": "Analytics: on our public pages (home, about, privacy, sign-in and sign-up), we measure visits and a few anonymous actions, such as clicking a sign-up button or completing registration, with Umami, a privacy-friendly analytics service. Umami sets no cookies and stores no personal data: visitors are counted with a salted hash that changes regularly, and we never send your name, email or account identifiers. Query strings are removed from page addresses before they are sent. This helps us understand which parts of the site are useful, based on our legitimate interest. Blocking the Umami script, for example with an ad blocker, has no effect on how TalkUp works.",
+        "p4": "To compare two headlines on the home page, your browser stores which one you were shown (the letter a or b and the date); after 13 months it is ignored and deleted on your next visit. It contains no personal data and is never used to identify you."
+      },
+      "transfers": {
+        "title": "12. International transfers",
+        "p1": "Your data may be processed in the European Economic Area and, where necessary, in other countries with appropriate safeguards such as standard contractual clauses or equivalent mechanisms."
+      },
+      "changes": {
+        "title": "13. Changes to this policy",
+        "p1": "We may update this Privacy Policy from time to time. When we make material changes, we will post the updated version on this page and adjust the \"Last updated\" date. Continued use of TalkUp after an update means you accept the revised policy."
+      },
+      "contact": {
+        "title": "14. Contact",
+        "p1": "Questions about this Privacy Policy or your personal data? Email us at contact.talkup.ai@gmail.com."
+      }
+    }
+  }
+}
