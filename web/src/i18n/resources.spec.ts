@@ -14,6 +14,22 @@ const leaves = (value: object, prefix = ''): [string, unknown][] =>
 
 const keysOf = (value: object) => leaves(value).map(([key]) => key);
 
+/**
+ * `<Trans>` tags (keeping the self-closing `/`) and `{{variables}}` of a
+ * string, sorted: word order may differ between languages, the set may not.
+ */
+const placeholders = (value: unknown) =>
+  typeof value === 'string'
+    ? [
+        ...[...value.matchAll(/<\/?[\w-]+\s*\/?>/g)].map(([tag]) =>
+          tag.replace(/\s+/g, ''),
+        ),
+        ...[...value.matchAll(/{{\s*([\w.]+)[^}]*}}/g)].map(
+          ([, name]) => `{{${name}}}`,
+        ),
+      ].sort()
+    : [];
+
 describe('translation resources', () => {
   it.each(SUPPORTED_LANGUAGES)('registers every namespace in %s', (lng) => {
     expect(Object.keys(resources[lng]).sort()).toEqual([...NAMESPACES].sort());
@@ -31,6 +47,20 @@ describe('translation resources', () => {
 
     it('has every fr key in en', () => {
       expect(frKeys.filter((key) => !enKeys.includes(key))).toEqual([]);
+    });
+
+    // A missing `{{variable}}`, or `<tag/>` written as `<tag></tag>` (which
+    // drops the child a component passes in), would otherwise fail silently.
+    it('uses the same tags and variables in en and fr', () => {
+      const fr = Object.fromEntries(leaves(resources.fr[ns]));
+      const mismatched = leaves(resources.en[ns])
+        .filter(([key]) => key in fr)
+        .filter(
+          ([key, value]) =>
+            placeholders(value).join() !== placeholders(fr[key]).join(),
+        )
+        .map(([key]) => key);
+      expect(mismatched).toEqual([]);
     });
 
     it.each(SUPPORTED_LANGUAGES)('has only non-empty strings in %s', (lng) => {
