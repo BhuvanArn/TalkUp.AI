@@ -9,10 +9,6 @@ import { useTranslation } from 'react-i18next';
 /** Job titles offered in the selector. `value` is what the profile stores. */
 const JOB_OPTIONS = [
   {
-    value: 'Product Manager Candidate',
-    labelKey: 'generalSettings.jobOptions.productManagerCandidate',
-  },
-  {
     value: 'Product Designer',
     labelKey: 'generalSettings.jobOptions.productDesigner',
   },
@@ -81,7 +77,15 @@ export function GeneralSettings({
       value,
       label: t(labelKey),
     }));
-    if (!jobTitle || options.some((o) => o.value === jobTitle)) {
+    // No title yet: an empty first option, so the selector does not show (and
+    // a save does not store) a title the user never picked.
+    if (!jobTitle) {
+      return [
+        { value: '', label: t('generalSettings.jobTitlePlaceholder') },
+        ...options,
+      ];
+    }
+    if (options.some((o) => o.value === jobTitle)) {
       return options;
     }
     return [{ value: jobTitle, label: jobTitle }, ...options];

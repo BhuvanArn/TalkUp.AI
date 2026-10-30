@@ -47,7 +47,6 @@ export const Route = createFileRoute('/profile')({
 });
 
 const THEME_ACCENT = '#2B70C9';
-const DEFAULT_JOB_TITLE = 'Product Manager Candidate';
 const SECURITY_SIGNIN_PREF_KEY = 'securityEmailOnNewDevice';
 /** Placeholder goal progress shown in the side card (0–1). */
 const GOAL_PROGRESS = 0.78;
@@ -150,7 +149,7 @@ function profileToSnapshot(p: UserProfile): ProfileSnapshot {
     bio: p.bio ?? '',
     phoneNumber: p.phone ?? '',
     linkedinUrl: p.linkedinUrl ?? '',
-    jobTitle: p.jobTitle ?? DEFAULT_JOB_TITLE,
+    jobTitle: p.jobTitle ?? '',
     avatarColor: p.avatarAccentColor ?? THEME_ACCENT,
     bannerGradient: p.bannerGradient ?? BANNER_PRESETS[0].value,
     profileVisibility: p.profileVisibility,
@@ -213,7 +212,7 @@ const emptySnapshot = (): ProfileSnapshot => ({
   bio: '',
   phoneNumber: '',
   linkedinUrl: '',
-  jobTitle: DEFAULT_JOB_TITLE,
+  jobTitle: '',
   avatarColor: THEME_ACCENT,
   bannerGradient: BANNER_PRESETS[0].value,
   profileVisibility: 'public',
@@ -236,7 +235,7 @@ function Profile() {
   const [bio, setBio] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [jobTitle, setJobTitle] = useState(DEFAULT_JOB_TITLE);
+  const [jobTitle, setJobTitle] = useState('');
   const [accountUsername, setAccountUsername] = useState('');
   const [avatarColor, setAvatarColor] = useState(THEME_ACCENT);
   const [bannerGradient, setBanner] = useState<string>(BANNER_PRESETS[0].value);

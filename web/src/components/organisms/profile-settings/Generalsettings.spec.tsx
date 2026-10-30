@@ -261,11 +261,22 @@ describe('GeneralSettings', () => {
       ).toBeInTheDocument();
     });
 
-    it('has Product Manager Candidate as default option', () => {
+    it('keeps a stored title that is not in the list as the selected option', () => {
       render(<GeneralSettings {...defaultProps} />);
       expect(screen.getByLabelText('Job title')).toHaveValue(
         'Product Manager Candidate',
       );
+      expect(
+        screen.queryByRole('option', { name: 'Select a job title' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('selects an empty placeholder when no title is stored', () => {
+      render(<GeneralSettings {...defaultProps} jobTitle="" />);
+      expect(screen.getByLabelText('Job title')).toHaveValue('');
+      expect(
+        screen.getByRole('option', { name: 'Select a job title' }),
+      ).toBeInTheDocument();
     });
   });
 });
