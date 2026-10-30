@@ -24,7 +24,7 @@
   },
   "languageSwitcher": {
     "switchTo": "Passer en",
-    "current": "(langue actuelle : {{current}})"
+    "current": "(langue actuelle : {{current}})"
   },
   "avatar": {
     "alt": "Avatar"
