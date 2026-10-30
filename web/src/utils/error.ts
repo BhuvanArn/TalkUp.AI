@@ -1,3 +1,5 @@
+import i18next from 'i18next';
+
 /**
  * Type representing various error shapes we might encounter
  */
@@ -58,7 +60,7 @@ const hasMessage = (error: unknown): error is ErrorWithMessage => {
  */
 export const extractErrorMessage = (
   error: ErrorInput,
-  fallback = 'An error occurred. Please try again.',
+  fallback: string = i18next.t('common:errors.fallback'),
 ): string => {
   if (!error) return fallback;
 

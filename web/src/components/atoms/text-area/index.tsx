@@ -1,5 +1,6 @@
 import { cn } from '@/utils/cn';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface TextAreaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -42,7 +43,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
   id,
   value = '',
   name = 'textarea',
-  placeholder = 'Enter text',
+  placeholder,
   rows = 3,
   cols = 50,
   resize = true,
@@ -53,6 +54,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
   className,
   ...rest
 }) => {
+  const { t } = useTranslation();
   const resizeClass = disabled
     ? 'resize-none'
     : resize
@@ -64,7 +66,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
       {...rest}
       id={id}
       name={name}
-      placeholder={placeholder}
+      placeholder={placeholder ?? t('input.placeholder')}
       value={value}
       onChange={onChange}
       disabled={disabled}

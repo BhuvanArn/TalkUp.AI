@@ -1,6 +1,7 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ConfirmModalProps } from './types';
 
@@ -38,13 +39,15 @@ export const ConfirmModal = ({
   isOpen,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   confirmColor = 'error',
   icon = 'warning',
   onConfirm,
   onCancel,
 }: ConfirmModalProps) => {
+  const { t } = useTranslation();
+
   // Handle ESC key to close modal
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -94,7 +97,7 @@ export const ConfirmModal = ({
         type="button"
         className="absolute inset-0 bg-scrim/50 transition-opacity"
         onClick={onCancel}
-        aria-label="Close modal"
+        aria-label={t('confirmModal.close')}
       />
 
       <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-fadeIn">
@@ -127,7 +130,7 @@ export const ConfirmModal = ({
               onClick={onCancel}
               className="flex-1"
             >
-              {cancelLabel}
+              {cancelLabel ?? t('actions.cancel')}
             </Button>
             <Button
               variant="contained"
@@ -135,7 +138,7 @@ export const ConfirmModal = ({
               onClick={onConfirm}
               className="flex-1"
             >
-              {confirmLabel}
+              {confirmLabel ?? t('actions.confirm')}
             </Button>
           </div>
         </div>

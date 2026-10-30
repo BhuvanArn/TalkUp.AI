@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -17,9 +18,11 @@ const ConfirmationModal = ({
   message,
   onConfirm,
   onCancel,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText,
+  cancelText,
 }: ConfirmationModalProps) => {
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -65,14 +68,14 @@ const ConfirmationModal = ({
             onClick={onCancel}
             className="h-10 px-4 rounded-md border border-border text-idle hover:bg-surface-raised hover:text-active transition-colors"
           >
-            {cancelText}
+            {cancelText ?? t('actions.cancel')}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             className="h-10 px-4 rounded-md bg-danger text-white hover:opacity-90 transition-opacity"
           >
-            {confirmText}
+            {confirmText ?? t('actions.confirm')}
           </button>
         </div>
       </div>

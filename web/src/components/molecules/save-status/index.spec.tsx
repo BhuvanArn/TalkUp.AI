@@ -1,5 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { changeLanguage } from '@/i18n';
+import { act, render, screen } from '@testing-library/react';
+import i18next from 'i18next';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { SaveStatus } from './index';
 import type { SaveStatusType } from './index';
@@ -307,5 +309,24 @@ describe('SaveStatus', () => {
       const element = container.querySelector('.text-error');
       expect(element).toBeInTheDocument();
     });
+  });
+});
+
+describe('SaveStatus in French', () => {
+  afterEach(async () => {
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders the French labels', async () => {
+    await act(() => changeLanguage('fr'));
+    const { rerender } = render(<SaveStatus status="unsaved" />);
+
+    expect(
+      screen.getByText('Modifications non enregistrées'),
+    ).toBeInTheDocument();
+
+    rerender(<SaveStatus status="error" />);
+    expect(screen.getByText('Échec de l’enregistrement')).toBeInTheDocument();
   });
 });

@@ -15,7 +15,8 @@
   },
   "errors": {
     "generic": "Une erreur est survenue. Veuillez réessayer.",
-    "network": "Erreur réseau. Vérifiez votre connexion et réessayez."
+    "network": "Erreur réseau. Vérifiez votre connexion et réessayez.",
+    "fallback": "Une erreur est survenue. Veuillez réessayer."
   },
   "languages": {
     "en": "English",
@@ -24,5 +25,43 @@
   "languageSwitcher": {
     "switchTo": "Passer en",
     "current": "(langue actuelle : {{current}})"
+  },
+  "avatar": {
+    "alt": "Avatar"
+  },
+  "colorPicker": {
+    "title": "Choisir une couleur",
+    "select": {
+      "blue": "Choisir le bleu",
+      "green": "Choisir le vert",
+      "red": "Choisir le rouge",
+      "yellow": "Choisir le jaune"
+    }
+  },
+  "confirmModal": {
+    "close": "Fermer la fenêtre"
+  },
+  "input": {
+    "placeholder": "Saisissez du texte"
+  },
+  "notificationBanner": {
+    "dismiss": "Masquer la notification"
+  },
+  "saveStatus": {
+    "saving": "Enregistrement…",
+    "saved": "Enregistré",
+    "unsaved": "Modifications non enregistrées",
+    "error": "Échec de l’enregistrement"
+  },
+  "themeToggle": {
+    "toggle": "Changer de thème",
+    "dark": "Mode sombre",
+    "light": "Mode clair"
+  },
+  "unsavedChanges": {
+    "message": "Vous avez des modifications non enregistrées",
+    "save": "Enregistrer les modifications",
+    "saved": "Enregistré",
+    "reset": "Réinitialiser"
   }
 }
