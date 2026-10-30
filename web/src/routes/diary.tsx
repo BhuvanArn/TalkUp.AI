@@ -87,7 +87,7 @@ function Diary() {
         name="phoneInput"
         id="phoneInput"
         helperText={t('diary.phone.helper')}
-        placeholder="+1234567890"
+        placeholder={t('diary.phone.placeholder')}
         type="tel"
         value={phoneValue}
         onChange={(e: InputChangeEvent) => setPhoneValue(e.target.value)}

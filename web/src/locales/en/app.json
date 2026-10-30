@@ -117,7 +117,6 @@
     },
     "jobAtCompany": "{{jobTitle}} at {{companyName}}",
     "loadError": "Couldn't load your applications. Please try again in a moment.",
-    "loading": "Loading…",
     "new": "New application",
     "status": {
       "accepted": "Accepted",
@@ -245,7 +244,8 @@
       "label": "Subscribe to our Newsletter"
     },
     "phone": {
-      "helper": "Your phone number, including country code (e.g., +1234567890)."
+      "helper": "Your phone number, including country code (e.g., +1234567890).",
+      "placeholder": "+1234567890"
     },
     "project": {
       "helper": "Provide a brief description of your project (max 200 characters).",
@@ -273,8 +273,10 @@
     "fontSize": "Font Size",
     "groups": {
       "alignment": "Alignment",
+      "font": "Font",
       "formatting": "Formatting",
       "lists": "Lists",
+      "size": "Size",
       "styling": "Styling"
     },
     "highlightColor": "Highlight Color",

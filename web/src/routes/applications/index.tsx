@@ -21,7 +21,7 @@ export const Route = createFileRoute('/applications/')({
  * flow (/cv-analysis).
  */
 function ApplicationsPage() {
-  const { t } = useTranslation('app');
+  const { t } = useTranslation(['app', 'common']);
   const navigate = Route.useNavigate();
   const { data: applications, isLoading, isError } = useApplications();
   const updateStatus = useUpdateApplicationStatus();
@@ -83,7 +83,7 @@ function ApplicationsPage() {
 
       {isLoading && (
         <p className="text-body-m text-text-weaker">
-          {t('applications.loading')}
+          {t('common:status.loading')}
         </p>
       )}
 

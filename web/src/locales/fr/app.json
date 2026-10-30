@@ -117,7 +117,6 @@
     },
     "jobAtCompany": "{{jobTitle}} chez {{companyName}}",
     "loadError": "Impossible de charger vos candidatures. Veuillez réessayer dans un instant.",
-    "loading": "Chargement…",
     "new": "Nouvelle candidature",
     "status": {
       "accepted": "Acceptée",
@@ -245,7 +244,8 @@
       "label": "S’abonner à notre newsletter"
     },
     "phone": {
-      "helper": "Votre numéro de téléphone, indicatif du pays compris (par exemple +33612345678)."
+      "helper": "Votre numéro de téléphone, indicatif du pays compris (par exemple +33612345678).",
+      "placeholder": "+33612345678"
     },
     "project": {
       "helper": "Décrivez brièvement votre projet (200 caractères maximum).",
@@ -273,8 +273,10 @@
     "fontSize": "Taille du texte",
     "groups": {
       "alignment": "Alignement",
+      "font": "Police",
       "formatting": "Mise en forme",
       "lists": "Listes",
+      "size": "Taille",
       "styling": "Style"
     },
     "highlightColor": "Couleur de surlignage",
@@ -341,7 +343,7 @@
     },
     "empty": {
       "cta": "Créer votre première note",
-      "description": "Créez votre première note pour commencer. Les notes vous aident à organiser vos idées et à préparer vos séances d’entraînement.",
+      "description": "Créez votre première note pour commencer. Les notes vous aident à organiser vos idées et à préparer vos sessions d’entraînement.",
       "title": "Aucune note pour l’instant"
     },
     "emptyFilter": {
@@ -361,9 +363,9 @@
     },
     "filters": {
       "all": "Toutes",
-      "application": "Candidature",
+      "application": "Candidatures",
       "general": "Générales",
-      "simulation": "Simulation"
+      "simulation": "Simulations"
     },
     "floating": {
       "placeholder": "Écrivez ici…",
@@ -476,8 +478,8 @@
     "timeline": {
       "goal": "Objectif : prêt pour le poste",
       "goalBy": "Prêt pour le poste d’ici le {{date}}",
-      "matchScore": "Score de correspondance",
-      "matchScoreValue": "Score de correspondance {{score}} %"
+      "matchScore": "Score de compatibilité",
+      "matchScoreValue": "Score de compatibilité {{score}} %"
     },
     "topic": {
       "details": "Détails : {{title}}",
@@ -509,8 +511,8 @@
       "loadMore": "Afficher plus…",
       "showing": "Affichage de 1 à {{to}} sur {{total}} résultats",
       "status": {
-        "cancelled": "Annulé",
-        "completed": "Terminé",
+        "cancelled": "Annulée",
+        "completed": "Terminée",
         "inProgress": "En cours"
       },
       "statusHeader": "Statut",
@@ -521,7 +523,7 @@
     "interviewContext": "Contexte de l’entretien : {{label}}",
     "loadingContext": "Chargement du contexte de la candidature…",
     "queue": {
-      "estimatedWait": "— attente estimée ~<strong>{{minutes}}</strong> min",
+      "estimatedWait": "— attente estimée ~<strong>{{minutes}}</strong> min",
       "position": "Position : <strong>{{position}}</strong>",
       "slots": "{{active}}/{{max}} créneaux GPU utilisés. Votre session démarrera automatiquement.",
       "title": "File d’attente de la simulation"

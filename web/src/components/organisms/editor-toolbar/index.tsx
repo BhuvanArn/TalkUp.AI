@@ -354,7 +354,9 @@ export const EditorToolbar: FC<EditorToolbarProps> = ({
           >
             {hiddenGroups.includes('fontFamily') && (
               <div className="">
-                <div className="text-xs text-gray-500 mb-1">Font</div>
+                <div className="text-xs text-gray-500 mb-1">
+                  {t('editor.groups.font')}
+                </div>
                 <SelectorInput
                   options={fontFamilyOptions}
                   onChange={(e) => onFontFamilyChange(e.target.value)}
@@ -366,7 +368,9 @@ export const EditorToolbar: FC<EditorToolbarProps> = ({
             )}
             {hiddenGroups.includes('fontSize') && (
               <div className="">
-                <div className="text-xs text-gray-500 mb-1">Size</div>
+                <div className="text-xs text-gray-500 mb-1">
+                  {t('editor.groups.size')}
+                </div>
                 <div className="flex items-center gap-1 justify-center">
                   <Button
                     onClick={onDecreaseFontSize}
