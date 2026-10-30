@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { PasswordField } from '@/components/molecules/auth/password-field';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostRegisterOrganization } from '@/hooks/auth/useServices';
@@ -7,6 +8,7 @@ import { extractErrorMessage } from '@/utils/error';
 import {
   type ValidationKey,
   emailSchema,
+  keyedSchema,
   passwordSchema,
   validateWithSchema,
 } from '@/utils/validators';
@@ -16,10 +18,15 @@ import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-const organizationNameSchema = z
-  .string()
-  .min(2, 'auth:validation.organizationNameMinLength' satisfies ValidationKey)
-  .max(40, 'auth:validation.organizationNameMaxLength' satisfies ValidationKey);
+const organizationNameSchema = keyedSchema(
+  z
+    .string()
+    .min(2, 'auth:validation.organizationNameMinLength' satisfies ValidationKey)
+    .max(
+      40,
+      'auth:validation.organizationNameMaxLength' satisfies ValidationKey,
+    ),
+);
 
 /**
  * F12: self-serve organization signup — org name + admin email/password.
@@ -94,13 +101,7 @@ export const RegisterOrganizationForm = () => {
                   'registerOrganizationForm.organizationNamePlaceholder',
                 )}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -121,13 +122,7 @@ export const RegisterOrganizationForm = () => {
                 onBlur={field.handleBlur}
                 placeholder={t('registerOrganizationForm.emailPlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -148,13 +143,7 @@ export const RegisterOrganizationForm = () => {
                 autoComplete="new-password"
                 showStrength
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>

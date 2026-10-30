@@ -1,6 +1,7 @@
 import { BaseInput } from '@/components/atoms/base-input';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { PasswordField } from '@/components/molecules/auth/password-field';
 import {
   usePasswordResetComplete,
@@ -21,6 +22,14 @@ import { Trans, useTranslation } from 'react-i18next';
 
 const RESEND_COOLDOWN_SEC = 60;
 
+/** An i18n key, translated at render, or a server message shown as is. */
+type FormError = { key: ValidationKey } | { raw: string };
+
+const toFormError = (error: unknown, fallback: ValidationKey): FormError => {
+  const message = extractErrorMessage(error, '');
+  return message ? { raw: message } : { key: fallback };
+};
+
 type ResetPasswordFormProps = {
   initialEmail: string;
 };
@@ -29,7 +38,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
   const { t } = useTranslation(['auth', 'common']);
   const completeReset = usePasswordResetComplete();
   const resendOtp = usePostResendOtp();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<FormError | null>(null);
   const [resendSecondsLeft, setResendSecondsLeft] = useState(0);
 
   const emailTrimmed = initialEmail.trim();
@@ -57,16 +66,16 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
     onSubmit: ({ value }) => {
       setServerError(null);
       if (emailMissingOrInvalid) {
-        setServerError(t('resetPasswordForm.errors.missingEmail'));
+        setServerError({ key: 'resetPasswordForm.errors.missingEmail' });
         return;
       }
       const pwdErr = validateWithSchema(value.newPassword, passwordSchema);
       if (pwdErr) {
-        setServerError(t(pwdErr as ValidationKey));
+        setServerError({ key: pwdErr });
         return;
       }
       if (value.newPassword !== value.confirmPassword) {
-        setServerError(t('resetPasswordForm.errors.passwordMismatch'));
+        setServerError({ key: 'resetPasswordForm.errors.passwordMismatch' });
         return;
       }
       completeReset.mutate(
@@ -78,7 +87,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
         {
           onError: (error: unknown) => {
             setServerError(
-              extractErrorMessage(error, t('resetPasswordForm.errors.failed')),
+              toFormError(error, 'resetPasswordForm.errors.failed'),
             );
           },
         },
@@ -161,13 +170,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
                 aria-invalid={field.state.meta.errors.length > 0}
                 className="text-center font-mono text-h3 tabular-nums tracking-[0.35em] placeholder:tracking-[0.35em] py-3"
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -189,13 +192,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
                 autoComplete="new-password"
                 showStrength
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -215,19 +212,9 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
           )}
         </form.Field>
 
-        <form.Subscribe selector={(state) => state.errors}>
-          {(errors) =>
-            errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">
-                {errors.map((error) => t(String(error) as ValidationKey))}
-              </span>
-            )
-          }
-        </form.Subscribe>
-
         {serverError && (
           <div className="text-sm text-red-600 text-center" role="alert">
-            {serverError}
+            {'key' in serverError ? t(serverError.key) : serverError.raw}
           </div>
         )}
 
@@ -253,7 +240,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
           onClick={() => {
             setServerError(null);
             if (emailMissingOrInvalid) {
-              setServerError(t('resetPasswordForm.errors.missingEmail'));
+              setServerError({ key: 'resetPasswordForm.errors.missingEmail' });
               return;
             }
             resendOtp.mutate(
@@ -263,11 +250,9 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
                   startCooldown();
                 },
                 onError: (error: unknown) => {
-                  const msg = extractErrorMessage(
-                    error,
-                    t('otpCode.errors.resendFailed'),
+                  setServerError(
+                    toFormError(error, 'otpCode.errors.resendFailed'),
                   );
-                  setServerError(msg);
                   if (
                     typeof error === 'object' &&
                     error !== null &&

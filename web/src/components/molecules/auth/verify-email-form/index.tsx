@@ -1,10 +1,10 @@
 import { BaseInput } from '@/components/atoms/base-input';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { usePostResendOtp, usePostVerifyEmail } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
 import {
-  type ValidationKey,
   emailSchema,
   otpCodeSchema,
   validateWithSchema,
@@ -149,26 +149,10 @@ export const VerifyEmailForm = ({
                 aria-invalid={field.state.meta.errors.length > 0}
                 className="text-center font-mono text-h3 tabular-nums tracking-[0.35em] placeholder:tracking-[0.35em] py-3"
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
-        <form.Subscribe selector={(state) => state.errors}>
-          {(errors) =>
-            errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">
-                {errors.map((error) => t(String(error) as ValidationKey))}
-              </span>
-            )
-          }
-        </form.Subscribe>
-
         {serverError && (
           <div className="text-sm text-red-600 text-center" role="alert">
             {serverError}

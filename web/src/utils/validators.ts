@@ -3,18 +3,38 @@ import { z } from 'zod';
 
 /**
  * i18n key of a validation message. Schemas hold keys, not text: translate the
- * error where it is displayed, with `t(error as ValidationKey)` from
+ * error where it is displayed, with `t(error)` from
  * `useTranslation(['auth', 'common'])`.
  */
 export type ValidationKey = ParseKeys<['auth', 'common']>;
 
+declare const keyedMessages: unique symbol;
+
+/**
+ * A Zod schema whose messages are all {@link ValidationKey}s. Zod types its
+ * messages as plain `string`, so this brand is what lets
+ * {@link validateWithSchema} reject a schema that was not built for i18n.
+ */
+export type KeyedSchema<T> = z.ZodType<T> & {
+  readonly [keyedMessages]: true;
+};
+
+/**
+ * Mark a schema as a {@link KeyedSchema}. Only wrap schemas whose every
+ * message is written `'ns:key' satisfies ValidationKey`.
+ */
+export const keyedSchema = <T>(schema: z.ZodType<T>): KeyedSchema<T> =>
+  schema as KeyedSchema<T>;
+
 /**
  * Email validation schema
  */
-export const emailSchema = z
-  .string()
-  .min(1, 'auth:validation.emailRequired' satisfies ValidationKey)
-  .email('auth:validation.emailInvalid' satisfies ValidationKey);
+export const emailSchema = keyedSchema(
+  z
+    .string()
+    .min(1, 'auth:validation.emailRequired' satisfies ValidationKey)
+    .email('auth:validation.emailInvalid' satisfies ValidationKey),
+);
 
 /**
  * Allowlisted "symbol" character class for password validation. Shared with
@@ -26,45 +46,51 @@ export const PASSWORD_SYMBOL_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
 /**
  * Password validation schema for registration
  */
-export const passwordSchema = z
-  .string()
-  .min(1, 'auth:validation.passwordRequired' satisfies ValidationKey)
-  .min(8, 'auth:validation.passwordMinLength' satisfies ValidationKey)
-  .max(50, 'auth:validation.passwordMaxLength' satisfies ValidationKey)
-  .regex(/[a-z]/, 'auth:validation.passwordLowercase' satisfies ValidationKey)
-  .regex(/[A-Z]/, 'auth:validation.passwordUppercase' satisfies ValidationKey)
-  .regex(/[0-9]/, 'auth:validation.passwordNumber' satisfies ValidationKey)
-  .regex(
-    PASSWORD_SYMBOL_REGEX,
-    'auth:validation.passwordSymbol' satisfies ValidationKey,
-  );
+export const passwordSchema = keyedSchema(
+  z
+    .string()
+    .min(1, 'auth:validation.passwordRequired' satisfies ValidationKey)
+    .min(8, 'auth:validation.passwordMinLength' satisfies ValidationKey)
+    .max(50, 'auth:validation.passwordMaxLength' satisfies ValidationKey)
+    .regex(/[a-z]/, 'auth:validation.passwordLowercase' satisfies ValidationKey)
+    .regex(/[A-Z]/, 'auth:validation.passwordUppercase' satisfies ValidationKey)
+    .regex(/[0-9]/, 'auth:validation.passwordNumber' satisfies ValidationKey)
+    .regex(
+      PASSWORD_SYMBOL_REGEX,
+      'auth:validation.passwordSymbol' satisfies ValidationKey,
+    ),
+);
 
 /**
  * Password validation schema for login
  */
-export const loginPasswordSchema = z
-  .string()
-  .min(1, 'auth:validation.passwordRequired' satisfies ValidationKey);
+export const loginPasswordSchema = keyedSchema(
+  z.string().min(1, 'auth:validation.passwordRequired' satisfies ValidationKey),
+);
 
 /**
  * Username validation schema
  */
-export const usernameSchema = z
-  .string()
-  .min(1, 'auth:validation.usernameRequired' satisfies ValidationKey)
-  .min(3, 'auth:validation.usernameMinLength' satisfies ValidationKey)
-  .max(20, 'auth:validation.usernameMaxLength' satisfies ValidationKey)
-  .regex(
-    /^[a-zA-Z0-9]+$/,
-    'auth:validation.usernameAlphanumeric' satisfies ValidationKey,
-  );
+export const usernameSchema = keyedSchema(
+  z
+    .string()
+    .min(1, 'auth:validation.usernameRequired' satisfies ValidationKey)
+    .min(3, 'auth:validation.usernameMinLength' satisfies ValidationKey)
+    .max(20, 'auth:validation.usernameMaxLength' satisfies ValidationKey)
+    .regex(
+      /^[a-zA-Z0-9]+$/,
+      'auth:validation.usernameAlphanumeric' satisfies ValidationKey,
+    ),
+);
 
 /** 6-digit email verification / OTP code */
-export const otpCodeSchema = z
-  .string()
-  .min(1, 'auth:validation.codeRequired' satisfies ValidationKey)
-  .length(6, 'auth:validation.codeLength' satisfies ValidationKey)
-  .regex(/^\d{6}$/, 'auth:validation.codeLength' satisfies ValidationKey);
+export const otpCodeSchema = keyedSchema(
+  z
+    .string()
+    .min(1, 'auth:validation.codeRequired' satisfies ValidationKey)
+    .length(6, 'auth:validation.codeLength' satisfies ValidationKey)
+    .regex(/^\d{6}$/, 'auth:validation.codeLength' satisfies ValidationKey),
+);
 
 /**
  * Protocols allowed for a user-provided job-offer URL.
@@ -100,17 +126,16 @@ export const isAllowedJobUrl = (value: string): boolean => {
 };
 
 /**
- * Helper function to validate a field with a Zod schema
- * Returns the first error message (a {@link ValidationKey} for the schemas
- * above) or undefined if valid
+ * Validate a field with a {@link KeyedSchema}.
+ * Returns the i18n key of the first error, or undefined if valid.
  */
 export const validateWithSchema = <T>(
   value: T,
-  schema: z.ZodSchema<T>,
-): string | undefined => {
+  schema: KeyedSchema<T>,
+): ValidationKey | undefined => {
   const result = schema.safeParse(value);
   if (!result.success) {
-    return result.error.errors[0]?.message;
+    return result.error.errors[0]?.message as ValidationKey | undefined;
   }
   return undefined;
 };

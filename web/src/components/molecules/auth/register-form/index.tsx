@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { PasswordField } from '@/components/molecules/auth/password-field';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostRegister } from '@/hooks/auth/useServices';
@@ -26,7 +27,6 @@ import { Trans, useTranslation } from 'react-i18next';
  * - Username input field with validation
  * - Email input field with validation
  * - Password input field with validation
- * - Form-level error messages
  * - Loading indicators during validation
  * - Submit button
  *
@@ -104,13 +104,7 @@ export const RegisterForm = ({
                 onBlur={field.handleBlur}
                 placeholder={t('registerForm.usernamePlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -131,13 +125,7 @@ export const RegisterForm = ({
                 onBlur={field.handleBlur}
                 placeholder={t('registerForm.emailPlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -158,13 +146,7 @@ export const RegisterForm = ({
                 autoComplete="new-password"
                 showStrength
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -188,26 +170,10 @@ export const RegisterForm = ({
                 onBlur={field.handleBlur}
                 placeholder={t('registerForm.organizationCodePlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
-        <form.Subscribe selector={(state) => state.errors}>
-          {(errors) =>
-            errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">
-                {errors.map((error) => t(String(error) as ValidationKey))}
-              </span>
-            )
-          }
-        </form.Subscribe>
-
         {serverError && (
           <div className="text-sm text-red-600 text-center" role="alert">
             {serverError}

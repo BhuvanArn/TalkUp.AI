@@ -1,11 +1,11 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { PasswordField } from '@/components/molecules/auth/password-field';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostLogin } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
 import {
-  type ValidationKey,
   emailSchema,
   loginPasswordSchema,
   validateWithSchema,
@@ -25,7 +25,6 @@ import { Trans, useTranslation } from 'react-i18next';
  * The form includes:
  * - Email input field with validation
  * - Password input field with validation
- * - Form-level error messages
  * - Loading indicators during validation
  * - Submit button
  *
@@ -94,13 +93,7 @@ export const LoginForm = () => {
                 onBlur={field.handleBlur}
                 placeholder={t('loginForm.emailPlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -121,26 +114,10 @@ export const LoginForm = () => {
                 placeholder={t('loginForm.passwordPlaceholder')}
                 autoComplete="current-password"
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
-        <form.Subscribe selector={(state) => state.errors}>
-          {(errors) =>
-            errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">
-                {errors.map((error) => t(String(error) as ValidationKey))}
-              </span>
-            )
-          }
-        </form.Subscribe>
-
         {serverError && (
           <div className="text-sm text-red-600 text-center" role="alert">
             {serverError}

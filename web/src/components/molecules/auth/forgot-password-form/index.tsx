@@ -1,13 +1,10 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostPasswordResetRequest } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
-import {
-  type ValidationKey,
-  emailSchema,
-  validateWithSchema,
-} from '@/utils/validators';
+import { emailSchema, validateWithSchema } from '@/utils/validators';
 import { useForm } from '@tanstack/react-form';
 import { Link, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -92,26 +89,10 @@ export const ForgotPasswordForm = ({
                 onBlur={field.handleBlur}
                 placeholder={t('forgotPasswordForm.emailPlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors.map((error) =>
-                    t(error as ValidationKey),
-                  )}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
-        <form.Subscribe selector={(state) => state.errors}>
-          {(errors) =>
-            errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">
-                {errors.map((error) => t(String(error) as ValidationKey))}
-              </span>
-            )
-          }
-        </form.Subscribe>
-
         {serverError && (
           <div className="text-sm text-red-600 text-center" role="alert">
             {serverError}
