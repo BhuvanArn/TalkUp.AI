@@ -125,8 +125,9 @@ export default function VerbalAnalysisPanel({
           <Trans
             ns="app"
             i18nKey="verbalAnalysis.register"
-            values={{ register: registerLabel, turn: latest.turn_index }}
-            components={{ strong: <strong /> }}
+            values={{ turn: latest.turn_index }}
+            // registerLabel can be the raw server value: pass it as a child.
+            components={{ register: <strong>{registerLabel}</strong> }}
           />
         </p>
       </div>

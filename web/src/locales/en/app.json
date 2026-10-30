@@ -373,7 +373,7 @@
       "title": "Notes"
     },
     "loading": "Loading notes...",
-    "showingFor": "Showing notes for <strong>{{application}}</strong>",
+    "showingFor": "Showing notes for <application/>",
     "simulationTitle": "Simulation notes",
     "subtitle": "Add Notes, Share them and Access them during Practice !",
     "thisApplication": "this application",
@@ -578,7 +578,7 @@
     "empty": "The analysis will appear after you first speak.",
     "liveAdvice": "Live advice",
     "politeness": "Politeness",
-    "register": "Register: <strong>{{register}}</strong> · Turn {{turn}}",
+    "register": "Register: <register/> · Turn {{turn}}",
     "registers": {
       "inappropriate": "Inappropriate",
       "informal": "Informal",

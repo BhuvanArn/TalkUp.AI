@@ -2,9 +2,11 @@ import { useNoteCreation } from '@/hooks/notes/useNoteCreation';
 import { useNoteFavorite } from '@/hooks/notes/useNoteFavorite';
 import { useNoteNavigation } from '@/hooks/notes/useNoteNavigation';
 import { useNotesList } from '@/hooks/notes/useNotesList';
+import { changeLanguage } from '@/i18n';
 import { useApplications } from '@/services/applications/hooks';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18next from 'i18next';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Notes } from './index';
@@ -282,6 +284,36 @@ describe('Notes Route', () => {
       expect(
         screen.getByRole('link', { name: /back to all notes/i }),
       ).toHaveAttribute('href', '/notes');
+    });
+
+    it('renders markup in the application label as text', () => {
+      (useApplications as any).mockReturnValue({
+        data: [
+          {
+            applicationId: 'app-1',
+            companyName: 'Acme',
+            jobTitle: '<strong>Dev</strong>',
+          },
+        ],
+      });
+      const { container } = render(<Notes />);
+      const label = screen.getByText('<strong>Dev</strong> at Acme');
+      expect(label).toHaveClass('font-semibold');
+      expect(label.querySelector('strong')).toBeNull();
+      expect(container.querySelector('strong')).toBeNull();
+    });
+
+    it('says "Notes pour" in French, without elision', async () => {
+      await changeLanguage('fr');
+      try {
+        render(<Notes />);
+        expect(screen.getByText(/^Notes pour/)).toHaveTextContent(
+          'Notes pour SRE chez Datadog',
+        );
+      } finally {
+        await i18next.changeLanguage('en');
+        localStorage.clear();
+      }
     });
 
     it('creates a note scoped to the application in scope', async () => {

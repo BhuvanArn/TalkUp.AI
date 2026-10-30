@@ -373,7 +373,7 @@
       "title": "Notes"
     },
     "loading": "Chargement des notes…",
-    "showingFor": "Notes de <strong>{{application}}</strong>",
+    "showingFor": "Notes pour <application/>",
     "simulationTitle": "Notes de simulation",
     "subtitle": "Ajoutez des notes, partagez-les et retrouvez-les pendant vos entraînements.",
     "thisApplication": "cette candidature",
@@ -578,7 +578,7 @@
     "empty": "L’analyse apparaîtra après votre première prise de parole.",
     "liveAdvice": "Conseil en direct",
     "politeness": "Politesse",
-    "register": "Registre : <strong>{{register}}</strong> · Tour {{turn}}",
+    "register": "Registre : <register/> · Tour {{turn}}",
     "registers": {
       "inappropriate": "Inadapté",
       "informal": "Familier",

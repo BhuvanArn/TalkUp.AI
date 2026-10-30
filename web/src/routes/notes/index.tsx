@@ -168,14 +168,16 @@ export function Notes() {
         {applicationId ? (
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-body-m text-text-weak">
+              {/* The label is user data: pass it as a child, never in `values`. */}
               <Trans
                 ns="app"
                 i18nKey="notes.showingFor"
-                values={{
-                  application: scopedAppLabel ?? t('notes.thisApplication'),
-                }}
                 components={{
-                  strong: <span className="font-semibold text-text-idle" />,
+                  application: (
+                    <span className="font-semibold text-text-idle">
+                      {scopedAppLabel ?? t('notes.thisApplication')}
+                    </span>
+                  ),
                 }}
               />
             </span>
