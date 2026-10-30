@@ -6,6 +6,7 @@ import {
 } from '@/components/organisms/landing-nav/landing-links';
 import { trackContactClick } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { FaGithub, FaInstagram, FaLinkedin } from 'react-icons/fa6';
 
 const FOCUS_RING = `rounded-sm ${LANDING_FOCUS_RING}`;
@@ -37,6 +38,7 @@ const ColumnTitle = ({ children }: { children: string }) => (
 );
 
 const LandingFooter = () => {
+  const { t } = useTranslation('landing');
   const year = new Date().getFullYear();
 
   return (
@@ -45,16 +47,18 @@ const LandingFooter = () => {
         <div className="col-span-2 flex flex-col gap-3 sm:col-span-1">
           <Link
             to="/"
-            aria-label="TalkUp home"
+            aria-label={t('nav.home')}
             className={`self-start ${FOCUS_RING}`}
           >
             <Logo variant="line" color="primary" />
           </Link>
           <p className="text-body-m text-text-weaker max-w-[36ch]">
-            Interview preparation built by four Epitech students. © {year}{' '}
-            Talkup.
+            {t('footer.tagline', { year })}
           </p>
-          <ul className="flex items-center gap-1" aria-label="Social links">
+          <ul
+            className="flex items-center gap-1"
+            aria-label={t('footer.socialLinks')}
+          >
             {SOCIAL_LINKS.map(({ label, href, Icon }) => (
               <li key={label}>
                 <a
@@ -71,8 +75,8 @@ const LandingFooter = () => {
           </ul>
         </div>
 
-        <nav aria-label="Product">
-          <ColumnTitle>Product</ColumnTitle>
+        <nav aria-label={t('footer.product')}>
+          <ColumnTitle>{t('footer.product')}</ColumnTitle>
           <ul className="flex flex-col gap-2">
             {PRODUCT_LINKS.map((item) => (
               <li key={item.hash}>
@@ -82,24 +86,24 @@ const LandingFooter = () => {
                   resetScroll={false}
                   className={LINK_CLASS}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
 
-        <nav aria-label="Company">
-          <ColumnTitle>Company</ColumnTitle>
+        <nav aria-label={t('footer.company')}>
+          <ColumnTitle>{t('footer.company')}</ColumnTitle>
           <ul className="flex flex-col gap-2">
             <li>
               <Link to="/about" className={LINK_CLASS}>
-                About
+                {t('links.about')}
               </Link>
             </li>
             <li>
               <Link to="/privacy" className={LINK_CLASS}>
-                Privacy
+                {t('links.privacy')}
               </Link>
             </li>
             <li>

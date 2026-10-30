@@ -7,6 +7,7 @@ import { useAuthStatus } from '@/hooks/auth/useServices';
 import { trackCtaClick } from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   LANDING_FOCUS_RING as FOCUS_RING,
@@ -17,6 +18,7 @@ const DESKTOP_LINK_CLASS = `rounded-sm text-body-m text-text-weaker transition-c
 const MOBILE_LINK_CLASS = `block rounded-sm py-2 text-body-l text-text hover:text-accent aria-[current=page]:text-accent ${FOCUS_RING}`;
 
 const LandingNav = () => {
+  const { t } = useTranslation('landing');
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -44,12 +46,12 @@ const LandingNav = () => {
       }`}
     >
       <nav
-        aria-label="Main"
+        aria-label={t('nav.label')}
         className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-4 sm:px-6"
       >
         <Link
           to="/"
-          aria-label="TalkUp home"
+          aria-label={t('nav.home')}
           className={`flex items-center gap-2 rounded-sm ${FOCUS_RING}`}
         >
           <Logo variant="line" color="primary" />
@@ -65,13 +67,13 @@ const LandingNav = () => {
                 activeOptions={{ includeHash: true }}
                 className={DESKTOP_LINK_CLASS}
               >
-                {link.label}
+                {t(link.labelKey)}
               </Link>
             </li>
           ))}
           <li>
             <Link to="/about" className={DESKTOP_LINK_CLASS}>
-              About
+              {t('links.about')}
             </Link>
           </li>
         </ul>
@@ -91,7 +93,7 @@ const LandingNav = () => {
               size="sm"
               className={FOCUS_RING}
             >
-              <Link to={APP_HOME}>Open the app</Link>
+              <Link to={APP_HOME}>{t('actions.openApp')}</Link>
             </Button>
           ) : (
             <>
@@ -102,7 +104,7 @@ const LandingNav = () => {
                 size="sm"
                 className={FOCUS_RING}
               >
-                <Link to="/login">Log in</Link>
+                <Link to="/login">{t('actions.logIn')}</Link>
               </Button>
               <Button
                 asChild
@@ -115,7 +117,7 @@ const LandingNav = () => {
                   to="/register"
                   onClick={trackCtaClick('nav', '/register')}
                 >
-                  Create an account
+                  {t('actions.createAccount')}
                 </Link>
               </Button>
             </>
@@ -124,13 +126,13 @@ const LandingNav = () => {
 
         <button
           type="button"
-          aria-label="Toggle menu"
+          aria-label={t('nav.toggleMenu')}
           aria-expanded={open}
           aria-controls="landing-mobile-menu"
           onClick={() => setOpen((v) => !v)}
           className={`lg:hidden inline-flex h-11 w-11 items-center justify-center rounded-md border border-border text-text ${FOCUS_RING}`}
         >
-          <span className="sr-only">Menu</span>
+          <span className="sr-only">{t('nav.menu')}</span>
           <div className="flex flex-col gap-1" aria-hidden="true">
             <span className="block h-0.5 w-5 bg-text" />
             <span className="block h-0.5 w-5 bg-text" />
@@ -155,13 +157,13 @@ const LandingNav = () => {
                   onClick={close}
                   className={MOBILE_LINK_CLASS}
                 >
-                  {link.label}
+                  {t(link.labelKey)}
                 </Link>
               </li>
             ))}
             <li>
               <Link to="/about" onClick={close} className={MOBILE_LINK_CLASS}>
-                About
+                {t('links.about')}
               </Link>
             </li>
             <li className="mt-2 flex flex-col gap-2">
@@ -179,7 +181,7 @@ const LandingNav = () => {
                   className={`w-full ${FOCUS_RING}`}
                 >
                   <Link to={APP_HOME} onClick={close}>
-                    Open the app
+                    {t('actions.openApp')}
                   </Link>
                 </Button>
               ) : (
@@ -192,7 +194,7 @@ const LandingNav = () => {
                     className={`w-full ${FOCUS_RING}`}
                   >
                     <Link to="/login" onClick={close}>
-                      Log in
+                      {t('actions.logIn')}
                     </Link>
                   </Button>
                   <Button
@@ -209,7 +211,7 @@ const LandingNav = () => {
                         close();
                       }}
                     >
-                      Create an account
+                      {t('actions.createAccount')}
                     </Link>
                   </Button>
                 </>

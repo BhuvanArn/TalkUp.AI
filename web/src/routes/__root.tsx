@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import NotFoundPage from './-not-found';
 
@@ -25,6 +26,20 @@ const PUBLIC_SHELL_PATHS = new Set<string>([
   '/reset-password',
   '/verify-email',
 ]);
+
+/** Its own component so only it, not the root, re-renders on a language switch. */
+const NotFoundPending = () => {
+  const { t } = useTranslation('landing');
+  return (
+    <div
+      className="min-h-screen w-full bg-background"
+      role="status"
+      aria-busy="true"
+      aria-label={t('notFound.loading')}
+      data-testid="not-found-pending"
+    />
+  );
+};
 
 const RootComponent = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -67,15 +82,7 @@ const RootComponent = () => {
     // Only a real in-flight fetch waits — an offline/paused query falls through and
     // renders the anonymous variant rather than hanging on a blank page.
     if (authLoading) {
-      return (
-        <div
-          className="min-h-screen w-full bg-background"
-          role="status"
-          aria-busy="true"
-          aria-label="Loading"
-          data-testid="not-found-pending"
-        />
-      );
+      return <NotFoundPending />;
     }
 
     if (!isAuthed) {

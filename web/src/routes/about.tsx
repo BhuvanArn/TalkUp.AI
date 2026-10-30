@@ -6,73 +6,95 @@ import {
 } from '@/components/organisms/landing-nav/landing-links';
 import { trackContactClick } from '@/utils/analytics';
 import { createFileRoute } from '@tanstack/react-router';
+import type { ParseKeys } from 'i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/about')({
   component: About,
 });
 
+type LandingKey = ParseKeys<'landing'>;
+
 const CONTAINER = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
 
 const SECTION_TITLE = 'text-h3 md:text-h2 text-text tracking-[-0.015em]';
 
-const VALUES = [
+const VALUES: { titleKey: LandingKey; bodyKey: LandingKey }[] = [
   {
-    title: 'Accessible',
-    body: "Practice shouldn't depend on paying a coach. Talkup is free while in beta.",
+    titleKey: 'about.values.accessible.title',
+    bodyKey: 'about.values.accessible.body',
   },
   {
-    title: 'Personal',
-    body: 'Every preparation starts from your CV and a real job offer, not a generic question list.',
+    titleKey: 'about.values.personal.title',
+    bodyKey: 'about.values.personal.body',
   },
   {
-    title: 'Concrete',
-    body: 'Feedback names the habit to change: a verbal tic, a casual register, too many filler words.',
+    titleKey: 'about.values.concrete.title',
+    bodyKey: 'about.values.concrete.body',
   },
 ];
 
-const TEAM = [
+const TEAM: { initials: string; name: string; roleKey: LandingKey }[] = [
   {
     initials: 'ZB',
     name: 'Ziane Badarou',
-    role: 'Frontend developer, communication lead',
+    roleKey: 'about.team.roles.ziane',
   },
   {
     initials: 'TA',
     name: 'Toavina Andria',
-    role: 'AI engineer, data analyst, DevOps',
+    roleKey: 'about.team.roles.toavina',
   },
-  { initials: 'RE', name: 'Regine Emagni', role: 'Backend, server lead' },
-  { initials: 'BA', name: 'Bhuvan Arnaud', role: 'Frontend, backend, DevOps' },
+  {
+    initials: 'RE',
+    name: 'Regine Emagni',
+    roleKey: 'about.team.roles.regine',
+  },
+  {
+    initials: 'BA',
+    name: 'Bhuvan Arnaud',
+    roleKey: 'about.team.roles.bhuvan',
+  },
 ];
 
-const WORKING_TODAY = [
-  'CV and job offer analysis with a match score',
-  'Preparation path and interview talking points',
-  'Voice simulations in French with live verbal analysis',
-  'Application board, notes, agenda and assistant',
-  'Organizations with invite codes and member stats',
+const WORKING_TODAY: LandingKey[] = [
+  'about.status.working.analysis',
+  'about.status.working.path',
+  'about.status.working.simulations',
+  'about.status.working.board',
+  'about.status.working.orgs',
 ];
 
-const NEXT = [
-  'A report after each simulation, and progress over time',
-  'Simulations in English',
-  'Faster, more reliable AI sessions',
+const NEXT: LandingKey[] = [
+  'about.status.upcoming.report',
+  'about.status.upcoming.english',
+  'about.status.upcoming.reliability',
 ];
 
-const StatusList = ({ title, items }: { title: string; items: string[] }) => (
-  <div>
-    <h3 className="font-display text-body-xl-strong font-semibold text-text mb-2">
-      {title}
-    </h3>
-    <ul className="list-disc space-y-1.5 pl-5 text-body-l text-text-weaker">
-      {items.map((item) => (
-        <li key={item}>{item}</li>
-      ))}
-    </ul>
-  </div>
-);
+const StatusList = ({
+  title,
+  items,
+}: {
+  title: string;
+  items: LandingKey[];
+}) => {
+  const { t } = useTranslation('landing');
+  return (
+    <div>
+      <h3 className="font-display text-body-xl-strong font-semibold text-text mb-2">
+        {title}
+      </h3>
+      <ul className="list-disc space-y-1.5 pl-5 text-body-l text-text-weaker">
+        {items.map((item) => (
+          <li key={item}>{t(item)}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 function About() {
+  const { t } = useTranslation('landing');
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <LandingNav />
@@ -81,27 +103,23 @@ function About() {
           <div className={CONTAINER}>
             {/* Navy in light; the primary token is too dim on the dark canvas, so flip to text. */}
             <h1 className="font-display font-extrabold text-[length:clamp(44px,7vw,84px)] leading-[0.95] tracking-[-0.01em] text-primary [.dark_&]:text-text max-w-[14ch] text-balance">
-              We built the interview coach we couldn&apos;t afford.
+              {t('about.title')}
             </h1>
             <p className="mt-5 max-w-[56ch] text-lg text-text-weaker">
-              Talkup started as our Epitech Innovative Project. We kept seeing
-              friends with good profiles lose internships at the interview
-              stage, with no idea what went wrong. Coaching exists, but
-              it&apos;s expensive and rarely tied to the job you&apos;re
-              applying for.
+              {t('about.lead')}
             </p>
           </div>
         </section>
 
-        <section aria-label="Our values" className="pb-18">
+        <section aria-label={t('about.valuesLabel')} className="pb-18">
           <div className={`${CONTAINER} grid grid-cols-1 gap-8 md:grid-cols-3`}>
             {VALUES.map((value) => (
-              <div key={value.title}>
+              <div key={value.titleKey}>
                 <h2 className="font-display text-body-xl-strong font-semibold text-text">
-                  {value.title}
+                  {t(value.titleKey)}
                 </h2>
                 <p className="mt-1.5 text-body-l text-text-weaker">
-                  {value.body}
+                  {t(value.bodyKey)}
                 </p>
               </div>
             ))}
@@ -114,7 +132,7 @@ function About() {
         >
           <div className={CONTAINER}>
             <h2 id="about-team" className={SECTION_TITLE}>
-              The team
+              {t('about.team.title')}
             </h2>
             <ul className="mt-8 grid grid-cols-1 gap-6 min-[461px]:grid-cols-2 lg:grid-cols-4">
               {TEAM.map((member) => (
@@ -129,7 +147,7 @@ function About() {
                     {member.name}
                   </span>
                   <span className="text-body-m text-text-weaker">
-                    {member.role}
+                    {t(member.roleKey)}
                   </span>
                 </li>
               ))}
@@ -140,25 +158,36 @@ function About() {
         <section aria-labelledby="about-status" className="py-18">
           <div className={CONTAINER}>
             <h2 id="about-status" className={SECTION_TITLE}>
-              Where we are
+              {t('about.status.title')}
             </h2>
             <div className="mt-7 grid grid-cols-1 gap-8 md:grid-cols-2">
-              <StatusList title="Working today" items={WORKING_TODAY} />
-              <StatusList title="Next" items={NEXT} />
+              <StatusList
+                title={t('about.status.workingToday')}
+                items={WORKING_TODAY}
+              />
+              <StatusList title={t('about.status.next')} items={NEXT} />
             </div>
 
             <p className="mt-9 max-w-[56ch] text-lg text-text-weaker">
-              Questions, a school partnership, or feedback on the beta?
+              {t('about.contact.question')}
             </p>
             <p className="mt-4 text-body-l text-text">
-              Write to us at{' '}
-              <a
-                href={`mailto:${CONTACT_EMAIL}`}
-                onClick={trackContactClick('about')}
-                className={`break-all rounded-sm font-semibold text-text-link underline underline-offset-4 hover:text-accent-hover ${LANDING_FOCUS_RING}`}
-              >
-                {CONTACT_EMAIL}
-              </a>
+              <Trans
+                ns="landing"
+                i18nKey="about.contact.writeTo"
+                values={{ email: CONTACT_EMAIL }}
+                components={{
+                  email: (
+                    // Filled with the address by <Trans>.
+                    // eslint-disable-next-line jsx-a11y/anchor-has-content
+                    <a
+                      href={`mailto:${CONTACT_EMAIL}`}
+                      onClick={trackContactClick('about')}
+                      className={`break-all rounded-sm font-semibold text-text-link underline underline-offset-4 hover:text-accent-hover ${LANDING_FOCUS_RING}`}
+                    />
+                  ),
+                }}
+              />
             </p>
           </div>
         </section>
@@ -167,5 +196,3 @@ function About() {
     </div>
   );
 }
-
-export default About;
