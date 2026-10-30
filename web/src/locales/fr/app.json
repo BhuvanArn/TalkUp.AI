@@ -302,5 +302,74 @@
       "readMore": "Lire la suite",
       "step": "Étape {{step}}"
     }
+  },
+  "agenda": {
+    "addEvent": "Ajouter un événement",
+    "addEventTitle": "Ajouter un événement",
+    "backToWeek": "Revenir à la semaine",
+    "connections": {
+      "appleConnected": "iOS connecté",
+      "connectApple": "Connecter Apple",
+      "connectGoogle": "Connecter Google",
+      "googleConnected": "Google connecté",
+      "title": "Connexions"
+    },
+    "controlBar": {
+      "createEvent": "Créer un événement",
+      "day": "Jour",
+      "filters": "Filtres",
+      "list": "Liste",
+      "table": "Tableau",
+      "title": "Calendrier",
+      "week": "Semaine"
+    },
+    "errors": {
+      "create": "Impossible de créer l’événement",
+      "delete": "Impossible de supprimer l’événement",
+      "fetch": "Impossible de récupérer les événements",
+      "update": "Impossible de modifier l’événement"
+    },
+    "eventModal": {
+      "close": "Fermer la fenêtre de l’événement",
+      "color": "Couleur",
+      "create": "Créer",
+      "createTitle": "Créer un événement",
+      "deleteMessage": "Voulez-vous vraiment supprimer cet événement ? Cette action est irréversible.",
+      "deleteTitle": "Supprimer l’événement",
+      "description": "Description",
+      "descriptionPlaceholder": "Ajouter une description",
+      "editTitle": "Modifier l’événement",
+      "end": "Fin",
+      "errors": {
+        "endBeforeStart": "L’heure de fin doit être postérieure à l’heure de début.",
+        "invalidDate": "Date ou heure invalide.",
+        "multiDay": "Un événement ne peut pas s’étendre sur plusieurs jours.",
+        "titleRequired": "Veuillez saisir un titre pour votre événement."
+      },
+      "start": "Début",
+      "titleLabel": "Titre de l’événement",
+      "titlePlaceholder": "Ajouter un titre",
+      "update": "Mettre à jour"
+    },
+    "loading": "Chargement des événements…",
+    "miniCalendar": {
+      "nextMonth": "Mois suivant",
+      "previousMonth": "Mois précédent"
+    },
+    "nextEvent": {
+      "empty": "Aucun événement à venir.",
+      "goToWeek": "Voir la semaine",
+      "title": "Prochain événement",
+      "unknownDate": "Date inconnue"
+    },
+    "share": "Partager mon agenda",
+    "subtitle": "Planifiez et organisez votre parcours",
+    "timeRange": "{{start}} – {{end}}",
+    "title": "Agenda TalkUp"
+  },
+  "time": {
+    "daysAgo": "il y a {{days}} j",
+    "hoursAgo": "il y a {{hours}} h",
+    "justNow": "À l’instant"
   }
 }

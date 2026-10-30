@@ -1,4 +1,5 @@
 import { useCalendarTable } from '@/hooks/calendar/useCalendarTable';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import { CalendarEvent } from '@/stores/useCalendarStore';
 import { format } from 'date-fns';
 import { Calendar } from 'react-big-calendar';
@@ -20,6 +21,7 @@ const DnDCalendar = withDragAndDrop<CalendarEvent>(Calendar);
 const CalendarTable = () => {
   const {
     events,
+    culture,
     currentDate,
     calendarViewMode,
     localizer,
@@ -32,13 +34,14 @@ const CalendarTable = () => {
     calendarFormats,
     eventPropGetter,
   } = useCalendarTable();
+  const { dateFnsLocale } = useLocale();
 
   return (
     <div className="flex-1 h-full flex flex-col overflow-hidden">
       {calendarViewMode === 'day' && (
         <div className="flex-none bg-white">
           <CalendarTableDayHeader
-            dayName={format(currentDate, 'EEEE')}
+            dayName={format(currentDate, 'EEEE', { locale: dateFnsLocale })}
             date={currentDate.getDate()}
             isToday={new Date().toDateString() === currentDate.toDateString()}
             view="day"
@@ -48,6 +51,7 @@ const CalendarTable = () => {
       )}
       <DnDCalendar
         localizer={localizer}
+        culture={culture}
         events={events}
         startAccessor="start"
         endAccessor="end"
@@ -70,7 +74,7 @@ const CalendarTable = () => {
             if (calendarViewMode === 'day') return null;
             return (
               <CalendarTableDayHeader
-                dayName={format(date, 'EEEE')}
+                dayName={format(date, 'EEEE', { locale: dateFnsLocale })}
                 date={date.getDate()}
                 isToday={new Date().toDateString() === date.toDateString()}
                 view={calendarViewMode}

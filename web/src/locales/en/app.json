@@ -302,5 +302,74 @@
       "readMore": "Read more",
       "step": "Step {{step}}"
     }
+  },
+  "agenda": {
+    "addEvent": "Add Event",
+    "addEventTitle": "Add event",
+    "backToWeek": "Go back to Week",
+    "connections": {
+      "appleConnected": "iOS Connected",
+      "connectApple": "Connect Apple",
+      "connectGoogle": "Connect Google",
+      "googleConnected": "Google Connected",
+      "title": "Connections"
+    },
+    "controlBar": {
+      "createEvent": "Create Event",
+      "day": "Day",
+      "filters": "Filters",
+      "list": "List",
+      "table": "Table",
+      "title": "Calendar",
+      "week": "Week"
+    },
+    "errors": {
+      "create": "Failed to create event",
+      "delete": "Failed to delete event",
+      "fetch": "Failed to fetch events",
+      "update": "Failed to update event"
+    },
+    "eventModal": {
+      "close": "Close event modal",
+      "color": "Color",
+      "create": "Create",
+      "createTitle": "Create Event",
+      "deleteMessage": "Are you sure you want to delete this event? This action cannot be undone.",
+      "deleteTitle": "Delete Event",
+      "description": "Description",
+      "descriptionPlaceholder": "Add description",
+      "editTitle": "Edit Event",
+      "end": "End",
+      "errors": {
+        "endBeforeStart": "The end time must be after the start time.",
+        "invalidDate": "Invalid date or time.",
+        "multiDay": "Events cannot span multiple days.",
+        "titleRequired": "Please provide a title for your event."
+      },
+      "start": "Start",
+      "titleLabel": "Event Title",
+      "titlePlaceholder": "Add title",
+      "update": "Update"
+    },
+    "loading": "Loading agenda events...",
+    "miniCalendar": {
+      "nextMonth": "Next month",
+      "previousMonth": "Previous month"
+    },
+    "nextEvent": {
+      "empty": "No upcoming events.",
+      "goToWeek": "Go to week",
+      "title": "Next Event",
+      "unknownDate": "Unknown date"
+    },
+    "share": "Share my agenda",
+    "subtitle": "Plan and Organize your journey",
+    "timeRange": "{{start}} to {{end}}",
+    "title": "Agenda TalkUp"
+  },
+  "time": {
+    "daysAgo": "{{days}}d ago",
+    "hoursAgo": "{{hours}}h ago",
+    "justNow": "Just now"
   }
 }

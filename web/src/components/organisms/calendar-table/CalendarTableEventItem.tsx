@@ -1,5 +1,7 @@
+import { useLocale } from '@/hooks/i18n/useLocale';
 import { getEventColorData } from '@/utils/eventColors';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 import { CalendarTableEventItemProps } from './types';
 
@@ -18,6 +20,8 @@ const CalendarTableEventItem = ({
   endHour,
   endMinute,
 }: CalendarTableEventItemProps) => {
+  const { t } = useTranslation('app');
+  const { dateFnsLocale } = useLocale();
   const colors = getEventColorData(color);
 
   const timeRange =
@@ -30,7 +34,10 @@ const CalendarTableEventItem = ({
           startDate.setHours(startHour, startMinute);
           const endDate = new Date();
           endDate.setHours(endHour, endMinute);
-          return `${format(startDate, 'H:mm')} to ${format(endDate, 'H:mm')}`;
+          return t('agenda.timeRange', {
+            start: format(startDate, 'H:mm', { locale: dateFnsLocale }),
+            end: format(endDate, 'H:mm', { locale: dateFnsLocale }),
+          });
         })()
       : null;
 

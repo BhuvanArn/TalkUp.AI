@@ -5,6 +5,7 @@ import {
   getEventColorNameFromHex,
 } from '@/utils/eventColors';
 import { format } from 'date-fns';
+import i18next from 'i18next';
 import { useEffect, useState } from 'react';
 
 /**
@@ -118,7 +119,7 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
     } = formData;
 
     if (!title.trim()) {
-      setErrorMessage('Please provide a title for your event.');
+      setErrorMessage(i18next.t('app:agenda.eventModal.errors.titleRequired'));
       return;
     }
 
@@ -126,17 +127,17 @@ export const useCalendarEventModal = (): UseCalendarEventModalReturn => {
     const endDateTime = new Date(`${endDate}T${endTime}`);
 
     if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-      setErrorMessage('Invalid date or time.');
+      setErrorMessage(i18next.t('app:agenda.eventModal.errors.invalidDate'));
       return;
     }
 
     if (endDateTime <= startDateTime) {
-      setErrorMessage('The end time must be after the start time.');
+      setErrorMessage(i18next.t('app:agenda.eventModal.errors.endBeforeStart'));
       return;
     }
 
     if (startDate !== endDate) {
-      setErrorMessage('Events cannot span multiple days.');
+      setErrorMessage(i18next.t('app:agenda.eventModal.errors.multiDay'));
       return;
     }
 

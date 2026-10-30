@@ -18,6 +18,7 @@ import {
   startOfWeek,
   subDays,
 } from 'date-fns';
+import i18next from 'i18next';
 import { create } from 'zustand';
 
 /**
@@ -139,7 +140,10 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
       set({ events: calendarEvents, isLoading: false });
     } catch (error) {
       console.error('Failed to fetch events:', error);
-      set({ error: 'Failed to fetch events', isLoading: false });
+      set({
+        error: i18next.t('app:agenda.errors.fetch'),
+        isLoading: false,
+      });
     }
   },
 
@@ -181,7 +185,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
       // Revert on failure
       set({
         events: previousEvents,
-        error: 'Failed to create event',
+        error: i18next.t('app:agenda.errors.create'),
         isLoading: false,
       });
     }
@@ -223,7 +227,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
       // Revert to previous state on failure
       set({
         events: previousEvents,
-        error: 'Failed to update event',
+        error: i18next.t('app:agenda.errors.update'),
         isLoading: false,
       });
     }
@@ -241,7 +245,10 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Failed to delete event:', error);
-      set({ error: 'Failed to delete event', isLoading: false });
+      set({
+        error: i18next.t('app:agenda.errors.delete'),
+        isLoading: false,
+      });
     }
   },
 

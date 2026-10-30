@@ -1,12 +1,15 @@
+import { useLocale } from '@/hooks/i18n/useLocale';
 import { CalendarEvent, useCalendarStore } from '@/stores/useCalendarStore';
 import { format, getDay, isSameDay, parse, startOfWeek } from 'date-fns';
-import { enUS } from 'date-fns/locale';
+import { enUS, fr } from 'date-fns/locale';
 import { useMemo } from 'react';
 import { dateFnsLocalizer } from 'react-big-calendar';
 import { withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop';
 
+/** date-fns locales for react-big-calendar, keyed by `AppLocale.intlLocale`. */
 const locales = {
   'en-US': enUS,
+  'fr-FR': fr,
 };
 
 export const useCalendarTable = () => {
@@ -20,6 +23,7 @@ export const useCalendarTable = () => {
     calendarViewMode,
     setCalendarViewMode,
   } = useCalendarStore();
+  const { intlLocale } = useLocale();
 
   const localizer = useMemo(
     () =>
@@ -86,6 +90,7 @@ export const useCalendarTable = () => {
   return {
     // State
     events,
+    culture: intlLocale,
     currentDate,
     calendarViewMode,
     localizer,

@@ -1,6 +1,7 @@
 import IconAction from '@/components/atoms/icon-action';
 import { useMiniCalendar } from '@/hooks/calendar/useMiniCalendar';
 import { isSameDay } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 /**
  * MiniCalendar component.
@@ -9,6 +10,7 @@ import { isSameDay } from 'date-fns';
  * @returns The MiniCalendar component.
  */
 export const MiniCalendar = () => {
+  const { t } = useTranslation('app');
   const {
     days,
     monthYear,
@@ -28,12 +30,12 @@ export const MiniCalendar = () => {
           <IconAction
             icon="caret-left"
             onClick={handlePrevMonth}
-            aria-label="Previous month"
+            aria-label={t('agenda.miniCalendar.previousMonth')}
           />
           <IconAction
             icon="caret-right"
             onClick={handleNextMonth}
-            aria-label="Next month"
+            aria-label={t('agenda.miniCalendar.nextMonth')}
           />
         </div>
       </div>
