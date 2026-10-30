@@ -1,6 +1,6 @@
 import { useLocale } from '@/hooks/i18n/useLocale';
 import type { ParseKeys } from 'i18next';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /** Testimonials: the review text is translated, the name and rating are not. */
@@ -17,6 +17,10 @@ const REVIEWS = [
 const ConvincingBanner = () => {
   const { t } = useTranslation('auth');
   const { intlLocale } = useLocale();
+  const ratingFormat = useMemo(
+    () => new Intl.NumberFormat(intlLocale),
+    [intlLocale],
+  );
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {
@@ -41,9 +45,7 @@ const ConvincingBanner = () => {
         <p className="text-body-l text-white/90">
           {t('convincingBanner.recentReview', {
             name: currentReview.name,
-            rating: new Intl.NumberFormat(intlLocale).format(
-              currentReview.rating,
-            ),
+            rating: ratingFormat.format(currentReview.rating),
           })}
         </p>
         <blockquote className="text-body-l italic text-white min-h-[100px] flex items-center justify-center">

@@ -7,121 +7,101 @@ import { usePhoneNumber } from './usePhoneNumber';
 
 const countries: Country[] = [
   {
-    nameKey: 'phoneNumber.countries.US',
     code: 'US',
     flag: '🇺🇸',
     dialCode: '+1',
   },
   {
-    nameKey: 'phoneNumber.countries.CA',
     code: 'CA',
     flag: '🇨🇦',
     dialCode: '+1',
   },
   {
-    nameKey: 'phoneNumber.countries.GB',
     code: 'GB',
     flag: '🇬🇧',
     dialCode: '+44',
   },
   {
-    nameKey: 'phoneNumber.countries.DE',
     code: 'DE',
     flag: '🇩🇪',
     dialCode: '+49',
   },
   {
-    nameKey: 'phoneNumber.countries.FR',
     code: 'FR',
     flag: '🇫🇷',
     dialCode: '+33',
   },
   {
-    nameKey: 'phoneNumber.countries.AU',
     code: 'AU',
     flag: '🇦🇺',
     dialCode: '+61',
   },
   {
-    nameKey: 'phoneNumber.countries.JP',
     code: 'JP',
     flag: '🇯🇵',
     dialCode: '+81',
   },
   {
-    nameKey: 'phoneNumber.countries.CN',
     code: 'CN',
     flag: '🇨🇳',
     dialCode: '+86',
   },
   {
-    nameKey: 'phoneNumber.countries.IN',
     code: 'IN',
     flag: '🇮🇳',
     dialCode: '+91',
   },
   {
-    nameKey: 'phoneNumber.countries.BR',
     code: 'BR',
     flag: '🇧🇷',
     dialCode: '+55',
   },
   {
-    nameKey: 'phoneNumber.countries.RU',
     code: 'RU',
     flag: '🇷🇺',
     dialCode: '+7',
   },
   {
-    nameKey: 'phoneNumber.countries.ZA',
     code: 'ZA',
     flag: '🇿🇦',
     dialCode: '+27',
   },
   {
-    nameKey: 'phoneNumber.countries.MX',
     code: 'MX',
     flag: '🇲🇽',
     dialCode: '+52',
   },
   {
-    nameKey: 'phoneNumber.countries.KR',
     code: 'KR',
     flag: '🇰🇷',
     dialCode: '+82',
   },
   {
-    nameKey: 'phoneNumber.countries.IT',
     code: 'IT',
     flag: '🇮🇹',
     dialCode: '+39',
   },
   {
-    nameKey: 'phoneNumber.countries.ES',
     code: 'ES',
     flag: '🇪🇸',
     dialCode: '+34',
   },
   {
-    nameKey: 'phoneNumber.countries.NL',
     code: 'NL',
     flag: '🇳🇱',
     dialCode: '+31',
   },
   {
-    nameKey: 'phoneNumber.countries.SE',
     code: 'SE',
     flag: '🇸🇪',
     dialCode: '+46',
   },
   {
-    nameKey: 'phoneNumber.countries.CH',
     code: 'CH',
     flag: '🇨🇭',
     dialCode: '+41',
   },
   {
-    nameKey: 'phoneNumber.countries.AR',
     code: 'AR',
     flag: '🇦🇷',
     dialCode: '+54',
@@ -176,9 +156,9 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
         className={cn('h-10 rounded-md border px-2', selectClassName)}
         disabled={disabled}
       >
-        {countries.map((country) => (
-          <option key={country.code} value={country.code}>
-            {country.flag} {t(country.nameKey)} ({country.dialCode})
+        {countries.map(({ code, flag, dialCode }) => (
+          <option key={code} value={code}>
+            {flag} {t(`phoneNumber.countries.${code}`)} ({dialCode})
           </option>
         ))}
       </select>
