@@ -1,9 +1,12 @@
 import { Avatar } from '@/components/atoms/avatar';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import {
   useGetMemberDetail,
   useGetMyOrganization,
 } from '@/hooks/organization/useServices';
 import type { OrgMemberRole } from '@/services/organization/types';
+import type { ParseKeys } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 const EMPTY = '—';
 
@@ -16,22 +19,22 @@ const orgInitials = (name: string) =>
     .map((part) => part.charAt(0).toUpperCase())
     .join('') || '?';
 
-/** Human label for the caller's org role. */
-const ROLE_LABEL: Record<OrgMemberRole, string> = {
-  admin: 'Administrator',
-  employee: 'Employee',
-  user: 'Member',
-};
+/** Translation key of the human label for the caller's org role. */
+const ROLE_LABEL_KEYS = {
+  admin: 'organizationSettings.roles.admin',
+  employee: 'organizationSettings.roles.employee',
+  user: 'organizationSettings.roles.user',
+} as const satisfies Record<OrgMemberRole, ParseKeys<'settings'>>;
 
-const roleLabel = (role: string | null | undefined): string => {
+const roleLabelKey = (role: string | null | undefined) => {
   if (role === 'admin' || role === 'employee' || role === 'user') {
-    return ROLE_LABEL[role];
+    return ROLE_LABEL_KEYS[role];
   }
-  return 'Member';
+  return ROLE_LABEL_KEYS.user;
 };
 
-const formatDateTime = (iso: string | null | undefined) =>
-  iso ? new Date(iso).toLocaleString() : EMPTY;
+const formatDateTime = (iso: string | null | undefined, intlLocale: string) =>
+  iso ? new Date(iso).toLocaleString(intlLocale) : EMPTY;
 
 /**
  * @interface OrganizationSettingsProps
@@ -63,6 +66,8 @@ export function OrganizationSettings({
   userId,
   userRole,
 }: OrganizationSettingsProps) {
+  const { t } = useTranslation('settings');
+  const { intlLocale } = useLocale();
   const orgQuery = useGetMyOrganization();
   const memberQuery = useGetMemberDetail(organizationId, userId);
 
@@ -72,7 +77,7 @@ export function OrganizationSettings({
   if (orgQuery.isPending) {
     return (
       <p className="text-body-m text-text-weaker" data-testid="org-loading">
-        Loading organization…
+        {t('organizationSettings.loading')}
       </p>
     );
   }
@@ -80,7 +85,7 @@ export function OrganizationSettings({
   if (orgQuery.isError || !org) {
     return (
       <p className="text-body-s text-error" data-testid="org-error">
-        We could not load your organization right now. Please try again later.
+        {t('organizationSettings.loadError')}
       </p>
     );
   }
@@ -96,20 +101,22 @@ export function OrganizationSettings({
     <div className="flex flex-col gap-8" data-testid="organization-settings">
       <div className="flex flex-col gap-5">
         <h3 className="mb-1 border-b border-border pb-2 text-base font-bold text-text">
-          Your organization
+          {t('organizationSettings.title')}
         </h3>
 
         <div className="flex items-center gap-4">
           <Avatar
             data-testid="org-avatar"
             src={org.profile_picture ?? undefined}
-            alt={`${org.organization_name} logo`}
+            alt={t('organization.logoAlt', { name: org.organization_name })}
             fallback={orgInitials(org.organization_name)}
             size="lg"
             className="shrink-0 border border-border bg-accent-weak text-accent"
           />
           <div className="flex min-w-0 flex-col">
-            <span className="text-label-s text-accent">Organization</span>
+            <span className="text-label-s text-accent">
+              {t('organization.label')}
+            </span>
             <span className="truncate text-h4 text-text">
               {org.organization_name}
             </span>
@@ -117,19 +124,21 @@ export function OrganizationSettings({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-label-m text-idle">Your role</span>
+          <span className="text-label-m text-idle">
+            {t('organizationSettings.yourRole')}
+          </span>
           <span
             className="text-sm font-semibold text-text"
             data-testid="org-role-label"
           >
-            {roleLabel(userRole)}
+            {t(roleLabelKey(userRole))}
           </span>
         </div>
       </div>
 
       <div className="flex flex-col gap-5">
         <h3 className="mb-1 border-b border-border pb-2 text-base font-bold text-text">
-          Your activity
+          {t('organizationSettings.activity.title')}
         </h3>
 
         {memberQuery.isError ? (
@@ -137,35 +146,43 @@ export function OrganizationSettings({
             className="text-body-s text-text-weaker"
             data-testid="org-stats-unavailable"
           >
-            Your activity stats are not available right now.
+            {t('organizationSettings.activity.unavailable')}
           </p>
         ) : (
           <dl className="grid grid-cols-2 gap-4 text-body-s sm:grid-cols-4">
             <div>
-              <dt className="text-text-weaker">Interviews</dt>
+              <dt className="text-text-weaker">
+                {t('organization.stats.interviews')}
+              </dt>
               <dd className="text-h5 text-text" data-testid="stat-interviews">
                 {interviewCount}
               </dd>
             </div>
             <div>
-              <dt className="text-text-weaker">Completed</dt>
+              <dt className="text-text-weaker">
+                {t('organization.stats.completed')}
+              </dt>
               <dd className="text-h5 text-text" data-testid="stat-completed">
                 {completedCount}
               </dd>
             </div>
             <div>
-              <dt className="text-text-weaker">Average score</dt>
+              <dt className="text-text-weaker">
+                {t('organization.stats.avgScore')}
+              </dt>
               <dd className="text-h5 text-text" data-testid="stat-avg-score">
                 {avgScore ?? EMPTY}
               </dd>
             </div>
             <div>
-              <dt className="text-text-weaker">Last activity</dt>
+              <dt className="text-text-weaker">
+                {t('organization.stats.lastActivity')}
+              </dt>
               <dd
                 className="text-h5 text-text"
                 data-testid="stat-last-activity"
               >
-                {formatDateTime(lastActivityAt)}
+                {formatDateTime(lastActivityAt, intlLocale)}
               </dd>
             </div>
           </dl>

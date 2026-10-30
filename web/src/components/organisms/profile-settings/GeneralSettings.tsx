@@ -2,13 +2,28 @@ import { BaseInput } from '@/components/atoms/base-input';
 import type { SelectorOption } from '@/components/atoms/selector-input';
 import { TextArea } from '@/components/atoms/text-area';
 import { InputMolecule } from '@/components/molecules/input-molecule';
+import type { ParseKeys } from 'i18next';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
-const JOB_OPTIONS: SelectorOption[] = [
-  { value: 'Product Manager Candidate', label: 'Product Manager Candidate' },
-  { value: 'Product Designer', label: 'Product Designer' },
-  { value: 'Software Engineer', label: 'Software Engineer' },
-];
+/** Job titles offered in the selector. `value` is what the profile stores. */
+const JOB_OPTIONS = [
+  {
+    value: 'Product Manager Candidate',
+    labelKey: 'generalSettings.jobOptions.productManagerCandidate',
+  },
+  {
+    value: 'Product Designer',
+    labelKey: 'generalSettings.jobOptions.productDesigner',
+  },
+  {
+    value: 'Software Engineer',
+    labelKey: 'generalSettings.jobOptions.softwareEngineer',
+  },
+] as const satisfies readonly {
+  value: string;
+  labelKey: ParseKeys<'settings'>;
+}[];
 
 /**
  * @interface GeneralSettingsProps
@@ -60,21 +75,23 @@ export function GeneralSettings({
   onLinkedinUrlChange,
   onJobTitleChange,
 }: GeneralSettingsProps) {
+  const { t } = useTranslation('settings');
   const jobOptions = useMemo((): SelectorOption[] => {
-    if (JOB_OPTIONS.some((o) => o.value === jobTitle)) {
-      return JOB_OPTIONS;
+    const options = JOB_OPTIONS.map(({ value, labelKey }) => ({
+      value,
+      label: t(labelKey),
+    }));
+    if (!jobTitle || options.some((o) => o.value === jobTitle)) {
+      return options;
     }
-    if (!jobTitle) {
-      return JOB_OPTIONS;
-    }
-    return [{ value: jobTitle, label: jobTitle }, ...JOB_OPTIONS];
-  }, [jobTitle]);
+    return [{ value: jobTitle, label: jobTitle }, ...options];
+  }, [jobTitle, t]);
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-5">
         <h3 className="mb-1 border-b border-border pb-2 text-base font-bold text-text">
-          Identity
+          {t('generalSettings.identity')}
         </h3>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -82,7 +99,7 @@ export function GeneralSettings({
             inputType="base"
             id="firstName"
             name="firstName"
-            label="First name"
+            label={t('generalSettings.firstName')}
             value={firstName}
             onChange={(e) => onFirstNameChange(e.target.value)}
             placeholder=""
@@ -91,7 +108,7 @@ export function GeneralSettings({
             inputType="base"
             id="lastName"
             name="lastName"
-            label="Last name"
+            label={t('generalSettings.lastName')}
             value={lastName}
             onChange={(e) => onLastNameChange(e.target.value)}
             placeholder=""
@@ -100,7 +117,7 @@ export function GeneralSettings({
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="username" className="text-label-m text-idle">
-            Username
+            {t('generalSettings.username')}
           </label>
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-weakest">
@@ -120,12 +137,12 @@ export function GeneralSettings({
 
       <div className="flex flex-col gap-5">
         <h3 className="mb-1 border-b border-border pb-2 text-base font-bold text-text">
-          About & Contact
+          {t('generalSettings.aboutContact')}
         </h3>
 
         <div className="flex flex-col gap-1">
           <label htmlFor="bio" className="text-label-m text-idle">
-            Bio
+            {t('generalSettings.bio')}
           </label>
           <TextArea
             id="bio"
@@ -144,7 +161,7 @@ export function GeneralSettings({
             inputType="base"
             id="phone"
             name="phone"
-            label="Phone number"
+            label={t('generalSettings.phone')}
             type="tel"
             value={phoneNumber}
             onChange={(e) => onPhoneNumberChange(e.target.value)}
@@ -154,7 +171,7 @@ export function GeneralSettings({
             inputType="base"
             id="linkedin"
             name="linkedin"
-            label="LinkedIn URL"
+            label={t('generalSettings.linkedin')}
             value={linkedinUrl}
             onChange={(e) => onLinkedinUrlChange(e.target.value)}
             placeholder="https://linkedin.com/in/..."
@@ -165,7 +182,7 @@ export function GeneralSettings({
           inputType="selector"
           id="job-title"
           name="jobTitle"
-          label="Job title"
+          label={t('generalSettings.jobTitle')}
           value={jobTitle}
           onChange={(e) => onJobTitleChange(e.target.value)}
           options={jobOptions}

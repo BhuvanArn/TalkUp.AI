@@ -1,3 +1,4 @@
+import { changeLanguage } from '@/i18n';
 import type { UserProfile } from '@/services/users/types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
@@ -7,7 +8,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Profile from './profile';
 
@@ -613,5 +614,26 @@ describe('Profile page', () => {
       expect(cta).toHaveAttribute('data-attention', 'false');
       vi.useRealTimers();
     });
+  });
+});
+
+describe('Profile page in French', () => {
+  afterEach(async () => {
+    await act(() => changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders the tabs, side cards and goal percentage in French', async () => {
+    await act(() => changeLanguage('fr'));
+    renderProfile();
+    expect(screen.getByTestId('tab-general')).toHaveTextContent('Général');
+    expect(screen.getByTestId('tab-appearance')).toHaveTextContent('Apparence');
+    expect(screen.getByText('Présentation')).toBeInTheDocument();
+    expect(screen.getByText('Objectif')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Changer le style de la bannière' }),
+    ).toBeInTheDocument();
+    // fr-FR puts a narrow no-break space before the percent sign.
+    expect(screen.getByText(/^78\s%$/)).toBeInTheDocument();
   });
 });

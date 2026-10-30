@@ -1,12 +1,14 @@
 import { Avatar } from '@/components/atoms/avatar';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import type {
   OrgMemberRole,
   OrganizationMember,
 } from '@/services/organization/types';
 import { cn } from '@/utils/cn';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ROLE_META } from '../role-meta';
 
@@ -14,8 +16,8 @@ type RoleFilter = 'all' | 'employee' | 'user';
 
 const EMPTY = '·';
 
-const formatDate = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString() : EMPTY;
+const formatDate = (iso: string | null, intlLocale: string) =>
+  iso ? new Date(iso).toLocaleDateString(intlLocale) : EMPTY;
 
 const initials = (username: string) =>
   username
@@ -26,17 +28,20 @@ const initials = (username: string) =>
     .join('') || username.charAt(0).toUpperCase();
 
 /** Small role pill with an icon: admin highlighted, employee mid, user muted. */
-const RoleBadge = ({ role }: { role: OrgMemberRole }) => (
-  <span
-    className={cn(
-      'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-body-s font-medium capitalize',
-      ROLE_META[role].badge,
-    )}
-  >
-    <Icon icon={ROLE_META[role].icon} size="sm" />
-    {role}
-  </span>
-);
+const RoleBadge = ({ role }: { role: OrgMemberRole }) => {
+  const { t } = useTranslation('settings');
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-body-s font-medium capitalize',
+        ROLE_META[role].badge,
+      )}
+    >
+      <Icon icon={ROLE_META[role].icon} size="sm" />
+      {t(`organization.roleNames.${role}`)}
+    </span>
+  );
+};
 
 const thNum = 'px-4 py-3 text-center font-medium';
 const tdNum = 'px-4 py-3 text-center tabular-nums text-text';
@@ -60,6 +65,8 @@ export const MembersTable = ({
   onChangeRole: (userId: string, role: 'user' | 'employee') => void;
   onRemove: (userId: string) => void;
 }) => {
+  const { t } = useTranslation('settings');
+  const { intlLocale } = useLocale();
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
 
   const isFiltered = isAdmin && roleFilter !== 'all';
@@ -72,28 +79,30 @@ export const MembersTable = ({
   // (user-role members only), so for them an empty table means no such members
   // yet — never a filter.
   const emptyMessage = isFiltered
-    ? 'No members match this filter yet.'
+    ? t('membersTable.empty.filtered')
     : isAdmin
-      ? 'No members yet.'
-      : 'No members with the user role yet.';
+      ? t('membersTable.empty.admin')
+      : t('membersTable.empty.employee');
 
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-h4 text-text">Members</h3>
+        <h3 className="text-h4 text-text">{t('membersTable.title')}</h3>
         {isAdmin && (
           <label className="flex items-center gap-2 text-body-s text-text-weaker">
-            Filter by role
+            {t('membersTable.filterByRole')}
             <span className="relative inline-flex items-center">
               <select
-                aria-label="Filter by role"
+                aria-label={t('membersTable.filterByRole')}
                 className="cursor-pointer appearance-none rounded-lg border border-border bg-surface py-1.5 pl-3 pr-9 text-body-s text-text transition-colors hover:border-border-strong hover:bg-surface-hover focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
               >
-                <option value="all">All</option>
-                <option value="employee">Employees only</option>
-                <option value="user">Users only</option>
+                <option value="all">{t('membersTable.filters.all')}</option>
+                <option value="employee">
+                  {t('membersTable.filters.employee')}
+                </option>
+                <option value="user">{t('membersTable.filters.user')}</option>
               </select>
               <Icon
                 icon="caret-down"
@@ -109,13 +118,21 @@ export const MembersTable = ({
         <table className="w-full border-collapse text-left text-body-s">
           <thead>
             <tr className="border-b border-border bg-surface text-label-s uppercase tracking-wide text-text-weaker">
-              <th className="px-4 py-3 font-medium">Member</th>
-              <th className="px-4 py-3 font-medium">Role</th>
-              <th className={thNum}>Interviews</th>
-              <th className={thNum}>Completed</th>
-              <th className={thNum}>Avg score</th>
-              <th className="px-4 py-3 font-medium">Last activity</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">
+                {t('membersTable.columns.member')}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t('membersTable.columns.role')}
+              </th>
+              <th className={thNum}>{t('membersTable.columns.interviews')}</th>
+              <th className={thNum}>{t('membersTable.columns.completed')}</th>
+              <th className={thNum}>{t('membersTable.columns.avgScore')}</th>
+              <th className="px-4 py-3 font-medium">
+                {t('membersTable.columns.lastActivity')}
+              </th>
+              <th className="px-4 py-3 text-right font-medium">
+                {t('membersTable.columns.actions')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -149,14 +166,16 @@ export const MembersTable = ({
                   <td className={tdNum}>{m.completedCount}</td>
                   <td className={tdNum}>{m.avgScore ?? EMPTY}</td>
                   <td className="px-4 py-3 text-text-weak">
-                    {formatDate(m.lastActivityAt)}
+                    {formatDate(m.lastActivityAt, intlLocale)}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
                       {isAdmin && m.user_role !== 'admin' && (
                         <>
                           <select
-                            aria-label={`Role for ${m.username}`}
+                            aria-label={t('membersTable.roleFor', {
+                              username: m.username,
+                            })}
                             className="rounded-lg border border-border bg-surface px-2 py-1.5 text-body-s text-text focus:border-accent focus:outline-none"
                             value={
                               m.user_role as Exclude<OrgMemberRole, 'admin'>
@@ -168,8 +187,12 @@ export const MembersTable = ({
                               )
                             }
                           >
-                            <option value="user">user</option>
-                            <option value="employee">employee</option>
+                            <option value="user">
+                              {t('organization.roleNames.user')}
+                            </option>
+                            <option value="employee">
+                              {t('organization.roleNames.employee')}
+                            </option>
                           </select>
                           <Button
                             color="error"
@@ -177,7 +200,7 @@ export const MembersTable = ({
                             size="sm"
                             onClick={() => onRemove(m.user_id)}
                           >
-                            Remove
+                            {t('membersTable.remove')}
                           </Button>
                         </>
                       )}
@@ -188,7 +211,7 @@ export const MembersTable = ({
                         aria-pressed={isSelected}
                         onClick={() => onSelect(m.user_id)}
                       >
-                        View
+                        {t('membersTable.view')}
                       </Button>
                     </div>
                   </td>

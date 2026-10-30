@@ -1,12 +1,13 @@
 import { Badge } from '@/components/atoms/badge';
 import { cn } from '@/utils/cn';
+import { useTranslation } from 'react-i18next';
 
 /**
  * @interface Language
  * @description Defines the structure for a language proficiency entry.
  */
 interface Language {
-  /** The display name of the language (e.g., "Anglais") */
+  /** The display name of the language (e.g., "English") */
   name: string;
   /** CEFR proficiency level (e.g., "B2", "Native") */
   level: string;
@@ -34,24 +35,29 @@ interface LanguageSettingsProps {
  * @returns {JSX.Element} The rendered language management panel.
  */
 export const LanguageSettings = ({ languages }: LanguageSettingsProps) => {
+  const { t } = useTranslation('settings');
   return (
     <div className="flex flex-col gap-5">
       <div className={cardClass}>
-        <div className="mb-3 text-sm font-semibold text-text">Langues</div>
+        <div className="mb-3 text-sm font-semibold text-text">
+          {t('languageSettings.title')}
+        </div>
         <div className="flex flex-wrap gap-2">
-          <Badge color="accent">Français</Badge>
-          <Badge color="success">Anglais</Badge>
+          <Badge color="accent">{t('languageSettings.french')}</Badge>
+          <Badge color="success">{t('languageSettings.english')}</Badge>
           <Badge
             color="neutral"
             className="cursor-pointer border border-dashed border-border bg-transparent"
           >
-            + Ajouter
+            {t('languageSettings.add')}
           </Badge>
         </div>
       </div>
 
       <div className={cardClass}>
-        <div className="mb-4 text-sm font-semibold text-text">Progression</div>
+        <div className="mb-4 text-sm font-semibold text-text">
+          {t('languageSettings.progress')}
+        </div>
         {languages.map((lang) => (
           <div key={lang.name} className="mb-4 last:mb-0">
             <div className="mb-2 flex justify-between text-body-s">

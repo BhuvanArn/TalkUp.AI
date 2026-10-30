@@ -1,9 +1,11 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import type { OrganizationInvite } from '@/services/organization/types';
 import { cn } from '@/utils/cn';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 import InviteCreateModal from '../invite-create-modal';
 import { ROLE_META } from '../role-meta';
@@ -14,8 +16,6 @@ const STATUS_STYLES: Record<OrganizationInvite['status'], string> = {
   revoked: 'bg-error/10 text-error',
   expired: 'bg-surface text-text-weaker',
 };
-
-const formatDate = (iso: string) => new Date(iso).toLocaleDateString();
 
 /**
  * F13: generate/list/revoke invite codes. Employees may generate `user`
@@ -41,6 +41,8 @@ export const InvitesPanel = ({
   onRevoke: (inviteId: string) => void;
   isCreating: boolean;
 }) => {
+  const { t } = useTranslation('settings');
+  const { intlLocale } = useLocale();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const canInvite = callerRole === 'admin' || callerRole === 'employee';
@@ -48,21 +50,21 @@ export const InvitesPanel = ({
   const copyCode = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
-      toast.success('Code copied');
+      toast.success(t('invitesPanel.codeCopied'));
     } catch {
-      toast.error('Could not copy the code');
+      toast.error(t('invitesPanel.copyError'));
     }
   };
 
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-h4 text-text">Invites</h3>
+        <h3 className="text-h4 text-text">{t('invitesPanel.title')}</h3>
         {canInvite && (
           <Button color="accent" size="sm" onClick={() => setIsModalOpen(true)}>
             <span className="inline-flex items-center gap-1.5">
               <Icon icon="plus" size="sm" />
-              Create invite
+              {t('invitesPanel.create')}
             </span>
           </Button>
         )}
@@ -72,12 +74,24 @@ export const InvitesPanel = ({
         <table className="w-full border-collapse text-left text-body-s">
           <thead>
             <tr className="border-b border-border bg-surface text-label-s uppercase tracking-wide text-text-weaker">
-              <th className="px-4 py-3 font-medium">Code</th>
-              <th className="px-4 py-3 font-medium">Role</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Expires</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">
+                {t('invitesPanel.columns.code')}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t('invitesPanel.columns.role')}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t('invitesPanel.columns.status')}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t('invitesPanel.columns.email')}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t('invitesPanel.columns.expires')}
+              </th>
+              <th className="px-4 py-3 text-right font-medium">
+                {t('invitesPanel.columns.actions')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -97,7 +111,7 @@ export const InvitesPanel = ({
                     )}
                   >
                     <Icon icon={ROLE_META[invite.role].icon} size="sm" />
-                    {invite.role}
+                    {t(`organization.roleNames.${invite.role}`)}
                   </span>
                 </td>
                 <td className="px-4 py-3">
@@ -107,14 +121,14 @@ export const InvitesPanel = ({
                       STATUS_STYLES[invite.status],
                     )}
                   >
-                    {invite.status}
+                    {t(`invitesPanel.statuses.${invite.status}`)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-text-weak">
-                  {invite.email ?? 'any email'}
+                  {invite.email ?? t('invitesPanel.anyEmail')}
                 </td>
                 <td className="px-4 py-3 text-text-weak">
-                  {formatDate(invite.expires_at)}
+                  {new Date(invite.expires_at).toLocaleDateString(intlLocale)}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
@@ -124,7 +138,7 @@ export const InvitesPanel = ({
                       size="sm"
                       onClick={() => copyCode(invite.code)}
                     >
-                      Copy code
+                      {t('invitesPanel.copyCode')}
                     </Button>
                     {isAdmin && invite.status === 'pending' && (
                       <Button
@@ -133,7 +147,7 @@ export const InvitesPanel = ({
                         size="sm"
                         onClick={() => onRevoke(invite.invite_id)}
                       >
-                        Revoke
+                        {t('invitesPanel.revoke')}
                       </Button>
                     )}
                   </div>
@@ -146,7 +160,7 @@ export const InvitesPanel = ({
                   colSpan={6}
                   className="px-4 py-10 text-center text-text-weaker"
                 >
-                  No invites yet. Create one to onboard members.
+                  {t('invitesPanel.empty')}
                 </td>
               </tr>
             )}

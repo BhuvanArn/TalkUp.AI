@@ -5,6 +5,7 @@ import type {
   OrganizationMemberDetail,
 } from '@/services/organization/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import i18next from 'i18next';
 import toast from 'react-hot-toast';
 
 const organizationService = new OrganizationApiService();
@@ -47,10 +48,11 @@ export const useCreateInvite = (orgId: string) => {
     mutationFn: (body: { email?: string; role?: 'user' | 'employee' }) =>
       organizationService.createInvite(orgId, body),
     onSuccess: () => {
-      toast.success('Invite code generated');
+      toast.success(i18next.t('settings:organizationToasts.inviteCreated'));
       invalidate();
     },
-    onError: () => toast.error('Could not create the invite'),
+    onError: () =>
+      toast.error(i18next.t('settings:organizationToasts.inviteCreateError')),
   });
 };
 
@@ -60,10 +62,11 @@ export const useRevokeInvite = (orgId: string) => {
     mutationFn: (inviteId: string) =>
       organizationService.revokeInvite(orgId, inviteId),
     onSuccess: () => {
-      toast.success('Invite revoked');
+      toast.success(i18next.t('settings:organizationToasts.inviteRevoked'));
       invalidate();
     },
-    onError: () => toast.error('Could not revoke the invite'),
+    onError: () =>
+      toast.error(i18next.t('settings:organizationToasts.inviteRevokeError')),
   });
 };
 
@@ -78,10 +81,11 @@ export const useUpdateMemberRole = (orgId: string) => {
       role: 'user' | 'employee';
     }) => organizationService.updateMemberRole(orgId, userId, role),
     onSuccess: () => {
-      toast.success('Member role updated');
+      toast.success(i18next.t('settings:organizationToasts.roleUpdated'));
       invalidate();
     },
-    onError: () => toast.error('Could not update the role'),
+    onError: () =>
+      toast.error(i18next.t('settings:organizationToasts.roleUpdateError')),
   });
 };
 
@@ -91,10 +95,11 @@ export const useRemoveMember = (orgId: string) => {
     mutationFn: (userId: string) =>
       organizationService.removeMember(orgId, userId),
     onSuccess: () => {
-      toast.success('Member removed');
+      toast.success(i18next.t('settings:organizationToasts.memberRemoved'));
       invalidate();
     },
-    onError: () => toast.error('Could not remove the member'),
+    onError: () =>
+      toast.error(i18next.t('settings:organizationToasts.memberRemoveError')),
   });
 };
 
@@ -106,9 +111,10 @@ export const useUpdateOrganization = (orgId: string) => {
       OrganizationProfilePicture?: string;
     }) => organizationService.updateOrganization(orgId, body),
     onSuccess: () => {
-      toast.success('Organization updated');
+      toast.success(i18next.t('settings:organizationToasts.orgUpdated'));
       invalidate();
     },
-    onError: () => toast.error('Could not update the organization'),
+    onError: () =>
+      toast.error(i18next.t('settings:organizationToasts.orgUpdateError')),
   });
 };

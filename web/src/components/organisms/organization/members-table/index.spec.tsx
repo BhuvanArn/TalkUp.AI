@@ -1,6 +1,7 @@
+import { changeLanguage } from '@/i18n';
 import type { OrganizationMember } from '@/services/organization/types';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import MembersTable from './index';
 
@@ -243,5 +244,31 @@ describe('MembersTable', () => {
     expect(
       screen.queryByRole('button', { name: /remove/i }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('MembersTable in French', () => {
+  afterEach(async () => {
+    await act(() => changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders headers, roles and the last activity date in French', async () => {
+    await act(() => changeLanguage('fr'));
+    render(
+      <MembersTable
+        members={members}
+        isAdmin={true}
+        selectedUserId={null}
+        onSelect={vi.fn()}
+        onChangeRole={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Membres')).toBeInTheDocument();
+    expect(screen.getByText('Dernière activité')).toBeInTheDocument();
+    expect(screen.getByLabelText('Filtrer par rôle')).toBeInTheDocument();
+    expect(screen.getByLabelText('Rôle de alice')).toBeInTheDocument();
+    expect(screen.getByText('01/07/2026')).toBeInTheDocument();
   });
 });

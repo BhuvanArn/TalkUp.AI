@@ -1,1 +1,336 @@
-{}
+{
+  "settingsPages": {
+    "billing": "Billing",
+    "integrations": "Integrations",
+    "security": "Security"
+  },
+  "profile": {
+    "title": "Profile",
+    "loading": "Loading profile…",
+    "loadError": "We could not load your profile. Refresh the page or try again later.",
+    "saveError": "Could not save your profile. Please try again.",
+    "passwordResetError": "Could not start password reset right now. Please try again.",
+    "tabs": {
+      "general": "General",
+      "appearance": "Appearance",
+      "notifications": "Notifications",
+      "security": "Security",
+      "organization": "Organization"
+    },
+    "banner": {
+      "changeStyle": "Change style",
+      "changeStyleLabel": "Change banner style"
+    },
+    "avatar": {
+      "uploadTitle": "Upload profile photo",
+      "fallbackAlt": "Profile",
+      "change": "Change profile picture",
+      "choose": "Choose photo",
+      "take": "Take photo",
+      "remove": "Remove",
+      "imageError": "Could not use this image. Try another file."
+    },
+    "header": {
+      "subtitle": "{{jobTitle}} · TalkUp Pro",
+      "defaultJobTitle": "Member"
+    },
+    "intro": {
+      "title": "Introduction",
+      "bioLabel": "User profile :"
+    },
+    "goal": {
+      "title": "Goal"
+    },
+    "notifications": {
+      "training": {
+        "label": "Training reminders",
+        "desc": "Daily practice notification"
+      },
+      "recruiters": {
+        "label": "Messages",
+        "desc": "Alerts for new messages"
+      },
+      "simulations": {
+        "label": "Simulation results",
+        "desc": "Report after each simulation"
+      },
+      "updates": {
+        "label": "TalkUp updates",
+        "desc": "New tools and features"
+      },
+      "weekly": {
+        "label": "Weekly summary",
+        "desc": "Progress recap every Monday"
+      }
+    }
+  },
+  "generalSettings": {
+    "identity": "Identity",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "username": "Username",
+    "aboutContact": "About & Contact",
+    "bio": "Bio",
+    "phone": "Phone number",
+    "linkedin": "LinkedIn URL",
+    "jobTitle": "Job title",
+    "jobOptions": {
+      "productManagerCandidate": "Product Manager Candidate",
+      "productDesigner": "Product Designer",
+      "softwareEngineer": "Software Engineer"
+    }
+  },
+  "appearanceSettings": {
+    "color": {
+      "title": "Profile color",
+      "desc": "Choose your avatar and accent color",
+      "use": "Use color {{name}}",
+      "custom": "Custom color",
+      "names": {
+        "blue": "Blue",
+        "green": "Green",
+        "orange": "Orange",
+        "pink": "Pink",
+        "yellow": "Yellow",
+        "purple": "Purple",
+        "gray": "Gray"
+      }
+    },
+    "preview": {
+      "title": "Avatar preview",
+      "alt": "Avatar preview",
+      "banner": "Banner preview",
+      "sizes": {
+        "large": "Large",
+        "medium": "Medium",
+        "small": "Small"
+      }
+    },
+    "banner": {
+      "title": "Profile banner",
+      "desc": "Choose a theme for your banner",
+      "presets": {
+        "minimal": "Minimal",
+        "ocean": "Ocean",
+        "night": "Night"
+      }
+    },
+    "visibility": {
+      "title": "Profile visibility",
+      "desc": "Who can view your profile?",
+      "public": {
+        "label": "Public",
+        "desc": "Visible to recruiters and the community"
+      },
+      "private": {
+        "label": "Private",
+        "desc": "Visible only to you and your associated recruiters"
+      },
+      "hidden": {
+        "label": "Hidden",
+        "desc": "Profile is not indexed"
+      }
+    }
+  },
+  "notifSettings": {
+    "toggleLabel": "{{label}} notifications"
+  },
+  "securitySettings": {
+    "password": {
+      "title": "Password",
+      "desc": "Use a unique password for TalkUp. If you reuse a password from another service, change it here after any breach elsewhere.",
+      "change": "Change password"
+    },
+    "signIn": {
+      "title": "Sign-in notifications",
+      "desc": "Get an email when a new device or browser signs in to your account.",
+      "emailOnNewDevice": "Email me when a new device is used"
+    },
+    "sessions": {
+      "title": "Devices & sessions",
+      "desc": "These sessions can use your account. Revoke any you do not recognize.",
+      "noOtherDevices": "No other devices to sign out",
+      "logoutEverywhere": "Log out everywhere",
+      "thisDevice": "This device",
+      "revoke": "Revoke"
+    },
+    "data": {
+      "title": "Your data",
+      "desc": "Download a copy of the profile and activity data we store for your account (subject to product limits).",
+      "request": "Request a copy of my data"
+    },
+    "danger": {
+      "title": "Danger zone",
+      "desc": "Deleting your account removes your profile, preferences, and access to TalkUp. This cannot be undone.",
+      "delete": "Delete my account"
+    },
+    "logoutModal": {
+      "title": "Log out of other devices?",
+      "message": "You will be signed out everywhere except on this browser. Other devices will need to sign in again.",
+      "confirm": "Sign out other devices"
+    },
+    "deleteModal": {
+      "title": "Delete your account?",
+      "message": "You will lose access to TalkUp and your data will be scheduled for deletion according to our retention policy. This action cannot be undone.",
+      "confirm": "Delete account"
+    }
+  },
+  "languageSettings": {
+    "title": "Languages",
+    "french": "French",
+    "english": "English",
+    "add": "+ Add",
+    "progress": "Progress"
+  },
+  "organizationSettings": {
+    "loading": "Loading organization…",
+    "loadError": "We could not load your organization right now. Please try again later.",
+    "title": "Your organization",
+    "yourRole": "Your role",
+    "roles": {
+      "admin": "Administrator",
+      "employee": "Employee",
+      "user": "Member"
+    },
+    "activity": {
+      "title": "Your activity",
+      "unavailable": "Your activity stats are not available right now."
+    }
+  },
+  "organization": {
+    "label": "Organization",
+    "logoAlt": "{{name}} logo",
+    "roleNames": {
+      "admin": "admin",
+      "employee": "employee",
+      "user": "user"
+    },
+    "stats": {
+      "interviews": "Interviews",
+      "completed": "Completed",
+      "avgScore": "Average score",
+      "lastActivity": "Last activity"
+    },
+    "adminOnly": "Only organization admins can edit organization settings."
+  },
+  "orgViewLayout": {
+    "loading": "Loading organization…",
+    "loadError": "Couldn't load your organization. Please try again in a moment.",
+    "notAffiliated": "You are not affiliated with an organization."
+  },
+  "invitesPanel": {
+    "title": "Invites",
+    "create": "Create invite",
+    "columns": {
+      "code": "Code",
+      "role": "Role",
+      "status": "Status",
+      "email": "Email",
+      "expires": "Expires",
+      "actions": "Actions"
+    },
+    "statuses": {
+      "pending": "pending",
+      "accepted": "accepted",
+      "revoked": "revoked",
+      "expired": "expired"
+    },
+    "anyEmail": "any email",
+    "copyCode": "Copy code",
+    "revoke": "Revoke",
+    "empty": "No invites yet. Create one to onboard members.",
+    "codeCopied": "Code copied",
+    "copyError": "Could not copy the code"
+  },
+  "inviteCreateModal": {
+    "closeBackdrop": "Close create invite",
+    "title": "Create invite",
+    "desc": "Generate a code to onboard a new member.",
+    "email": "Email (optional)",
+    "emailLabel": "Invite email (optional)",
+    "role": "Invite role",
+    "submit": "Generate invite"
+  },
+  "memberDetail": {
+    "closeBackdrop": "Close member details",
+    "title": "Member details",
+    "loadError": "Couldn't load this member's details. Please try again.",
+    "loading": "Loading member…",
+    "recentInterviews": "Recent interviews",
+    "noInterviews": "No interviews yet."
+  },
+  "membersTable": {
+    "title": "Members",
+    "filterByRole": "Filter by role",
+    "filters": {
+      "all": "All",
+      "employee": "Employees only",
+      "user": "Users only"
+    },
+    "columns": {
+      "member": "Member",
+      "role": "Role",
+      "interviews": "Interviews",
+      "completed": "Completed",
+      "avgScore": "Avg score",
+      "lastActivity": "Last activity",
+      "actions": "Actions"
+    },
+    "roleFor": "Role for {{username}}",
+    "remove": "Remove",
+    "view": "View",
+    "empty": {
+      "filtered": "No members match this filter yet.",
+      "admin": "No members yet.",
+      "employee": "No members with the user role yet."
+    }
+  },
+  "orgSettings": {
+    "title": "Organization settings",
+    "desc": "Update how your organization appears to every member.",
+    "profile": "Profile",
+    "unsaved": "Unsaved changes",
+    "logo": {
+      "title": "Logo",
+      "hint": "Square images work best. Saved as a JPEG preview.",
+      "change": "Change logo",
+      "upload": "Upload logo",
+      "undo": "Undo",
+      "inputLabel": "Upload organization logo",
+      "error": "That image could not be processed. Try a different file."
+    },
+    "name": {
+      "label": "Organization name",
+      "tooShort": "Use at least two characters.",
+      "hint": "This name appears across the organization workspace."
+    },
+    "discard": "Discard",
+    "save": "Save changes",
+    "glance": {
+      "title": "At a glance",
+      "members": "Members",
+      "employees": "Employees",
+      "users": "Users",
+      "created": "Created",
+      "id": "Organization ID",
+      "memberCount_one": "{{count}} member",
+      "memberCount_other": "{{count}} members",
+      "employeeCount_one": "{{count}} employee",
+      "employeeCount_other": "{{count}} employees",
+      "userCount_one": "{{count}} user",
+      "userCount_other": "{{count}} users"
+    }
+  },
+  "organizationToasts": {
+    "inviteCreated": "Invite code generated",
+    "inviteCreateError": "Could not create the invite",
+    "inviteRevoked": "Invite revoked",
+    "inviteRevokeError": "Could not revoke the invite",
+    "roleUpdated": "Member role updated",
+    "roleUpdateError": "Could not update the role",
+    "memberRemoved": "Member removed",
+    "memberRemoveError": "Could not remove the member",
+    "orgUpdated": "Organization updated",
+    "orgUpdateError": "Could not update the organization"
+  }
+}

@@ -7,6 +7,7 @@ import {
 } from '@/hooks/organization/useServices';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/organization/settings')({
   beforeLoad: createAuthGuard('/organization/settings'),
@@ -19,6 +20,7 @@ export const Route = createFileRoute('/organization/settings')({
  * settings — the server rejects the mutation regardless).
  */
 function OrganizationSettingsPage() {
+  const { t } = useTranslation('settings');
   const { data: auth } = useAuthStatus();
   const { data: org } = useGetMyOrganization();
 
@@ -36,7 +38,7 @@ function OrganizationSettingsPage() {
         />
       ) : (
         <p className="text-body-m text-text-weaker">
-          Only organization admins can edit organization settings.
+          {t('organization.adminOnly')}
         </p>
       )}
     </OrgViewLayout>

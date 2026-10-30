@@ -1,15 +1,17 @@
 import { Avatar } from '@/components/atoms/avatar';
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import type { OrganizationDetails } from '@/services/organization/types';
 import { resizeImageFileToJpegDataUrl } from '@/utils/resizeImageToJpegDataUrl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const MIN_NAME_LENGTH = 2;
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, {
+const formatDate = (iso: string, intlLocale: string) =>
+  new Date(iso).toLocaleDateString(intlLocale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -45,6 +47,8 @@ export const OrgSettings = ({
   }) => void;
   isSaving: boolean;
 }) => {
+  const { t } = useTranslation('settings');
+  const { intlLocale } = useLocale();
   const [name, setName] = useState(org.organization_name);
   // null = untouched (fall back to org.profile_picture); '' would mean cleared,
   // but there is no backend clear action so we only ever set a new data URL.
@@ -78,21 +82,26 @@ export const OrgSettings = ({
   const meta = useMemo(
     () => [
       {
-        label: 'Members',
-        value: `${memberCount} ${memberCount === 1 ? 'member' : 'members'}`,
+        label: t('orgSettings.glance.members'),
+        value: t('orgSettings.glance.memberCount', { count: memberCount }),
       },
       {
-        label: 'Employees',
-        value: `${employeeCount} ${employeeCount === 1 ? 'employee' : 'employees'}`,
+        label: t('orgSettings.glance.employees'),
+        value: t('orgSettings.glance.employeeCount', { count: employeeCount }),
       },
       {
-        label: 'Users',
-        value: `${userCount} ${userCount === 1 ? 'user' : 'users'}`,
+        label: t('orgSettings.glance.users'),
+        value: t('orgSettings.glance.userCount', { count: userCount }),
       },
-      { label: 'Created', value: formatDate(org.created_at) },
-      { label: 'Organization ID', value: org.organization_id },
+      {
+        label: t('orgSettings.glance.created'),
+        value: formatDate(org.created_at, intlLocale),
+      },
+      { label: t('orgSettings.glance.id'), value: org.organization_id },
     ],
     [
+      t,
+      intlLocale,
       memberCount,
       employeeCount,
       userCount,
@@ -106,7 +115,7 @@ export const OrgSettings = ({
     try {
       setPicture(await resizeImageFileToJpegDataUrl(file));
     } catch {
-      toast.error('That image could not be processed. Try a different file.');
+      toast.error(t('orgSettings.logo.error'));
     }
   };
 
@@ -126,10 +135,8 @@ export const OrgSettings = ({
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <h2 className="text-h3 text-text">Organization settings</h2>
-        <p className="text-body-m text-text-weaker">
-          Update how your organization appears to every member.
-        </p>
+        <h2 className="text-h3 text-text">{t('orgSettings.title')}</h2>
+        <p className="text-body-m text-text-weaker">{t('orgSettings.desc')}</p>
       </header>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -138,12 +145,12 @@ export const OrgSettings = ({
           <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
             <div className="flex items-center gap-2">
               <Icon icon="organization" size="sm" className="text-accent" />
-              <h3 className="text-h5 text-text">Profile</h3>
+              <h3 className="text-h5 text-text">{t('orgSettings.profile')}</h3>
             </div>
             {isDirty && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-weak px-2.5 py-0.5 text-body-s font-medium text-accent">
                 <span className="size-1.5 rounded-full bg-accent" aria-hidden />
-                Unsaved changes
+                {t('orgSettings.unsaved')}
               </span>
             )}
           </div>
@@ -153,15 +160,17 @@ export const OrgSettings = ({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Avatar
                 src={previewSrc}
-                alt={`${org.organization_name} logo`}
+                alt={t('organization.logoAlt', { name: org.organization_name })}
                 fallback={initials(name || org.organization_name)}
                 size="xl"
                 className="shrink-0 border border-border bg-accent-weaker text-h5 text-accent"
               />
               <div className="flex flex-col gap-2">
-                <p className="text-body-s-strong text-text">Logo</p>
+                <p className="text-body-s-strong text-text">
+                  {t('orgSettings.logo.title')}
+                </p>
                 <p className="max-w-xs text-body-s text-text-weaker">
-                  Square images work best. Saved as a JPEG preview.
+                  {t('orgSettings.logo.hint')}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <Button
@@ -172,7 +181,9 @@ export const OrgSettings = ({
                   >
                     <span className="inline-flex items-center gap-1.5">
                       <Icon icon="upload" size="sm" />
-                      {previewSrc ? 'Change logo' : 'Upload logo'}
+                      {previewSrc
+                        ? t('orgSettings.logo.change')
+                        : t('orgSettings.logo.upload')}
                     </span>
                   </Button>
                   {pictureChanged && (
@@ -182,7 +193,7 @@ export const OrgSettings = ({
                       size="sm"
                       onClick={() => setPicture(null)}
                     >
-                      Undo
+                      {t('orgSettings.logo.undo')}
                     </Button>
                   )}
                 </div>
@@ -191,7 +202,7 @@ export const OrgSettings = ({
                   type="file"
                   accept="image/*"
                   className="sr-only"
-                  aria-label="Upload organization logo"
+                  aria-label={t('orgSettings.logo.inputLabel')}
                   onChange={(e) => {
                     void handleFile(e.target.files?.[0]);
                     e.target.value = '';
@@ -206,7 +217,7 @@ export const OrgSettings = ({
                 htmlFor="org-name"
                 className="text-body-s font-medium text-text-weaker"
               >
-                Organization name
+                {t('orgSettings.name.label')}
               </label>
               <input
                 id="org-name"
@@ -221,8 +232,8 @@ export const OrgSettings = ({
               />
               <p id="org-name-hint" className="text-body-s text-text-weaker">
                 {nameChanged && nameTooShort
-                  ? 'Use at least two characters.'
-                  : 'This name appears across the organization workspace.'}
+                  ? t('orgSettings.name.tooShort')
+                  : t('orgSettings.name.hint')}
               </p>
             </div>
           </div>
@@ -236,7 +247,7 @@ export const OrgSettings = ({
               disabled={!isDirty || isSaving}
               onClick={handleReset}
             >
-              Discard
+              {t('orgSettings.discard')}
             </Button>
             <Button
               color="accent"
@@ -245,7 +256,7 @@ export const OrgSettings = ({
               disabled={!canSave}
               onClick={handleSave}
             >
-              Save changes
+              {t('orgSettings.save')}
             </Button>
           </div>
         </section>
@@ -253,7 +264,7 @@ export const OrgSettings = ({
         {/* Read-only metadata rail */}
         <aside className="flex h-fit flex-col gap-4 rounded-xl border border-border bg-surface-raised p-6">
           <h3 className="text-body-s-strong uppercase tracking-wide text-text-weaker">
-            At a glance
+            {t('orgSettings.glance.title')}
           </h3>
           <dl className="flex flex-col gap-4">
             {meta.map((row) => (

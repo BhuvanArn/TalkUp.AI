@@ -1,5 +1,6 @@
 import { Toggle } from '@/components/atoms/toggle';
 import { cn } from '@/utils/cn';
+import { useTranslation } from 'react-i18next';
 
 /**
  * @interface NotifSetting
@@ -35,6 +36,7 @@ interface NotifSettingsProps {
  * @returns {JSX.Element} A structured list of notification toggles.
  */
 export const NotifSettings = ({ notifs, onToggle }: NotifSettingsProps) => {
+  const { t } = useTranslation('settings');
   return (
     <div className="flex flex-col">
       {notifs.map((n, i) => (
@@ -59,7 +61,7 @@ export const NotifSettings = ({ notifs, onToggle }: NotifSettingsProps) => {
             id={`notif-${n.id}`}
             enabled={n.enabled}
             onToggle={() => onToggle(n.id)}
-            aria-label={`${n.label} notifications`}
+            aria-label={t('notifSettings.toggleLabel', { label: n.label })}
           />
         </div>
       ))}
