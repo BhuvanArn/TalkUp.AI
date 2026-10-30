@@ -17,6 +17,10 @@ describe('getLocale', () => {
       intlLocale,
     });
   });
+
+  it('returns the same object on every call', () => {
+    expect(getLocale('fr')).toBe(getLocale('fr'));
+  });
 });
 
 describe('useLocale', () => {
