@@ -10,6 +10,9 @@ const EMPTY = '·';
 const formatDateTime = (iso: string | null, intlLocale: string) =>
   iso ? new Date(iso).toLocaleString(intlLocale) : EMPTY;
 
+const formatScore = (score: number | null | undefined, intlLocale: string) =>
+  score != null ? new Intl.NumberFormat(intlLocale).format(score) : EMPTY;
+
 /**
  * F14: profile basics + stats + recent interviews for one member, shown in a
  * modal so the members table can use the full page width. Renders nothing when
@@ -107,11 +110,7 @@ export const MemberDetail = ({
                   {t('organization.stats.avgScore')}
                 </dt>
                 <dd className="text-h5 text-text">
-                  {detail.stats.avgScore != null
-                    ? new Intl.NumberFormat(intlLocale).format(
-                        detail.stats.avgScore,
-                      )
-                    : EMPTY}
+                  {formatScore(detail.stats.avgScore, intlLocale)}
                 </dd>
               </div>
               <div>
@@ -142,7 +141,7 @@ export const MemberDetail = ({
                       <span className="truncate text-text">{iv.type}</span>
                       <span className="text-text-weaker">{iv.status}</span>
                       <span className="tabular-nums text-text">
-                        {iv.score ?? EMPTY}
+                        {formatScore(iv.score, intlLocale)}
                       </span>
                     </li>
                   ))}
