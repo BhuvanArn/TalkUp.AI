@@ -15,8 +15,7 @@
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
-    "network": "Network error. Check your connection and try again.",
-    "fallback": "An error occurred. Please try again."
+    "network": "Network error. Check your connection and try again."
   },
   "languages": {
     "en": "English",

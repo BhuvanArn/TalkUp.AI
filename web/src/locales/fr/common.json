@@ -15,8 +15,7 @@
   },
   "errors": {
     "generic": "Une erreur est survenue. Veuillez réessayer.",
-    "network": "Erreur réseau. Vérifiez votre connexion et réessayez.",
-    "fallback": "Une erreur est survenue. Veuillez réessayer."
+    "network": "Erreur réseau. Vérifiez votre connexion et réessayez."
   },
   "languages": {
     "en": "English",
