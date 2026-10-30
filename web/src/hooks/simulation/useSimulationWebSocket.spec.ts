@@ -14,7 +14,7 @@ const mockGetWebSocket = vi.fn();
 let mockReadyState = ReadyState.UNINSTANTIATED;
 let mockLastMessage: MessageEvent | null = null;
 let mockLastJsonMessage: any = null;
-let mockOnOpen: (() => void) | undefined;
+let mockOnOpen: ((event?: unknown) => void) | undefined;
 let mockOnClose: ((event: CloseEvent) => void) | undefined;
 let mockOnMessage: ((event: MessageEvent) => void) | undefined;
 let mockOnError: ((event: Event) => void) | undefined;
@@ -197,6 +197,38 @@ describe('useSimulationWebSocket', () => {
 
       mockOnOpen?.();
 
+      expect(onOpen).toHaveBeenCalled();
+    });
+
+    it('closes a socket that opens after disconnect', () => {
+      const onOpen = vi.fn();
+      const { result } = renderHook(() => useSimulationWebSocket({ onOpen }));
+      // The socket doesn't exist yet when disconnect runs.
+      mockGetWebSocket.mockReturnValue(null);
+
+      act(() => {
+        result.current.connect('ws://test.com');
+        result.current.disconnect(1000, 'Start failed');
+      });
+      const socket = { close: vi.fn() };
+      mockOnOpen?.({ target: socket });
+
+      expect(socket.close).toHaveBeenCalledWith(1000, 'Client disconnect');
+      expect(onOpen).not.toHaveBeenCalled();
+    });
+
+    it('keeps a socket opened after a new connect', () => {
+      const onOpen = vi.fn();
+      const { result } = renderHook(() => useSimulationWebSocket({ onOpen }));
+
+      act(() => {
+        result.current.disconnect();
+        result.current.connect('ws://test.com');
+      });
+      const socket = { close: vi.fn() };
+      mockOnOpen?.({ target: socket });
+
+      expect(socket.close).not.toHaveBeenCalled();
       expect(onOpen).toHaveBeenCalled();
     });
 

@@ -108,6 +108,10 @@ export function useSimulationWebSocket(
   const [socketUrl, setSocketUrl] = useState<string | null>(null);
   const interviewIDRef = useRef(interviewID);
   interviewIDRef.current = interviewID;
+  // react-use-websocket creates the socket asynchronously: a `disconnect`
+  // right after `connect` (e.g. a start that fails at once) can run before the
+  // socket exists, which then opens anyway. Close such a socket on open.
+  const disconnectedRef = useRef(false);
 
   const {
     sendMessage,
@@ -117,7 +121,13 @@ export function useSimulationWebSocket(
     readyState,
     getWebSocket,
   } = useWebSocket(socketUrl, {
-    onOpen: () => onOpen?.(),
+    onOpen: (event: WebSocketEventMap['open']) => {
+      if (disconnectedRef.current) {
+        (event.target as WebSocket).close(1000, 'Client disconnect');
+        return;
+      }
+      onOpen?.();
+    },
     onClose: (closeEvent: CloseEvent) => onClose?.(closeEvent),
     onMessage: (message: MessageEvent) => onMessage?.(message),
     onError: (event: Event) => onError?.(event),
@@ -129,6 +139,7 @@ export function useSimulationWebSocket(
     (url?: string) => {
       const targetUrl = url || defaultUrl;
       if (!targetUrl) return;
+      disconnectedRef.current = false;
       setSocketUrl(targetUrl);
     },
     [defaultUrl],
@@ -136,6 +147,7 @@ export function useSimulationWebSocket(
 
   const disconnect = useCallback(
     (code = 1000, reason = 'Client disconnect') => {
+      disconnectedRef.current = true;
       getWebSocket()?.close(code, reason);
       setSocketUrl(null);
     },
