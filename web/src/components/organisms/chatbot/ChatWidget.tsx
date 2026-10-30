@@ -1,27 +1,23 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
-import { ChatWindow, Message } from '@/components/organisms/chatbot/ChatWindow';
+import {
+  ChatWindow,
+  Message,
+  MessageText,
+} from '@/components/organisms/chatbot/ChatWindow';
 import { useChatContext } from '@/hooks/ui/useChatContext';
 import { useDragFAB } from '@/hooks/ui/useDragFAB';
-import { getLanguage } from '@/i18n';
-import { getLocale } from '@/i18n/locale';
 import { sendChatMessage } from '@/services/ai/http';
 import { ChatHistoryItem } from '@/services/ai/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** Id of the greeting message; its text is translated at render time. */
+/** Id of the greeting message, which is not sent to the API as history. */
 const WELCOME_ID = 'welcome';
 
 // How many prior turns to send as context. Keeps the request small and bounded
 // (the server also caps history), while giving the model enough to stay coherent.
 const HISTORY_LIMIT = 10;
-
-const getTimestamp = () =>
-  new Date().toLocaleTimeString(getLocale(getLanguage()).intlLocale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 
 export const ChatWidget = () => {
   const { t } = useTranslation('app');
@@ -30,13 +26,15 @@ export const ChatWidget = () => {
   // assistant can answer about what the user is looking at.
   const chatContext = useChatContext();
   // Computed on mount so the welcome timestamp reflects when the chat is first
-  // rendered, not when the module was loaded.
+  // rendered, not when the module was loaded. Messages hold keys and Dates, not
+  // translated or formatted text: ChatWindow renders them in the active
+  // language.
   const [messages, setMessages] = useState<Message[]>(() => [
     {
       id: WELCOME_ID,
-      text: '',
+      text: { key: 'chat.welcome' },
       variant: 'ai',
-      timestamp: getTimestamp(),
+      sentAt: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -58,9 +56,9 @@ export const ChatWidget = () => {
 
     const userMsg: Message = {
       id: `user-${(msgId.current += 1)}`,
-      text,
+      text: { raw: text },
       variant: 'user',
-      timestamp: getTimestamp(),
+      sentAt: new Date(),
     };
 
     // Snapshot the prior turns before appending the new user message so we send
@@ -70,21 +68,21 @@ export const ChatWidget = () => {
       .slice(-HISTORY_LIMIT)
       .map((m) => ({
         role: m.variant === 'ai' ? 'assistant' : 'user',
-        content: m.text,
+        content: 'key' in m.text ? t(m.text.key) : m.text.raw,
       }));
 
     setMessages((prev) => [...prev, userMsg]);
     setInputValue('');
     setIsTyping(true);
 
-    let replyText = t('chat.error');
+    let replyText: MessageText = { key: 'chat.error' };
     try {
       const { reply } = await sendChatMessage({
         message: text,
         history,
         ...(chatContext ? { context: chatContext } : {}),
       });
-      replyText = reply;
+      replyText = { raw: reply };
     } catch {
       // Fall back to the error message; the details are logged in the service.
     }
@@ -95,7 +93,7 @@ export const ChatWidget = () => {
       id: `ai-${(msgId.current += 1)}`,
       text: replyText,
       variant: 'ai',
-      timestamp: getTimestamp(),
+      sentAt: new Date(),
     };
     setMessages((prev) => [...prev, aiMsg]);
     setIsTyping(false);
@@ -143,11 +141,7 @@ export const ChatWidget = () => {
       {isOpen && (
         <div className="absolute bottom-16 right-0 transition-all duration-200 origin-bottom-right">
           <ChatWindow
-            messages={messages.map((message) =>
-              message.id === WELCOME_ID
-                ? { ...message, text: t('chat.welcome') }
-                : message,
-            )}
+            messages={messages}
             inputValue={inputValue}
             onInputChange={setInputValue}
             onSend={handleSend}
