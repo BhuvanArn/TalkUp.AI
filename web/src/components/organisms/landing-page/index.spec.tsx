@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import LandingPage from './index';
@@ -38,10 +39,15 @@ vi.mock('@/hooks/stats/usePublicStats', () => ({
 }));
 
 const trackEventMock = vi.fn();
+const heroVariantMock = vi.fn(() => 'a');
 vi.mock('@/utils/analytics', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/analytics')>();
   return {
     ...actual,
+    getHeroVariant: () => heroVariantMock(),
+    trackEvent: (...args: unknown[]) => trackEventMock(...args),
+    trackHeroView: (heroVariant: string) =>
+      trackEventMock('hero_view', { heroVariant }),
     trackCtaClick: (location: string, target: string) => () =>
       trackEventMock('cta_click', { location, target }),
   };
@@ -58,6 +64,7 @@ describe('LandingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     usePublicStatsMock.mockReturnValue(statsResult(1284));
+    heroVariantMock.mockReturnValue('a');
   });
 
   it('renders nav, footer and a single h1', () => {
@@ -66,9 +73,33 @@ describe('LandingPage', () => {
     expect(screen.getByTestId('landing-footer')).toBeInTheDocument();
     const h1s = screen.getAllByRole('heading', { level: 1 });
     expect(h1s).toHaveLength(1);
-    expect(h1s[0]).toHaveTextContent(
-      'Your interview is on Thursday. Walk in ready.',
+    expect(h1s[0]).toHaveTextContent('The interview before the interview.');
+  });
+
+  it.each([
+    ['a', 'The interview before the interview.'],
+    ['b', 'Speak right. Land the job.'],
+  ])('renders hero variant %s and reports the view', (variant, headline) => {
+    heroVariantMock.mockReturnValue(variant);
+    render(<LandingPage />);
+    expect(
+      screen.getByRole('heading', { level: 1, name: headline }),
+    ).toBeInTheDocument();
+    expect(trackEventMock).toHaveBeenCalledWith('hero_view', {
+      heroVariant: variant,
+    });
+  });
+
+  it('reports the hero view once under StrictMode', () => {
+    render(
+      <StrictMode>
+        <LandingPage />
+      </StrictMode>,
     );
+    const views = trackEventMock.mock.calls.filter(
+      ([name]) => name === 'hero_view',
+    );
+    expect(views).toHaveLength(1);
   });
 
   it('renders every section heading in order', () => {
@@ -252,7 +283,10 @@ describe('LandingPage', () => {
     final.click();
     const pricing = document.getElementById('pricing') as HTMLElement;
     within(pricing).getByRole('link', { name: 'Create an account' }).click();
-    expect(trackEventMock.mock.calls).toEqual([
+    const ctaCalls = trackEventMock.mock.calls.filter(
+      ([name]) => name === 'cta_click',
+    );
+    expect(ctaCalls).toEqual([
       ['cta_click', { location: 'hero', target: '/register' }],
       ['cta_click', { location: 'final', target: '/register' }],
       ['cta_click', { location: 'pricing_candidates', target: '/register' }],

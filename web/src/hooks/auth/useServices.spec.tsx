@@ -9,9 +9,12 @@ import {
   usePostVerifyEmail,
 } from './useServices';
 
-const { trackEvent } = vi.hoisted(() => ({ trackEvent: vi.fn() }));
+const { trackEvent, heroVariantData } = vi.hoisted(() => ({
+  trackEvent: vi.fn(),
+  heroVariantData: vi.fn(() => ({})),
+}));
 
-vi.mock('@/utils/analytics', () => ({ trackEvent }));
+vi.mock('@/utils/analytics', () => ({ trackEvent, heroVariantData }));
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ login: vi.fn() }),
@@ -70,6 +73,22 @@ describe('auth mutations analytics', () => {
       });
     },
   );
+
+  it('tags signup_completed with the hero variant the visitor saw', async () => {
+    heroVariantData.mockReturnValueOnce({ heroVariant: 'b' });
+    const { result } = renderHook(() => usePostRegister(), { wrapper });
+    await act(() =>
+      result.current.mutateAsync({
+        username: 'lea',
+        email: 'lea@example.com',
+        password: 'Secret123!',
+      }),
+    );
+    expect(trackEvent).toHaveBeenCalledWith('signup_completed', {
+      withOrganizationCode: false,
+      heroVariant: 'b',
+    });
+  });
 
   it('tracks organization_created', async () => {
     const { result } = renderHook(() => usePostRegisterOrganization(), {

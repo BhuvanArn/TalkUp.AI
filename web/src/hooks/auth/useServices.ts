@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import AuthService from '@/services/auth/http';
-import { trackEvent } from '@/utils/analytics';
+import { heroVariantData, trackEvent } from '@/utils/analytics';
 import { type AuthStatus, checkAuthStatus } from '@/utils/auth.guards';
 import { extractErrorMessage } from '@/utils/error';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -65,6 +65,7 @@ export const usePostRegister = () => {
     onSuccess: (_data, variables) => {
       trackEvent('signup_completed', {
         withOrganizationCode: Boolean(variables.organizationCode),
+        ...heroVariantData(),
       });
       toast.success('Check your email for a verification code');
       router.navigate({

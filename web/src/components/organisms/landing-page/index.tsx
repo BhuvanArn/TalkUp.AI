@@ -1,8 +1,15 @@
 import { Button } from '@/components/atoms/button';
 import LandingFooter from '@/components/organisms/landing-footer';
 import LandingNav from '@/components/organisms/landing-nav';
-import { type CtaLocation, trackCtaClick } from '@/utils/analytics';
+import {
+  type CtaLocation,
+  type HeroVariant,
+  getHeroVariant,
+  trackCtaClick,
+  trackHeroView,
+} from '@/utils/analytics';
 import { Link } from '@tanstack/react-router';
+import { useEffect, useRef, useState } from 'react';
 
 import AccountCounter from './account-counter';
 import HeroRoadmapMock from './hero-roadmap-mock';
@@ -162,48 +169,66 @@ const LandingPage = () => (
   </div>
 );
 
-const Hero = () => (
-  <section className="pt-10 pb-14 sm:pb-20">
-    <div
-      className={`${WRAP} grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12`}
-    >
-      <div className="min-w-0">
-        <h1
-          className={`${DISPLAY} text-[clamp(44px,6.4vw,76px)] leading-[0.95]`}
-        >
-          Your interview is on Thursday. Walk in ready.
-        </h1>
-        <p className={`${LEAD} mt-[22px]`}>
-          Add your CV and the link to the job offer. Talkup builds a prep path
-          for that exact role, then interviews you out loud with an AI recruiter
-          who has read both.
-        </p>
-        <div className={CTAS}>
-          <Button asChild variant="contained" color="accent" size="lg">
-            <Link to="/register" onClick={trackCtaClick('hero', '/register')}>
-              Analyze my CV and an offer
-            </Link>
-          </Button>
-          <Button asChild variant="outlined" color="neutral" size="lg">
-            <Link
-              to="/"
-              hash="how"
-              resetScroll={false}
-              onClick={trackCtaClick('hero', '#how')}
-            >
-              See how it works
-            </Link>
-          </Button>
+/** Hero headline A/B test, measured in Umami (see `web/ANALYTICS.md`). */
+const HERO_HEADLINES: Record<HeroVariant, string> = {
+  a: 'The interview before the interview.',
+  b: 'Speak right. Land the job.',
+};
+
+const Hero = () => {
+  const [variant] = useState(getHeroVariant);
+  const viewTracked = useRef(false);
+
+  useEffect(() => {
+    // StrictMode replays effects in dev: report one view per mount.
+    if (viewTracked.current) return;
+    viewTracked.current = true;
+    trackHeroView(variant);
+  }, [variant]);
+
+  return (
+    <section className="pt-10 pb-14 sm:pb-20">
+      <div
+        className={`${WRAP} grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12`}
+      >
+        <div className="min-w-0">
+          <h1
+            className={`${DISPLAY} text-[clamp(44px,6.4vw,76px)] leading-[0.95]`}
+          >
+            {HERO_HEADLINES[variant]}
+          </h1>
+          <p className={`${LEAD} mt-[22px]`}>
+            Add your CV and the link to the job offer. Talkup builds a prep path
+            for that exact role, then interviews you out loud with an AI
+            recruiter who has read both.
+          </p>
+          <div className={CTAS}>
+            <Button asChild variant="contained" color="accent" size="lg">
+              <Link to="/register" onClick={trackCtaClick('hero', '/register')}>
+                Analyze my CV and an offer
+              </Link>
+            </Button>
+            <Button asChild variant="outlined" color="neutral" size="lg">
+              <Link
+                to="/"
+                hash="how"
+                resetScroll={false}
+                onClick={trackCtaClick('hero', '#how')}
+              >
+                See how it works
+              </Link>
+            </Button>
+          </div>
+          <AccountCounter variant="hero" className="mt-4" />
+          <p className="mt-1 text-[13px] text-text-weaker">
+            CV in PDF. Simulations are held in French for now.
+          </p>
         </div>
-        <AccountCounter variant="hero" className="mt-4" />
-        <p className="mt-1 text-[13px] text-text-weaker">
-          CV in PDF. Simulations are held in French for now.
-        </p>
+        <HeroRoadmapMock />
       </div>
-      <HeroRoadmapMock />
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 /* Deep navy band: primary in light, the darker primary-weaker in dark so the
    light text keeps > 7:1 contrast in both themes. */

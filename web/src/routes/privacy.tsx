@@ -107,6 +107,7 @@ const SECTIONS: LegalSection[] = [
       'TalkUp uses cookies and similar technologies to keep you signed in, remember preferences, and understand how the product is used.',
       'For more detail on the cookies we use and how to manage them, see our Cookies policy (coming soon).',
       'Analytics: on our public pages (home, about, privacy, sign-in and sign-up), we measure visits and a few anonymous actions, such as clicking a sign-up button or completing registration, with Umami, a privacy-friendly analytics service. Umami sets no cookies and stores no personal data: visitors are counted with a salted hash that changes regularly, and we never send your name, email or account identifiers. Query strings are removed from page addresses before they are sent. This helps us understand which parts of the site are useful, based on our legitimate interest. Blocking the Umami script, for example with an ad blocker, has no effect on how TalkUp works.',
+      'To compare two headlines on the home page, your browser stores which one you were shown (the letter a or b and the date); after 13 months it is ignored and deleted on your next visit. It contains no personal data and is never used to identify you.',
     ],
   },
   {

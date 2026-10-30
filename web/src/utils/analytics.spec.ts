@@ -1,9 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  HERO_VARIANT_MAX_AGE_MS,
+  getHeroVariant,
+  heroVariantData,
   initAnalytics,
+  peekHeroVariant,
+  resetHeroVariant,
   resetPageviewTracking,
+  trackCtaClick,
   trackEvent,
+  trackHeroView,
   trackPageview,
 } from './analytics';
 
@@ -15,6 +22,10 @@ describe('analytics', () => {
     loaderScripts().forEach((s) => s.remove());
     delete window.umami;
     resetPageviewTracking();
+    resetHeroVariant();
+    localStorage.clear();
+    sessionStorage.clear();
+    vi.restoreAllMocks();
   });
 
   /** Runs each payload function Umami received against a stale default payload. */
@@ -22,6 +33,164 @@ describe('analytics', () => {
     track.mock.calls.map(([build]) =>
       build({ website: 'abc', url: 'https://talkup.test/stale' }),
     );
+
+  const sentEvents = (track: ReturnType<typeof vi.fn>) =>
+    sentPayloads(track)
+      .filter((p) => p.name)
+      .map(({ name, data, url }) => ({ name, data, url }));
+
+  describe('event queue', () => {
+    it('queues events while the injected tracker loads, then flushes them', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      trackEvent('hero_view', { heroVariant: 'a' });
+      const track = vi.fn();
+      window.umami = { track };
+      const [script] = loaderScripts();
+      script.dispatchEvent(new Event('load'));
+      expect(sentEvents(track)).toEqual([
+        { name: 'hero_view', data: { heroVariant: 'a' }, url: '/' },
+      ]);
+    });
+
+    it('keeps the path an event was fired on when flushing later', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      trackEvent('hero_view', { heroVariant: 'a' });
+      window.history.pushState({}, '', '/register');
+      const track = vi.fn();
+      window.umami = { track };
+      loaderScripts()[0].dispatchEvent(new Event('load'));
+      window.history.pushState({}, '', '/');
+      expect(sentEvents(track)).toEqual([
+        { name: 'hero_view', data: { heroVariant: 'a' }, url: '/' },
+      ]);
+    });
+
+    it('queues the first page view too, and flushes in order', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      trackPageview('/');
+      trackEvent('cta_click', { location: 'hero', target: '/register' });
+      window.history.pushState({}, '', '/register');
+      trackPageview('/register');
+      const track = vi.fn();
+      window.umami = { track };
+      loaderScripts()[0].dispatchEvent(new Event('load'));
+      window.history.pushState({}, '', '/');
+      expect(
+        sentPayloads(track).map((p) => `${p.name ?? 'pageview'} ${p.url}`),
+      ).toEqual(['pageview /', 'cta_click /', 'pageview /register']);
+    });
+
+    it('sends the landing page view before events fired on first render', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      trackEvent('hero_view', { heroVariant: 'a' }); // Hero effect
+      trackPageview('/'); // router onResolved, after the first render
+      const track = vi.fn();
+      window.umami = { track };
+      loaderScripts()[0].dispatchEvent(new Event('load'));
+      expect(
+        sentPayloads(track).map((p) => `${p.name ?? 'pageview'} ${p.url}`),
+      ).toEqual(['pageview /', 'hero_view /']);
+    });
+
+    it('stops queueing when the script fails to load (blocked)', () => {
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      trackEvent('hero_view', { heroVariant: 'a' });
+      loaderScripts()[0].dispatchEvent(new Event('error'));
+      trackEvent('cta_click', { location: 'hero', target: '/register' });
+      const track = vi.fn();
+      window.umami = { track };
+      loaderScripts()[0].dispatchEvent(new Event('load'));
+      expect(sentEvents(track)).toEqual([]);
+    });
+
+    it('drops events when no tracker is configured', () => {
+      trackEvent('hero_view', { heroVariant: 'a' });
+      initAnalytics({ VITE_UMAMI_WEBSITE_ID: 'abc' });
+      const track = vi.fn();
+      window.umami = { track };
+      loaderScripts()[0].dispatchEvent(new Event('load'));
+      expect(sentEvents(track)).toEqual([]);
+    });
+  });
+
+  describe('hero variant', () => {
+    it('assigns a variant once and keeps it in localStorage', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.7);
+      expect(peekHeroVariant()).toBeNull();
+      expect(getHeroVariant()).toBe('b');
+      resetHeroVariant();
+      vi.spyOn(Math, 'random').mockReturnValue(0.1);
+      expect(getHeroVariant()).toBe('b');
+      expect(localStorage.getItem('talkup.heroVariant')).toMatch(/^b:\d+$/);
+    });
+
+    it('draws again once the stored variant is older than 13 months', () => {
+      const expired = Date.now() - HERO_VARIANT_MAX_AGE_MS - 1;
+      localStorage.setItem('talkup.heroVariant', `b:${expired}`);
+      expect(peekHeroVariant()).toBeNull();
+      expect(localStorage.getItem('talkup.heroVariant')).toBeNull();
+      vi.spyOn(Math, 'random').mockReturnValue(0.1);
+      expect(getHeroVariant()).toBe('a');
+    });
+
+    it('ignores a malformed stored value', () => {
+      localStorage.setItem('talkup.heroVariant', 'b');
+      expect(peekHeroVariant()).toBeNull();
+    });
+
+    it('keeps the variant when its date is in the future, restarting it from now', () => {
+      localStorage.setItem('talkup.heroVariant', `b:${Date.now() + 60_000}`);
+      expect(peekHeroVariant()).toBe('b');
+      const [, assignedAt] = localStorage
+        .getItem('talkup.heroVariant')!
+        .split(':');
+      expect(Number(assignedAt)).toBeLessThanOrEqual(Date.now());
+    });
+
+    it('does not touch storage for a visitor without a variant', () => {
+      const remove = vi.spyOn(Storage.prototype, 'removeItem');
+      expect(peekHeroVariant()).toBeNull();
+      expect(remove).not.toHaveBeenCalled();
+    });
+
+    it('sends hero_view once per browser session', () => {
+      const track = vi.fn();
+      window.umami = { track };
+      trackHeroView('a');
+      trackHeroView('a');
+      expect(sentEvents(track)).toEqual([
+        { name: 'hero_view', data: { heroVariant: 'a' }, url: '/' },
+      ]);
+      sessionStorage.clear(); // new tab
+      trackHeroView('a');
+      expect(sentEvents(track)).toHaveLength(2);
+    });
+
+    it('still assigns a variant when storage is blocked', () => {
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+        throw new Error('blocked');
+      });
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('blocked');
+      });
+      vi.spyOn(Math, 'random').mockReturnValue(0.1);
+      expect(getHeroVariant()).toBe('a');
+      expect(getHeroVariant()).toBe('a');
+    });
+
+    it('tags events only for visitors who saw the hero', () => {
+      const track = vi.fn();
+      window.umami = { track };
+      expect(heroVariantData()).toEqual({});
+      trackCtaClick('nav', '/register')();
+      localStorage.setItem('talkup.heroVariant', `a:${Date.now()}`);
+      trackCtaClick('hero', '/register')();
+      expect(sentEvents(track).map(({ data }) => data)).toEqual([
+        { location: 'nav', target: '/register' },
+        { location: 'hero', target: '/register', heroVariant: 'a' },
+      ]);
+    });
+  });
 
   describe('trackPageview', () => {
     it('tracks public paths once per consecutive path, with the path as url', () => {
