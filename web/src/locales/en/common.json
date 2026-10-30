@@ -1,0 +1,28 @@
+{
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "retry": "Retry"
+  },
+  "status": {
+    "loading": "Loading…"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Network error. Check your connection and try again."
+  },
+  "languages": {
+    "en": "English",
+    "fr": "Français"
+  },
+  "languageSwitcher": {
+    "switchTo": "Switch to",
+    "current": "(current language: {{current}})"
+  }
+}

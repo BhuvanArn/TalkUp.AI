@@ -1,0 +1,28 @@
+{
+  "actions": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "retry": "Réessayer"
+  },
+  "status": {
+    "loading": "Chargement…"
+  },
+  "errors": {
+    "generic": "Une erreur est survenue. Veuillez réessayer.",
+    "network": "Erreur réseau. Vérifiez votre connexion et réessayez."
+  },
+  "languages": {
+    "en": "English",
+    "fr": "Français"
+  },
+  "languageSwitcher": {
+    "switchTo": "Passer en",
+    "current": "(langue actuelle : {{current}})"
+  }
+}
