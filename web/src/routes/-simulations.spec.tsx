@@ -4,6 +4,7 @@ import {
   useAudioStreaming,
   useInterviewSession,
 } from '@/hooks/simulation';
+import usePersonaStore from '@/stores/usePersonaStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   RouterProvider,
@@ -178,11 +179,20 @@ describe('Simulations', () => {
     // The debug panel is gated behind VITE_SHOW_WS_DEBUG; enable it so the
     // panel-rendering assertions below have something to find.
     vi.stubEnv('VITE_SHOW_WS_DEBUG', 'true');
+    // These tests exercise the established call/stream flow, not the persona
+    // picker itself (that flow is covered by simulation-workspace's own
+    // spec) — pre-select the default persona so the picker modal doesn't
+    // intercept the "start" button or duplicate the recruiter's name.
+    act(() => usePersonaStore.getState().setPersona('sophie-martin'));
     router.history.push('/simulations');
 
     await act(async () => {
       await router.load();
     });
+  });
+
+  afterEach(() => {
+    act(() => usePersonaStore.getState().clearPersona());
   });
 
   afterEach(() => {
