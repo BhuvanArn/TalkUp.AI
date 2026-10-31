@@ -3,6 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 interface UseVideoStreamOptions {
   shouldStartWithMic?: boolean;
   shouldStartWithCamera?: boolean;
+  /** Microphone picked in the setup step; empty means the system default. */
+  audioInputId?: string;
+  /** Camera picked in the setup step; empty means the system default. */
+  videoInputId?: string;
+  /** Called when the stream cannot be opened, so the page can react visibly. */
+  onError?: (error: unknown) => void;
 }
 
 /**
@@ -17,8 +23,13 @@ interface UseVideoStreamOptions {
  * }}
  */
 export const useVideoStream = (options?: UseVideoStreamOptions) => {
-  const { shouldStartWithMic = true, shouldStartWithCamera = true } =
-    options || {};
+  const {
+    shouldStartWithMic = true,
+    shouldStartWithCamera = true,
+    audioInputId = '',
+    videoInputId = '',
+    onError,
+  } = options || {};
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -37,8 +48,16 @@ export const useVideoStream = (options?: UseVideoStreamOptions) => {
       // Start the stream
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          // Asking for `video: true` and then dropping the tracks fails
+          // outright on a machine with no working camera, which would cost the
+          // user the microphone too.
+          video: !shouldStartWithCamera
+            ? false
+            : videoInputId
+              ? { deviceId: { exact: videoInputId } }
+              : true,
           audio: {
+            ...(audioInputId ? { deviceId: { exact: audioInputId } } : {}),
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
@@ -50,14 +69,6 @@ export const useVideoStream = (options?: UseVideoStreamOptions) => {
           track.enabled = shouldStartWithMic;
         });
 
-        if (!shouldStartWithCamera) {
-          // If camera should start off, stop and remove video tracks
-          stream.getVideoTracks().forEach((track) => {
-            track.stop();
-            stream.removeTrack(track);
-          });
-        }
-
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.play();
@@ -65,6 +76,7 @@ export const useVideoStream = (options?: UseVideoStreamOptions) => {
         setIsStreaming(true);
       } catch (error) {
         console.error('Error accessing the camera:', error);
+        onError?.(error);
       }
     }
   };

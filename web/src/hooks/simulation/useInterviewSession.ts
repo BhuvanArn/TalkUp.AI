@@ -234,13 +234,13 @@ export function useInterviewSession({
           }
           clearInterviewStorage();
           toast.error(
-            'La session précédente a expiré. Vous pouvez démarrer un nouvel entretien.',
+            'The previous session expired. You can start a new interview.',
           );
           return;
         }
 
         toast.error(
-          'Impossible de reprendre la simulation pour le moment. Rechargez la page pour réessayer.',
+          'Unable to resume the simulation right now. Reload the page to try again.',
         );
         toast.dismiss('sim-queue');
         setIsCallActive(false);
@@ -339,7 +339,7 @@ export function useInterviewSession({
             toast.dismiss('sim-queue');
             setIsQueued(false);
             setQueuePosition(0);
-            toast.success("C'est votre tour — démarrage de la simulation");
+            toast.success('Your turn — starting the simulation');
           }
 
           if (!entrypoint) {

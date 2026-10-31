@@ -100,7 +100,7 @@ describe('useInterviewSession restore', () => {
       'currentInterviewID',
     );
     expect(toast.error).toHaveBeenCalledWith(
-      'Impossible de reprendre la simulation pour le moment. Rechargez la page pour réessayer.',
+      'Unable to resume the simulation right now. Reload the page to try again.',
     );
   });
 
@@ -124,7 +124,7 @@ describe('useInterviewSession restore', () => {
       'currentInterviewID',
     );
     expect(toast.error).toHaveBeenCalledWith(
-      'La session précédente a expiré. Vous pouvez démarrer un nouvel entretien.',
+      'The previous session expired. You can start a new interview.',
     );
   });
 
@@ -158,7 +158,7 @@ describe('useInterviewSession restore', () => {
       'currentInterviewID',
     );
     expect(toast.error).toHaveBeenCalledWith(
-      'Impossible de reprendre la simulation pour le moment. Rechargez la page pour réessayer.',
+      'Unable to resume the simulation right now. Reload the page to try again.',
     );
   });
 });

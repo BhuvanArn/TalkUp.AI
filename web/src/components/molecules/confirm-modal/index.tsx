@@ -42,6 +42,7 @@ export const ConfirmModal = ({
   cancelLabel = 'Cancel',
   confirmColor = 'error',
   icon = 'warning',
+  hideCancel = false,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) => {
@@ -97,7 +98,7 @@ export const ConfirmModal = ({
         aria-label="Close modal"
       />
 
-      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-fadeIn">
+      <div className="relative bg-background rounded-lg shadow-xl max-w-md w-full mx-4 animate-fadeIn">
         <div className="flex flex-col items-center p-6 pb-4">
           <div
             className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
@@ -121,14 +122,16 @@ export const ConfirmModal = ({
           </p>
 
           <div className="flex gap-3 justify-end">
-            <Button
-              variant="outlined"
-              color="neutral"
-              onClick={onCancel}
-              className="flex-1"
-            >
-              {cancelLabel}
-            </Button>
+            {!hideCancel && (
+              <Button
+                variant="outlined"
+                color="neutral"
+                onClick={onCancel}
+                className="flex-1"
+              >
+                {cancelLabel}
+              </Button>
+            )}
             <Button
               variant="contained"
               color={confirmColor}

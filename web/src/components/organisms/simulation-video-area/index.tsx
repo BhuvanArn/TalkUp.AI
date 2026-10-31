@@ -11,7 +11,21 @@ import { useAudioAnalyzer } from '../../../hooks/streams/useAudioAnalyzer';
 import { useStreamControls } from '../../../hooks/streams/useStreamControls';
 import { useVideoStream } from '../../../hooks/streams/useVideoStream';
 
+/** Devices picked in the setup step, applied to the live interview. */
+export interface SimulationDeviceSettings {
+  audioInputId: string;
+  videoInputId: string;
+  audioOutputId: string;
+  cameraEnabled: boolean;
+}
+
 interface SimulationVideoAreaProps {
+  devices?: SimulationDeviceSettings;
+  /**
+   * Called instead of hanging up straight away, so the page can confirm first.
+   * Without it the hang-up button keeps its direct behaviour.
+   */
+  onEndCallRequest?: () => void;
   isAiSpeaking?: boolean;
   isAwaitingAiResponse?: boolean;
   speechTurn?: AiSpeechTurn | null;
@@ -20,6 +34,8 @@ interface SimulationVideoAreaProps {
   avatarFallbackReason?: string | null;
   onAvatarFallbackRequest?: (reason: string) => void;
   onStreamToggle?: (streaming: boolean) => void;
+  /** Raised when the picked devices cannot be opened for the live interview. */
+  onStreamError?: () => void;
   onStreamChange?: (stream: MediaStream | null) => void;
   onToggleRef?: (toggleFn: (() => void) | null) => void;
 }
@@ -29,6 +45,8 @@ interface SimulationVideoAreaProps {
  * @returns The SimulationVideoArea component.
  */
 const SimulationVideoArea = ({
+  devices,
+  onEndCallRequest,
   isAiSpeaking = false,
   isAwaitingAiResponse = false,
   speechTurn = null,
@@ -37,17 +55,31 @@ const SimulationVideoArea = ({
   avatarFallbackReason = null,
   onAvatarFallbackRequest,
   onStreamToggle,
+  onStreamError,
   onStreamChange,
   onToggleRef,
 }: SimulationVideoAreaProps = {}): React.ReactElement => {
+  const onStreamErrorRef = useRef(onStreamError);
+  onStreamErrorRef.current = onStreamError;
   const audioElementRef = useRef<HTMLAudioElement>(null);
   const [shouldStartWithMic, setShouldStartWithMic] = useState(true);
-  const [shouldStartWithCamera, setShouldStartWithCamera] = useState(true);
+  const cameraRequested = devices?.cameraEnabled ?? true;
+  const [shouldStartWithCamera, setShouldStartWithCamera] =
+    useState(cameraRequested);
+
+  // `devices` is undefined until the setup modal resolves, so the picker's
+  // camera choice only ever arrives as a prop change, never as initial state.
+  useEffect(() => {
+    setShouldStartWithCamera(cameraRequested);
+  }, [cameraRequested]);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   const { videoRef, isStreaming, elapsedTime, toggleStream } = useVideoStream({
     shouldStartWithMic,
     shouldStartWithCamera,
+    audioInputId: devices?.audioInputId,
+    videoInputId: devices?.videoInputId,
+    onError: () => onStreamErrorRef.current?.(),
   });
 
   useEffect(() => {
@@ -65,6 +97,8 @@ const SimulationVideoArea = ({
     toggleSpeaker,
     toggleCamera,
   } = useStreamControls(videoRef, audioElementRef, {
+    initialCameraActive: cameraRequested,
+    videoInputId: devices?.videoInputId,
     onMicChange: setShouldStartWithMic,
     onCameraChange: setShouldStartWithCamera,
   });
@@ -124,6 +158,32 @@ const SimulationVideoArea = ({
       }
     }
   }, [isStreaming, isSpeakerActive, videoRef]);
+
+  const audioOutputId = devices?.audioOutputId;
+
+  useEffect(() => {
+    const element = audioElementRef.current as
+      | (HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> })
+      | null;
+
+    if (!element?.setSinkId || !audioOutputId) return;
+
+    // Chrome and Edge only; elsewhere the browser keeps the system output.
+    element.setSinkId(audioOutputId).catch((error) => {
+      console.warn(
+        'Failed to route interview audio to the chosen output',
+        error,
+      );
+    });
+  }, [audioOutputId]);
+
+  const handleEndCallRequest = () => {
+    if (isStreaming && onEndCallRequest) {
+      onEndCallRequest();
+      return;
+    }
+    void toggleStream();
+  };
 
   const handleAvatarFallbackRequest = (reason: string) => {
     onAvatarFallbackRequest?.(reason);
@@ -194,7 +254,7 @@ const SimulationVideoArea = ({
       <audio ref={audioElementRef} style={{ display: 'none' }} />
 
       <VideoAreaControlsBar
-        toggleStream={toggleStream}
+        toggleStream={handleEndCallRequest}
         isStreaming={isStreaming}
         isMicActive={isMicActive}
         isCameraActive={isCameraActive}

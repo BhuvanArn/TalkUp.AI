@@ -22,20 +22,20 @@ export default function SimulationQueueBanner({
       role="status"
       aria-live="polite"
     >
-      <p className="font-medium">File d&apos;attente simulation</p>
+      <p className="font-medium">Simulation queue</p>
       <p className="text-sm mt-1">
-        Position&nbsp;: <strong>{queuePosition}</strong>
+        Position:&nbsp;<strong>{queuePosition}</strong>
         {waitMin != null && (
           <>
             {' '}
-            — attente estimée ~<strong>{waitMin}</strong> min
+            — estimated wait ~<strong>{waitMin}</strong> min
           </>
         )}
       </p>
       {activeCount != null && maxConcurrent != null && (
         <p className="text-xs mt-2 text-amber-800">
-          {activeCount}/{maxConcurrent} créneaux GPU utilisés. Votre session
-          démarrera automatiquement.
+          {activeCount}/{maxConcurrent} GPU slots in use. Your session will
+          start automatically.
         </p>
       )}
     </div>
