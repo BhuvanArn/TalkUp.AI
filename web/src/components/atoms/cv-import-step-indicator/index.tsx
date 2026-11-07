@@ -32,7 +32,9 @@ export const StepIndicator = ({
     <div
       className={cn(
         'text-body-s-strong flex h-6 w-6 items-center justify-center rounded-full',
-        active ? 'bg-accent text-white' : 'bg-surface-raised text-text-weaker',
+        active
+          ? 'bg-accent text-on-accent'
+          : 'bg-surface-raised text-text-weaker',
       )}
     >
       {number}

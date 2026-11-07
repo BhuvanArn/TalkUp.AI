@@ -192,7 +192,7 @@ export function Notes() {
                 onClick={() => setFilter(f.key)}
                 className={`text-body-s rounded-full border px-4 py-1.5 transition-colors ${
                   active
-                    ? 'border-accent bg-accent text-white'
+                    ? 'border-accent bg-accent text-on-accent'
                     : 'border-border text-text-weak hover:border-accent hover:text-accent'
                 }`}
               >

@@ -14,7 +14,7 @@ describe('CalendarTableDayHeader', () => {
     expect(dateEl).toHaveClass('text-idle');
     // Should not have the today styles
     expect(dateEl).not.toHaveClass('bg-accent');
-    expect(dateEl).not.toHaveClass('text-white');
+    expect(dateEl).not.toHaveClass('text-on-accent');
   });
 
   it('applies today styling when isToday is true', () => {
@@ -26,7 +26,7 @@ describe('CalendarTableDayHeader', () => {
     expect(dateEl).toBeInTheDocument();
     // Today should use accent background and white text
     expect(dateEl).toHaveClass('bg-accent');
-    expect(dateEl).toHaveClass('text-white');
+    expect(dateEl).toHaveClass('text-on-accent');
     // Should not have idle text class
     expect(dateEl).not.toHaveClass('text-idle');
   });

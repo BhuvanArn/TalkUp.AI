@@ -19,17 +19,19 @@ const ConvincingBanner = () => {
   const currentReview = reviews[slide];
 
   return (
-    <div className="bg-accent/90 flex justify-center items-center py-12 px-4 overflow-hidden relative">
+    <div className="bg-accent flex justify-center items-center py-12 px-4 overflow-hidden relative">
       <div className="max-w-3xl text-center flex flex-col gap-4">
-        <h2 className="text-h2 text-white font-bold mb-2">Our users love us</h2>
-        <p className="text-body-l text-white/90">
+        <h2 className="text-h2 text-on-accent font-bold mb-2">
+          Our users love us
+        </h2>
+        <p className="text-body-l text-on-accent">
           {currentReview.name} recently published this {currentReview.review}{' '}
           stars review
         </p>
-        <blockquote className="text-body-l italic text-white min-h-[100px] flex items-center justify-center">
+        <blockquote className="text-body-l italic text-on-accent min-h-[100px] flex items-center justify-center">
           "{currentReview.text}"
         </blockquote>
-        <p className="text-white text-body-l-strong mt-2">
+        <p className="text-on-accent text-body-l-strong mt-2">
           - {currentReview.name}
         </p>
         <div className="flex gap-3 justify-center mt-4">

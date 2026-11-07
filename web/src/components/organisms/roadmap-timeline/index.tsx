@@ -32,7 +32,7 @@ const RailDot = ({
 }) => {
   const styles: Record<RailDotVariant, string> = {
     origin: 'bg-accent-weak text-accent border-accent',
-    step: 'bg-accent text-white border-accent',
+    step: 'bg-accent text-on-accent border-accent',
     goal: 'bg-success-weak text-success border-success',
   };
   return (

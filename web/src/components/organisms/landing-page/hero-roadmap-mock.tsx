@@ -39,7 +39,9 @@ const MockButton = ({
 }) => (
   <span
     className={`inline-flex h-[34px] items-center rounded-md px-3 font-display text-[13px] font-semibold ${
-      primary ? 'bg-accent text-white' : 'border border-border-strong text-text'
+      primary
+        ? 'bg-accent text-on-accent'
+        : 'border border-border-strong text-text'
     }`}
   >
     {children}

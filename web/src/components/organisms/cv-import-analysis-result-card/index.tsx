@@ -88,7 +88,7 @@ export const AnalysisResultCard = ({
         <button
           type="button"
           onClick={onStartCourse}
-          className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent w-full cursor-pointer rounded-xl px-8 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent w-full cursor-pointer rounded-button px-8 py-4 text-on-accent transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           Start My Training
         </button>

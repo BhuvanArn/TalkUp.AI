@@ -70,7 +70,7 @@ const ConfirmationModal = ({
           <button
             type="button"
             onClick={onConfirm}
-            className="h-10 px-4 rounded-md bg-danger text-white hover:opacity-90 transition-opacity"
+            className="h-10 px-4 rounded-md bg-danger text-on-accent hover:opacity-90 transition-opacity"
           >
             {confirmText}
           </button>

@@ -70,7 +70,7 @@ export const ChatInputBar = ({
         // compound variant sets `bg-gray-400` (a background-color); a gradient is
         // a background-image and would paint over it, making a disabled button
         // look active. Dropping it when !canSend lets the disabled styling show.
-        className={`w-9 h-9 flex-shrink-0 text-white ${
+        className={`w-9 h-9 flex-shrink-0 text-on-accent ${
           canSend ? 'bg-brand-gradient hover:opacity-90 hover:scale-105' : ''
         }`}
       >

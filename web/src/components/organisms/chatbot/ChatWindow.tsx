@@ -75,10 +75,10 @@ export const ChatWindow = ({
       <div className="flex items-center gap-3 px-4 py-3 bg-brand-gradient">
         <ChatAvatar variant="ai" size="lg" />
         <div className="flex-1">
-          <p className="text-white text-body-m font-bold leading-tight">
+          <p className="text-on-accent text-body-m font-bold leading-tight">
             TalkUp AI
           </p>
-          <p className="text-white/80 text-body-s flex items-center gap-1 mt-0.5">
+          <p className="text-on-accent/80 text-body-s flex items-center gap-1 mt-0.5">
             <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
             Online, ready to help
           </p>

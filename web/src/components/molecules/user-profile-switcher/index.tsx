@@ -118,6 +118,11 @@ export const UserProfileSwitcher = ({
   const displayEmail = profile?.email ?? 'No email set';
   const avatarSrc = profile?.profilePicture ?? undefined;
   const avatarColor = profile?.avatarAccentColor ?? DEFAULT_AVATAR_COLOR;
+  // A user-picked colour is a literal hex in both themes (white initials);
+  // the default follows the theme accent, which turns pastel in dark.
+  const avatarTextClass = profile?.avatarAccentColor
+    ? 'text-on-media'
+    : 'text-on-accent';
   const initials =
     (resolvedFirstName.charAt(0) || '').toUpperCase() +
     (resolvedLastName.charAt(0) || '').toUpperCase();
@@ -169,7 +174,7 @@ export const UserProfileSwitcher = ({
           alt="User Avatar"
           fallback={initials}
           size="sm"
-          className="!h-8 !w-8 !border border-border text-white font-semibold"
+          className={`!h-8 !w-8 !border border-border font-semibold ${avatarTextClass}`}
           style={{ backgroundColor: avatarColor }}
         />
       ) : (
@@ -187,14 +192,14 @@ export const UserProfileSwitcher = ({
               alt=""
               fallback={initials}
               size="sm"
-              className="!h-8 !w-8 shrink-0 !border border-border text-white font-semibold"
+              className={`!h-8 !w-8 shrink-0 !border border-border font-semibold ${avatarTextClass}`}
               style={{ backgroundColor: avatarColor }}
             />
             <span className="min-w-0 flex flex-col text-left">
               <span className="truncate text-body-s text-idle">
                 {displayName}
               </span>
-              <span className="truncate text-body-s text-idle/60">
+              <span className="truncate text-body-s text-text-weakest">
                 {displayEmail}
               </span>
             </span>
