@@ -1,3 +1,4 @@
+import { Button } from '@/components/atoms/button';
 import { iconMap } from '@/components/atoms/icon/icon-map';
 import { InterviewDatePill } from '@/components/molecules/interview-date-pill';
 import { RoadmapSourcesModal } from '@/components/organisms/roadmap-sources-modal';
@@ -119,14 +120,13 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
           <p className="text-body-l text-error">
             Could not load your preparation path.
           </p>
-          <button
-            type="button"
+          <Button
+            color="accent"
             onClick={() => regenerate.mutate()}
             disabled={regenerate.isPending}
-            className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-button px-6 py-3 text-on-accent disabled:cursor-not-allowed disabled:bg-disabled"
           >
             {regenerate.isPending ? 'Retrying…' : 'Retry'}
-          </button>
+          </Button>
           {regenerate.isError && (
             <p className="text-body-s text-error">
               Couldn't regenerate — try again in a minute.
@@ -147,39 +147,41 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
   // frame) and the empty state (plain footer). Never scrolls horizontally.
   const actions = (
     <div className="flex flex-wrap items-center gap-4">
-      <Link
-        to="/applications/$applicationId/simulations"
-        params={{ applicationId }}
-        className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-button px-8 h-10 text-on-accent"
-      >
-        Start simulation
-        <StartIcon size={16} aria-hidden="true" />
-      </Link>
-      <Link
-        to="/notes"
-        search={{ applicationId }}
-        className="text-button-m border-accent text-accent hover:bg-accent-weak flex items-center gap-2 rounded-button border px-8 h-10 transition-colors"
-      >
-        <NotesIcon size={16} aria-hidden="true" />
-        My notes
-      </Link>
+      {/* Figma R1: 8px radius, 40px high (Button size md). */}
+      <Button asChild color="accent" className="px-8">
+        <Link
+          to="/applications/$applicationId/simulations"
+          params={{ applicationId }}
+        >
+          Start simulation
+          <StartIcon size={16} aria-hidden="true" />
+        </Link>
+      </Button>
+      <Button asChild variant="outlined" color="accent" className="border px-8">
+        <Link to="/notes" search={{ applicationId }}>
+          <NotesIcon size={16} aria-hidden="true" />
+          My notes
+        </Link>
+      </Button>
       <div className="ml-auto flex flex-col items-end gap-1">
         <div className="flex items-center gap-4">
           {application && (
-            <button
-              type="button"
+            <Button
+              variant="outlined"
+              color="neutral"
+              className="border-border text-text-weak hover:border-accent hover:text-accent px-5 border"
               onClick={() => setSourcesOpen(true)}
-              className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-button border px-5 h-10 transition-colors"
             >
               <SourcesIcon size={16} aria-hidden="true" />
               Sources
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
+          <Button
+            variant="outlined"
+            color="neutral"
+            className="border-border text-text-weak hover:border-accent hover:text-accent px-5 border"
             onClick={() => regenerate.mutate()}
             disabled={regenerate.isPending}
-            className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-button border px-5 h-10 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RegenerateIcon
               size={16}
@@ -187,7 +189,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
               className={regenerate.isPending ? 'animate-spin' : ''}
             />
             {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
-          </button>
+          </Button>
         </div>
         {regenerate.isError && (
           <p className="text-body-s text-error">
@@ -227,14 +229,13 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
                   <p className="text-body-l text-text-weak">
                     Couldn't build a path from this offer yet — try Regenerate.
                   </p>
-                  <button
-                    type="button"
+                  <Button
+                    color="accent"
                     onClick={() => regenerate.mutate()}
                     disabled={regenerate.isPending}
-                    className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-button px-6 py-3 text-on-accent disabled:cursor-not-allowed disabled:bg-disabled"
                   >
                     {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
-                  </button>
+                  </Button>
                 </>
               ) : (
                 <>

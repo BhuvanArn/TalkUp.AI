@@ -72,7 +72,7 @@ function ApplicationsPage() {
         {hasApplications && (
           <Link
             to="/cv-analysis"
-            className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-button px-4 py-2 text-on-accent transition-colors"
+            className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-button px-4 py-2 text-on-accent transition-colors focus-ring"
           >
             <PlusIcon size={18} aria-hidden="true" />
             New application
@@ -139,7 +139,7 @@ function ApplicationsPage() {
               </p>
               <Link
                 to="/cv-analysis"
-                className="text-button-m bg-accent hover:bg-accent-hover mt-5 rounded-button px-5 py-2.5 text-on-accent transition-colors"
+                className="text-button-m bg-accent hover:bg-accent-hover mt-5 rounded-button px-5 py-2.5 text-on-accent transition-colors focus-ring"
               >
                 Start a CV + offer analysis
               </Link>

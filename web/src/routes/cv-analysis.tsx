@@ -1,3 +1,4 @@
+import { Button } from '@/components/atoms/button';
 import { CheckboxInput } from '@/components/atoms/checkbox-input';
 import { useCreateApplication } from '@/services/applications/hooks';
 import type { Application } from '@/services/applications/types';
@@ -253,14 +254,15 @@ function CVAnalysisPage() {
               </p>
             </div>
 
-            <button
-              type="button"
+            <Button
+              color="accent"
+              size="lg"
+              className="px-14"
               onClick={handleStartAnalysis}
               disabled={!canStart || isAnalyzing}
-              className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent cursor-pointer rounded-button px-14 py-4 text-on-accent transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled disabled:text-text-disabled"
             >
               Start TalkUp Analysis
-            </button>
+            </Button>
           </footer>
         </>
       )}

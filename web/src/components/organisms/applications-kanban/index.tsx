@@ -94,7 +94,7 @@ const KanbanColumn = ({
       ref={setNodeRef}
       data-testid={`kanban-column-${status}`}
       aria-label={STATUS_LABELS[status]}
-      className={`bg-surface-raised flex h-full min-h-[180px] flex-col gap-2.5 rounded-xl p-3 ${
+      className={`bg-surface-raised flex h-full min-h-[180px] flex-col gap-2.5 rounded-card p-3 ${
         isOver ? 'ring-accent ring-2' : ''
       }`}
     >
