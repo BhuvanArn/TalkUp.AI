@@ -189,6 +189,10 @@ export async function runAudit(o) {
       const page = await context.newPage();
       await page.goto(o.url, { waitUntil: "networkidle" });
       checkSession(page, o.url);
+      // Dev-only overlays never ship: remove them so they don't skew layout or focus checks.
+      await page.addStyleTag({
+        content: `${DEV_OVERLAYS}{display:none!important}`,
+      });
       await settle(page);
       // A pistes page shows one piste at a time: audit each in turn.
       const pistes = await page.$$eval(".piste[data-piste]", (els) =>

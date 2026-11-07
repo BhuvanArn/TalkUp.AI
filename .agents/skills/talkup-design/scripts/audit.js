@@ -514,6 +514,7 @@
     for (const el of [...root.querySelectorAll("*")].filter(
       (e) => ownText(e).length > 0 && isVisible(e),
     )) {
+      if (!seen(el)) continue; // sr-only text is clipped on purpose
       const s = getComputedStyle(el);
       // Cut off by an ancestor that hides overflow (a mockup frame wider than its canvas)?
       const r = el.getBoundingClientRect();
@@ -525,6 +526,8 @@
       ) {
         const as = getComputedStyle(a);
         if (as.overflowX !== "visible") {
+          // A scroller (auto / scroll) lets people reach the content: not cut off.
+          if (as.overflowX === "auto" || as.overflowX === "scroll") break;
           const ar = a.getBoundingClientRect();
           if (r.right > ar.right + 1 || r.left < ar.left - 1) clipper = a;
           break;

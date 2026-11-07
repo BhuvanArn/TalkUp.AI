@@ -330,3 +330,36 @@ test("audits every piste of a pistes page", async () => {
     1,
   );
 });
+
+test("scrollable rows and sr-only text are not clipped text", async () => {
+  const r = await audit(
+    page(`<div style="width:300px;overflow-x:auto"><div style="width:900px"><p>Kanban column far right</p></div></div>
+          <label for="d" style="${SR_ONLY}">Interview date</label><input id="d">`),
+  );
+  assert.deepEqual(byRule(r, "layout.clipped-text"), []);
+});
+
+test("dev overlays do not count as page overflow", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "talkup-audit-"));
+  const file = join(dir, "devtools.html");
+  await writeFile(
+    file,
+    page(
+      '<p>Fits</p><footer class="TanStackRouterDevtools"><div style="width:2000px">devtools</div></footer>',
+    ),
+  );
+  const { stdout } = await promisify(execFile)(process.execPath, [
+    CLI,
+    pathToFileURL(file).href,
+    "--themes",
+    "light",
+    "--width",
+    "390",
+    "--json",
+    "--no-focus",
+  ]).catch((e) => e);
+  assert.deepEqual(
+    JSON.parse(stdout)[0].findings.filter((f) => f.rule === "layout.overflow"),
+    [],
+  );
+});
