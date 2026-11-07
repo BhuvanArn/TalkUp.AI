@@ -7,22 +7,32 @@
 // Hides dev overlays (TanStack devtools), waits for theme transitions, toggles the
 // `dark` class like the app's theme store. --clip crops to one element so the variant
 // stays readable at real size in the pistes page.
-import { chromium } from '@playwright/test';
-import { fileURLToPath } from 'node:url';
+import { chromium } from "@playwright/test";
+import { fileURLToPath } from "node:url";
 
-const DEV_OVERLAYS = '.TanStackRouterDevtools,.tsqd-parent-container,[data-talkup-audit-ignore]';
+const DEV_OVERLAYS =
+  ".TanStackRouterDevtools,.tsqd-parent-container,[data-talkup-audit-ignore]";
 
 function parse(argv) {
-  const o = { theme: 'light', width: 1440, height: 900, clip: null, full: false, storage: null, out: null, url: null };
+  const o = {
+    theme: "light",
+    width: 1440,
+    height: 900,
+    clip: null,
+    full: false,
+    storage: null,
+    out: null,
+    url: null,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--out') o.out = argv[++i];
-    else if (a === '--theme') o.theme = argv[++i];
-    else if (a === '--width') o.width = Number(argv[++i]);
-    else if (a === '--height') o.height = Number(argv[++i]);
-    else if (a === '--clip') o.clip = argv[++i];
-    else if (a === '--storage') o.storage = argv[++i];
-    else if (a === '--full') o.full = true;
+    if (a === "--out") o.out = argv[++i];
+    else if (a === "--theme") o.theme = argv[++i];
+    else if (a === "--width") o.width = Number(argv[++i]);
+    else if (a === "--height") o.height = Number(argv[++i]);
+    else if (a === "--clip") o.clip = argv[++i];
+    else if (a === "--storage") o.storage = argv[++i];
+    else if (a === "--full") o.full = true;
     else o.url = a;
   }
   return o;
@@ -43,16 +53,26 @@ const settle = (page) =>
 
 const o = parse(process.argv.slice(2));
 if (!o.url || !o.out) {
-  console.error('usage: node capture.mjs <url> --out <file.png> [--theme light|dark] [--width 1440] [--clip sel] [--full] [--storage state.json]');
+  console.error(
+    "usage: node capture.mjs <url> --out <file.png> [--theme light|dark] [--width 1440] [--clip sel] [--full] [--storage state.json]",
+  );
   process.exit(2);
 }
 const browser = await chromium.launch();
 try {
-  const context = await browser.newContext({ viewport: { width: o.width, height: o.height }, storageState: o.storage || undefined });
+  const context = await browser.newContext({
+    viewport: { width: o.width, height: o.height },
+    storageState: o.storage || undefined,
+  });
   const page = await context.newPage();
-  await page.goto(o.url, { waitUntil: 'networkidle' });
-  await page.addStyleTag({ content: `${DEV_OVERLAYS}{display:none!important}` });
-  await page.evaluate((dark) => document.documentElement.classList.toggle('dark', dark), o.theme === 'dark');
+  await page.goto(o.url, { waitUntil: "networkidle" });
+  await page.addStyleTag({
+    content: `${DEV_OVERLAYS}{display:none!important}`,
+  });
+  await page.evaluate(
+    (dark) => document.documentElement.classList.toggle("dark", dark),
+    o.theme === "dark",
+  );
   await page.waitForTimeout(50);
   await settle(page);
   if (o.clip) await page.locator(o.clip).first().screenshot({ path: o.out });

@@ -5,18 +5,18 @@
 //
 // Writes <out>/<slug>/index.html (--out is the parent folder; the slug folder is added).
 // Refuses to overwrite an existing folder.
-import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { extractTokens, tokensToCss } from './tokens.mjs';
+import { existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { extractTokens, tokensToCss } from "./tokens.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const REPO = resolve(here, '..', '..', '..', '..');
-const TEMPLATE = join(here, '..', 'templates', 'pistes.html');
-const TAILWIND = join(REPO, 'web', 'src', 'styles', 'tailwind.css');
+const REPO = resolve(here, "..", "..", "..", "..");
+const TEMPLATE = join(here, "..", "templates", "pistes.html");
+const TAILWIND = join(REPO, "web", "src", "styles", "tailwind.css");
 
-const LETTERS = 'ABC';
+const LETTERS = "ABC";
 
 const pisteSkeleton = (letter) => `
         <section class="piste" data-piste="${letter}" aria-labelledby="piste-${letter}-title">
@@ -46,19 +46,31 @@ const pisteSkeleton = (letter) => `
         </section>`;
 
 function parse(argv) {
-  const o = { count: 3, out: join(REPO, 'docs', 'design', 'pistes'), title: null, slug: null };
+  const o = {
+    count: 3,
+    out: join(REPO, "docs", "design", "pistes"),
+    title: null,
+    slug: null,
+  };
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--title') o.title = argv[++i];
-    else if (argv[i] === '--count') o.count = Number(argv[++i]);
-    else if (argv[i] === '--out') o.out = resolve(argv[++i]);
+    if (argv[i] === "--title") o.title = argv[++i];
+    else if (argv[i] === "--count") o.count = Number(argv[++i]);
+    else if (argv[i] === "--out") o.out = resolve(argv[++i]);
     else o.slug = argv[i];
   }
   return o;
 }
 
 const o = parse(process.argv.slice(2));
-if (!o.slug || !/^[a-z0-9-]+$/.test(o.slug) || !o.title || ![2, 3].includes(o.count)) {
-  console.error('usage: node new-pistes.mjs <kebab-slug> --title "<titre>" [--count 2|3] [--out dir]');
+if (
+  !o.slug ||
+  !/^[a-z0-9-]+$/.test(o.slug) ||
+  !o.title ||
+  ![2, 3].includes(o.count)
+) {
+  console.error(
+    'usage: node new-pistes.mjs <kebab-slug> --title "<titre>" [--count 2|3] [--out dir]',
+  );
   process.exit(2);
 }
 const dir = join(o.out, o.slug);
@@ -67,17 +79,24 @@ if (existsSync(dir)) {
   process.exit(1);
 }
 
-const escape = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const escape = (s) =>
+  s.replace(
+    /[&<>"]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+  );
 const now = new Date();
-const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-const tokens = tokensToCss(extractTokens(await readFile(TAILWIND, 'utf8')));
-const html = (await readFile(TEMPLATE, 'utf8'))
-  .replace('/* TOKENS:END */', `${tokens}\n      /* TOKENS:END */`)
-  .replaceAll('{{TITLE}}', escape(o.title))
-  .replaceAll('{{SLUG}}', o.slug)
-  .replaceAll('{{DATE}}', date)
-  .replace('<!-- PISTES -->', [...LETTERS.slice(0, o.count)].map(pisteSkeleton).join('\n'));
+const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+const tokens = tokensToCss(extractTokens(await readFile(TAILWIND, "utf8")));
+const html = (await readFile(TEMPLATE, "utf8"))
+  .replace("/* TOKENS:END */", `${tokens}\n      /* TOKENS:END */`)
+  .replaceAll("{{TITLE}}", escape(o.title))
+  .replaceAll("{{SLUG}}", o.slug)
+  .replaceAll("{{DATE}}", date)
+  .replace(
+    "<!-- PISTES -->",
+    [...LETTERS.slice(0, o.count)].map(pisteSkeleton).join("\n"),
+  );
 
 await mkdir(dir, { recursive: true });
-await writeFile(join(dir, 'index.html'), html);
-console.log(join(dir, 'index.html'));
+await writeFile(join(dir, "index.html"), html);
+console.log(join(dir, "index.html"));

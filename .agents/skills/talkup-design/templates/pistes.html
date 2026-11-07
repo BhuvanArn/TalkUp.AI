@@ -24,7 +24,7 @@
       html {
         color-scheme: light;
       }
-      html[data-theme='dark'] {
+      html[data-theme="dark"] {
         color-scheme: dark;
       }
       body {
@@ -42,8 +42,8 @@
         outline: 2px solid var(--color-accent);
         outline-offset: 2px;
       }
-      html[data-lang='fr'] [data-lang='en']:not(html),
-      html[data-lang='en'] [data-lang='fr']:not(html) {
+      html[data-lang="fr"] [data-lang="en"]:not(html),
+      html[data-lang="en"] [data-lang="fr"]:not(html) {
         display: none !important;
       }
 
@@ -90,7 +90,7 @@
       .controls button:hover {
         background: var(--color-surface-raised);
       }
-      .controls button[aria-pressed='true'] {
+      .controls button[aria-pressed="true"] {
         color: var(--color-on-accent);
         background: var(--color-accent);
         border-color: var(--color-accent);
@@ -102,7 +102,9 @@
         color: var(--color-text-weak);
       }
       kbd {
-        font: 12px/1 ui-monospace, monospace;
+        font:
+          12px/1 ui-monospace,
+          monospace;
         padding: 2px 6px;
         border: 1px solid var(--color-border-strong);
         border-radius: 4px;
@@ -132,10 +134,10 @@
         gap: 32px;
         align-items: start;
       }
-      html[data-layout='focus'] .pistes {
+      html[data-layout="focus"] .pistes {
         grid-template-columns: 1fr;
       }
-      html[data-layout='focus'] .piste:not([data-current]) {
+      html[data-layout="focus"] .piste:not([data-current]) {
         display: none;
       }
       .piste {
@@ -143,7 +145,7 @@
         gap: 16px;
         scroll-margin-top: 120px;
       }
-      html[data-layout='focus'] .piste {
+      html[data-layout="focus"] .piste {
         grid-template-columns: minmax(260px, 320px) 1fr;
         align-items: start;
       }
@@ -228,7 +230,7 @@
           padding-left: 16px;
           padding-right: 16px;
         }
-        html[data-layout='focus'] .piste {
+        html[data-layout="focus"] .piste {
           grid-template-columns: 1fr;
         }
       }
@@ -241,14 +243,21 @@
         <p class="meta">Pistes de design du {{DATE}}</p>
       </div>
       <div class="controls" role="group" aria-label="Affichage">
-        <button type="button" data-view-toggle aria-pressed="false">Côte à côte</button>
-        <button type="button" data-theme-toggle aria-pressed="false">Sombre</button>
+        <button type="button" data-view-toggle aria-pressed="false">
+          Côte à côte
+        </button>
+        <button type="button" data-theme-toggle aria-pressed="false">
+          Sombre
+        </button>
         <button type="button" data-lang-toggle aria-pressed="false">EN</button>
-        <button type="button" data-org-toggle aria-pressed="false">Vue organisation</button>
+        <button type="button" data-org-toggle aria-pressed="false">
+          Vue organisation
+        </button>
       </div>
       <p class="keys">
-        <kbd>←</kbd> <kbd>→</kbd> piste précédente ou suivante, <kbd>V</kbd> côte à côte, <kbd>T</kbd> thème,
-        <kbd>L</kbd> langue, <kbd>O</kbd> vue organisation
+        <kbd>←</kbd> <kbd>→</kbd> piste précédente ou suivante,
+        <kbd>V</kbd> côte à côte, <kbd>T</kbd> thème, <kbd>L</kbd> langue,
+        <kbd>O</kbd> vue organisation
       </p>
     </header>
 
@@ -287,49 +296,66 @@
     <script>
       (() => {
         const html = document.documentElement;
-        const pistes = [...document.querySelectorAll('.piste')];
+        const pistes = [...document.querySelectorAll(".piste")];
         let current = 0;
         const btn = (k) => document.querySelector(`[data-${k}-toggle]`);
 
         const show = (i, scroll = true) => {
           current = (i + pistes.length) % pistes.length;
-          pistes.forEach((p, j) => p.toggleAttribute('data-current', j === current));
-          if (scroll && html.dataset.layout === 'grid') pistes[current]?.scrollIntoView({ block: 'start' });
+          pistes.forEach((p, j) =>
+            p.toggleAttribute("data-current", j === current),
+          );
+          if (scroll && html.dataset.layout === "grid")
+            pistes[current]?.scrollIntoView({ block: "start" });
         };
         const setLayout = (focus) => {
-          html.dataset.layout = focus ? 'focus' : 'grid';
-          btn('view').setAttribute('aria-pressed', String(!focus));
+          html.dataset.layout = focus ? "focus" : "grid";
+          btn("view").setAttribute("aria-pressed", String(!focus));
         };
         const setTheme = (dark) => {
-          html.dataset.theme = dark ? 'dark' : 'light';
-          html.classList.toggle('dark', dark);
-          btn('theme').setAttribute('aria-pressed', String(dark));
+          html.dataset.theme = dark ? "dark" : "light";
+          html.classList.toggle("dark", dark);
+          btn("theme").setAttribute("aria-pressed", String(dark));
         };
         const setLang = (en) => {
-          html.dataset.lang = en ? 'en' : 'fr';
-          html.lang = en ? 'en' : 'fr';
-          btn('lang').setAttribute('aria-pressed', String(en));
+          html.dataset.lang = en ? "en" : "fr";
+          html.lang = en ? "en" : "fr";
+          btn("lang").setAttribute("aria-pressed", String(en));
         };
         const setOrg = (on) => {
-          if (on) html.dataset.view = 'organization';
+          if (on) html.dataset.view = "organization";
           else delete html.dataset.view;
-          btn('org').setAttribute('aria-pressed', String(on));
+          btn("org").setAttribute("aria-pressed", String(on));
         };
 
-        btn('view').addEventListener('click', () => setLayout(html.dataset.layout !== 'focus'));
-        btn('theme').addEventListener('click', () => setTheme(html.dataset.theme !== 'dark'));
-        btn('lang').addEventListener('click', () => setLang(html.dataset.lang !== 'en'));
-        btn('org').addEventListener('click', () => setOrg(html.dataset.view !== 'organization'));
+        btn("view").addEventListener("click", () =>
+          setLayout(html.dataset.layout !== "focus"),
+        );
+        btn("theme").addEventListener("click", () =>
+          setTheme(html.dataset.theme !== "dark"),
+        );
+        btn("lang").addEventListener("click", () =>
+          setLang(html.dataset.lang !== "en"),
+        );
+        btn("org").addEventListener("click", () =>
+          setOrg(html.dataset.view !== "organization"),
+        );
 
-        document.addEventListener('keydown', (e) => {
-          if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest('input, textarea, select, [contenteditable]')) return;
+        document.addEventListener("keydown", (e) => {
+          if (
+            e.metaKey ||
+            e.ctrlKey ||
+            e.altKey ||
+            e.target.closest("input, textarea, select, [contenteditable]")
+          )
+            return;
           const k = e.key.toLowerCase();
-          if (e.key === 'ArrowRight') show(current + 1);
-          else if (e.key === 'ArrowLeft') show(current - 1);
-          else if (k === 'v') setLayout(html.dataset.layout !== 'focus');
-          else if (k === 't') setTheme(html.dataset.theme !== 'dark');
-          else if (k === 'l') setLang(html.dataset.lang !== 'en');
-          else if (k === 'o') setOrg(html.dataset.view !== 'organization');
+          if (e.key === "ArrowRight") show(current + 1);
+          else if (e.key === "ArrowLeft") show(current - 1);
+          else if (k === "v") setLayout(html.dataset.layout !== "focus");
+          else if (k === "t") setTheme(html.dataset.theme !== "dark");
+          else if (k === "l") setLang(html.dataset.lang !== "en");
+          else if (k === "o") setOrg(html.dataset.view !== "organization");
           else return;
           e.preventDefault();
         });
