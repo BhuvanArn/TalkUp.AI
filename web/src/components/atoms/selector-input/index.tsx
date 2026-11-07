@@ -55,7 +55,7 @@ export const SelectorInput: React.FC<SelectorInputProps> = ({
       required={required}
       aria-label={name}
       className={cn(
-        'px-4 py-2 text-sm font-normal transition-colors duration-200 ease-in-out border rounded-sm font-display focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent cursor-pointer disabled:cursor-not-allowed disabled:bg-disabled disabled:text-text-disabled border-border-input',
+        'px-4 py-2 text-sm font-normal transition-colors duration-200 ease-in-out border rounded-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent cursor-pointer disabled:cursor-not-allowed disabled:bg-disabled disabled:text-text-disabled border-border-input',
         hideCaret ? 'appearance-none' : '',
         className,
       )}

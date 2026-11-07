@@ -359,6 +359,20 @@
   }
 }
 
+/* Keyboard focus ring shared by every interactive control (buttons, links,
+   nav items, segmented controls): 2px accent ring, 2px offset on the page
+   colour. Contrast 4.93:1 light, 8.37:1 dark. Mouse clicks show no ring
+   (:focus-visible); text fields keep their own `focus:` ring. Override the
+   offset with `focus-visible:ring-offset-*` in tight spots. */
+@utility focus-ring {
+  &:focus {
+    outline: none;
+  }
+  &:focus-visible {
+    @apply ring-2 ring-accent ring-offset-2 ring-offset-background;
+  }
+}
+
 @layer utilities {
   /* Weights read `--tw-font-weight` first, so `font-bold`, `font-medium`…
      placed next to a text-* utility still apply (they used to be silently

@@ -32,7 +32,7 @@ export const SwitchButton = ({
     <div className="flex items-center bg-surface border border-surface-raised rounded-button transition-colors h-6">
       <button
         onClick={() => handleSwitch('left')}
-        className={`px-3 py-0.5 h-6 text-button-s cursor-pointer rounded-button transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-surface ${
+        className={`px-3 py-0.5 h-6 text-button-s cursor-pointer rounded-button transition-colors focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-surface ${
           active === 'left'
             ? 'text-active bg-surface-raised hover:bg-surface-raised-hover'
             : 'text-idle'
@@ -42,7 +42,7 @@ export const SwitchButton = ({
       </button>
       <button
         onClick={() => handleSwitch('right')}
-        className={`px-3 py-0.5 h-6 text-button-s cursor-pointer rounded-button transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-surface ${
+        className={`px-3 py-0.5 h-6 text-button-s cursor-pointer rounded-button transition-colors focus-ring focus-visible:ring-offset-1 focus-visible:ring-offset-surface ${
           active === 'right'
             ? 'text-active bg-surface-raised hover:bg-surface-raised-hover'
             : 'text-idle'

@@ -18,7 +18,7 @@ const menuPanelClass =
   'min-w-[220px] rounded-xl border border-border bg-surface-raised p-1 shadow-lg ring-1 ring-black/5 dark:ring-white/10';
 
 const menuItemClass =
-  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-body-s font-medium text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-body-s font-medium text-text transition-colors hover:bg-surface-sidebar-hover focus-ring';
 // Falls back to the live brand accent token so the avatar follows the active
 // view (blue normally, emerald in the organization view). A user's explicit
 // avatarAccentColor still overrides it.
@@ -180,7 +180,7 @@ export const UserProfileSwitcher = ({
       ) : (
         <button
           type="button"
-          className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg py-0.5 pl-0.5 pr-1 text-left transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
+          className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg py-0.5 pl-0.5 pr-1 text-left transition-colors hover:bg-surface-sidebar-hover focus-ring cursor-pointer"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
           aria-label={`Open account menu, ${displayName}`}
@@ -275,7 +275,7 @@ export const UserProfileSwitcher = ({
               <button
                 type="button"
                 role="menuitem"
-                className="flex size-9 items-center justify-center rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
+                className="flex size-9 items-center justify-center rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus-ring cursor-pointer"
                 aria-label={
                   theme === 'light'
                     ? 'Switch to dark theme'

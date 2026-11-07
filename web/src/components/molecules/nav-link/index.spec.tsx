@@ -29,8 +29,7 @@ describe('NavLink', () => {
     render(<NavLink to="/home" label="Home" />);
 
     expect(screen.getByRole('link', { name: 'Home' })).toHaveClass(
-      'focus-visible:ring-2',
-      'focus-visible:ring-accent',
+      'focus-ring',
     );
   });
 

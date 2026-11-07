@@ -94,8 +94,7 @@ describe('Button Component', () => {
         expect(buttonElement).toHaveClass(
           typeClass,
           'rounded-button',
-          'focus-visible:ring-2',
-          'focus-visible:ring-accent',
+          'focus-ring',
         );
         unmount();
       }

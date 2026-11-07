@@ -25,8 +25,8 @@ export const iconActionVariants = cva(
     'cursor-pointer',
     'transition-colors duration-200 ease-in-out',
     'rounded-button',
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-    'disabled:opacity-50 disabled:cursor-not-allowed',
+    'focus-ring',
+    'disabled:text-text-disabled disabled:cursor-not-allowed',
   ],
   {
     variants: {

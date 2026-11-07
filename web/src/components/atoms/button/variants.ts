@@ -8,7 +8,7 @@ export const buttonVariants = cva(
     'transition-all duration-200 ease-in-out',
     // Keyboard focus: one accent ring for every variant and colour
     // (4.93:1 light, 8.37:1 dark against the page).
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+    'focus-ring',
   ],
   {
     variants: {

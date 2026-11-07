@@ -71,7 +71,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
           <div
             className={`flex gap-3 items-center justify-between ${isCollapsed ? 'flex-col' : 'flex-row'}`}
           >
-            <Link className="flex items-center gap-2" to="/">
+            <Link
+              className="focus-ring flex items-center gap-2 rounded-button"
+              to="/"
+            >
               <Logo variant={isCollapsed ? 'no-text' : 'line'} color="accent" />
             </Link>
             <Button
