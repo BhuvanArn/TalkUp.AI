@@ -208,7 +208,7 @@ export const RegisterForm = ({
           Learn about our Terms of Service
         </Link>
         <Button color="accent" type="submit">
-          <Icon icon="register" color="white" />
+          <Icon icon="register" color="inherit" />
           Register
         </Button>
         <p className="text-idle text-label-m">

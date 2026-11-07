@@ -166,7 +166,7 @@ export const VerifyEmailForm = ({
           type="submit"
           disabled={verifyEmail.isPending || emailMissingOrInvalid}
         >
-          <Icon icon="register" color="white" />
+          <Icon icon="register" color="inherit" />
           Verify and continue
         </Button>
       </form>
@@ -216,7 +216,7 @@ export const VerifyEmailForm = ({
             );
           }}
         >
-          <Icon icon="arrow-right" color="white" />
+          <Icon icon="arrow-right" color="inherit" />
           {resendSecondsLeft > 0
             ? `Resend code (${resendSecondsLeft}s)`
             : 'Resend code'}

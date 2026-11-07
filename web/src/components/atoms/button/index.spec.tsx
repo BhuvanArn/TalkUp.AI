@@ -179,8 +179,9 @@ describe('Button Component', () => {
         name: 'Disabled Contained',
       });
       expect(buttonElement).toHaveClass(
-        'bg-disabled',
-        'text-text-disabled',
+        'disabled:bg-disabled',
+        'disabled:text-text-disabled',
+        'aria-disabled:bg-disabled',
         'cursor-not-allowed',
       );
       expect(buttonElement).not.toHaveClass('opacity-50');
@@ -196,9 +197,30 @@ describe('Button Component', () => {
         name: 'Disabled Outlined',
       });
       expect(buttonElement).toHaveClass(
-        'border-border',
-        'text-text-disabled',
+        'disabled:border-border',
+        'disabled:text-text-disabled',
         'cursor-not-allowed',
+      );
+    });
+
+    it('keeps the disabled colours when a colour is passed through className', () => {
+      render(
+        <Button
+          disabled
+          variant="outlined"
+          color="neutral"
+          className="border-border text-text-weak hover:text-accent"
+        >
+          Busy
+        </Button>,
+      );
+      const buttonElement = screen.getByRole('button', { name: 'Busy' });
+      // The override stays, but the variant-scoped disabled classes survive
+      // tailwind-merge and win in CSS while the button is disabled.
+      expect(buttonElement).toHaveClass(
+        'text-text-weak',
+        'disabled:text-text-disabled',
+        'disabled:hover:text-text-disabled',
       );
     });
   });
@@ -247,7 +269,7 @@ describe('Button Component', () => {
       });
       expect(buttonElement).toHaveClass('!cursor-wait', 'opacity-75');
       expect(buttonElement).toHaveClass('bg-primary');
-      expect(buttonElement).not.toHaveClass('bg-disabled');
+      expect(buttonElement).not.toHaveClass('disabled:bg-disabled');
     });
   });
 

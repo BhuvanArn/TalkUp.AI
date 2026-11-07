@@ -144,7 +144,7 @@ export const LoginForm = () => {
           Forgot your password?
         </Link>
         <Button color="accent" type="submit">
-          <Icon icon="login" color="white" />
+          <Icon icon="login" color="inherit" />
           Log In
         </Button>
         <p className="text-idle text-label-m">

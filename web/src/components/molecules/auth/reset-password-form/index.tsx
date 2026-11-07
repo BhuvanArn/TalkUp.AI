@@ -220,7 +220,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
           type="submit"
           disabled={completeReset.isPending || emailMissingOrInvalid}
         >
-          <Icon icon="register" color="white" />
+          <Icon icon="register" color="inherit" />
           Update password
         </Button>
       </form>
@@ -270,7 +270,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
             );
           }}
         >
-          <Icon icon="arrow-right" color="white" />
+          <Icon icon="arrow-right" color="inherit" />
           {resendSecondsLeft > 0
             ? `Resend code (${resendSecondsLeft}s)`
             : 'Resend code'}

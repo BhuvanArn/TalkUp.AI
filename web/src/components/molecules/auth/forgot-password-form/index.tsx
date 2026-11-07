@@ -119,7 +119,7 @@ export const ForgotPasswordForm = ({
           type="submit"
           disabled={passwordResetRequest.isPending}
         >
-          <Icon icon="arrow-right" color="white" />
+          <Icon icon="arrow-right" color="inherit" />
           Continue
         </Button>
 

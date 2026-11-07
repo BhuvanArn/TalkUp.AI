@@ -66,15 +66,19 @@ export const ChatInputBar = ({
         onClick={handleSend}
         disabled={!canSend}
         aria-label="Send message"
-        // Only paint the brand gradient when enabled. The Button atom's disabled
-        // compound variant sets `bg-gray-400` (a background-color); a gradient is
-        // a background-image and would paint over it, making a disabled button
-        // look active. Dropping it when !canSend lets the disabled styling show.
-        className={`w-9 h-9 flex-shrink-0 text-on-accent ${
-          canSend ? 'bg-brand-gradient hover:opacity-90 hover:scale-105' : ''
+        // Only paint the brand gradient (and its label colour) when enabled.
+        // The Button atom's disabled variant sets `bg-disabled` (a
+        // background-color) and `text-text-disabled`; a gradient is a
+        // background-image and would paint over the fill, and a label colour
+        // passed here would win over the disabled one, making a disabled
+        // button look active.
+        className={`w-9 h-9 flex-shrink-0 ${
+          canSend
+            ? 'bg-brand-gradient text-on-accent hover:opacity-90 hover:scale-105'
+            : ''
         }`}
       >
-        <Icon icon="send" size="sm" color="white" />
+        <Icon icon="send" size="sm" color="inherit" />
       </Button>
     </div>
   );

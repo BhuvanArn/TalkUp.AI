@@ -198,7 +198,7 @@ const CalendarModal = () => {
               disabled={!title.trim()}
             >
               {modalEventToEdit ? 'Update' : 'Create'}
-              <Icon icon="save" size="sm" color="white" />
+              <Icon icon="save" size="sm" color="inherit" />
             </Button>
           </div>
         </div>

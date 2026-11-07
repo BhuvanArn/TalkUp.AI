@@ -251,24 +251,27 @@ export const buttonVariants = cva(
         className:
           'text-idle hover:text-active hover:bg-surface-sidebar-hover active:text-active active:bg-surface-sidebar-active',
       },
-      // Disabled variants - readable (5.04:1 light, 5.49:1 dark), no hover
+      // Disabled variants - readable (5.04:1 light, 5.49:1 dark), no hover.
+      // Written under `disabled:` / `aria-disabled:` (native button, or
+      // `asChild` link) so a colour passed through `className` cannot win
+      // over them: tailwind-merge only dedupes classes with the same variant.
       {
         disabled: true,
         variant: 'contained',
         className:
-          'bg-disabled hover:bg-disabled active:bg-disabled text-text-disabled hover:text-text-disabled active:text-text-disabled',
+          'disabled:bg-disabled disabled:text-text-disabled disabled:hover:bg-disabled disabled:hover:text-text-disabled disabled:active:bg-disabled aria-disabled:bg-disabled aria-disabled:text-text-disabled aria-disabled:hover:bg-disabled aria-disabled:hover:text-text-disabled aria-disabled:active:bg-disabled',
       },
       {
         disabled: true,
         variant: 'outlined',
         className:
-          'border-border text-text-disabled hover:border-border hover:text-text-disabled hover:bg-transparent active:border-border active:text-text-disabled active:bg-transparent',
+          'disabled:border-border disabled:text-text-disabled disabled:hover:border-border disabled:hover:text-text-disabled disabled:hover:bg-transparent aria-disabled:border-border aria-disabled:text-text-disabled aria-disabled:hover:border-border aria-disabled:hover:text-text-disabled aria-disabled:hover:bg-transparent',
       },
       {
         disabled: true,
         variant: 'text',
         className:
-          'text-text-disabled hover:text-text-disabled hover:bg-transparent active:text-text-disabled active:bg-transparent',
+          'disabled:text-text-disabled disabled:hover:text-text-disabled disabled:hover:bg-transparent aria-disabled:text-text-disabled aria-disabled:hover:text-text-disabled aria-disabled:hover:bg-transparent',
       },
       // Loading state
       {

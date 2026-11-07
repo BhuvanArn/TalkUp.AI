@@ -150,7 +150,7 @@ export const RegisterOrganizationForm = () => {
           </div>
         )}
         <Button color="accent" type="submit">
-          <Icon icon="register" color="white" />
+          <Icon icon="register" color="inherit" />
           Create organization
         </Button>
         <p className="text-idle text-label-m">
