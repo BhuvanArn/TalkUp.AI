@@ -44,7 +44,7 @@ Use **semantic tokens** (`bg-background`, `text-text`, `border-border`, `bg-acce
 | --- | --- | --- | --- |
 | Page | `--color-background` | `#fff` | `#18253f` |
 | Soft panel / inset well | `--color-surface` | `#f8f9ff` | `#111c31` |
-| Card that sits inside a raised column | `--color-white` | `#fff` | `#111c31` |
+| Card that sits inside a raised column | `--color-surface-card` | `#fff` | `#111c31` |
 | Raised (kanban column, cards) | `--color-surface-raised` | `#ecedf6` | `#1f2e4d` |
 | Sidebar | `--color-surface-sidebar` (+ `border-r border-border`) | `#f8f9ff` | `#16223a` |
 | Sidebar hover / selected | `--color-surface-sidebar-hover`, `-active` | `#e2e4f0` | `#24345a` |
@@ -147,7 +147,7 @@ No pill buttons, no one-off `rounded-[Npx]` in shared components.
 - Sizes `xs` 24 px, `sm` 32 px, `md` 40 px, `lg` 48 px, all Saira (`text-button-*`), all `rounded-button`.
 - **Contained**: fill from the colour token, label `text-on-accent` (white in light, navy in dark on pastel fills).
 - **Outlined / text**: border and label in the colour token, tinted `-weaker` hover.
-- **Disabled**: `bg-disabled` + `text-text-disabled` (≥ 5:1), no opacity fade. **Loading** keeps the colour, dimmed, with a spinner.
+- **Disabled**: `bg-disabled` + `text-text-disabled` (≥ 5:1), no opacity fade. These classes are scoped `disabled:` / `aria-disabled:`, so colours passed through `className` cannot override them. Icons inside a button use `color="inherit"` so they follow the label. **Loading** keeps the colour, dimmed, with a spinner.
 - **Focus**: the shared `focus-ring` utility, same for all variants.
 - Use the `Button` atom for every action, including links styled as buttons (`<Button asChild><Link …/></Button>`), instead of hand-rolled class strings.
 
@@ -167,7 +167,7 @@ Every interactive atom shows a visible keyboard focus: Button, IconAction, LinkB
 ### Cards and panels
 
 - Light: white or `surface` with a `border` hairline, `rounded-card`.
-- Dark: cards inside a raised column are inset wells (`bg-white` → `#111c31`) with a `border` hairline.
+- Dark: cards inside a raised column are inset wells (`bg-surface-card` → `#111c31`) with a `border` hairline.
 
 ### Navigation and shell
 
@@ -228,7 +228,7 @@ Follow patterns already used in the app (TanStack Router layouts, existing break
 
 ### Quick token reference
 
-- Page `bg-background`; soft section `bg-surface`; column `bg-surface-raised`; card in a column `bg-white`.
+- Page `bg-background`; soft section `bg-surface`; column `bg-surface-raised`; card in a column `bg-surface-card`.
 - Text `text-text`, secondary `text-text-weaker`, quiet `text-text-weakest`.
 - Action `bg-accent text-on-accent`; link `text-text-link`; accent text on a tint `text-accent-hover`.
 - Border `border-border`; input `border-border-input`.
@@ -239,7 +239,7 @@ Follow patterns already used in the app (TanStack Router layouts, existing break
 
 - _"Settings card: `bg-surface border border-border rounded-card`. Title `text-h5 text-text`, body `text-body-m text-text-weaker`. Primary `Button` (contained, accent)."_
 - _"Form row: label `text-label-m text-text-idle`, use `BaseInput` (`border-border-input`, `focus:ring-2 ring-accent`), 16 px between rows, 32 px before the submit button."_
-- _"Kanban column: `bg-surface-raised rounded-card p-3`; cards `bg-white border border-border rounded-card`; status dot `bg-success` (pastel in dark)."_
+- _"Kanban column: `bg-surface-raised rounded-card p-3`; cards `bg-surface-card border border-border rounded-card`; status dot `bg-success` (pastel in dark)."_
 
 ### Iteration checklist
 

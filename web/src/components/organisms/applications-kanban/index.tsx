@@ -109,7 +109,7 @@ const KanbanColumn = ({
           className="text-text-weak shrink-0"
         />
         {STATUS_LABELS[status]}
-        <span className="bg-white ml-auto rounded-full px-2">
+        <span className="bg-surface-card ml-auto rounded-full px-2">
           {applications.length}
         </span>
       </h3>

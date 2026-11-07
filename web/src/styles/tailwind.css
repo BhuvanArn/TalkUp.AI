@@ -57,6 +57,9 @@
   --color-surface-hover: #f0f4fa;
   --color-surface-raised: #ecedf6;
   --color-surface-raised-hover: #dcddee;
+  /* Card that sits inside a raised column (kanban): white in light, an
+     inset navy well in dark (Figma dark/bg). */
+  --color-surface-card: #fff;
 
   --color-note-card: #ecedf6;
   --color-note-card-hover: #dfe0e9;
@@ -92,15 +95,6 @@
   --color-text-weakest: #6a6a7e;
   --color-text-idle: #57585e;
   --color-text-active: #1e2229;
-
-  /* Short aliases of the text tiers. They reference the text-* tokens so the
-     two sets can no longer drift apart between themes. */
-  --color-idle: var(--color-text-idle);
-  --color-active: var(--color-text-active);
-  --color-hover: var(--color-text);
-  --color-weak: var(--color-text-weak);
-  --color-weaker: var(--color-text-weaker);
-  --color-weakest: var(--color-text-weakest);
 
   /* Light sidebar = page surface + hairline right border (Figma G1). */
   --color-surface-sidebar: #f8f9ff;
@@ -170,6 +164,19 @@
   --font-size-body-s: 12px;
 }
 
+/* Short aliases of the text tiers (`text-idle`, `bg-weak`…). `inline` makes
+   the generated utilities point straight at the text-* tokens, so the two sets
+   cannot drift apart and they follow `.dark` / `data-view` wherever those are
+   set, not only on <html>. */
+@theme inline {
+  --color-idle: var(--color-text-idle);
+  --color-active: var(--color-text-active);
+  --color-hover: var(--color-text);
+  --color-weak: var(--color-text-weak);
+  --color-weaker: var(--color-text-weaker);
+  --color-weakest: var(--color-text-weakest);
+}
+
 /*
  * Dark Mode Colors — navy, not neutral grey (Figma G4 / L2, variables
  * dark/*). Elevation reads by lightness: surface (inset wells, cards)
@@ -205,6 +212,7 @@
   --color-surface-hover: #1f2e4d;
   --color-surface-raised: #1f2e4d;
   --color-surface-raised-hover: #24345a;
+  --color-surface-card: #111c31;
 
   --color-note-card: #1f2e4d;
   --color-note-card-hover: #24345a;
