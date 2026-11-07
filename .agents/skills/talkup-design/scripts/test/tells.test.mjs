@@ -72,3 +72,14 @@ test('addedLines keeps only added lines with their new line numbers', () => {
     ],
   });
 });
+
+test('skips the inlined token block of a pistes page', () => {
+  const html = ['<style>', '/* TOKENS:START */', ':root { --color-accent: #2b70c9; }', '/* TOKENS:END */', '.x { color: #ff00aa; }', '</style>'].join('\n');
+  const tells = scanText('docs/design/pistes/x/index.html', html);
+  assert.deepEqual(tells.map((t) => [t.id, t.line]), [['hex-literal', 5]]);
+});
+
+test('arrows and check marks are not emoji', () => {
+  assert.deepEqual(scanText('web/src/a.tsx', '<dt>Écarts Figma ↔ code ✓ ← ×</dt>'), []);
+  assert.equal(scanText('web/src/a.tsx', '<p>Bravo ✨</p>').filter((t) => t.id === 'emoji').length, 1);
+});

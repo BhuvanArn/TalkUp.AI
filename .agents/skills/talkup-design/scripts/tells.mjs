@@ -66,7 +66,7 @@ export const RULES = [
   },
   {
     id: 'emoji',
-    re: /\p{Extended_Pictographic}/u,
+    re: /\p{Emoji_Presentation}/u,
     instead: 'No emoji as icons or decoration. Use the Icon atom (functional) or a seminar-style illustration (emotional moment).',
   },
   {
@@ -110,7 +110,14 @@ const stripNonCode = (line) =>
 export function scanText(path, text) {
   if (TOKEN_SOURCES.some((re) => re.test(path))) return [];
   const out = [];
+  let inTokens = false;
   text.split(/\r?\n/).forEach((raw, i) => {
+    // pistes pages inline the real tokens (hex by nature) between these markers
+    if (raw.includes('TOKENS:START')) inTokens = true;
+    if (inTokens) {
+      if (raw.includes('TOKENS:END')) inTokens = false;
+      return;
+    }
     if (/design-ok:\s*\S/.test(raw)) return;
     const line = stripNonCode(raw);
     if (!line.trim()) return;
