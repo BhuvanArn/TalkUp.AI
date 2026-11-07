@@ -70,6 +70,10 @@ someone picks them up.
 - `Icon` `color="white"` maps to the theme-flipping `text-white`.
 - Two confirm dialogs (`ConfirmModal`, `ConfirmationModal`) and ~6 hand-rolled
   modal shells; `molecules/menu` is dead code.
+- The delete-application confirmation (`ConfirmModal`) has no
+  `role="dialog"` / `aria-modal` (found by the #209 smoke).
+- Below ~1024 px the 256 px sidebar stays open and crushes the content (see
+  M1 above).
 - Input radius (`rounded-sm`, 4 px) vs Figma 6-8 px.
 - Light `accent` `#2b70c9` used as small text on accent-tinted or
   `surface-raised` backgrounds drops to 4.1-4.4:1; #208 fixed the three

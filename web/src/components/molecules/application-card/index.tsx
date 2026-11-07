@@ -147,7 +147,7 @@ export const ApplicationCard = ({
         <div
           {...listeners}
           {...attributes}
-          className="bg-surface-raised border-border hover:border-border-strong group flex min-w-0 flex-1 cursor-grab items-center gap-2.5 rounded-lg border p-2 transition-colors active:cursor-grabbing"
+          className="bg-surface-raised border-border hover:border-border-strong group flex min-w-0 flex-1 cursor-grab items-center gap-2.5 rounded-lg border p-2 transition-colors active:cursor-grabbing focus-ring"
         >
           <span
             aria-hidden="true"
@@ -179,7 +179,7 @@ export const ApplicationCard = ({
             aria-expanded={isMenuOpen}
             disabled={isPending}
             onClick={() => (isMenuOpen ? closeMenu() : setIsMenuOpen(true))}
-            className={`text-text-weakest hover:text-text hover:bg-surface flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed ${
+            className={`text-text-weakest hover:text-text hover:bg-surface flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed focus-ring ${
               isMenuOpen ? 'bg-surface text-text' : ''
             }`}
           >
@@ -212,7 +212,7 @@ export const ApplicationCard = ({
                         onStatusChange(application.applicationId, status);
                         closeMenu();
                       }}
-                      className="text-body-s text-text hover:bg-surface flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left"
+                      className="text-body-s text-text hover:bg-surface focus-visible:bg-surface flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left outline-none"
                     >
                       <StatusIcon
                         size={15}
@@ -252,7 +252,7 @@ export const ApplicationCard = ({
                     onClick={() =>
                       onInterviewAtChange(application.applicationId, null)
                     }
-                    className="text-text-weakest hover:text-text shrink-0 cursor-pointer rounded px-1"
+                    className="text-text-weakest hover:text-text shrink-0 cursor-pointer rounded px-1 focus-ring"
                   >
                     <iconMap.times size={14} aria-hidden="true" />
                   </button>
@@ -267,7 +267,7 @@ export const ApplicationCard = ({
                   closeMenu();
                   setIsDeleteModalOpen(true);
                 }}
-                className="text-body-s text-error hover:bg-error-weaker flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left"
+                className="text-body-s text-error hover:bg-error-weaker focus-visible:bg-error-weaker flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left outline-none"
               >
                 <TrashIcon size={15} aria-hidden="true" className="shrink-0" />
                 Delete
@@ -322,7 +322,7 @@ export const ApplicationCard = ({
         <button
           type="button"
           onClick={() => onOpenTraining(application.applicationId)}
-          className="text-body-s-strong text-accent hover:text-accent-hover cursor-pointer"
+          className="text-body-s-strong text-accent hover:text-accent-hover cursor-pointer rounded-button focus-ring"
         >
           Resume training
         </button>
