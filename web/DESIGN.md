@@ -4,6 +4,8 @@ This document describes how the **TalkUp** product should look and feel in the b
 
 The foundations follow the post-seminar Figma (UI/UX seminar of 2026-11-06), file **TalkUp — App & Design System** (`N0oUi7zzoaQHvkMVYh2wLM`), pages "Avant / Après", "Foundations" and "Audit". Decisions from that file that the code does not implement yet are listed in [`docs/design/figma-backlog.md`](../docs/design/figma-backlog.md): for those items the Figma is the reference, for everything else the code is.
 
+How to design a change (method, visual options, measurements): [`docs/design/METHODE.md`](../docs/design/METHODE.md), and the `talkup-design` agent skill in `.agents/skills/`.
+
 TalkUp is a career and interview preparation product (applications, CV analysis, roadmap, simulations, agenda, notes, organizations). The UI should feel **clear, professional, and calm**: plenty of whitespace, readable type, a **cool blue** accent in light and a **navy** theme with **pastel** accents in dark.
 
 ---
