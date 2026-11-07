@@ -152,6 +152,31 @@ async function settle(page) {
   );
 }
 
+export class SessionExpired extends Error {}
+
+// Signed-in pages redirect to /login when the stored session has expired.
+export function checkSession(page, requested) {
+  const want = new URL(requested);
+  const got = new URL(page.url());
+  if (
+    want.protocol.startsWith("http") &&
+    got.pathname.startsWith("/login") &&
+    !want.pathname.startsWith("/login")
+  )
+    throw new SessionExpired(
+      `${requested} redirected to /login: the session expired. Run login.mjs again and retry.`,
+    );
+}
+
+// The app reads the `dark` class; pistes pages also read data-theme.
+const setTheme = (page, theme) =>
+  page.evaluate((dark) => {
+    const html = document.documentElement;
+    html.classList.toggle("dark", dark);
+    if (html.hasAttribute("data-theme"))
+      html.dataset.theme = dark ? "dark" : "light";
+  }, theme === "dark");
+
 export async function runAudit(o) {
   const browser = await chromium.launch();
   const runs = [];
@@ -163,23 +188,43 @@ export async function runAudit(o) {
       });
       const page = await context.newPage();
       await page.goto(o.url, { waitUntil: "networkidle" });
+      checkSession(page, o.url);
       await settle(page);
+      // A pistes page shows one piste at a time: audit each in turn.
+      const pistes = await page.$$eval(".piste[data-piste]", (els) =>
+        els.map((e) => e.dataset.piste),
+      );
       for (const theme of o.themes) {
-        await page.evaluate(
-          (t) =>
-            document.documentElement.classList.toggle("dark", t === "dark"),
-          theme,
-        );
+        await setTheme(page, theme);
         await settle(page);
-        await page.addScriptTag({ path: AUDIT });
-        const r = await page.evaluate(
-          ([root, ignore]) => window.__talkupAudit({ root, ignore }),
-          [o.root, o.ignore],
-        );
-        if (o.focus) r.findings.push(...(await focusFindings(page)));
-        r.findings.push(...(await reducedMotionFindings(page)));
-        if (o.axe) r.findings.push(...(await axeFindings(page)));
-        runs.push({ url: o.url, width, theme, findings: r.findings });
+        for (const piste of pistes.length ? pistes : [null]) {
+          if (piste) {
+            await page.evaluate((id) => {
+              document.documentElement.dataset.layout = "focus";
+              document
+                .querySelectorAll(".piste")
+                .forEach((p) =>
+                  p.toggleAttribute("data-current", p.dataset.piste === id),
+                );
+            }, piste);
+            await settle(page);
+          }
+          await page.addScriptTag({ path: AUDIT });
+          const r = await page.evaluate(
+            ([root, ignore]) => window.__talkupAudit({ root, ignore }),
+            [o.root, o.ignore],
+          );
+          if (o.focus) r.findings.push(...(await focusFindings(page)));
+          r.findings.push(...(await reducedMotionFindings(page)));
+          if (o.axe) r.findings.push(...(await axeFindings(page)));
+          runs.push({
+            url: o.url,
+            width,
+            theme,
+            ...(piste ? { piste } : {}),
+            findings: r.findings,
+          });
+        }
       }
       await context.close();
     }
@@ -194,7 +239,9 @@ function print(runs) {
     const counts = ["FAIL", "WARN", "NOTE"]
       .map((s) => `${run.findings.filter((f) => f.severity === s).length} ${s}`)
       .join(", ");
-    console.log(`\n== ${run.url} · ${run.width}px · ${run.theme} — ${counts}`);
+    console.log(
+      `\n== ${run.url} · ${run.width}px · ${run.theme}${run.piste ? ` · piste ${run.piste}` : ""} — ${counts}`,
+    );
     for (const f of run.findings)
       console.log(
         `  [${f.severity}] ${f.rule}: ${f.message}${f.selector ? `  (${f.selector})` : ""}`,
@@ -210,7 +257,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     );
     process.exit(2);
   }
-  const runs = await runAudit(o);
+  let runs;
+  try {
+    runs = await runAudit(o);
+  } catch (e) {
+    if (!(e instanceof SessionExpired)) throw e;
+    console.error(e.message);
+    process.exit(3);
+  }
   if (o.json) console.log(JSON.stringify(runs, null, 2));
   else print(runs);
   process.exit(

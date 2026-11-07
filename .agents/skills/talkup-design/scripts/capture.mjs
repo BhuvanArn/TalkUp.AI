@@ -3,6 +3,7 @@
 //
 //   node capture.mjs <url> --out <file.png> [--theme light|dark] [--width 1440] [--height 900]
 //                    [--clip <css selector>] [--full] [--storage state.json]
+//                    [--lang fr|en] [--piste A|B|C]      (pistes pages)
 //
 // Hides dev overlays (TanStack devtools), waits for theme transitions, toggles the
 // `dark` class like the app's theme store. --clip crops to one element so the variant
@@ -23,6 +24,9 @@ function parse(argv) {
     storage: null,
     out: null,
     url: null,
+    lang: null,
+    piste: null,
+    report: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -33,6 +37,9 @@ function parse(argv) {
     else if (a === "--clip") o.clip = argv[++i];
     else if (a === "--storage") o.storage = argv[++i];
     else if (a === "--full") o.full = true;
+    else if (a === "--lang") o.lang = argv[++i];
+    else if (a === "--piste") o.piste = argv[++i];
+    else if (a === "--report") o.report = true;
     else o.url = a;
   }
   return o;
@@ -66,18 +73,63 @@ try {
   });
   const page = await context.newPage();
   await page.goto(o.url, { waitUntil: "networkidle" });
+  const want = new URL(o.url);
+  if (
+    want.protocol.startsWith("http") &&
+    new URL(page.url()).pathname.startsWith("/login") &&
+    !want.pathname.startsWith("/login")
+  ) {
+    console.error(
+      `${o.url} redirected to /login: the session expired. Run login.mjs again and retry.`,
+    );
+    process.exitCode = 3;
+    await browser.close();
+    process.exit(3);
+  }
   await page.addStyleTag({
     content: `${DEV_OVERLAYS}{display:none!important}`,
   });
+  // The app reads the `dark` class; pistes pages read data-theme / data-lang / data-current.
   await page.evaluate(
-    (dark) => document.documentElement.classList.toggle("dark", dark),
-    o.theme === "dark",
+    ({ dark, lang, piste }) => {
+      const html = document.documentElement;
+      html.classList.toggle("dark", dark);
+      if (html.hasAttribute("data-theme"))
+        html.dataset.theme = dark ? "dark" : "light";
+      if (lang) {
+        html.dataset.lang = lang;
+        html.lang = lang;
+      }
+      if (piste)
+        document
+          .querySelectorAll(".piste")
+          .forEach((p) =>
+            p.toggleAttribute("data-current", p.dataset.piste === piste),
+          );
+    },
+    { dark: o.theme === "dark", lang: o.lang, piste: o.piste },
   );
   await page.waitForTimeout(50);
   await settle(page);
   if (o.clip) await page.locator(o.clip).first().screenshot({ path: o.out });
   else await page.screenshot({ path: o.out, fullPage: o.full });
   console.log(o.out);
+  if (o.report)
+    console.log(
+      JSON.stringify(
+        await page.evaluate(() => ({
+          theme: document.documentElement.classList.contains("dark")
+            ? "dark"
+            : "light",
+          lang:
+            document.documentElement.dataset.lang ||
+            document.documentElement.lang,
+          piste:
+            document.querySelector(".piste[data-current]")?.dataset.piste ??
+            null,
+        })),
+      ),
+    );
 } finally {
   await browser.close();
 }

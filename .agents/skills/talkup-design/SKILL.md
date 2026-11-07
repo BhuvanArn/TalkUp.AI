@@ -25,7 +25,7 @@ Track these seven phases as a checklist. Each produces something; do not skip a 
 
 | # | Phase | You produce | Small change | New feature |
 |---|---|---|---|---|
-| 0 | **Frame** | Captures of the real screen today ("Avant", light + dark, 1440 + 390) and the *Cadrage* block, five short lines: surface mode, user, primary job of the screen, **the concept questioned** (is this element the right answer, or does the user need something else?), backlog items involved | yes | yes |
+| 0 | **Frame** | Captures of the real screen today ("Avant", light + dark, at the widths the screen is used at) and the *Cadrage* block, one short line each (two for the concept): surface mode, user, primary job of the screen, **the concept questioned** (is this element the right answer, or does the user need something else?), backlog items involved | yes | yes |
 | 1 | **References** | Real products that solved it, each with what you take and what you leave; the seminar principles and designer quotes that apply | 1–2 | 3–5 |
 | 2 | **Pistes** | `docs/design/pistes/<slug>/index.html`, every slot filled, FR + EN, light + dark, *Recommandation* and *Questions bloquantes* filled | 2 variants placed in a cropped capture of the real screen | 3 pistes that differ on a decision: safe, TalkUp, forward-looking |
 | 3 | **Stop** | Message to the human: the page path, one line per piste, your recommendation and the blocking questions. **End your turn.** | yes | yes |
@@ -43,19 +43,19 @@ node $S/new-pistes.mjs <slug> --title "<titre FR>" --count 2   # or 3
 
 The page inlines the real tokens and has slots per piste: **Intention, Idée forte, Références, Lois UX, États et mesures, Compromis, Écarts Figma ↔ code**. Fill every slot with **one sentence**: the page must be read in five minutes. An empty slot means the thinking was not done. Then:
 
-- **Backlog item?** Piste A is the Figma decision applied to today's screen, with the states the Figma lacks. B and C may depart from it on a decision the designer did not see; say so in *Écarts* and in the recommendation ("departs from Ap1: needs the designer's OK").
-- Draw the mockup with tokens (`var(--color-…)`, `.text-h3`, `--radius-button`), never hex. Desktop mockups at real width; the page opens one piste at a time.
-- Real content at real length, the **same persona and data in every piste**, both languages (`data-lang="fr|en"`), French first because it is longer. New copy exists in FR and EN even if the locale files are not on your branch yet; existing user data (job titles, summaries) stays as shipped. Run `node $S/fr-typo.mjs <page>` for French spacing.
-- Show the states that matter (empty, error, loading, overflow, sent…), and write their numbers in *États et mesures*: contrast ratios, target sizes, gaps.
+- **Backlog item?** Piste A is the Figma decision applied to today's screen, with the states the Figma lacks. Where the Figma itself breaks a rule of this skill (an unlabelled icon button, a tell, a missing prerequisite like R1), piste A keeps the intent, fixes the rule, and lists each fix in *Écarts*. B and C may depart from the decision; say so in *Écarts* and in the recommendation ("departs from Ap1: needs the designer's OK").
+- Draw the mockup with tokens (`var(--color-…)`, `.text-h3`, `--radius-button`), never hex. Mockups at the real width of their device (1440 desktop, 390 phone frames for mobile-only screens); the page opens one piste at a time. Sample the real surfaces from your "Avant" captures: in dark, the signed-in main area is `--color-white` (the darkest navy), not `--color-background`.
+- Real content at real length, the **same persona and data in every piste**, both languages (`data-lang="fr|en"`), French first because it is longer. New copy exists in FR and EN even if the locale files are not on your branch yet; existing user data (job titles, summaries, generated talking points) stays as shipped: wrap it in `lang="en"` inside the FR view and note it. Run `node $S/fr-typo.mjs <page>` for French spacing (it only touches `data-lang="fr"` text, and skips `lang="en"`).
+- Show the states that matter (empty, error, loading, overflow, sent…), and write their numbers in *États et mesures* (a short list is fine there): contrast ratios, target sizes, gaps. Several states of one phone screen: lay them out side by side and let them wrap, never in a horizontally scrolling strip.
 - Emotional moments (empty, blocker, success): a simple inline SVG in the TalkUp style, or a placeholder that names the illustration and its Figma reference. Never an emoji.
-- Small change: `node $S/capture.mjs <url> --out <page dir>/context.png --clip <selector of the zone> [--theme dark] [--storage state.json]`, then place each variant in `.context > .slot`, at real size.
+- Changes inside an existing screen (small or not): `node $S/capture.mjs <url> --out <page dir>/context.png --clip <selector of the zone> [--theme dark] [--storage state.json]`, then place each variant in `.context > .slot` at real size, or stack the real capture above your mockup when the variant pushes content down.
 - Pistes must differ on a **decision** (concept, placement, disclosure, interaction model), not on decoration. See `references/taste.md` §4.
 - Before showing, check the page itself:
   ```bash
   node $S/run-audit.mjs file://$PWD/docs/design/pistes/<slug>/index.html --themes light,dark --width 1440,390 --no-focus
   node $S/tells.mjs docs/design/pistes/<slug>/index.html
   ```
-  No FAIL, no `layout.clipped-text`, no tells. Then cover the logo: "could this be any AI SaaS?"
+  The audit runs on every piste in turn. No FAIL, no `layout.clipped-text`, no tells. Then cover the logo: "could this be any AI SaaS?"
 
 ### Phase 3: the stop
 
@@ -80,13 +80,14 @@ Present the pistes and end your turn. Do not start phase 4 in the same turn, eve
 ```bash
 S=.agents/skills/talkup-design/scripts      # run from the repo root
 node $S/new-pistes.mjs <slug> --title "<titre>" [--count 2|3] [--out dir]
-node $S/capture.mjs <url> --out shot.png [--theme light|dark] [--width 1440] [--clip sel] [--full] [--storage state.json]
+node $S/login.mjs http://localhost:8081 --email <e> --password <p> --out state.json   # right before signed-in captures
+node $S/capture.mjs <url> --out shot.png [--theme light|dark] [--width 1440] [--clip sel] [--full] [--storage state.json] [--lang fr|en] [--piste A]
 node $S/run-audit.mjs <url> --themes light,dark --width 1440,390 --axe [--root main] [--storage state.json]
 node $S/tells.mjs --diff origin/staging        # or: node $S/tells.mjs <files>
 node $S/fr-typo.mjs <page.html>                # French no-break spaces in data-lang="fr" text
 ```
 
-The app: `VITE_PORT=8081 npm run dev:web` (signed-in pages also need the server; `LOCAL_DEV.md` if present). Signed-in captures and audits need a Playwright storage state: log in once with a script and save `context.storageState({ path })`. Your own Node scripts outside the repo need `NODE_PATH=<repo>/node_modules` to find Playwright. Tests of the scripts: `node --test '.agents/skills/talkup-design/scripts/test/*.test.mjs'`.
+The app: `VITE_PORT=8081 npm run dev:web` (signed-in pages also need the server; `LOCAL_DEV.md` if present). Signed-in captures and audits need a storage state from `login.mjs`. Sessions rotate and expire within minutes: log in right before each batch; `capture.mjs` and `run-audit.mjs` exit with code 3 and say so when they land on /login. For your own Playwright scripts, prefer the bundled ones; otherwise write a `.cjs` file and run it with `NODE_PATH=<repo>/node_modules` (ES modules ignore `NODE_PATH`; use `createRequire` there). Tests of the scripts: `node --test '.agents/skills/talkup-design/scripts/test/*.test.mjs'`.
 
 ## Missing capabilities
 

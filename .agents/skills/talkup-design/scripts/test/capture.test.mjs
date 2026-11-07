@@ -46,3 +46,34 @@ test("captures a region in dark without dev overlays", async () => {
   assert.deepEqual(await png(out), { w: 300, h: 120 });
   assert.ok((await stat(out)).size > 0);
 });
+
+test("captures one piste of a pistes page in English and dark", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "cap-"));
+  const page = join(dir, "p.html");
+  await writeFile(
+    page,
+    `<!doctype html><html data-lang="fr" data-theme="light" data-layout="focus"><head><style>
+    body{margin:0} .piste{display:none} .piste[data-current]{display:block;width:200px;height:50px}
+    [data-theme='dark'] .piste{background:#000} html[data-lang='fr'] [data-lang='en']:not(html){display:none}</style></head>
+    <body><section class="piste" data-piste="A" data-current></section><section class="piste" data-piste="B"><span data-lang="en">EN</span></section></body></html>`,
+  );
+  const out = join(dir, "b.png");
+  const { stdout } = await run(process.execPath, [
+    CAPTURE,
+    pathToFileURL(page).href,
+    "--out",
+    out,
+    "--theme",
+    "dark",
+    "--lang",
+    "en",
+    "--piste",
+    "B",
+    "--clip",
+    '[data-piste="B"]',
+    "--report",
+  ]);
+  const state = JSON.parse(stdout.trim().split("\n").pop());
+  assert.deepEqual(state, { theme: "dark", lang: "en", piste: "B" });
+  assert.deepEqual(await png(out), { w: 200, h: 50 });
+});

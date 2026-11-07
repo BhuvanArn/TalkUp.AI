@@ -18,6 +18,7 @@
 | `BaseInput` has no error state; errors are a sibling span | No `aria-invalid`, no red boundary | Add the error style + `aria-invalid` + `aria-describedby` when you build a form |
 | Login / sign-up use placeholders as labels, 12 px between fields | Seminar A1/A2 not implemented (backlog) | Visible labels, 16 px between fields, 32 px before the button |
 | `.bg-brand-gradient` still exists for the old chatbot surfaces | Obsolete per seminar; `tells.mjs` flags new uses | Do not use; the assistant redesign removes it (backlog B/G2) |
+| The signed-in shell paints its main area with `bg-white` | In dark it is `--color-white` = the darkest navy (`#111c31`), not `--color-background` | Match mockups to the real surface; prefer `bg-background` / `bg-surface-*` in new code |
 | `web/src` files are CRLF | Whole-file rewrites change every line | Edit in place, preserve line endings |
 
 ## Fixed by #208 (no longer pitfalls)

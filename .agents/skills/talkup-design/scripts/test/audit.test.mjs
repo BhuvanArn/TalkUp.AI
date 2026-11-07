@@ -296,3 +296,37 @@ test("flags content cut off by a clipping ancestor", async () => {
   );
   assert.equal(byRule(r, "layout.clipped-text").length, 1);
 });
+
+test("audits every piste of a pistes page", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "talkup-audit-"));
+  const file = join(dir, "pistes.html");
+  await writeFile(
+    file,
+    page(
+      `<section class="piste" data-piste="A" data-current><p>Readable</p></section>
+       <section class="piste" data-piste="B"><p style="color:#c8c8d4">Too light</p></section>`,
+      ".piste{display:none} .piste[data-current]{display:block}",
+    ),
+  );
+  const { stdout } = await promisify(execFile)(process.execPath, [
+    CLI,
+    pathToFileURL(file).href,
+    "--themes",
+    "light",
+    "--width",
+    "1440",
+    "--json",
+    "--no-focus",
+  ]).catch((e) => e);
+  const runs = JSON.parse(stdout);
+  assert.deepEqual(
+    runs.map((r) => r.piste),
+    ["A", "B"],
+  );
+  assert.equal(
+    runs
+      .find((r) => r.piste === "B")
+      .findings.filter((f) => f.rule === "contrast.text").length,
+    1,
+  );
+});

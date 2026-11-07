@@ -35,3 +35,29 @@ test('frTypoHtml only touches text inside data-lang="fr" elements', () => {
     `<span data-lang="fr">Prêt${NNBSP}?</span><span data-lang="en">Ready ?</span><p>Hors : FR</p>`,
   );
 });
+
+test("frTypoHtml ignores the html element, style and script, and handles nesting", () => {
+  const html =
+    '<html data-lang="fr"><head><style>p { line-height: 1.2; }</style></head><body>' +
+    '<p data-lang="en">Not received ?</p>' +
+    '<p data-lang="fr">Pas reçu ? <strong>Renvoyer</strong> : maintenant</p>' +
+    "<script>const a = b ? c : d;</script></body></html>";
+  const out = frTypoHtml(html);
+  assert.ok(out.includes("<style>p { line-height: 1.2; }</style>"));
+  assert.ok(out.includes('<p data-lang="en">Not received ?</p>'));
+  assert.ok(
+    out.includes(
+      `Pas reçu${NNBSP}? <strong>Renvoyer</strong>${NBSP}: maintenant`,
+    ),
+  );
+  assert.ok(out.includes("<script>const a = b ? c : d;</script>"));
+});
+
+test('lang="en" inside a French element is left alone', () => {
+  const html =
+    '<p data-lang="fr">Angle : <q lang="en">limit it: correctness first</q> ?</p>';
+  assert.equal(
+    frTypoHtml(html),
+    `<p data-lang="fr">Angle${NBSP}: <q lang="en">limit it: correctness first</q>${NNBSP}?</p>`,
+  );
+});

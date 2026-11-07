@@ -54,11 +54,11 @@ test("tokensToCss scopes themes on html attributes", () => {
     utilities: "",
   });
   assert.match(css, /:root\s*\{[^}]*--a: 1;/);
-  assert.match(css, /\[data-theme='dark'\]\s*\{[^}]*--a: 2;/);
+  assert.match(css, /\[data-theme='dark'\][^{]*\{[^}]*--a: 2;/);
   assert.match(css, /\[data-view='organization'\]\s*\{[^}]*--a: 3;/);
   assert.match(
     css,
-    /\[data-theme='dark'\]\[data-view='organization'\]\s*\{[^}]*--a: 4;/,
+    /\[data-theme='dark'\]\[data-view='organization'\][^{]*\{[^}]*--a: 4;/,
   );
 });
 
@@ -152,4 +152,16 @@ test("page asks for a recommendation, blocking questions and measured states", a
   const d = new Date();
   const local = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   assert.match(header, new RegExp(local));
+});
+
+test("tokensToCss also answers to the .dark class", () => {
+  const css = tokensToCss({
+    light: {},
+    dark: { "--a": "2" },
+    org: {},
+    orgDark: { "--a": "4" },
+    utilities: "",
+  });
+  assert.match(css, /\.dark\s*[,{]/);
+  assert.match(css, /\.dark\[data-view='organization'\]/);
 });

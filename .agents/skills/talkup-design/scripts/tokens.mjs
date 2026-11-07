@@ -57,9 +57,9 @@ const decl = (o) =>
 export function tokensToCss(t) {
   return [
     `:root {\n${decl(t.light)}\n}`,
-    `[data-theme='dark'] {\n${decl(t.dark)}\n}`,
+    `[data-theme='dark'],\n.dark {\n${decl(t.dark)}\n}`,
     `[data-view='organization'] {\n${decl(t.org)}\n}`,
-    `[data-theme='dark'][data-view='organization'] {\n${decl(t.orgDark)}\n}`,
+    `[data-theme='dark'][data-view='organization'],\n.dark[data-view='organization'] {\n${decl(t.orgDark)}\n}`,
     t.utilities,
   ].join("\n\n");
 }
