@@ -136,7 +136,7 @@ Both families load **once**, from `index.html` (variable fonts, weights 100–90
 
 | Token / class | Value | Use |
 | --- | --- | --- |
-| `rounded-button` (`--radius-button`) | 8 px | **Every button**, segmented controls, nav items, dropdowns |
+| `rounded-button` (`--radius-button`) | 8 px | **Every button**, segmented controls, nav items, dropdown menus |
 | `rounded-card` (`--radius-card`) | 12 px | Cards, panels, kanban columns |
 | `rounded-full` | — | Badges, dots, avatars only |
 
@@ -148,12 +148,12 @@ No pill buttons, no one-off `rounded-[Npx]` in shared components.
 - **Contained**: fill from the colour token, label `text-on-accent` (white in light, navy in dark on pastel fills).
 - **Outlined / text**: border and label in the colour token, tinted `-weaker` hover.
 - **Disabled**: `bg-disabled` + `text-text-disabled` (≥ 5:1), no opacity fade. **Loading** keeps the colour, dimmed, with a spinner.
-- **Focus**: one accent ring for all variants: `focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background`.
-- Hand-rolled CTAs (roadmap, CV analysis) follow the same rules: `rounded-button`, 40 px high, `text-on-accent`.
+- **Focus**: the shared `focus-ring` utility, same for all variants.
+- Use the `Button` atom for every action, including links styled as buttons (`<Button asChild><Link …/></Button>`), instead of hand-rolled class strings.
 
 ### Focus
 
-Every interactive atom shows a visible keyboard focus: Button, IconAction, NavLink, NavSelector, SwitchButton, the account menu. Use `focus-visible:` (not `focus:`), ring `accent`, width 2 px, offset 2 px (1 px inside tight segmented controls). Ring contrast: 4.93:1 light, 8.37:1 dark.
+Every interactive atom shows a visible keyboard focus: Button, IconAction, LinkButton, NavLink, NavSelector, SwitchButton, the account menu. Buttons, links and nav items use the **`focus-ring`** utility (`tailwind.css`): keyboard-only (`:focus-visible`) 2 px `accent` ring with a 2 px offset; inside tight segmented controls add `focus-visible:ring-offset-1`. Text fields keep their own `focus:` ring so it also shows on click. Ring contrast: 4.93:1 light, 8.37:1 dark.
 
 `NavLink` is a single `<a>` styled through `Button asChild`: never nest a `<button>` inside a link.
 
@@ -238,7 +238,7 @@ Follow patterns already used in the app (TanStack Router layouts, existing break
 ### Example prompts
 
 - _"Settings card: `bg-surface border border-border rounded-card`. Title `text-h5 text-text`, body `text-body-m text-text-weaker`. Primary `Button` (contained, accent)."_
-- _"Form row: label `text-label-m text-text-idle`, input `border-border-input rounded-button`, focus `ring-2 ring-accent`, 16 px between rows, 32 px before the submit button."_
+- _"Form row: label `text-label-m text-text-idle`, use `BaseInput` (`border-border-input`, `focus:ring-2 ring-accent`), 16 px between rows, 32 px before the submit button."_
 - _"Kanban column: `bg-surface-raised rounded-card p-3`; cards `bg-white border border-border rounded-card`; status dot `bg-success` (pastel in dark)."_
 
 ### Iteration checklist

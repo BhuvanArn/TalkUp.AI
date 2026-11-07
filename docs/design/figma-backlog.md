@@ -70,8 +70,6 @@ someone picks them up.
 - `Icon` `color="white"` maps to the theme-flipping `text-white`.
 - Two confirm dialogs (`ConfirmModal`, `ConfirmationModal`) and ~6 hand-rolled
   modal shells; `molecules/menu` is dead code.
-- Text inputs carry a dead `font-display` class (they render Inter because
-  `text-body-m` wins); remove it.
 - Input radius (`rounded-sm`, 4 px) vs Figma 6-8 px.
 - Light `accent` `#2b70c9` used as small text on accent-tinted or
   `surface-raised` backgrounds drops to 4.1-4.4:1; #208 fixed the three
