@@ -174,7 +174,7 @@ export const UploaderCard = ({
           )}
         >
           <div className="bg-surface mb-5 flex h-16 w-16 items-center justify-center rounded-2xl">
-            <UploadIcon size={32} className="text-success" aria-hidden="true" />
+            <UploadIcon size={32} className="text-accent" aria-hidden="true" />
           </div>
 
           <h3 className="text-body-xl-strong text-text mb-1">
@@ -256,7 +256,7 @@ export const UploaderCard = ({
               const newDate = new Date(year, month - 1, day);
               onDeadlineChange?.(newDate);
             }}
-            className="text-body-m text-text bg-background border-border-strong focus-visible:border-accent focus-visible:ring-accent flex-1 cursor-pointer rounded-lg border px-3 py-2 outline-none focus-visible:ring-1"
+            className="text-body-m text-text bg-background border-border-input focus-visible:border-accent focus-visible:ring-accent flex-1 cursor-pointer rounded-lg border px-3 py-2 outline-none focus-visible:ring-1"
           />
           {deadline && (
             <button

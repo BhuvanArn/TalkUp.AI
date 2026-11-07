@@ -144,11 +144,11 @@ export const TimeComboBox = ({ value, onChange }: TimeComboBoxProps) => {
         onClick={() => setIsOpen(true)}
         onChange={handleInputChange}
         onBlur={commitInputValue}
-        className="bg-surface border border-border rounded-[5px] p-2 w-full focus:outline-none focus:border-primary"
+        className="bg-surface border border-border-input rounded-button p-2 w-full focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent"
       />
 
       {isOpen && (
-        <ul className="absolute z-50 w-full mt-1 bg-surface border border-border rounded-[5px] shadow-lg max-h-48 overflow-y-auto custom-scrollbar">
+        <ul className="absolute z-50 w-full mt-1 bg-surface border border-border rounded-button shadow-lg max-h-48 overflow-y-auto custom-scrollbar">
           {timeOptions.map((time) => (
             <li
               key={time}

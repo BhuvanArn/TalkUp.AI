@@ -60,7 +60,7 @@ export const BaseInput = React.forwardRef<HTMLInputElement, BaseInputProps>(
         aria-label={name}
         aria-required={required}
         className={cn(
-          'p-2 text-body-m font-normal transition-colors duration-200 ease-in-out border rounded-sm border-border-strong placeholder:text font-display focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:cursor-not-allowed disabled:bg-disabled disabled:opacity-50 ',
+          'p-2 text-body-m font-normal transition-colors duration-200 ease-in-out border rounded-sm border-border-input placeholder:text-text-weakest font-display focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:cursor-not-allowed disabled:bg-disabled disabled:text-text-disabled ',
           className,
         )}
       />

@@ -87,7 +87,7 @@ export const MembersTable = ({
             <span className="relative inline-flex items-center">
               <select
                 aria-label="Filter by role"
-                className="cursor-pointer appearance-none rounded-lg border border-border bg-surface py-1.5 pl-3 pr-9 text-body-s text-text transition-colors hover:border-border-strong hover:bg-surface-hover focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                className="cursor-pointer appearance-none rounded-lg border border-border-input bg-surface py-1.5 pl-3 pr-9 text-body-s text-text transition-colors hover:border-border-strong hover:bg-surface-hover focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
               >
@@ -135,7 +135,7 @@ export const MembersTable = ({
                         alt=""
                         fallback={initials(m.username)}
                         size="sm"
-                        className="!h-8 !w-8 shrink-0 border border-border bg-accent font-semibold text-white"
+                        className="!h-8 !w-8 shrink-0 border border-border bg-accent font-semibold text-on-accent"
                       />
                       <span className="truncate font-medium text-text">
                         {m.username}

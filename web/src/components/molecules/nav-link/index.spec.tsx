@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import NavLink from './index';
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ to, children, className }: any) => (
-    <a href={typeof to === 'string' ? to : '#'} className={className}>
+  Link: ({ to, children, ...rest }: any) => (
+    <a href={typeof to === 'string' ? to : '#'} {...rest}>
       {children}
     </a>
   ),
@@ -16,16 +16,22 @@ describe('NavLink', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the label and forwards `to` as href on the Link', () => {
+  it('renders a single link (no nested button) that forwards `to` as href', () => {
     render(<NavLink to="/register" label="Dashboard" />);
 
-    const button = screen.getByRole('button', { name: 'Dashboard' });
-    expect(button).toBeInTheDocument();
-
-    const anchor = button.closest('a');
-    expect(anchor).toBeInTheDocument();
+    const anchor = screen.getByRole('link', { name: 'Dashboard' });
     expect(anchor).toHaveAttribute('href', '/register');
     expect(anchor).toHaveClass('w-full');
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('shows an accent focus ring on keyboard focus', () => {
+    render(<NavLink to="/home" label="Home" />);
+
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveClass(
+      'focus-visible:ring-2',
+      'focus-visible:ring-accent',
+    );
   });
 
   it('renders an icon when `icon` prop is provided', () => {
