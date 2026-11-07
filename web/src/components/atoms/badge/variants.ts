@@ -23,7 +23,7 @@ export const badgeVariants = cva(
   {
     variants: {
       color: {
-        accent: 'bg-accent/10 text-accent',
+        accent: 'bg-accent/10 text-accent-hover',
         primary: 'bg-primary/10 text-primary',
         success: 'bg-success/10 text-success',
         warning: 'bg-warning/10 text-warning',

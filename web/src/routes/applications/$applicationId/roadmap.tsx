@@ -123,7 +123,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
             type="button"
             onClick={() => regenerate.mutate()}
             disabled={regenerate.isPending}
-            className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-2xl px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-disabled"
+            className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-button px-6 py-3 text-on-accent disabled:cursor-not-allowed disabled:bg-disabled"
           >
             {regenerate.isPending ? 'Retrying…' : 'Retry'}
           </button>
@@ -150,7 +150,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
       <Link
         to="/applications/$applicationId/simulations"
         params={{ applicationId }}
-        className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-2xl px-8 py-3 text-white"
+        className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-button px-8 h-10 text-on-accent"
       >
         Start simulation
         <StartIcon size={16} aria-hidden="true" />
@@ -158,7 +158,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
       <Link
         to="/notes"
         search={{ applicationId }}
-        className="text-button-m border-accent text-accent hover:bg-accent-weak flex items-center gap-2 rounded-2xl border px-8 py-3 transition-colors"
+        className="text-button-m border-accent text-accent hover:bg-accent-weak flex items-center gap-2 rounded-button border px-8 h-10 transition-colors"
       >
         <NotesIcon size={16} aria-hidden="true" />
         My notes
@@ -169,7 +169,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
             <button
               type="button"
               onClick={() => setSourcesOpen(true)}
-              className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-2xl border px-5 py-3 transition-colors"
+              className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-button border px-5 h-10 transition-colors"
             >
               <SourcesIcon size={16} aria-hidden="true" />
               Sources
@@ -179,7 +179,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
             type="button"
             onClick={() => regenerate.mutate()}
             disabled={regenerate.isPending}
-            className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-2xl border px-5 py-3 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+            className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-button border px-5 h-10 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RegenerateIcon
               size={16}
@@ -231,7 +231,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
                     type="button"
                     onClick={() => regenerate.mutate()}
                     disabled={regenerate.isPending}
-                    className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-2xl px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-disabled"
+                    className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-button px-6 py-3 text-on-accent disabled:cursor-not-allowed disabled:bg-disabled"
                   >
                     {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
                   </button>

@@ -257,7 +257,7 @@ function CVAnalysisPage() {
               type="button"
               onClick={handleStartAnalysis}
               disabled={!canStart || isAnalyzing}
-              className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent cursor-pointer rounded-2xl px-14 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled"
+              className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent cursor-pointer rounded-button px-14 py-4 text-on-accent transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled disabled:text-text-disabled"
             >
               Start TalkUp Analysis
             </button>

@@ -62,7 +62,7 @@ export const InterviewDatePill = ({
   };
 
   const pillClass = interviewAt
-    ? 'bg-accent-weak text-accent border-transparent hover:border-accent'
+    ? 'bg-accent-weak text-accent-hover border-transparent hover:border-accent'
     : 'border-border border-dashed text-text-weak hover:border-accent hover:text-accent hover:bg-accent-weak';
 
   let content;

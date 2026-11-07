@@ -137,7 +137,7 @@ export const ApplicationCard = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-background border-border rounded-xl border p-3 ${
+      className={`bg-white border-border rounded-card border p-3 ${
         isDragging ? 'z-10 opacity-80 shadow-lg' : ''
       } ${isPending ? 'opacity-60' : ''}`}
     >
@@ -151,7 +151,7 @@ export const ApplicationCard = ({
         >
           <span
             aria-hidden="true"
-            className="bg-background text-primary text-body-s-strong flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-display"
+            className="bg-white text-primary text-body-s-strong flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-display"
           >
             {(application.companyName ?? '?').charAt(0).toUpperCase()}
           </span>

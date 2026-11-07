@@ -39,7 +39,7 @@ export const EmptyState = ({
         <Icon icon={icon} className="w-12 h-12 text-text-weaker" />
       </div>
       <h2 className="text-h2 text-text-idle font-semibold mb-2">{title}</h2>
-      <p className="text-body-md text-text-weaker mb-6 text-center max-w-md">
+      <p className="text-body-m text-text-weaker mb-6 text-center max-w-md">
         {description}
       </p>
       {actionLabel && onAction && (

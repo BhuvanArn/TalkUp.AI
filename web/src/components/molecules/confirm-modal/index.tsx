@@ -116,7 +116,7 @@ export const ConfirmModal = ({
         </div>
 
         <div className="px-6 pb-6">
-          <p className="text-body-md text-text-weaker text-center mb-6">
+          <p className="text-body-m text-text-weaker text-center mb-6">
             {message}
           </p>
 

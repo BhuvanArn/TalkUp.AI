@@ -64,7 +64,7 @@ export function OrgViewLayout({ children }: { children: ReactNode }) {
             className="shrink-0 border border-border bg-accent-weak text-accent"
           />
           <div className="flex flex-col">
-            <span className="text-label-s text-accent">Organization</span>
+            <span className="text-label-s text-text-weaker">Organization</span>
             <h2 className="text-h3 text-text">{org.organization_name}</h2>
           </div>
         </header>
