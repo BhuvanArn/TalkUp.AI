@@ -302,6 +302,33 @@
     }
   }
 
+  function auditLayout(root, add) {
+    const doc = document.documentElement;
+    if (doc.scrollWidth > doc.clientWidth + 1)
+      add('layout.overflow', 'FAIL', document.body, `${doc.scrollWidth}px > ${doc.clientWidth}px`, 'no horizontal scroll (WCAG 1.4.10 at 320px)', `The page scrolls sideways: content is ${doc.scrollWidth}px wide in a ${doc.clientWidth}px viewport.`);
+    for (const el of [...root.querySelectorAll('*')].filter((e) => ownText(e).length > 0 && isVisible(e))) {
+      const s = getComputedStyle(el);
+      // Cut off by an ancestor that hides overflow (a mockup frame wider than its canvas)?
+      const r = el.getBoundingClientRect();
+      let clipper = null;
+      for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+        const as = getComputedStyle(a);
+        if (as.overflowX !== 'visible') {
+          const ar = a.getBoundingClientRect();
+          if (r.right > ar.right + 1 || r.left < ar.left - 1) clipper = a;
+          break;
+        }
+      }
+      if (clipper) {
+        add('layout.clipped-text', 'WARN', el, `${Math.round(r.right - clipper.getBoundingClientRect().right)}px hidden`, 'fully visible', `Text "${ownText(el).slice(0, 40)}" runs past ${sel(clipper)}, which hides overflow: it is cut off.`);
+        continue;
+      }
+      if (s.overflowX === 'visible' || s.textOverflow === 'ellipsis') continue;
+      if (el.scrollWidth > el.clientWidth + 1)
+        add('layout.clipped-text', 'WARN', el, `${el.scrollWidth}px in ${el.clientWidth}px`, 'wrap, or truncate with an ellipsis', `Text "${ownText(el).slice(0, 40)}" is cut off in ${sel(el)}: let it wrap or truncate with an ellipsis (and a title).`);
+    }
+  }
+
   window.__talkupAudit = (options = {}) => {
     const root = document.querySelector(options.root || 'body') || document.body;
     ignoreSel = DEFAULT_IGNORE.concat(options.ignore || []).join(',');
@@ -312,6 +339,7 @@
     auditControls(root, add);
     auditSpacingGrid(root, add);
     auditMotion(root, add);
+    auditLayout(root, add);
     return { theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light', findings };
   };
   window.__talkupAuditNorms = NORMS;

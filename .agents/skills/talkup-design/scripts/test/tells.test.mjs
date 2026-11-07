@@ -83,3 +83,11 @@ test('arrows and check marks are not emoji', () => {
   assert.deepEqual(scanText('web/src/a.tsx', '<dt>Écarts Figma ↔ code ✓ ← ×</dt>'), []);
   assert.equal(scanText('web/src/a.tsx', '<p>Bravo ✨</p>').filter((t) => t.id === 'emoji').length, 1);
 });
+
+test('arrow in prose is not an arrow CTA', () => {
+  assert.deepEqual(scanText('docs/design/pistes/x/index.html', '<p>Figma node 188:239 → 188:244 shows the after state.</p>'), []);
+});
+
+test('arrow ending a non-button element is not an arrow CTA', () => {
+  assert.deepEqual(scanText('docs/design/pistes/x/index.html', '<dd>Avant : 188:239 →</dd>'), []);
+});

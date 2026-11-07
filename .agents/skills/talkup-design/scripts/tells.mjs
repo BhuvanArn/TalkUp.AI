@@ -76,7 +76,7 @@ export const RULES = [
   },
   {
     id: 'arrow-cta',
-    re: /(?:→|-&gt;|&rarr;)\s*<\/(?:button|Button|LinkButton|a|Link)>|>[^<]*\s(?:→|&rarr;)\s*</,
+    re: /(?:→|-&gt;|&rarr;)\s*<\/(?:button|Button|LinkButton|a|Link)>/,
     instead: 'An arrow on every CTA is a template tic. A clear verb is enough ("Analyse my CV").',
   },
   {

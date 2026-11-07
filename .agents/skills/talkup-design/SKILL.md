@@ -21,12 +21,14 @@ Core rule: **no UI code before a human has chosen between visual pistes.** Every
 
 Track these seven phases as a checklist. Each produces something; do not skip a product.
 
+**Depth.** It is a **new feature** if any of these is true: it adds a screen or a flow, needs new data or a new API route, or implements a backlog item marked *Maquette*. Otherwise it is a **small change**.
+
 | # | Phase | You produce | Small change | New feature |
 |---|---|---|---|---|
-| 0 | **Frame** | The *Cadrage* block of the pistes page: surface mode, user, primary job of the screen, **the concept questioned** (is this element the right answer, or does the user need something else?), backlog items involved | yes | yes |
+| 0 | **Frame** | Captures of the real screen today ("Avant", light + dark, 1440 + 390) and the *Cadrage* block, five short lines: surface mode, user, primary job of the screen, **the concept questioned** (is this element the right answer, or does the user need something else?), backlog items involved | yes | yes |
 | 1 | **References** | Real products that solved it, each with what you take and what you leave; the seminar principles and designer quotes that apply | 1–2 | 3–5 |
-| 2 | **Pistes** | `docs/design/pistes/<slug>/index.html`, every slot filled, FR + EN, light + dark | 2 variants placed in a screenshot of the real screen | 3 pistes that differ on a decision: safe, TalkUp, forward-looking |
-| 3 | **Stop** | Message to the human: the page path, one line per piste, your recommendation and why. **End your turn.** | yes | yes |
+| 2 | **Pistes** | `docs/design/pistes/<slug>/index.html`, every slot filled, FR + EN, light + dark, *Recommandation* and *Questions bloquantes* filled | 2 variants placed in a cropped capture of the real screen | 3 pistes that differ on a decision: safe, TalkUp, forward-looking |
+| 3 | **Stop** | Message to the human: the page path, one line per piste, your recommendation and the blocking questions. **End your turn.** | yes | yes |
 | 4 | **Implement** | The chosen piste with existing components and tokens; i18n keys in `en` and `fr`; decision recorded in the page's *Décision* block | yes | yes |
 | 5 | **Audit** | `run-audit.mjs` (light + dark, 1440 + 390, `--axe`) and `tells.mjs --diff`: every FAIL fixed, every WARN fixed or justified | yes | yes |
 | 6 | **Critique** | Screenshots 1440 + 390, light + dark, FR + EN; your critique in the designer's form (element, measurement, why it matters, proposal); fixes applied | yes | yes |
@@ -34,16 +36,26 @@ Track these seven phases as a checklist. Each produces something; do not skip a 
 ### Phase 2 in detail
 
 ```bash
-node .agents/skills/talkup-design/scripts/new-pistes.mjs <slug> --title "<titre FR>" --count 2   # or 3
+S=.agents/skills/talkup-design/scripts      # from the repo root
+node $S/new-pistes.mjs <slug> --title "<titre FR>" --count 2   # or 3
+# --out <dir> writes <dir>/<slug>/index.html instead of docs/design/pistes/<slug>/
 ```
 
-The page inlines the real tokens and has slots per piste: **Intention, Idée forte, Références, Lois UX, Compromis, Écarts Figma ↔ code**. Fill every slot; an empty slot means the thinking was not done. Then:
+The page inlines the real tokens and has slots per piste: **Intention, Idée forte, Références, Lois UX, États et mesures, Compromis, Écarts Figma ↔ code**. Fill every slot with **one sentence**: the page must be read in five minutes. An empty slot means the thinking was not done. Then:
 
-- Draw the mockup with tokens (`var(--color-…)`, `.text-h3`, `--radius-button`), never hex.
-- Real content at real length, both languages (`data-lang="fr|en"`), French first because it is longer. Include the empty, error and overflow cases that matter.
-- Small change: capture the real screen (browser automation, both themes if they differ), save it as `context.png` next to the page, place each variant in a `.context > .slot`.
+- **Backlog item?** Piste A is the Figma decision applied to today's screen, with the states the Figma lacks. B and C may depart from it on a decision the designer did not see; say so in *Écarts* and in the recommendation ("departs from Ap1: needs the designer's OK").
+- Draw the mockup with tokens (`var(--color-…)`, `.text-h3`, `--radius-button`), never hex. Desktop mockups at real width; the page opens one piste at a time.
+- Real content at real length, the **same persona and data in every piste**, both languages (`data-lang="fr|en"`), French first because it is longer. New copy exists in FR and EN even if the locale files are not on your branch yet; existing user data (job titles, summaries) stays as shipped. Run `node $S/fr-typo.mjs <page>` for French spacing.
+- Show the states that matter (empty, error, loading, overflow, sent…), and write their numbers in *États et mesures*: contrast ratios, target sizes, gaps.
+- Emotional moments (empty, blocker, success): a simple inline SVG in the TalkUp style, or a placeholder that names the illustration and its Figma reference. Never an emoji.
+- Small change: `node $S/capture.mjs <url> --out <page dir>/context.png --clip <selector of the zone> [--theme dark] [--storage state.json]`, then place each variant in `.context > .slot`, at real size.
 - Pistes must differ on a **decision** (concept, placement, disclosure, interaction model), not on decoration. See `references/taste.md` §4.
-- Before showing: run `node .agents/skills/talkup-design/scripts/tells.mjs docs/design/pistes/<slug>/index.html`, cover the logo and ask "could this be any AI SaaS?", and check the page in dark (`T`) and English (`L`).
+- Before showing, check the page itself:
+  ```bash
+  node $S/run-audit.mjs file://$PWD/docs/design/pistes/<slug>/index.html --themes light,dark --width 1440,390 --no-focus
+  node $S/tells.mjs docs/design/pistes/<slug>/index.html
+  ```
+  No FAIL, no `layout.clipped-text`, no tells. Then cover the logo: "could this be any AI SaaS?"
 
 ### Phase 3: the stop
 
@@ -51,6 +63,8 @@ Present the pistes and end your turn. Do not start phase 4 in the same turn, eve
 **No human available** (you are a subagent, in an automated loop, or told not to ask): produce the pistes, report them, and stop. Never pick for the human.
 
 ## Which reference to read
+
+**Small change, short path:** `talkup-identity.md` §1 and §6, `designer-reflexes.md`, `craft-rules.md` §1–4, `ai-tells.md` self-check. Read the rest only when the task touches it.
 
 | When | Read |
 |---|---|
@@ -64,13 +78,15 @@ Present the pistes and end your turn. Do not start phase 4 in the same turn, eve
 ## Commands
 
 ```bash
-S=.agents/skills/talkup-design/scripts
-node $S/new-pistes.mjs <slug> --title "<titre>" [--count 2|3]
-node $S/run-audit.mjs http://localhost:8081/<route> --themes light,dark --width 1440,390 --axe [--root main] [--storage state.json]
+S=.agents/skills/talkup-design/scripts      # run from the repo root
+node $S/new-pistes.mjs <slug> --title "<titre>" [--count 2|3] [--out dir]
+node $S/capture.mjs <url> --out shot.png [--theme light|dark] [--width 1440] [--clip sel] [--full] [--storage state.json]
+node $S/run-audit.mjs <url> --themes light,dark --width 1440,390 --axe [--root main] [--storage state.json]
 node $S/tells.mjs --diff origin/staging        # or: node $S/tells.mjs <files>
+node $S/fr-typo.mjs <page.html>                # French no-break spaces in data-lang="fr" text
 ```
 
-The app: `VITE_PORT=8081 npm run dev:web` (signed-in pages also need the server; `LOCAL_DEV.md` if present). Tests of the scripts: `node --test '.agents/skills/talkup-design/scripts/test/*.test.mjs'`.
+The app: `VITE_PORT=8081 npm run dev:web` (signed-in pages also need the server; `LOCAL_DEV.md` if present). Signed-in captures and audits need a Playwright storage state: log in once with a script and save `context.storageState({ path })`. Your own Node scripts outside the repo need `NODE_PATH=<repo>/node_modules` to find Playwright. Tests of the scripts: `node --test '.agents/skills/talkup-design/scripts/test/*.test.mjs'`.
 
 ## Missing capabilities
 
@@ -93,7 +109,9 @@ The app: `VITE_PORT=8081 npm run dev:web` (signed-in pages also need the server;
 |---|---|
 | "It's just a link / a button, pistes are overkill" | The user asked for pistes on every change. Two variants in a screenshot take minutes. |
 | "One option is clearly best, I'll describe the others in prose" | Prose alternatives are not pistes. The human chooses by looking. |
-| "I'll show one proposal marked RECOMMENDED" | Recommend in the stop message, not by shrinking the other pistes. |
+| "I'll show one proposal marked RECOMMENDED" | Recommend in the *Recommandation* block and the stop message, not with a badge or by shrinking the other pistes. |
+| "The reasoning is in my message, the page can stay 'À décider'" | The page travels without you: recommendation and blocking questions go in it. |
+| "Measurements come at implementation" | The team chooses on the page: put contrast, sizes and states in *États et mesures*. |
 | "English only, FR is a translation detail" | French is longer and breaks layouts: it is part of the design. |
 | "Grey boxes are enough for a mockup" | Placeholders hide hierarchy and length problems. Real content. |
 | "I know the convention, no need for references" | References are where the forward-looking idea comes from. |

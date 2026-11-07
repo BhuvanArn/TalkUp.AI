@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="light" data-lang="fr" data-layout="grid">
+<html lang="fr" data-theme="light" data-lang="fr" data-layout="focus">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -176,7 +176,7 @@
       .piste-canvas {
         position: relative;
         min-height: 320px;
-        overflow: hidden;
+        overflow-x: auto;
         background: var(--color-background);
         border: 1px solid var(--color-border);
         border-radius: 12px;
@@ -208,8 +208,18 @@
         border: 1px solid var(--color-border);
         border-radius: 12px;
       }
-      .decision p {
+      .decision h3 {
+        margin: 16px 0 4px;
+        font-family: var(--font-display);
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .decision p,
+      .decision ul {
         margin: 0;
+      }
+      .decision ul {
+        padding-left: 18px;
       }
 
       @media (max-width: 720px) {
@@ -228,29 +238,30 @@
     <header class="chrome">
       <div>
         <h1>{{TITLE}}</h1>
-        <p class="meta">Pistes de design · {{SLUG}} · {{DATE}}</p>
+        <p class="meta">Pistes de design du {{DATE}}</p>
       </div>
       <div class="controls" role="group" aria-label="Affichage">
-        <button type="button" data-view-toggle aria-pressed="false">Une à la fois</button>
+        <button type="button" data-view-toggle aria-pressed="false">Côte à côte</button>
         <button type="button" data-theme-toggle aria-pressed="false">Sombre</button>
         <button type="button" data-lang-toggle aria-pressed="false">EN</button>
         <button type="button" data-org-toggle aria-pressed="false">Vue organisation</button>
       </div>
       <p class="keys">
-        <kbd>←</kbd> <kbd>→</kbd> piste précédente / suivante · <kbd>V</kbd> vue · <kbd>T</kbd> thème ·
-        <kbd>L</kbd> langue · <kbd>O</kbd> organisation
+        <kbd>←</kbd> <kbd>→</kbd> piste précédente ou suivante, <kbd>V</kbd> côte à côte, <kbd>T</kbd> thème,
+        <kbd>L</kbd> langue, <kbd>O</kbd> vue organisation
       </p>
     </header>
 
     <main>
       <section class="brief" aria-labelledby="brief-title">
         <h2 id="brief-title">Cadrage</h2>
-        <!-- Phase 0, one line each: surface mode (Persuader / Opérer / Lire), user, primary job of the screen,
-             the concept question ("is this element the right one?") and its answer, the backlog items involved. -->
+        <!-- Phase 0. One short line each, five lines in total: no paragraphs. Add an "Avant" capture of the real screen
+             (capture.mjs, light and dark) below if it exists. -->
         <p><strong>Mode :</strong> …</p>
         <p><strong>Utilisateur :</strong> …</p>
         <p><strong>Tâche principale :</strong> …</p>
         <p><strong>Le concept, remis en question :</strong> …</p>
+        <p><strong>Registre Figma :</strong> …</p>
       </section>
 
       <div class="pistes">
@@ -259,7 +270,16 @@
 
       <section class="decision" id="decision" aria-labelledby="decision-title">
         <h2 id="decision-title">Décision</h2>
-        <!-- Filled by the agent after the human answers: chosen piste (or mix), date, who, what changes before implementation. -->
+        <h3>Recommandation</h3>
+        <!-- Which piste and why, in two sentences. Say if it departs from a validated Figma decision. -->
+        <p>…</p>
+        <h3>Questions bloquantes</h3>
+        <!-- What the team must answer before building (data, back end, product), one per line. -->
+        <ul>
+          <li>…</li>
+        </ul>
+        <h3>Choix de l'équipe</h3>
+        <!-- Filled after the human answers: chosen piste (or mix), date, who, what changes before implementation. -->
         <p>À décider.</p>
       </section>
     </main>
@@ -278,7 +298,7 @@
         };
         const setLayout = (focus) => {
           html.dataset.layout = focus ? 'focus' : 'grid';
-          btn('view').setAttribute('aria-pressed', String(focus));
+          btn('view').setAttribute('aria-pressed', String(!focus));
         };
         const setTheme = (dark) => {
           html.dataset.theme = dark ? 'dark' : 'light';

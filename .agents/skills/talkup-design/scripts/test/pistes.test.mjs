@@ -76,12 +76,16 @@ test('template keyboard controls and audit', async () => {
   await newPistes(dir, 'kbd', '--title', 'Clavier', '--count', '3');
   const p = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await p.goto(pathToFileURL(join(dir, 'kbd', 'index.html')).href);
-  await p.click('[data-view-toggle]');
+  // Opens one piste at a time, full width; V switches to side by side.
   assert.ok(await p.isVisible('[data-piste="A"]'));
   assert.ok(!(await p.isVisible('[data-piste="B"]')));
   await p.keyboard.press('ArrowRight');
   assert.ok(await p.isVisible('[data-piste="B"]'));
   assert.ok(!(await p.isVisible('[data-piste="A"]')));
+  await p.keyboard.press('v');
+  assert.ok(await p.isVisible('[data-piste="A"]'));
+  assert.ok(await p.isVisible('[data-piste="C"]'));
+  await p.keyboard.press('v');
   await p.keyboard.press('t');
   assert.equal(await p.getAttribute('html', 'data-theme'), 'dark');
   await p.keyboard.press('l');
@@ -95,4 +99,18 @@ test('template keyboard controls and audit', async () => {
     assert.deepEqual(r.findings.filter((f) => f.severity === 'FAIL'), [], `${theme}: ${JSON.stringify(r.findings)}`);
   }
   await p.close();
+});
+
+test('page asks for a recommendation, blocking questions and measured states', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'pistes-'));
+  await newPistes(dir, 'slots', '--title', 'Slots', '--count', '2');
+  const html = await readFile(join(dir, 'slots', 'index.html'), 'utf8');
+  assert.match(html, /<h3[^>]*>Recommandation<\/h3>/);
+  assert.match(html, /<h3[^>]*>Questions bloquantes<\/h3>/);
+  assert.equal((html.match(/<dt>États et mesures<\/dt>/g) || []).length, 2);
+  const header = html.slice(html.indexOf('<header'), html.indexOf('</header>'));
+  assert.doesNotMatch(header, /·/);
+  const d = new Date();
+  const local = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  assert.match(header, new RegExp(local));
 });

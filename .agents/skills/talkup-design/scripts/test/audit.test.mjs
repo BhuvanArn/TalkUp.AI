@@ -192,3 +192,24 @@ test('borderless input is judged by its bordered wrapper', async () => {
   assert.match(low[0].measured, /^1\.\d:1$/);
   assert.deepEqual(byRule(await audit(wrap('#6b6b78')), 'contrast.non-text'), []);
 });
+
+test('flags horizontal page overflow', async () => {
+  const r = await audit(page('<div style="width:2000px">wide</div>'));
+  assert.equal(byRule(r, 'layout.overflow').length, 1);
+});
+
+test('flags clipped text but not ellipsis', async () => {
+  const r = await audit(
+    page(`<p id="cut" style="width:80px;white-space:nowrap;overflow:hidden">Ingénieur logiciel backend (Go)</p>
+          <p id="ell" style="width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ingénieur logiciel backend (Go)</p>`),
+  );
+  const f = byRule(r, 'layout.clipped-text');
+  assert.deepEqual(f.map((x) => x.selector), ['#cut']);
+});
+
+test('flags content cut off by a clipping ancestor', async () => {
+  const r = await audit(
+    page(`<div id="canvas" style="width:300px;overflow:hidden"><div id="phone" style="width:420px"><p id="t">Envoyez-moi le lien par e-mail</p></div></div>`),
+  );
+  assert.equal(byRule(r, 'layout.clipped-text').length, 1);
+});
