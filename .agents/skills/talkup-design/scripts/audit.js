@@ -116,6 +116,13 @@
     return by ? document.getElementById(by.split(' ')[0]) : null;
   };
 
+  // A label hidden for screen readers only (sr-only, 1px) does not count as a visible label.
+  const seen = (el) => {
+    if (!el || !isVisible(el)) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 2 && r.height > 2;
+  };
+
   const ownText = (el) =>
     [...el.childNodes]
       .filter((n) => n.nodeType === 3)
@@ -130,12 +137,13 @@
       const fields = controls.map((c) => {
         const label = labelFor(c);
         const cr = c.getBoundingClientRect();
-        const separate = label && !label.contains(c) && isVisible(label);
+        const separate = label && !label.contains(c) && seen(label);
         const lr = separate ? label.getBoundingClientRect() : null;
         return { el: c, labelGap: lr ? cr.top - lr.bottom : null, top: lr ? Math.min(lr.top, cr.top) : cr.top, bottom: cr.bottom };
       });
       fields.forEach((f) => {
-        const visibleLabel = labelFor(f.el); if (!(visibleLabel && visibleLabel !== f.el && isVisible(visibleLabel) && visibleLabel.textContent.trim()) && f.el.placeholder)
+        const visibleLabel = labelFor(f.el);
+        if (!(visibleLabel && seen(visibleLabel) && visibleLabel.textContent.trim()) && f.el.placeholder)
           add('form.placeholder-label', 'WARN', f.el, 'placeholder only', 'visible label above the field', `Field ${sel(f.el)} uses its placeholder "${f.el.placeholder}" as label: it disappears on typing. Put a visible label above and an example in the placeholder.`);
         if (f.labelGap === null) return;
         const g = round(f.labelGap);
@@ -240,9 +248,26 @@
       const fillRatio = ratio(inside, outside);
       const bw = px(s.borderBottomWidth);
       const borderRatio = bw > 0 ? ratio(blend(toRGBA(s.borderBottomColor), outside), outside) : 0;
-      const best = Math.max(fillRatio, borderRatio);
+      let best = Math.max(fillRatio, borderRatio);
+      let target = el;
+      // Borderless field drawn inside a bordered wrapper (input group): judge the wrapper.
+      if (bw === 0 && fillRatio < NORMS.nonTextContrast) {
+        const r = el.getBoundingClientRect();
+        for (let w = el.parentElement, i = 0; w && i < 3; w = w.parentElement, i++) {
+          const ws = getComputedStyle(w);
+          const wr = w.getBoundingClientRect();
+          if (px(ws.borderBottomWidth) > 0 && wr.height <= r.height + 64) {
+            const around = effectiveBg(w.parentElement || w).rgb;
+            const wFill = ratio(blend(toRGBA(ws.backgroundColor), around), around);
+            const wBorder = ratio(blend(toRGBA(ws.borderBottomColor), around), around);
+            best = Math.max(wFill, wBorder);
+            target = w;
+            break;
+          }
+        }
+      }
       if (best < NORMS.nonTextContrast)
-        add('contrast.non-text', 'FAIL', el, fmtRatio(best), `≥ ${NORMS.nonTextContrast}:1`, `Field ${sel(el)} outline is ${fmtRatio(best)} against its surroundings; norm ${NORMS.nonTextContrast}:1 so the field can be found.`);
+        add('contrast.non-text', 'FAIL', target, fmtRatio(best), `≥ ${NORMS.nonTextContrast}:1`, `Field ${sel(target)} outline is ${fmtRatio(best)} against its surroundings; norm ${NORMS.nonTextContrast}:1 so the field can be found.`);
     }
   }
 

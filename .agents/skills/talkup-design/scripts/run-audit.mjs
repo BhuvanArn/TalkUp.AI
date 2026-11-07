@@ -79,6 +79,22 @@ async function axeFindings(page) {
   return res.map((v) => ({ rule: `axe.${v.id}`, severity: v.impact === 'critical' || v.impact === 'serious' ? 'FAIL' : 'WARN', selector: v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(', '), measured: `${v.nodes.length} node(s)`, norm: v.helpUrl, message: v.help }));
 }
 
+// The app animates colours on theme switch: measure only once finite transitions are done.
+async function settle(page) {
+  await page.waitForTimeout(50);
+  await page.evaluate(() =>
+    Promise.race([
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+          .map((a) => a.finished.catch(() => {})),
+      ),
+      new Promise((r) => setTimeout(r, 3000)),
+    ]),
+  );
+}
+
 export async function runAudit(o) {
   const browser = await chromium.launch();
   const runs = [];
@@ -87,9 +103,10 @@ export async function runAudit(o) {
       const context = await browser.newContext({ viewport: { width, height: 900 }, storageState: o.storage || undefined });
       const page = await context.newPage();
       await page.goto(o.url, { waitUntil: 'networkidle' });
+      await settle(page);
       for (const theme of o.themes) {
         await page.evaluate((t) => document.documentElement.classList.toggle('dark', t === 'dark'), theme);
-        await page.waitForTimeout(150);
+        await settle(page);
         await page.addScriptTag({ path: AUDIT });
         const r = await page.evaluate(([root, ignore]) => window.__talkupAudit({ root, ignore }), [o.root, o.ignore]);
         if (o.focus) r.findings.push(...(await focusFindings(page)));

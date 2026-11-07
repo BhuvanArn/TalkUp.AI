@@ -164,3 +164,31 @@ test('aria-label does not replace a visible label', async () => {
   const r = await audit(page('<form><input id="email" aria-label="email" placeholder="Email"><button>Go</button></form>'));
   assert.equal(byRule(r, 'form.placeholder-label').length, 1);
 });
+
+test('waits for theme transitions before measuring', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'talkup-audit-'));
+  const file = join(dir, 'transition.html');
+  // A colour transition like the app's theme switch: mid-way, grey text sits on grey.
+  await writeFile(file, page('<p class="t">Theme text</p>', 'body,.t{transition:color 0.5s linear,background-color 0.5s linear} .t{color:#24242d} .dark body{background:#17253f} .dark .t{color:#e8ecf6}'));
+  const { stdout } = await promisify(execFile)(process.execPath, [CLI, pathToFileURL(file).href, '--themes', 'dark', '--width', '1440', '--json', '--no-focus']).catch((e) => e);
+  const dark = JSON.parse(stdout).find((x) => x.theme === 'dark');
+  assert.deepEqual(dark.findings.filter((f) => f.rule === 'contrast.text'), []);
+});
+
+const SR_ONLY = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)';
+
+test('sr-only label is not a visible label', async () => {
+  const r = await audit(page(`<form><label for="d" style="${SR_ONLY}">Interview date</label><input id="d" placeholder="Interview date"><button>Go</button></form>`));
+  assert.deepEqual(byRule(r, 'form.label-input-gap'), []);
+  assert.equal(byRule(r, 'form.placeholder-label').length, 1);
+});
+
+test('borderless input is judged by its bordered wrapper', async () => {
+  const wrap = (border) =>
+    page(`<div style="background:#f8f9ff;padding:24px"><div class="w" style="border:1px solid ${border};padding:12px 16px">
+      <input id="u" style="border:0;background:transparent;height:21px" placeholder="https://…"></div></div>`);
+  const low = byRule(await audit(wrap('#d9dbeb')), 'contrast.non-text');
+  assert.equal(low.length, 1);
+  assert.match(low[0].measured, /^1\.\d:1$/);
+  assert.deepEqual(byRule(await audit(wrap('#6b6b78')), 'contrast.non-text'), []);
+});
