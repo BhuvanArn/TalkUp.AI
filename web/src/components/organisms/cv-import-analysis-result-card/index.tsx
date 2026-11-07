@@ -1,3 +1,4 @@
+import { Button } from '@/components/atoms/button';
 import type { Application } from '@/services/applications/types';
 
 import { iconMap } from '../../atoms/icon/icon-map';
@@ -82,16 +83,17 @@ export const AnalysisResultCard = ({
 
       {/* Primary Action Zone */}
       <div className="bg-accent-weaker mb-6 rounded-3xl p-8">
-        <p className="text-body-l-strong text-accent mb-5">
+        <p className="text-body-l-strong text-accent-hover mb-5">
           Your custom training is ready.
         </p>
-        <button
-          type="button"
+        <Button
+          color="accent"
+          size="lg"
+          className="w-full"
           onClick={onStartCourse}
-          className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent w-full cursor-pointer rounded-button px-8 py-4 text-on-accent transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           Start My Training
-        </button>
+        </Button>
       </div>
 
       {/* Secondary Action Link */}

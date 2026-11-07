@@ -1,3 +1,4 @@
+import { Button } from '@/components/atoms/button';
 import { iconMap } from '@/components/atoms/icon/icon-map';
 import { ApplicationsKanban } from '@/components/organisms/applications-kanban';
 import {
@@ -70,13 +71,12 @@ function ApplicationsPage() {
         {/* The add button only shows once at least one application exists — the
             empty state carries its own single call to action instead. */}
         {hasApplications && (
-          <Link
-            to="/cv-analysis"
-            className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-button px-4 py-2 text-on-accent transition-colors focus-ring"
-          >
-            <PlusIcon size={18} aria-hidden="true" />
-            New application
-          </Link>
+          <Button asChild color="accent">
+            <Link to="/cv-analysis">
+              <PlusIcon size={18} aria-hidden="true" />
+              New application
+            </Link>
+          </Button>
         )}
       </div>
 
@@ -137,12 +137,9 @@ function ApplicationsPage() {
                 Import your CV and a job offer that interests you, and TalkUp
                 creates your application with a tailored training path.
               </p>
-              <Link
-                to="/cv-analysis"
-                className="text-button-m bg-accent hover:bg-accent-hover mt-5 rounded-button px-5 py-2.5 text-on-accent transition-colors focus-ring"
-              >
-                Start a CV + offer analysis
-              </Link>
+              <Button asChild color="accent" className="mt-5">
+                <Link to="/cv-analysis">Start a CV + offer analysis</Link>
+              </Button>
             </div>
           </div>
         </div>
