@@ -2,73 +2,100 @@
 
 This document describes how the **TalkUp** product should look and feel in the browser. It is aligned with the **implemented tokens** in `src/styles/tailwind.css` (Tailwind v4 `@theme`). When in doubt, **the CSS variables win** — update this file if tokens change.
 
-TalkUp is a career and interview preparation product (simulations, agenda, notes, profile). The UI should feel **clear, professional, and calm**: plenty of whitespace, readable type, and a **cool blue / indigo** accent — not a warm “marketing brochure” palette.
+The foundations follow the post-seminar Figma (UI/UX seminar of 2026-11-06), file **TalkUp — App & Design System** (`N0oUi7zzoaQHvkMVYh2wLM`), pages "Avant / Après", "Foundations" and "Audit". Decisions from that file that the code does not implement yet are listed in [`docs/design/figma-backlog.md`](../docs/design/figma-backlog.md): for those items the Figma is the reference, for everything else the code is.
+
+TalkUp is a career and interview preparation product (applications, CV analysis, roadmap, simulations, agenda, notes, organizations). The UI should feel **clear, professional, and calm**: plenty of whitespace, readable type, a **cool blue** accent in light and a **navy** theme with **pastel** accents in dark.
 
 ---
 
 ## 1. Visual theme and atmosphere
 
-- **Canvas**: White (`--color-background`) with **subtle cool-tinted surfaces** (`--color-surface` `#f8f9ff`, `--color-surface-raised` `#ecedf6`) so sections and sidebars feel layered without heavy chrome.
-- **Accent**: Interactive blue `--color-accent` `#2b70c9` (links, focus, primary actions). Deeper navy **`--color-primary` `#29457a`** supports brand-weight elements where used in the app.
-- **Contrast**: Body text is near-black violet-gray (`--color-text` `#24242d`), not pure black — slightly softer for long sessions (interviews, calendar, editors).
-- **Depth**: Prefer **borders** (`--color-border` `#d9dbeb`) and light surface steps over dramatic shadows. Elevation is modest; the product is tool-like, not a landing-page spectacle.
-- **Dark mode**: The `.dark` class on the document flips the full palette (see `tailwind.css`). New UI must remain usable in both schemes.
-
-**Key characteristics**
-
-- Cool lavender-gray surfaces, blue accent, high legibility.
-- Structured layouts (dashboards, tables, forms) over full-bleed gradient marketing blocks.
-- French copy is common in settings flows; layout should tolerate longer labels.
+- **Light canvas**: white page (`--color-background`) with cool-tinted surfaces (`--color-surface` `#f8f9ff`, `--color-surface-raised` `#ecedf6`).
+- **Dark canvas**: tinted brand navy, never neutral black. Elevation reads by lightness: inset cards `#111c31` < sidebar `#16223a` < page `#18253f` < raised columns `#1f2e4d` < selected `#24345a`.
+- **Accent**: interactive blue `#2b70c9` in light; pastel `#8fb8f4` with **dark labels** in dark ("pastel fill, dark text beats saturated fill, white text").
+- **Status colours** go pastel in dark (mint `#8fdba4`, butter `#f2d488`, salmon `#f4a093`).
+- **Depth**: borders and surface steps, not shadows. Chrome is separated with hairlines, not tint blocks (the light sidebar is the page surface plus a 1 px right border).
+- **Contrast is measured, not eyeballed**: every text tier ≥ 4.5:1 on the surfaces it sits on, disabled labels included; input borders ≥ 3:1. Ratios are written next to the adjusted tokens in `tailwind.css`.
+- **Colour carries meaning**: green means success only, accent means interactive only. Non-interactive labels (eyebrows, the org name in the nav) stay neutral.
 
 ---
 
 ## 2. Color palette and roles
 
-Use **semantic CSS variables** in components (Tailwind: `bg-background`, `text-text`, `border-border`, `bg-accent`, etc., per your class conventions). Hex values below are the **light theme** defaults from `@theme`.
+Use **semantic tokens** (`bg-background`, `text-text`, `border-border`, `bg-accent`, …), never hex. Values below: light / dark.
 
 ### Brand and interactive
 
-| Role                   | Variable                                        | Light default        | Usage                                               |
-| ---------------------- | ----------------------------------------------- | -------------------- | --------------------------------------------------- |
-| Accent                 | `--color-accent`                                | `#2b70c9`            | Links, primary buttons, focus rings, key highlights |
-| Accent hover / active  | `--color-accent-hover`, `--color-accent-active` | `#205497`, `#163865` | Pressed / hover states                              |
-| Primary (brand weight) | `--color-primary`                               | `#29457a`            | Strong brand moments (varies by screen)             |
-| Text link              | `--color-text-link`                             | `#2b70c9`            | Inline links                                        |
+| Role | Token | Light | Dark | Notes |
+| --- | --- | --- | --- | --- |
+| Accent | `--color-accent` | `#2b70c9` | `#8fb8f4` | Links, primary actions, focus ring |
+| Accent hover / active | `--color-accent-hover`, `-active` | `#205497`, `#163865` | `#a6c8f7`, `#bcd6fa` | Use `text-accent-hover` for accent **text on tinted backgrounds** (light accent is only 4.1–4.4:1 there) |
+| Accent tints | `--color-accent-weak`, `-weaker` | `#eff1f6`, `#f0f4fa` | `#24345a`, `#1b2a47` | |
+| Primary | `--color-primary` | `#29457a` | `#8fb8f4` | Default `Button` fill; same pastel as accent in dark |
+| Label on fills | `--color-on-accent` | `#ffffff` | `#111c31` | Text/icons on accent, primary and status fills (8.37:1 on dark accent) |
+| Label on media | `--color-on-media` | `#ffffff` | `#ffffff` | Constant white over video, photos, user-picked avatar colours |
+| Text link | `--color-text-link` | `#2b70c9` | `#8fb8f4` | |
+
+> `text-white` / `bg-white` use the **theme-flipping** `--color-white` (`#fff` light, `#111c31` dark). Do not use `text-white` for a label on a coloured fill: use `text-on-accent`, or `text-on-media` when it must stay white.
 
 ### Surfaces
 
-| Role                     | Variable                                            | Light default |
-| ------------------------ | --------------------------------------------------- | ------------- |
-| Page background          | `--color-background`                                | `#fff`        |
-| Soft panels              | `--color-surface`                                   | `#f8f9ff`     |
-| Raised / cards / sidebar | `--color-surface-raised`, `--color-surface-sidebar` | `#ecedf6`     |
-| Note cards               | `--color-note-card`                                 | `#ecedf6`     |
+| Role | Token | Light | Dark |
+| --- | --- | --- | --- |
+| Page | `--color-background` | `#fff` | `#18253f` |
+| Soft panel / inset well | `--color-surface` | `#f8f9ff` | `#111c31` |
+| Card that sits inside a raised column | `--color-white` | `#fff` | `#111c31` |
+| Raised (kanban column, cards) | `--color-surface-raised` | `#ecedf6` | `#1f2e4d` |
+| Sidebar | `--color-surface-sidebar` (+ `border-r border-border`) | `#f8f9ff` | `#16223a` |
+| Sidebar hover / selected | `--color-surface-sidebar-hover`, `-active` | `#e2e4f0` | `#24345a` |
+| Note card | `--color-note-card` | `#ecedf6` | `#1f2e4d` |
+| Scrim | `--color-scrim` (`bg-scrim/50`) | `#000` | `#000` |
 
 ### Text
 
-| Role      | Variable                                     | Light default         |
-| --------- | -------------------------------------------- | --------------------- |
-| Primary   | `--color-text`                               | `#24242d`             |
-| Secondary | `--color-text-weak` … `--color-text-weakest` | `#383850` → `#a4a4b2` |
-| Muted UI  | `--color-text-idle`                          | `#57585e`             |
+| Tier | Token | Light | Dark | Min. contrast |
+| --- | --- | --- | --- | --- |
+| Primary | `--color-text` | `#24242d` | `#e8e8e8` | |
+| Secondary | `--color-text-weak` | `#383850` | `#c8d0e0` | |
+| Tertiary | `--color-text-weaker` | `#5f5f77` | `#b4bdd0` | 5.31 / 6.49 |
+| Quaternary | `--color-text-weakest` | `#6a6a7e` | `#a3aec4` | 4.53 on `surface-raised` / 5.49 on selected |
+| UI idle / active | `--color-text-idle`, `--color-text-active` | `#57585e`, `#1e2229` | `#b4bdd0`, `#f0f0f0` | |
+| Disabled label | `--color-text-disabled` on `--color-disabled` | `#5f5f77` on `#e4e8f0` | `#a3aec4` on `#24345a` | 5.04 / 5.49 |
+
+`--color-idle`, `--color-active`, `--color-hover`, `--color-weak`, `--color-weaker`, `--color-weakest` are aliases of the text tiers (they reference them, so they cannot drift).
+
+Figma keeps light `text-weakest` at `#a4a4b2` (2.46:1); the code uses the closest passing value of the same hue, `#6a6a7e`.
 
 ### Borders and icons
 
-| Role           | Variable                | Light default |
-| -------------- | ----------------------- | ------------- |
-| Default border | `--color-border`        | `#d9dbeb`     |
-| Strong border  | `--color-border-strong` | `#c8c8d4`     |
-| Icons          | `--color-icon`          | `#5f5f77`     |
+| Role | Token | Light | Dark |
+| --- | --- | --- | --- |
+| Hairline / card border | `--color-border` | `#d9dbeb` | `#2f3f63` |
+| Strong (decorative, dashed drop zones) | `--color-border-strong` | `#c8c8d4` | `#3e5079` |
+| **Input boundary** (inputs, selects, text areas, checkboxes) | `--color-border-input` | `#8f8fa7` (3.16:1) | `#5e76ad` (3.4:1) |
+| Hover | `--color-border-hover` | `#5f5f77` | `#b4bdd0` |
+| Icons | `--color-icon`, `--color-icon-hover` | `#5f5f77`, `#24242d` | `#b4bdd0`, `#e8e8e8` |
 
-### Status (use full scale: base + weak/weaker + hover/active)
+### Status
 
-- **Success**: `--color-success` (e.g. confirmations, positive states)
-- **Warning**: `--color-warning`
-- **Error / danger**: `--color-error`, `--color-danger` (aliases)
+Each has base + `-hover` / `-active` + `-weak` / `-weaker` tints. `danger` aliases `error`.
 
-### User-chosen accents (profile / appearance)
+| Status | Light | Dark | Dark tint (`-weak`) |
+| --- | --- | --- | --- |
+| Success | `#0f7b16` | `#8fdba4` | `#1d3b3a` |
+| Warning | `#8a6a17` (5.05:1) | `#f2d488` | `#3b3a2e` |
+| Error | `#c8322a` (5.32:1) | `#f4a093` | `#3f2c3a` |
+| Neutral | `#383850` | `#c8d0e0` | `#2f3f63` |
 
-Some flows (e.g. profile appearance) allow a **user accent** such as `#2B70C9`, `#1D9E75`, etc. Treat these as **overrides on top of** the system accent for that user’s preview only; core chrome should still respect theme tokens where possible.
+Never signal status by colour alone (add an icon or a label).
+
+### Organization view
+
+`:root[data-view='organization']` (set by `NavigationProvider`) remaps **only** `accent`, `primary` and `text-link` to emerald. Light uses the deep `#0f6b4c` (6.51:1 with a white label) so it never reads as a success message; dark keeps `#2fc48f` (no Figma value yet, see the backlog). Surfaces are unchanged, and non-interactive org labels (the "Organization" eyebrow, the org name in the sidebar) use neutral text tokens.
+
+### User-chosen accents
+
+Profile appearance lets a user pick an avatar colour (`#2B70C9`, `#1D9E75`, …). These are literal hex in both themes: put `text-on-media` on them. The default avatar colour follows `var(--color-accent)` and therefore uses `text-on-accent`.
 
 ---
 
@@ -76,63 +103,76 @@ Some flows (e.g. profile appearance) allow a **user accent** such as `#2B70C9`, 
 
 ### Font families
 
-| Role      | Variable / stack                          | Usage                                                   |
-| --------- | ----------------------------------------- | ------------------------------------------------------- |
-| Display   | `--font-display`: **Saira**, `sans-serif` | Headings (`text-h1` … `text-h6`), button text utilities |
-| Body / UI | `--font-body`: **Inter**, `sans-serif`    | Body copy, labels, dense UI                             |
+| Role | Token | Usage |
+| --- | --- | --- |
+| Display | `--font-display`: **Saira** | Headings (`text-h1` … `text-h6`), **every button size** (`text-button-*`), the logo |
+| Body / UI | `--font-body`: **Inter** | Everything else. `body` defaults to Inter, so text without a `text-*` utility no longer falls back to `ui-sans-serif` |
 
-Google Fonts are loaded from `index.html` (Inter + Saira, variable weights).
+Both families load **once**, from `index.html` (variable fonts, weights 100–900). Do not `@import` them again in CSS.
 
-### Scale (implemented utilities)
+### Scale
 
-Sizes are defined as `@theme` variables and applied via classes in `@layer utilities` in `tailwind.css`:
+| Utility | Font | Size | Default weight |
+| --- | --- | --- | --- |
+| `text-h1` … `text-h4` | Saira | 40 / 32 / 28 / 24 px | 700 |
+| `text-h5` | Saira | 20 px | 500 |
+| `text-h6` | Saira | 18 px | 400 |
+| `text-body-xl-strong` | Inter | 18 px | 700 |
+| `text-body-l`, `text-body-l-strong` | Inter | 16 px | 400 / 700 |
+| `text-body-m`, `text-label-m` | Inter | 14 px | 400 |
+| `text-body-s`, `text-body-s-strong`, `text-label-s` | Inter | 12 px | 400 / 700 |
+| `text-button-l` / `text-button-m` / `text-button-s` | Saira | 16 / 14 / 12 px | 400 |
 
-| Utility                             | Font  | Size        | Weight (typical) |
-| ----------------------------------- | ----- | ----------- | ---------------- |
-| `text-h1` … `text-h4`               | Saira | 40px … 24px | 700              |
-| `text-h5`                           | Saira | 20px        | 500              |
-| `text-h6`                           | Saira | 18px        | 400              |
-| `text-body-xl-strong`               | Inter | 18px        | 700              |
-| `text-body-l`, `text-body-l-strong` | Inter | 16px        | 400 / 700        |
-| `text-body-m`, `text-label-*`       | Inter | 14px        | 400              |
-| `text-body-s`, `text-body-s-strong` | Inter | 12px        | 400 / 700        |
-| `text-button-m`, `text-button-s`    | Saira | 14px / 12px | 400              |
-
-### Principles
-
-- **Headings**: Saira, bold display treatment — confident and product-like (not ultra-light display cut).
-- **Body**: Inter, comfortable line-height (~1.5) for forms, notes, and interview UI.
-- **Buttons**: Saira via `text-button-*` utilities keeps actions visually consistent with the brand.
-- Do **not** introduce ad hoc font families for new screens unless there is a strong reason; extend the existing scale.
+- The default weight can be changed with `font-medium`, `font-semibold`, `font-bold` next to the utility (the utilities read `--tw-font-weight`). Prefer the `-strong` variants; Figma asks for few variants (Saira Bold + Regular, Inter Regular + Bold).
+- `cn()` (`src/utils/cn.ts`) knows every utility above as a font size, so `cn('text-h3', 'text-text')` keeps both.
+- Only these class names exist: there is no `text-body-sm` / `text-body-md`.
+- Long subtitles break into two short lines rather than one long one.
 
 ---
 
-## 4. Component styling (product conventions)
+## 4. Component styling
 
-### Buttons
+### Radius
 
-- **Primary**: Filled with accent / primary tokens, white or high-contrast label text, clear hover/active (see existing button atoms and Tailwind classes).
-- **Secondary / ghost**: Transparent or surface background, border from `--color-border`, text from secondary text tokens.
-- **Destructive**: Use `--color-danger` and its hover/active variants.
+| Token / class | Value | Use |
+| --- | --- | --- |
+| `rounded-button` (`--radius-button`) | 8 px | **Every button**, segmented controls, nav items, dropdowns |
+| `rounded-card` (`--radius-card`) | 12 px | Cards, panels, kanban columns |
+| `rounded-full` | — | Badges, dots, avatars only |
 
-Avoid ElevenLabs-style **full pill (9999px) everywhere** unless a specific screen already uses that pattern; match existing app buttons.
+No pill buttons, no one-off `rounded-[Npx]` in shared components.
 
-### Cards and panels
+### Buttons (`atoms/button`)
 
-- Background: `--color-background` or `--color-surface` / `--color-surface-raised` depending on hierarchy.
-- Border: `1px` or token border with `--color-border`; radius typically **8px–12px** in newer profile-style UI, consistent with surrounding components.
-- Prefer spacing and alignment over heavy shadow stacks.
+- Sizes `xs` 24 px, `sm` 32 px, `md` 40 px, `lg` 48 px, all Saira (`text-button-*`), all `rounded-button`.
+- **Contained**: fill from the colour token, label `text-on-accent` (white in light, navy in dark on pastel fills).
+- **Outlined / text**: border and label in the colour token, tinted `-weaker` hover.
+- **Disabled**: `bg-disabled` + `text-text-disabled` (≥ 5:1), no opacity fade. **Loading** keeps the colour, dimmed, with a spinner.
+- **Focus**: one accent ring for all variants: `focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background`.
+- Hand-rolled CTAs (roadmap, CV analysis) follow the same rules: `rounded-button`, 40 px high, `text-on-accent`.
+
+### Focus
+
+Every interactive atom shows a visible keyboard focus: Button, IconAction, NavLink, NavSelector, SwitchButton, the account menu. Use `focus-visible:` (not `focus:`), ring `accent`, width 2 px, offset 2 px (1 px inside tight segmented controls). Ring contrast: 4.93:1 light, 8.37:1 dark.
+
+`NavLink` is a single `<a>` styled through `Button asChild`: never nest a `<button>` inside a link.
 
 ### Inputs and forms
 
-- Borders and focus: use **accent-colored focus** (e.g. ring or border + soft glow) consistent with `--color-accent`.
-- Labels: secondary text color, small/medium body scale.
-- Always label controls for accessibility (`htmlFor` / `id`).
+- Boundary `border-border-input`, focus ring `ring-accent`, disabled `bg-disabled text-text-disabled`, placeholder `text-text-weakest`.
+- Labels stay visible above fields; placeholders hold **examples**, not labels (Figma A1/A2 — not implemented yet, see backlog).
+- Rhythm: 16 px between fields, 32 px before the primary button.
+- Always label controls (`htmlFor` / `id`).
+
+### Cards and panels
+
+- Light: white or `surface` with a `border` hairline, `rounded-card`.
+- Dark: cards inside a raised column are inset wells (`bg-white` → `#111c31`) with a `border` hairline.
 
 ### Navigation and shell
 
-- Sidebars often use `--color-surface-sidebar` and border separation.
-- Sticky top bars: light background, bottom border; actions right-aligned where the app already does so.
+- Sidebar: `bg-surface-sidebar border-r border-border`; selected item `bg-surface-sidebar-active`; hover is subtle.
+- The selected nav icon switching to its filled variant, and "Ask Tali" at the top of the nav, are Figma decisions not implemented yet (backlog).
 
 ### Atomic design
 
@@ -142,76 +182,75 @@ Shared UI lives under `src/components/` in **atoms → molecules → organisms**
 
 ## 5. Layout and spacing
 
-- **Base unit**: 4px / 8px mental grid (Tailwind spacing scale is the practical reference).
-- **Density**: Interview and calendar views may be denser; marketing-style “huge vertical gaps” are not the default.
-- **Max width**: Centered content where it matches existing routes; dashboards are often full-width with internal max-width for readability.
+- **Base unit**: 4 px / 8 px grid (Tailwind spacing scale).
+- **Forms**: 16 px between fields, 32 px before the primary CTA.
+- **Dense lists / tables**: 40 px rows.
+- More air above page titles than between sections.
+- **Max width**: centred content where it matches existing routes; dashboards are full-width with an internal max-width for readability.
 
 ---
 
 ## 6. Depth and elevation
 
-TalkUp does **not** rely on a multi-layer, warm-tinted shadow language. Prefer:
-
-- **Flat** surfaces with borders.
-- **Optional** light shadow for modals / dropdowns only where already used in the codebase.
-
-Focus rings should meet accessibility contrast; use accent or browser defaults wired through Tailwind focus utilities.
+- **Light**: flat surfaces with borders; a light shadow only on menus, modals and dropdowns.
+- **Dark**: elevation by lightness steps (section 1); shadows do not read on navy.
+- **No offset shadows.** The landing glow / halo treatment (Figma L1/L2) is a proposal, see the backlog.
 
 ---
 
-## 7. Do’s and don’ts
+## 7. Do's and don'ts
 
 ### Do
 
-- Use **`tailwind.css` tokens** for colors, fonts, and semantic states (including dark mode).
-- Use **Saira + Inter** via the provided utilities.
-- Keep **accent blue** (`#2b70c9` light) as the default interactive color unless the screen is explicitly user-themed.
-- Test **dark mode** when adding persistent UI.
+- Use `tailwind.css` tokens for colours, fonts, radii and states, in both themes.
+- Measure contrast for any new text/background pair (≥ 4.5:1 text, ≥ 3:1 input boundaries and focus rings).
+- Use `text-on-accent` on coloured fills and `text-on-media` over media.
+- Check light, dark **and** organization view for persistent UI.
 
-### Don’t
+### Don't
 
-- Don’t replace the palette with **achromatic warm stone** or black-only CTAs from third-party reference docs.
-- Don’t add **Waldenburg / Geist** or other fonts not in the project without a deliberate design decision and `index.html` update.
-- Don’t hardcode hex colors when a **CSS variable or Tailwind semantic class** exists.
-- Don’t ship UI that only works in light mode.
+- Don't hardcode hex where a token exists, or use the raw Tailwind palette (`gray-400`, …).
+- Don't use `text-white` as "white on a fill" (it flips in dark).
+- Don't fade disabled controls with `opacity-50`: use the disabled tokens.
+- Don't use green for anything but success, or accent for non-interactive labels.
+- Don't add fonts other than Saira and Inter, or load them from CSS.
+- Don't use pill buttons or one-off radii.
 
 ---
 
 ## 8. Responsive behavior
 
-Follow patterns already used in the app (TanStack Router layouts, existing breakpoints in components). Typical expectations:
-
-- **Mobile**: stack sidebars / filters; preserve touch-friendly targets (min ~44px where possible).
-- **Desktop**: multi-column dashboards, calendar grids, split editors.
-
-There is no single “hamburger at 1024px” rule in this doc — match each route’s existing layout.
+Follow patterns already used in the app (TanStack Router layouts, existing breakpoints). Touch targets ≥ 44 px where possible. The mobile bottom nav and status tabs (Figma M1/M2) are not implemented yet (backlog).
 
 ---
 
-## 9. Agent prompt guide (TalkUp-aligned)
+## 9. Agent prompt guide
 
 ### Quick token reference
 
-- Page: `var(--color-background)`; soft sections: `var(--color-surface)`.
-- Text: `var(--color-text)` primary, `var(--color-text-weaker)` secondary.
-- Actions: `var(--color-accent)`; borders: `var(--color-border)`.
-- Headings: Saira; body: Inter; sizes from `text-h*` / `text-body-*`.
+- Page `bg-background`; soft section `bg-surface`; column `bg-surface-raised`; card in a column `bg-white`.
+- Text `text-text`, secondary `text-text-weaker`, quiet `text-text-weakest`.
+- Action `bg-accent text-on-accent`; link `text-text-link`; accent text on a tint `text-accent-hover`.
+- Border `border-border`; input `border-border-input`.
+- Headings `text-h*` (Saira); body `text-body-*` (Inter); buttons `text-button-*` (Saira).
+- Radius `rounded-button` / `rounded-card`.
 
 ### Example prompts
 
-- _“Build a settings card: background `var(--color-surface-raised)`, 10px radius, border `var(--color-border)`. Section title Saira 13px semibold, body Inter 13px `var(--color-text-weaker)`. Primary button filled `var(--color-accent)` white text.”_
-- _“Create a form row: label Inter 12px `var(--color-text-idle)`, input border `var(--color-border)`, focus ring using `var(--color-accent)` at ~22% opacity.”_
-- _“Hero for TalkUp: headline Saira `text-h1`, subcopy Inter `text-body-l`, CTA primary accent — cool white/lavender surfaces, not warm beige.”_
+- _"Settings card: `bg-surface border border-border rounded-card`. Title `text-h5 text-text`, body `text-body-m text-text-weaker`. Primary `Button` (contained, accent)."_
+- _"Form row: label `text-label-m text-text-idle`, input `border-border-input rounded-button`, focus `ring-2 ring-accent`, 16 px between rows, 32 px before the submit button."_
+- _"Kanban column: `bg-surface-raised rounded-card p-3`; cards `bg-white border border-border rounded-card`; status dot `bg-success` (pastel in dark)."_
 
 ### Iteration checklist
 
-1. Check `tailwind.css` for the latest variable values.
-2. Use semantic tokens, not one-off hex, unless user-specific accent.
-3. Verify **dark** class behavior for new surfaces and borders.
-4. Reuse **atoms/molecules/organisms** before inventing new folders.
+1. Read `tailwind.css` for current values; check `docs/design/figma-backlog.md` if the screen has a Figma decision pending.
+2. Semantic tokens only.
+3. Verify light, dark and org view; measure contrast.
+4. Keyboard-tab through new controls: focus ring visible.
+5. Reuse atoms/molecules/organisms.
 
 ---
 
 ## 10. Relation to external inspiration
 
-Earlier drafts referenced **ElevenLabs**-style marketing aesthetics (warm stone, Waldenburg, extreme pill buttons, layered shadows). **That is not the TalkUp baseline.** You may still borrow _ideas_ (clarity, whitespace, strong hierarchy) as long as **colors, fonts, and tokens** stay consistent with this file and `src/styles/tailwind.css`.
+Earlier drafts referenced ElevenLabs-style marketing aesthetics (warm stone, Waldenburg, extreme pill buttons, layered shadows). **That is not the TalkUp baseline.** Borrow ideas (clarity, whitespace, hierarchy) only as long as colours, fonts and tokens stay consistent with this file and `src/styles/tailwind.css`.

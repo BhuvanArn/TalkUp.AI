@@ -11,8 +11,10 @@ key.pem
 # WebSocket test server tool recordings
 recordings/
 
-# Local design specs and implementation plans (not pushed)
-docs/
+# Local design specs and implementation plans (not pushed).
+# docs/design/ is the exception: the shared Figma backlog lives there.
+docs/*
+!docs/design/
 
 # AI build artifacts and local dev files
 ai/core/server/build/
