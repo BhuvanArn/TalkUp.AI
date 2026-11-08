@@ -2,7 +2,7 @@
 // Screenshot the real app for a pistes page (the "context" of a small change) or for a PR.
 //
 //   node capture.mjs <url> --out <file.png> [--theme light|dark] [--width 1440] [--height 900]
-//                    [--clip <css selector>] [--full] [--storage state.json]
+//                    [--clip <css selector>] [--click sel] [--hide sel,sel] [--full] [--storage <state file>]
 //                    [--lang fr|en] [--piste A|B|C]      (pistes pages)
 //
 // Hides dev overlays (TanStack devtools), waits for theme transitions, toggles the
@@ -10,6 +10,7 @@
 // stays readable at real size in the pistes page.
 import { chromium } from "@playwright/test";
 import { fileURLToPath } from "node:url";
+import { saveSession } from "./session.mjs";
 
 const DEV_OVERLAYS =
   ".TanStackRouterDevtools,.tsqd-parent-container,[data-talkup-audit-ignore]";
@@ -68,7 +69,7 @@ const settle = (page) =>
 const o = parse(process.argv.slice(2));
 if (!o.url || !o.out) {
   console.error(
-    "usage: node capture.mjs <url> --out <file.png> [--theme light|dark] [--width 1440] [--clip sel] [--full] [--storage state.json]",
+    "usage: node capture.mjs <url> --out <file.png> [--theme light|dark] [--width 1440] [--clip sel] [--click sel] [--hide sel,sel] [--full] [--storage <state file>]",
   );
   process.exit(2);
 }
@@ -175,10 +176,8 @@ try {
     );
 } finally {
   // Sessions rotate on use: keep the newest one for the next capture or audit.
-  if (o.storage)
-    await browser
-      .contexts()[0]
-      ?.storageState({ path: o.storage })
-      .catch(() => {});
+  const context = browser.contexts()[0];
+  if (o.storage && context)
+    await saveSession(context, o.storage).catch(() => {});
   await browser.close();
 }

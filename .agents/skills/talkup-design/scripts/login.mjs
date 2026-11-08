@@ -12,6 +12,7 @@ import { chromium } from "@playwright/test";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { saveSession } from "./session.mjs";
 
 export const DEFAULT_STATE = join(tmpdir(), "talkup-storage-state.json");
 
@@ -68,7 +69,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       );
       process.exit(1);
     }
-    await context.storageState({ path: o.out });
+    await saveSession(context, o.out);
     console.log(o.out);
   } finally {
     await browser.close();

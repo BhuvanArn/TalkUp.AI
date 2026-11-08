@@ -2,7 +2,7 @@
 // Run the TalkUp design audit on a page, in each theme and width.
 //
 //   node run-audit.mjs <url> [--themes light,dark] [--width 1440,390] [--root main]
-//                      [--ignore sel,sel] [--axe] [--no-focus] [--storage state.json] [--json]
+//                      [--ignore sel,sel] [--axe] [--no-focus] [--storage <state file>] [--json]
 //
 // Needs @playwright/test (repo devDependency) and Chromium (`npx playwright install chromium`).
 // Theme switch = toggling the `dark` class on <html>, like the app's theme store.
@@ -11,6 +11,7 @@
 import { chromium } from "@playwright/test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { saveSession } from "./session.mjs";
 
 const AUDIT = join(dirname(fileURLToPath(import.meta.url)), "audit.js");
 const DEV_OVERLAYS =
@@ -268,8 +269,7 @@ export async function runAudit(o) {
     }
   } finally {
     // Sessions rotate on use: keep the newest one for the next capture or audit.
-    if (o.storage)
-      await context.storageState({ path: o.storage }).catch(() => {});
+    if (o.storage) await saveSession(context, o.storage).catch(() => {});
     await browser.close();
   }
   return runs;
@@ -294,7 +294,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const o = parseArgs(process.argv.slice(2));
   if (!o.url) {
     console.error(
-      "usage: node run-audit.mjs <url> [--themes light,dark] [--width 1440,390] [--root sel] [--ignore sel,sel] [--axe] [--no-focus] [--storage state.json] [--json]",
+      "usage: node run-audit.mjs <url> [--themes light,dark] [--width 1440,390] [--root sel] [--ignore sel,sel] [--axe] [--no-focus] [--storage <state file>] [--json]",
     );
     process.exit(2);
   }
