@@ -45,7 +45,7 @@ export const MatchGauge = ({ score }: MatchGaugeProps) => {
           cy="40"
         />
       </svg>
-      <p className="text-h5 text-text absolute">{normalized}%</p>
+      <p className="text-h4 text-text absolute">{normalized}%</p>
     </div>
   );
 };

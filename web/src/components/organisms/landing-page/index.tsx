@@ -25,7 +25,7 @@ const H2 =
 const DISPLAY =
   'font-display font-extrabold tracking-[-0.01em] text-balance text-primary [.dark_&]:text-text';
 const LEAD = 'max-w-[56ch] text-lg text-text-weaker';
-const FINE = 'mt-3.5 text-[13px] text-text-weaker';
+const FINE = 'mt-3.5 text-body-m text-text-weaker';
 const CTAS = 'mt-7 flex flex-wrap gap-3';
 const BULLETS = 'mt-[18px] list-disc space-y-1.5 pl-[18px] text-text-weaker';
 
@@ -220,7 +220,7 @@ const Hero = () => {
             </Button>
           </div>
           <AccountCounter variant="hero" className="mt-4" />
-          <p className="mt-1 text-[13px] text-text-weaker">
+          <p className="mt-1 text-body-m text-text-weaker">
             CV in PDF. Simulations are held in French for now.
           </p>
         </div>
@@ -237,13 +237,13 @@ const ProblemBand = () => (
     className={`${SECTION} bg-primary text-background [.dark_&]:bg-primary-weaker [.dark_&]:text-text`}
   >
     <div className={`${WRAP} grid items-start gap-12 md:grid-cols-[1fr_1.3fr]`}>
-      <p className="font-display text-[clamp(30px,4.2vw,48px)] font-bold leading-[1.08] text-balance">
+      <p className="font-display text-[clamp(28px,4vw,40px)] font-bold leading-[1.08] text-balance">
         A strong profile can still lose the job in a bad interview.
       </p>
       <dl className="grid gap-[22px]">
         {PROBLEMS.map(({ term, detail }) => (
           <div key={term}>
-            <dt className="font-display text-lg font-semibold leading-snug">
+            <dt className="font-display text-h6 font-semibold leading-snug">
               {term}
             </dt>
             <dd className="mt-1 text-primary-weak [.dark_&]:text-text-weak">
@@ -272,15 +272,15 @@ const HowItWorks = () => (
           >
             <span
               aria-hidden="true"
-              className="font-display text-[32px] font-extrabold leading-none tabular-nums text-accent"
+              className="font-display text-h1 font-extrabold leading-none tabular-nums text-accent"
             >
               {index + 1}
             </span>
-            <h3 className="mt-3 font-display text-lg font-semibold leading-tight text-text">
+            <h3 className="mt-3 font-display text-h6 font-semibold leading-tight text-text">
               {step.title}
             </h3>
-            <p className="mt-2 text-[15px] text-text-weaker">{step.body}</p>
-            <p className="mt-3 text-[13px] text-text-weaker">{step.where}</p>
+            <p className="mt-2 text-body-l text-text-weaker">{step.body}</p>
+            <p className="mt-3 text-body-m text-text-weaker">{step.where}</p>
           </li>
         ))}
       </ol>
@@ -326,10 +326,10 @@ const TalkingPoints = () => (
       >
         {TALKING_POINTS.map(({ mission, answer }) => (
           <li key={mission} className="grid gap-1.5 px-[18px] py-4">
-            <span className="text-[13px] text-text-weaker">
+            <span className="text-body-m text-text-weaker">
               Mission · {mission}
             </span>
-            <span className="text-[15px] text-text">{answer}</span>
+            <span className="text-body-l text-text">{answer}</span>
           </li>
         ))}
       </ul>
@@ -344,10 +344,10 @@ const Audiences = () => (
       <div className="mt-9 grid gap-8 md:grid-cols-3">
         {AUDIENCES.map(({ title, body }) => (
           <div key={title} className="border-t-2 border-text pt-4">
-            <h3 className="font-display text-xl font-semibold leading-tight text-text">
+            <h3 className="font-display text-h6 font-semibold leading-tight text-text">
               {title}
             </h3>
-            <p className="mt-1.5 text-[15px] text-text-weaker">{body}</p>
+            <p className="mt-1.5 text-body-l text-text-weaker">{body}</p>
           </div>
         ))}
       </div>
@@ -417,16 +417,16 @@ const Pricing = () => (
                 : 'border-border bg-background'
             }`}
           >
-            <h3 className="font-display text-xl font-semibold leading-tight text-text">
+            <h3 className="font-display text-h6 font-semibold leading-tight text-text">
               {plan.name}
             </h3>
-            <p className="font-display text-[40px] font-extrabold leading-none text-text">
+            <p className="font-display text-h1 font-extrabold leading-none text-text">
               Free
-              <small className="ml-1.5 font-body text-sm font-normal text-text-weaker">
+              <small className="ml-1.5 font-body text-body-m font-normal text-text-weaker">
                 during the beta
               </small>
             </p>
-            <ul className="mt-1.5 list-disc space-y-1 pl-[18px] text-[15px] text-text-weaker">
+            <ul className="mt-1.5 list-disc space-y-1 pl-[18px] text-body-l text-text-weaker">
               {plan.features.map((feature) => (
                 <li key={feature}>{feature}</li>
               ))}
@@ -460,7 +460,7 @@ const FinalCta = () => (
   <section className="py-16 sm:py-22">
     <div className={WRAP}>
       <h2
-        className={`${DISPLAY} max-w-[16ch] text-[clamp(36px,6vw,64px)] leading-none`}
+        className={`${DISPLAY} max-w-[16ch] text-[clamp(44px,6.4vw,76px)] leading-none`}
       >
         Speak with confidence. Land the job.
       </h2>

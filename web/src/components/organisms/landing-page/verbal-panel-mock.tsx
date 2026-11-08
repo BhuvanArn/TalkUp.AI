@@ -23,9 +23,9 @@ const VerbalPanelMock = () => (
       <span className="font-display text-base font-semibold text-text">
         Verbal analysis
       </span>
-      <span className="font-display text-4xl font-extrabold leading-none tabular-nums text-text">
+      <span className="font-display text-h1 font-extrabold leading-none tabular-nums text-text">
         74
-        <small className="ml-1 font-body text-xs font-normal text-text-weaker">
+        <small className="ml-1 font-body text-body-s font-normal text-text-weaker">
           / 100 session
         </small>
       </span>
@@ -35,7 +35,7 @@ const VerbalPanelMock = () => (
       {SCORES.map(({ label, value }) => (
         <div
           key={label}
-          className="grid grid-cols-[88px_minmax(0,1fr)_28px] items-center gap-2.5 text-[13px] text-text sm:grid-cols-[96px_minmax(0,1fr)_34px]"
+          className="grid grid-cols-[88px_minmax(0,1fr)_28px] items-center gap-2.5 text-body-m text-text sm:grid-cols-[96px_minmax(0,1fr)_34px]"
         >
           <span>{label}</span>
           <span className="h-2 overflow-hidden rounded bg-surface-raised">
@@ -49,38 +49,38 @@ const VerbalPanelMock = () => (
       ))}
     </div>
 
-    <p className="mt-3.5 text-[13px] text-text-weaker">
+    <p className="mt-3.5 text-body-m text-text-weaker">
       Register: Professional · <span className="tabular-nums">Turn 6</span>
     </p>
 
-    <div className="mt-3.5 rounded-md bg-warning-weak px-3 py-2.5 text-sm">
+    <div className="mt-3.5 rounded-md bg-warning-weak px-3 py-2.5 text-body-m">
       <span className="mb-0.5 block font-display text-xs font-semibold text-warning-active">
         Alert
       </span>
       <span className="text-text">Many filler words detected.</span>
     </div>
 
-    <div className="mt-3.5 rounded-md bg-accent-weak px-3 py-2.5 text-sm text-text">
+    <div className="mt-3.5 rounded-md bg-accent-weak px-3 py-2.5 text-body-m text-text">
       <span className="mb-0.5 block font-display text-xs font-semibold text-accent-active">
         Live tip
       </span>
       Pause briefly instead of saying “euh” or “genre”.
     </div>
 
-    <div className="mt-3.5 text-[13px] text-text-weaker">Frequent tics</div>
+    <div className="mt-3.5 text-body-m text-text-weaker">Frequent tics</div>
     <div className="mt-2 flex flex-wrap gap-1.5">
       {TICS.map((tic) => (
         <span
           key={tic}
           lang="fr"
-          className="rounded bg-surface-raised px-2 py-[3px] text-xs tabular-nums text-text"
+          className="rounded bg-surface-raised px-2 py-[3px] text-body-s tabular-nums text-text"
         >
           {tic}
         </span>
       ))}
     </div>
 
-    <div className="mt-3.5 grid gap-2 border-t border-border pt-3 text-sm text-text">
+    <div className="mt-3.5 grid gap-2 border-t border-border pt-3 text-body-m text-text">
       <div className="grid grid-cols-[28px_minmax(0,1fr)] gap-2">
         <span className="font-display text-xs font-semibold leading-relaxed text-text-weaker">
           AI

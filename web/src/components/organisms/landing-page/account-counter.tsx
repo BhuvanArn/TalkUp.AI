@@ -40,7 +40,7 @@ const AccountCounter = ({ variant, className = '' }: AccountCounterProps) => {
   return (
     <p
       data-testid={`account-counter-${variant}`}
-      className={`min-h-5 text-sm leading-5 text-text-weaker tabular-nums ${className}`}
+      className={`min-h-5 text-body-m leading-5 text-text-weaker tabular-nums ${className}`}
     >
       {visible &&
         PHRASES[variant](

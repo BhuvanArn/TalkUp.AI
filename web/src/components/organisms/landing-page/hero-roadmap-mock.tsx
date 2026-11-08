@@ -38,7 +38,7 @@ const MockButton = ({
   primary?: boolean;
 }) => (
   <span
-    className={`inline-flex h-[34px] items-center rounded-md px-3 font-display text-[13px] font-semibold ${
+    className={`inline-flex h-[34px] items-center rounded-md px-3 font-display text-button-m font-semibold ${
       primary
         ? 'bg-accent text-on-accent'
         : 'border border-border-strong text-text'
@@ -63,13 +63,13 @@ const HeroRoadmapMock = () => (
   >
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border px-5 py-[18px]">
       <div className="min-w-0">
-        <div className="text-[13px] text-text-weaker">
+        <div className="text-body-m text-text-weaker">
           Atelier Nord · Lyon · Apprenticeship
         </div>
-        <div className="mt-0.5 font-display text-lg font-semibold leading-tight text-text">
+        <div className="mt-0.5 font-display text-h6 font-semibold leading-tight text-text">
           Junior Backend Developer
         </div>
-        <span className="mt-2.5 inline-flex flex-wrap gap-x-2 gap-y-1 rounded-full bg-accent-weak px-2.5 py-[5px] text-xs tabular-nums text-accent-active">
+        <span className="mt-2.5 inline-flex flex-wrap gap-x-2 gap-y-1 rounded-full bg-accent-weak px-2.5 py-[5px] text-body-s tabular-nums text-accent-active">
           <span>Interview Oct 23</span>
           <span>5 days left</span>
           <span>≈4 topics/week</span>
@@ -80,7 +80,7 @@ const HeroRoadmapMock = () => (
       </div>
     </div>
 
-    <div className="flex gap-[18px] border-b border-border px-5 text-[13px]">
+    <div className="flex gap-[18px] border-b border-border px-5 text-body-m">
       <span className="py-2.5 font-medium text-text shadow-[inset_0_-2px_0_var(--color-accent)]">
         Preparation path
       </span>
@@ -100,20 +100,20 @@ const HeroRoadmapMock = () => (
           />
           <span className="relative mt-1 size-3.5 rounded-full border-2 border-border-strong bg-background" />
           <div>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[15px] font-medium text-text">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-body-l font-medium text-text">
               {item.title}
               <span
-                className={`rounded px-1.5 py-[3px] text-[11px] font-semibold leading-none ${PRIORITY_STYLES[item.priority]}`}
+                className={`rounded px-1.5 py-[3px] text-body-s font-semibold leading-none ${PRIORITY_STYLES[item.priority]}`}
               >
                 {item.priority}
               </span>
               {item.gap && (
-                <span className="rounded border border-border px-1.5 py-0.5 text-[11px] leading-none text-text-weaker">
+                <span className="rounded border border-border px-1.5 py-0.5 text-body-s leading-none text-text-weaker">
                   Gap
                 </span>
               )}
             </div>
-            <div className="mt-0.5 text-[13px] text-text-weaker">
+            <div className="mt-0.5 text-body-m text-text-weaker">
               {item.detail}
             </div>
           </div>
@@ -122,7 +122,7 @@ const HeroRoadmapMock = () => (
       <div className="relative grid grid-cols-[14px_minmax(0,1fr)] gap-3.5 py-3">
         <span className="absolute inset-y-0 left-1.5 w-0.5 bg-border" />
         <span className="relative mt-1 size-3.5 rounded-full border-2 border-text bg-text" />
-        <div className="text-[15px] font-medium text-text">
+        <div className="text-body-l font-medium text-text">
           Job-ready by Oct 23
         </div>
       </div>

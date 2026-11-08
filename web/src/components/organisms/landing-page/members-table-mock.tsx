@@ -71,7 +71,7 @@ const MembersTableMock = () => (
   >
     <table
       aria-label="Example members table"
-      className="w-full min-w-[520px] border-collapse text-left text-[13px] tabular-nums text-text"
+      className="w-full min-w-[520px] border-collapse text-left text-body-m tabular-nums text-text"
     >
       <thead>
         <tr>
@@ -92,7 +92,7 @@ const MembersTableMock = () => (
             <td className={CELL}>{member.name}</td>
             <td className={CELL}>
               <span
-                className={`rounded px-1.5 py-0.5 text-[11px] capitalize ${ROLE_META[member.role].badge}`}
+                className={`rounded px-1.5 py-0.5 text-body-s capitalize ${ROLE_META[member.role].badge}`}
               >
                 {member.role}
               </span>
