@@ -16,7 +16,7 @@
 | Icons mix `react-icons/fa` (filled FontAwesome) and `react-icons/pi` (Phosphor outline) in `atoms/icon/icon-map.ts` | Mixed stroke styles on one screen | Outline (Phosphor) by default; filled only for the selected state (seminar G1) |
 | Form atoms (`BaseInput`, `TextArea`, `SelectorInput`, `CheckboxInput`) set `aria-label={name}` after spreading props (issue #206) | Overrides visible labels and callers' `aria-label`; screen readers read machine names | Until #206 lands, check the accessible name in the audit (axe `label` rules) |
 | `BaseInput` has no error state; errors are a sibling span | No `aria-invalid`, no red boundary | Add the error style + `aria-invalid` + `aria-describedby` when you build a form |
-| Login / sign-up use placeholders as labels, 12 px between fields | Seminar A1/A2 not implemented (backlog) | Visible labels, 16 px between fields, 32 px before the button |
+| `/forgot-password`, `/reset-password`, `/verify-email`, `/register-organization` still use placeholders as labels | Sibling auth screens drift from login / register (A1/A2) | Apply the login pattern: `label` prop on `InputMolecule` / `PasswordField`, 16 px between fields, 32 px before the button |
 | `.bg-brand-gradient` still exists for the old chatbot surfaces | Obsolete per seminar; `tells.mjs` flags new uses | Do not use; the assistant redesign removes it (backlog B/G2) |
 | The signed-in shell paints its main area with `bg-white` | In dark it is `--color-white` = the darkest navy (`#111c31`), not `--color-background` | Match mockups to the real surface; prefer `bg-background` / `bg-surface-*` in new code |
 | `web/src` files are CRLF | Whole-file rewrites change every line | Edit in place, preserve line endings |
@@ -29,3 +29,5 @@
 - Focus styles on IconAction, SwitchButton, NavLink, sidebar buttons (`focus-ring` utility).
 - Disabled buttons readable (`text-text-disabled`), no opacity fade.
 - Navy dark theme, pastel accents, input boundary token `border-input` (≥ 3:1).
+- Login and register: visible labels, example placeholders, 16 / 32 px rhythm (A1/A2).
+- Icon-only buttons have an accessible name and a 24 × 24 px minimum (`IconAction`); the standalone logo is named.
