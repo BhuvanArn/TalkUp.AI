@@ -165,3 +165,16 @@ test("tokensToCss also answers to the .dark class", () => {
   assert.match(css, /\.dark\s*[,{]/);
   assert.match(css, /\.dark\[data-view='organization'\]/);
 });
+
+test("in one-at-a-time view the canvas spans the page width", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "pistes-"));
+  await newPistes(dir, "wide", "--title", "Large", "--count", "2");
+  const p = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await p.goto(pathToFileURL(join(dir, "wide", "index.html")).href);
+  const w = await p.$eval(
+    '[data-piste="A"] .piste-canvas',
+    (e) => e.getBoundingClientRect().width,
+  );
+  assert.ok(w >= 1360, `canvas ${w}px`);
+  await p.close();
+});

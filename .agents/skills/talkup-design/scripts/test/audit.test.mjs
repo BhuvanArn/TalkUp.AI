@@ -372,3 +372,12 @@ test("text nested in an sr-only label is not clipped text", async () => {
   );
   assert.deepEqual(byRule(r, "layout.clipped-text"), []);
 });
+
+test("flags a mockup wider than its pistes canvas", async () => {
+  const r = await audit(
+    page(
+      '<div class="piste-canvas" style="width:400px;overflow-x:auto"><div style="width:700px"><p>Desktop mockup</p></div></div>',
+    ),
+  );
+  assert.equal(byRule(r, "layout.canvas-scroll").length, 1);
+});

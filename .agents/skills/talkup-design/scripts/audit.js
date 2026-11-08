@@ -506,6 +506,18 @@
 
   function auditLayout(root, add) {
     const doc = document.documentElement;
+    // Pistes pages: a mockup wider than its canvas makes reviewers scroll and miss the edges.
+    for (const c of root.querySelectorAll(".piste-canvas")) {
+      if (isVisible(c) && c.scrollWidth > c.clientWidth + 1)
+        add(
+          "layout.canvas-scroll",
+          "WARN",
+          c,
+          `${c.scrollWidth}px in ${c.clientWidth}px`,
+          "mockup fits its canvas",
+          `The mockup is ${c.scrollWidth}px wide in a ${c.clientWidth}px canvas: draw it at the canvas width or crop it.`,
+        );
+    }
     if (doc.scrollWidth > doc.clientWidth + 1)
       add(
         "layout.overflow",
