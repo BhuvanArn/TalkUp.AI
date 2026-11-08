@@ -146,6 +146,7 @@ export const RegisterForm = ({
                 onBlur={field.handleBlur}
                 label={t('registerForm.passwordLabel')}
                 placeholder={t('registerForm.passwordPlaceholder')}
+                hint={t('registerForm.passwordHint')}
                 autoComplete="new-password"
                 showStrength
               />
@@ -179,7 +180,7 @@ export const RegisterForm = ({
           )}
         </form.Field>
         {serverError && (
-          <div className="text-sm text-red-600 text-center" role="alert">
+          <div className="text-label-m text-error text-center" role="alert">
             {serverError}
           </div>
         )}

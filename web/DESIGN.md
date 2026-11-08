@@ -166,7 +166,8 @@ Every interactive atom shows a visible keyboard focus: Button, IconAction, LinkB
 ### Inputs and forms
 
 - Boundary `border-border-input`, focus ring `ring-accent`, disabled `bg-disabled text-text-disabled`, placeholder `text-text-weakest`.
-- Labels stay visible above fields (`label` prop of `InputMolecule` / `PasswordField`: `text-label-m text-text-weak`, 8 px above the field); placeholders hold **examples** (`you@example.com`, `e.g. camille_dev`), never the label. An optional field says so in its label ("Organization code (optional)"); a rule goes in the placeholder ("8+ characters: …"). Reference: login and register (Figma A1/A2).
+- Labels stay visible above fields (`label` prop of `InputMolecule` / `PasswordField`: `text-label-m text-text-weak`, 8 px above the field); placeholders hold **examples** (`you@example.com`, `e.g. camille_dev`), never the label. An optional field says so in its label ("Organization code (optional)"); a rule goes in a hint under the field (`hint` prop of `PasswordField`: `text-label-s text-text-weaker`, linked with `aria-describedby`), never in the placeholder, which gets cut off and disappears on typing. Reference: login and register (Figma A1/A2).
+- Errors use `text-error` (`#c8322a` light, `#f4a093` dark): field errors via `FieldErrors`, the form-level server error as `text-label-m text-error` with `role="alert"`. No `text-red-*`: it ignores the theme and drops to 3.2:1 on the dark page.
 - Rhythm: 16 px between fields, 32 px before the primary button (`gap-4` + `mt-4` on the button).
 - A borderless input inside a decorated wrapper (icon + input, e.g. the CV job link): the wrapper carries `border-border-input` and the focus ring, the input carries the vertical padding so the label stays 8 px above it.
 - Always label controls (`htmlFor` / `id`).
