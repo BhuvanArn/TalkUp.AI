@@ -10,6 +10,7 @@
 // Exit code 1 when any tell is found. A tell is a question, not a verdict: fix it or justify it.
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const TOKEN_SOURCES = [/web\/src\/styles\/tailwind\.css$/];
@@ -217,8 +218,14 @@ const SCANNED = (f) =>
 // tree. Each file is scanned whole (so state like the pistes token block is kept) and only
 // findings on added lines are reported.
 function diffTells(base) {
+  // Run git from the repo root so diff and ls-files agree on repo-relative paths, and read
+  // files from there too: otherwise --diff run from web/ finds nothing.
+  const root = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+    encoding: "utf8",
+  }).trim();
   const git = (args) =>
     execFileSync("git", args, {
+      cwd: root,
       encoding: "utf8",
       maxBuffer: 64 * 1024 * 1024,
     });
@@ -237,7 +244,7 @@ function diffTells(base) {
   for (const f of files) {
     let text;
     try {
-      text = readFileSync(f, "utf8");
+      text = readFileSync(join(root, f), "utf8");
     } catch {
       continue; // deleted in the working tree
     }

@@ -11,7 +11,7 @@
 import { chromium } from "@playwright/test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { saveSession } from "./session.mjs";
+import { saveSession, warnSaveFailed } from "./session.mjs";
 
 const AUDIT = join(dirname(fileURLToPath(import.meta.url)), "audit.js");
 const DEV_OVERLAYS =
@@ -49,7 +49,15 @@ function parseArgs(argv) {
 async function focusFindings(page, max = 60) {
   const out = [];
   const seen = new Set();
-  await page.evaluate(() => document.activeElement?.blur());
+  // The page is reused across themes and widths: clear marks from the previous walk.
+  const unmark = () =>
+    page.evaluate(() => {
+      document
+        .querySelectorAll("[data-audit-focused]")
+        .forEach((e) => e.removeAttribute("data-audit-focused"));
+      document.activeElement?.blur();
+    });
+  await unmark();
   for (let i = 0; i < max; i++) {
     await page.keyboard.press("Tab");
     const r = await page.evaluate((skip) => {
@@ -72,12 +80,14 @@ async function focusFindings(page, max = 60) {
       const id = el.id
         ? `#${el.id}`
         : `${el.tagName.toLowerCase()}:${(el.textContent || el.getAttribute("aria-label") || "").trim().slice(0, 30)}`;
-      return { id, visible: outline || shadow };
+      // Detect the wrap-around on the element itself: two controls can share a label.
+      const wrapped = el.hasAttribute("data-audit-focused");
+      el.setAttribute("data-audit-focused", "");
+      return { id, visible: outline || shadow, wrapped };
     }, DEV_OVERLAYS);
-    if (!r || seen.has(r.id)) {
-      if (r && seen.has(r.id)) break; // wrapped around
-      continue;
-    }
+    if (!r) continue;
+    if (r.wrapped) break;
+    if (seen.has(r.id)) continue; // same label already reported
     seen.add(r.id);
     if (!r.visible)
       out.push({
@@ -89,6 +99,7 @@ async function focusFindings(page, max = 60) {
         message: `${r.id} shows no focus indicator when reached with Tab.`,
       });
   }
+  await unmark();
   return out;
 }
 
@@ -119,17 +130,21 @@ async function reducedMotionFindings(page) {
     : [];
 }
 
-async function axeFindings(page) {
+// Same zone as the rendered audit: --root limits it, --ignore and dev overlays are skipped.
+async function axeFindings(page, root, ignore) {
   await page.addScriptTag({ url: AXE });
   const res = await page.evaluate(
-    async (skip) =>
+    async ([root, skip]) =>
       (
         await window.axe.run(
-          { exclude: skip.split(",").map((s) => [s]) },
+          {
+            ...(root ? { include: [[root]] } : {}),
+            exclude: skip.map((s) => [s]),
+          },
           { runOnly: ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"] },
         )
       ).violations,
-    DEV_OVERLAYS,
+    [root, [...DEV_OVERLAYS.split(","), ...ignore]],
   );
   return res.map((v) => ({
     rule: `axe.${v.id}`,
@@ -256,7 +271,8 @@ export async function runAudit(o) {
           );
           if (o.focus) r.findings.push(...(await focusFindings(page)));
           r.findings.push(...(await reducedMotionFindings(page)));
-          if (o.axe) r.findings.push(...(await axeFindings(page)));
+          if (o.axe)
+            r.findings.push(...(await axeFindings(page, o.root, o.ignore)));
           runs.push({
             url: o.url,
             width,
@@ -269,7 +285,8 @@ export async function runAudit(o) {
     }
   } finally {
     // Sessions rotate on use: keep the newest one for the next capture or audit.
-    if (o.storage) await saveSession(context, o.storage).catch(() => {});
+    if (o.storage)
+      await saveSession(context, o.storage).catch(warnSaveFailed(o.storage));
     await browser.close();
   }
   return runs;

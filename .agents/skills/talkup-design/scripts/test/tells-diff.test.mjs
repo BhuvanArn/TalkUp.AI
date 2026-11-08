@@ -48,4 +48,10 @@ test("--diff sees committed, staged and untracked lines, and skips token blocks"
     "web/src/a.tsx:2:pill-button",
     "web/src/b.tsx:1:transition-all",
   ]);
+  // Same answer from a subdirectory: git paths are repo-relative.
+  const sub = spawnSync(process.execPath, [TELLS, "--diff", "main"], {
+    cwd: join(repo, "web"),
+    encoding: "utf8",
+  });
+  assert.equal(sub.stdout, r.stdout);
 });

@@ -178,3 +178,11 @@ test("in one-at-a-time view the canvas spans the page width", async () => {
   assert.ok(w >= 1360, `canvas ${w}px`);
   await p.close();
 });
+
+test("a $ in the title is written as is", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "pistes-"));
+  const r = await newPistes(dir, "price", "--title", "Prix $& $' test");
+  assert.equal(r.code ?? 0, 0, r.stderr);
+  const html = await readFile(join(dir, "price", "index.html"), "utf8");
+  assert.match(html, /<title>Prix \$&amp; \$' test<\/title>/);
+});

@@ -88,12 +88,12 @@ const now = new Date();
 const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 const tokens = tokensToCss(extractTokens(await readFile(TAILWIND, "utf8")));
 const html = (await readFile(TEMPLATE, "utf8"))
-  .replace("/* TOKENS:END */", `${tokens}\n      /* TOKENS:END */`)
-  .replaceAll("{{TITLE}}", escape(o.title))
-  .replaceAll("{{SLUG}}", o.slug)
-  .replaceAll("{{DATE}}", date)
-  .replace(
-    "<!-- PISTES -->",
+  // Function replacements: a string one would read `$&`, `$'`… in a title as patterns.
+  .replace("/* TOKENS:END */", () => `${tokens}\n      /* TOKENS:END */`)
+  .replaceAll("{{TITLE}}", () => escape(o.title))
+  .replaceAll("{{SLUG}}", () => o.slug)
+  .replaceAll("{{DATE}}", () => date)
+  .replace("<!-- PISTES -->", () =>
     [...LETTERS.slice(0, o.count)].map(pisteSkeleton).join("\n"),
   );
 

@@ -10,7 +10,7 @@
 // stays readable at real size in the pistes page.
 import { chromium } from "@playwright/test";
 import { fileURLToPath } from "node:url";
-import { saveSession } from "./session.mjs";
+import { saveSession, warnSaveFailed } from "./session.mjs";
 
 const DEV_OVERLAYS =
   ".TanStackRouterDevtools,.tsqd-parent-container,[data-talkup-audit-ignore]";
@@ -178,6 +178,6 @@ try {
   // Sessions rotate on use: keep the newest one for the next capture or audit.
   const context = browser.contexts()[0];
   if (o.storage && context)
-    await saveSession(context, o.storage).catch(() => {});
+    await saveSession(context, o.storage).catch(warnSaveFailed(o.storage));
   await browser.close();
 }

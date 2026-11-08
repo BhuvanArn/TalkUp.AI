@@ -23,6 +23,9 @@ const THEMED = `<!doctype html><html><head>${STYLE}</head><body><p id="t">Themed
 </script></body></html>`;
 const FOCUS = `<!doctype html><html><head>${STYLE}<style>button{outline:0 solid #2b70c9;transition:all .3s}button:focus-visible{outline-width:2px}</style></head><body><button>One</button><button>Two</button></body></html>`;
 
+// Two controls share a label: the Tab walk must not take the second for a wrap-around.
+const FOCUS_DUPES = `<!doctype html><html><head>${STYLE}<style>button:focus-visible{outline:2px solid #2b70c9}#bare{outline:none}</style></head><body><button>Edit</button><button>Edit</button><button id="bare">Last</button></body></html>`;
+
 let server;
 let base;
 let session = 1;
@@ -30,6 +33,7 @@ before(async () => {
   server = createServer((req, res) => {
     if (req.url === "/themed") return res.end(THEMED);
     if (req.url === "/focus") return res.end(FOCUS);
+    if (req.url === "/focus-dupes") return res.end(FOCUS_DUPES);
     if (req.url === "/app") {
       const m = /session=(\d+)/.exec(req.headers.cookie || "");
       if (!m || Number(m[1]) !== session) {
@@ -176,4 +180,20 @@ test("capture renders dark through the theme store and saves the rotated session
     (c) => c.name === "session",
   );
   assert.equal(Number(saved.value), session);
+});
+
+test("controls with the same label do not end the focus walk", async () => {
+  const runs = await audit(
+    `${base}/focus-dupes`,
+    "--themes",
+    "light",
+    "--width",
+    "1440",
+  );
+  assert.deepEqual(
+    runs[0].findings
+      .filter((f) => f.rule === "focus.missing")
+      .map((f) => f.selector),
+    ["#bare"],
+  );
 });
