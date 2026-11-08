@@ -157,11 +157,18 @@ Every interactive atom shows a visible keyboard focus: Button, IconAction, LinkB
 
 `NavLink` is a single `<a>` styled through `Button asChild`: never nest a `<button>` inside a link.
 
+### Icon-only controls
+
+- Every icon-only button has an accessible name (`ariaLabel` on `IconAction`, `aria-label` on `Button`) and a hit area of at least 24×24 px (`IconAction` enforces `min-h-6 min-w-6`; WCAG 2.5.8).
+- The logo mark (`LogoSvg`) is decorative next to the "TALKUP" wordmark and named "TalkUp" when it stands alone (`label` prop).
+- Looping decoration uses `motion-safe:` so it stops under `prefers-reduced-motion`; carousels do not auto-advance then.
+
 ### Inputs and forms
 
 - Boundary `border-border-input`, focus ring `ring-accent`, disabled `bg-disabled text-text-disabled`, placeholder `text-text-weakest`.
-- Labels stay visible above fields; placeholders hold **examples**, not labels (Figma A1/A2 — not implemented yet, see backlog).
-- Rhythm: 16 px between fields, 32 px before the primary button.
+- Labels stay visible above fields (`label` prop of `InputMolecule` / `PasswordField`: `text-label-m text-text-weak`, 8 px above the field); placeholders hold **examples** (`you@example.com`, `e.g. camille_dev`), never the label. An optional field says so in its label ("Organization code (optional)"); a rule goes in the placeholder ("8+ characters: …"). Reference: login and register (Figma A1/A2).
+- Rhythm: 16 px between fields, 32 px before the primary button (`gap-4` + `mt-4` on the button).
+- A borderless input inside a decorated wrapper (icon + input, e.g. the CV job link): the wrapper carries `border-border-input` and the focus ring, the input carries the vertical padding so the label stays 8 px above it.
 - Always label controls (`htmlFor` / `id`).
 
 ### Cards and panels

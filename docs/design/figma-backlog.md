@@ -23,8 +23,6 @@ Created by #208 (foundations). Items that #208 implemented are not listed.
 | G1 Navigation | "Ask Tali" entry at the top of the nav (avatar + label, bordered); "Link Integrations" moves to Settings; the selected nav icon switches from outline to filled, in accent. #208 did the light sidebar surface and its hairline border. | 164:6, after 164:227 |
 | G3 Organisation | Org dark palette has no Figma value: the code keeps `#2fc48f` (7.63:1 with `on-accent`). Needs a designer decision so dark org green does not read as the dark success mint `#8fdba4`. | 168:736, after 168:931 |
 | G4 Dark theme | Status dots in the sidebar application list still use hard-coded hex (`STATUS_COLORS` in `organisms/sidebar/ContextNavigation.tsx`), so they stay saturated in dark. They should use `accent` / `warning` / `success` / `error` (NavSelector builds `${color}CC`, so it needs `color-mix` first). | 168:1147, after 168:1459 |
-| A1 Login | Visible labels above fields ("Email", "Password") with example placeholders (`you@example.com`); 16 px between fields; 32 px before the primary button; testimonial in a translucent bordered card (white 10-15 %, 12 px radius) with centred stars and a chat-bubbles illustration. Code still uses placeholder-as-label. | 172:112, after 172:169 |
-| A2 Register | Same as A1; optional field marked in its label ("Organization code (optional)"); password rule in the placeholder. | 172:274, after 172:343 |
 | C1 Compatibility Analysis | 64 px above the title, 40 px under the header. #208 did the readable disabled CTA and the blue upload icon. | 172:456, after 172:653 |
 | R1 Roadmap | Score in its own card top right (`success-weaker`, "Strong match", "How is it calculated?" popover); linear path of white cards on a grey track instead of the zig-zag timeline; 8 % starter stub on the ring at 0 %; two-line subtitle. #208 did the 8 px / 40 px buttons. | 185:137, after 185:460, ring 206:200 / 206:207 |
 
@@ -51,6 +49,7 @@ Created by #208 (foundations). Items that #208 implemented are not listed.
 | G5 Empty-state illustration | v3 illustration (volume, colour) for real empty states; functional affordances keep icons. | 168:1802, after 168:1951 |
 | L1 Illustrated landing | Soft blue halo (layer blur) instead of the 18 px offset shadow on the hero mockup; Tali speech card under the mockup; v3 illustrations replace the 1-4 numerals. | 170:16, after 170:575 |
 | L2 Dark landing | Tight text glow on large headings (not on buttons); light glow under the microphone illustration; sections alternate `#111c31` / band `#0c1526` (no token yet). | 170:1211, after 170:1770 |
+| A1/A2 auth illustration | Chat-bubbles illustration (pale blue + peach bubbles) above "Our users love us" on the login and register side panel. The labels, 16/32 px rhythm and translucent testimonial card of A1/A2 are implemented (#210). | 204:199 (component `illu/bubbles` 166:41) |
 | Illustration kit | v3 illustrations and avatars, light and dark. | "Kit d'illustrations et avatars — à valider" |
 
 ## Foundation debt left from the Audit page (7:235)
@@ -70,6 +69,11 @@ someone picks them up.
 - `Icon` `color="white"` maps to the theme-flipping `text-white`.
 - Two confirm dialogs (`ConfirmModal`, `ConfirmationModal`) and ~6 hand-rolled
   modal shells; `molecules/menu` is dead code.
+- Sibling auth forms still use placeholders as labels: `/forgot-password`,
+  `/reset-password`, `/verify-email`, `/register-organization`. Apply the A1/A2
+  pattern (`label` prop on `InputMolecule` / `PasswordField`).
+- At 390 px `/login` and `/register` scroll sideways (the auth carousel panel
+  grows to ~772 px); tracked in #210.
 - The delete-application confirmation (`ConfirmModal`) has no
   `role="dialog"` / `aria-modal` (found by the #209 smoke).
 - Below ~1024 px the 256 px sidebar stays open and crushes the content (see
