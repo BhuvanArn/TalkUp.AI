@@ -119,7 +119,7 @@ S=.agents/skills/talkup-design/scripts
 # Rendered audit: light + dark, desktop + phone, keyboard focus, reduced motion, axe (WCAG)
 node $S/run-audit.mjs http://localhost:8081/<route> --themes light,dark --width 1440,390 --axe
 #   --root main            limit to a region      --ignore .x,.y    skip regions
-#   --storage state.json   Playwright storage state for signed-in pages
+#   --storage <file>       state file printed by login.mjs, for signed-in pages
 #   --json                 machine-readable
 # Static scan of the lines you added
 node $S/tells.mjs --diff origin/staging

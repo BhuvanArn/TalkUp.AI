@@ -46,7 +46,7 @@ Si la tâche correspond à un élément du registre Figma, la piste A est la dé
 | 1 | **Références** | Des produits réels qui ont résolu le problème, avec pour chacun ce qu'on garde et ce qu'on laisse. Les principes et citations du séminaire qui s'appliquent. |
 | 2 | **Pistes** | Une page de pistes (voir §4), en FR et EN, en clair et en sombre, avec une recommandation et les questions bloquantes. |
 | 3 | **Choisir** | L'équipe regarde les pistes et choisit, ou mélange. On note le choix dans la page. |
-| 4 | **Implémenter** | La piste choisie, avec les composants et tokens existants, clés i18n en `en` et `fr`. |
+| 4 | **Implémenter** | La piste choisie, avec les composants et tokens existants. Textes en FR et EN : clés i18n en `en` et `fr` si `web/src/locales/` existe, sinon dans la page de pistes et la description de la PR (ne pas installer i18next soi-même). |
 | 5 | **Mesurer** | Espacements, typo, contraste, cibles, focus, mouvement (§5). |
 | 6 | **Critiquer** | Captures en 1440 et 390 px, clair et sombre, FR et EN. Critique à la manière de la designer : l'élément, la mesure ou l'observation, pourquoi ça gêne l'utilisateur, une proposition. |
 
@@ -147,7 +147,7 @@ Détail par ressource : `.agents/skills/talkup-design/references/resources.md`. 
 
 - [ ] La page de pistes est commitée dans `docs/design/pistes/<slug>/`, avec le choix de l'équipe noté (quelle piste, quand, qui).
 - [ ] La PR contient les captures en clair et sombre, à 1440 et 390 px.
-- [ ] Testé en FR et en EN ; toutes les clés i18n existent dans les deux langues.
+- [ ] Testé en FR et en EN ; si `web/src/locales/` existe, toutes les clés i18n existent dans les deux langues, sinon les deux versions sont dans la PR.
 - [ ] Mesures : aucun échec de contraste, de cible ou de focus ; écarts de formulaire 16–20 / 32 px.
 - [ ] Aucune couleur en dur, aucun bouton pilule, aucun signe « IA » non justifié.
 - [ ] Tous les états sont couverts : survol, focus, désactivé, chargement, vide, erreur, succès.

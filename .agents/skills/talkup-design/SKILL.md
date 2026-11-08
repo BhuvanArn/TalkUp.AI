@@ -48,7 +48,7 @@ The page inlines the real tokens and has slots per piste: **Intention, Idée for
 - Real content at real length, the **same persona and data in every piste**, both languages (`data-lang="fr|en"`), French first because it is longer. New copy exists in FR and EN even if the locale files are not on your branch yet; existing user data (job titles, summaries, generated talking points) stays as shipped: wrap it in `lang="en"` inside the FR view and note it. Run `node $S/fr-typo.mjs <page>` for French spacing (it only touches `data-lang="fr"` text, and skips `lang="en"`).
 - Show the states that matter (empty, error, loading, overflow, sent…), and write their numbers in *États et mesures* (a short list is fine there): contrast ratios, target sizes, gaps. Several states of one phone screen: lay them out side by side and let them wrap, never in a horizontally scrolling strip.
 - Emotional moments (empty, blocker, success): a simple inline SVG in the TalkUp style, or a placeholder that names the illustration and its Figma reference. Never an emoji.
-- Changes inside an existing screen (small or not): `node $S/capture.mjs <url> --out <page dir>/context.png --clip <selector of the zone> [--theme dark] [--storage state.json]`, then place each variant in `.context > .slot` at real size, or in `.stack` (capture above, mockup below) when the variant pushes content down. `--click <sel>` opens a tab or menu first, `--hide <sel>` removes floating widgets.
+- Changes inside an existing screen (small or not): `node $S/capture.mjs <url> --out <page dir>/context.png --clip <selector of the zone> [--theme dark] [--storage "$STATE"]`, then place each variant in `.context > .slot` at real size, or in `.stack` (capture above, mockup below) when the variant pushes content down. `--click <sel>` opens a tab or menu first, `--hide <sel>` removes floating widgets.
 - Pistes must differ on a **decision** (concept, placement, disclosure, interaction model), not on decoration. See `references/taste.md` §4.
 - Before showing, check the page itself:
   ```bash
@@ -80,9 +80,9 @@ Present the pistes and end your turn. Do not start phase 4 in the same turn, eve
 ```bash
 S=.agents/skills/talkup-design/scripts      # run from the repo root
 node $S/new-pistes.mjs <slug> --title "<titre>" [--count 2|3] [--out dir]
-TALKUP_PASSWORD=… node $S/login.mjs http://localhost:8081 --email <e>   # prints the state file (system temp folder)
-node $S/capture.mjs <url> --out shot.png [--theme light|dark] [--width 1440] [--clip sel] [--click sel] [--hide sel,sel] [--full] [--storage state.json] [--lang fr|en] [--piste A]
-node $S/run-audit.mjs <url> --themes light,dark --width 1440,390 --axe [--root main] [--storage state.json]
+STATE=$(TALKUP_PASSWORD=… node $S/login.mjs http://localhost:8081 --email <e>)   # path of the state file (system temp folder)
+node $S/capture.mjs <url> --out shot.png [--theme light|dark] [--width 1440] [--clip sel] [--click sel] [--hide sel,sel] [--full] [--storage "$STATE"] [--lang fr|en] [--piste A]
+node $S/run-audit.mjs <url> --themes light,dark --width 1440,390 --axe [--root main] [--storage "$STATE"]
 node $S/tells.mjs --diff origin/staging        # or: node $S/tells.mjs <files>
 node $S/fr-typo.mjs <page.html>                # French no-break spaces in data-lang="fr" text
 ```

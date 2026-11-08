@@ -20,7 +20,7 @@ Run from repo root unless noted.
 
 ```bash
 # Dev
-npm run dev:web        # Vite on :8081
+npm run dev:web        # Vite on :8080 (VITE_PORT to override; the design skill uses 8081)
 npm run dev:server     # NestJS watch mode
 
 # Quality (CI mirrors these — run before pushing)
