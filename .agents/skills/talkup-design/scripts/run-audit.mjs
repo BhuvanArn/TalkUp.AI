@@ -56,6 +56,14 @@ async function focusFindings(page, max = 60) {
       if (!el || el === document.body) return null;
       if (el.closest(skip))
         return { id: "__skip__" + Math.random(), visible: true };
+      // Focus rings are often animated (transition-all): read the end state.
+      for (const a of el.getAnimations()) {
+        try {
+          a.finish();
+        } catch {
+          /* infinite animation */
+        }
+      }
       const s = getComputedStyle(el);
       const outline =
         s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0;
@@ -168,39 +176,66 @@ export function checkSession(page, requested) {
     );
 }
 
-// The app reads the `dark` class; pistes pages also read data-theme.
-const setTheme = (page, theme) =>
-  page.evaluate((dark) => {
+// Put the page in a theme the way the app does it: the persisted theme store
+// (localStorage "theme-storage", read on load by ThemeProvider), the media query, then the
+// classes and color-scheme for pages without the store (pistes pages, fixtures).
+async function applyTheme(page, theme) {
+  const dark = theme === "dark";
+  await page.emulateMedia({ colorScheme: dark ? "dark" : "light" });
+  const stored = await page.evaluate((t) => {
+    try {
+      localStorage.setItem(
+        "theme-storage",
+        JSON.stringify({ state: { theme: t }, version: 0 }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }, theme);
+  if (stored && /^https?:/.test(page.url())) {
+    await page.reload({ waitUntil: "networkidle" });
+    await page.addStyleTag({
+      content: `${DEV_OVERLAYS}{display:none!important}`,
+    });
+  }
+  await page.evaluate((isDark) => {
     const html = document.documentElement;
-    html.classList.toggle("dark", dark);
+    html.classList.remove("light", "dark");
+    html.classList.add(isDark ? "dark" : "light");
+    html.style.colorScheme = isDark ? "dark" : "light";
     if (html.hasAttribute("data-theme"))
-      html.dataset.theme = dark ? "dark" : "light";
-  }, theme === "dark");
+      html.dataset.theme = isDark ? "dark" : "light";
+  }, dark);
+  await settle(page);
+}
 
 export async function runAudit(o) {
   const browser = await chromium.launch();
   const runs = [];
+  // One context for every width: a rotated session cookie stays valid across the whole run.
+  const context = await browser.newContext({
+    viewport: { width: o.widths[0], height: 900 },
+    storageState: o.storage || undefined,
+  });
   try {
+    const page = await context.newPage();
+    await page.goto(o.url, { waitUntil: "networkidle" });
+    checkSession(page, o.url);
+    // Dev-only overlays never ship: remove them so they don't skew layout or focus checks.
+    await page.addStyleTag({
+      content: `${DEV_OVERLAYS}{display:none!important}`,
+    });
+    await settle(page);
+    // A pistes page shows one piste at a time: audit each in turn.
+    const pistes = await page.$$eval(".piste[data-piste]", (els) =>
+      els.map((e) => e.dataset.piste),
+    );
     for (const width of o.widths) {
-      const context = await browser.newContext({
-        viewport: { width, height: 900 },
-        storageState: o.storage || undefined,
-      });
-      const page = await context.newPage();
-      await page.goto(o.url, { waitUntil: "networkidle" });
-      checkSession(page, o.url);
-      // Dev-only overlays never ship: remove them so they don't skew layout or focus checks.
-      await page.addStyleTag({
-        content: `${DEV_OVERLAYS}{display:none!important}`,
-      });
-      await settle(page);
-      // A pistes page shows one piste at a time: audit each in turn.
-      const pistes = await page.$$eval(".piste[data-piste]", (els) =>
-        els.map((e) => e.dataset.piste),
-      );
+      await page.setViewportSize({ width, height: 900 });
       for (const theme of o.themes) {
-        await setTheme(page, theme);
-        await settle(page);
+        await applyTheme(page, theme);
+        checkSession(page, o.url);
         for (const piste of pistes.length ? pistes : [null]) {
           if (piste) {
             await page.evaluate((id) => {
@@ -230,9 +265,11 @@ export async function runAudit(o) {
           });
         }
       }
-      await context.close();
     }
   } finally {
+    // Sessions rotate on use: keep the newest one for the next capture or audit.
+    if (o.storage)
+      await context.storageState({ path: o.storage }).catch(() => {});
     await browser.close();
   }
   return runs;

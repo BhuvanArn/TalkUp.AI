@@ -74,7 +74,13 @@ test("captures one piste of a pistes page in English and dark", async () => {
     "--report",
   ]);
   const state = JSON.parse(stdout.trim().split("\n").pop());
-  assert.deepEqual(state, { theme: "dark", lang: "en", piste: "B", hidden: 0 });
+  assert.deepEqual(state, {
+    theme: "dark",
+    lang: "en",
+    piste: "B",
+    storeTheme: "dark",
+    hidden: 0,
+  });
   assert.deepEqual(await png(out), { w: 200, h: 50 });
 });
 

@@ -8,7 +8,7 @@ Monorepo (npm workspaces) + Python AI services. Three top-level dev surfaces:
 
 | Path | Stack | Purpose |
 |------|-------|---------|
-| `web/` | React 19, Vite, TypeScript, Tailwind v4, TanStack Router/Query/Form, TipTap, Zustand, i18next, Vitest, Playwright | User-facing SPA |
+| `web/` | React 19, Vite, TypeScript, Tailwind v4, TanStack Router/Query/Form, TipTap, Zustand, Vitest, Playwright | User-facing SPA |
 | `server/` | NestJS 11, TypeORM 0.3 (Postgres), ioredis, JWT, bcrypt, nodemailer, throttler, Swagger, Jest | REST + WebSocket API |
 | `ai/` | Python microservices (`speech-to-text`, `text-to-speech`, `behavior-analyzer`, `emotional-analyzer`, `verbal-analyzer`, `llm-core`) + C++ core orchestrator | Conversation analysis pipeline |
 
@@ -79,7 +79,8 @@ Server tests enforce **80% coverage** (branches/functions/lines/statements) — 
 - **Design: any task that changes what a user sees or does in `web/` follows the `talkup-design` skill** (`.agents/skills/talkup-design/SKILL.md`): frame, references, visual options (*pistes*) for a human to choose, implement, measured audit. The human version of the method is `docs/design/METHODE.md`.
 - **Source of truth for the design.** An item listed in `docs/design/figma-backlog.md` follows the Figma file (`N0oUi7zzoaQHvkMVYh2wLM`). Everything else follows the code: tokens in `web/src/styles/tailwind.css` (they win over docs) and `web/DESIGN.md`. A PR that implements a backlog item removes it from the backlog.
 - Use semantic CSS variables / Tailwind classes (`bg-accent`, `text-text`, `border-border`, etc.) — no hardcoded hex. Saira for headings/buttons, Inter for body. Verify dark mode (`.dark` class) for any new persistent UI.
-- **i18n**: the app is bilingual (FR/EN, i18next). New copy goes through keys in both `web/src/locales/en/*.json` and `web/src/locales/fr/*.json`; see `web/I18N.md` once the i18n PRs land.
+- **i18n**: the app is becoming bilingual (FR/EN, i18next, issue #199). Once `web/src/locales/` exists on your branch, new copy goes through keys in both `en` and `fr` files, following `web/I18N.md`. Until then, write every new string in FR and EN in the pistes page and the PR description; do not install i18next or create locale files yourself.
+- **Symlinks**: `.claude/skills/*` are symlinks to `.agents/skills/*`. On Windows, clone with `core.symlinks=true` (and Developer Mode), or the links become plain text files.
 - Routing: TanStack Router file-based, generated tree at `src/routeTree.gen.ts` — do not hand-edit.
 - Data: TanStack Query for server state, Zustand for client state.
 - Forms: TanStack Form. Validation alongside form definition.

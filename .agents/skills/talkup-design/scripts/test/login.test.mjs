@@ -50,16 +50,13 @@ after(() => server.close());
 
 test("login saves a storage state with the session cookie", async () => {
   const out = join(await mkdtemp(join(tmpdir(), "login-")), "state.json");
-  await run(process.execPath, [
-    LOGIN,
-    base,
-    "--email",
-    "qa@talkup.ai",
-    "--password",
-    "x",
-    "--out",
-    out,
-  ]);
+  await run(
+    process.execPath,
+    [LOGIN, base, "--email", "qa@talkup.ai", "--out", out],
+    {
+      env: { ...process.env, TALKUP_PASSWORD: "x" },
+    },
+  );
   const state = JSON.parse(await readFile(out, "utf8"));
   assert.ok(
     state.cookies.some((c) => c.name === "session" && c.value === "ok"),
@@ -76,4 +73,23 @@ test("capture fails loudly when the session sends it to /login", async () => {
   ]).catch((e) => e);
   assert.equal(r.code, 3);
   assert.match(r.stderr, /login\.mjs/);
+});
+
+test("login reads the password from the environment and keeps the state out of the repo by default", async () => {
+  const r = await run(
+    process.execPath,
+    [LOGIN, base, "--email", "qa@talkup.ai"],
+    { env: { ...process.env, TALKUP_PASSWORD: "x" } },
+  );
+  const out = r.stdout.trim().split("\n").pop();
+  assert.ok(out.startsWith((await import("node:os")).tmpdir()), out);
+  const bad = await run(process.execPath, [
+    LOGIN,
+    base,
+    "--email",
+    "qa@talkup.ai",
+    "--password",
+    "x",
+  ]).catch((e) => e);
+  assert.equal(bad.code, 2);
 });

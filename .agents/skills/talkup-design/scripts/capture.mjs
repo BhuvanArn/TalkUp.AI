@@ -78,8 +78,22 @@ try {
     viewport: { width: o.width, height: o.height },
     storageState: o.storage || undefined,
   });
+  // Theme the way the app does: persisted theme store read on load, plus the media query.
+  await context.addInitScript((t) => {
+    try {
+      localStorage.setItem(
+        "theme-storage",
+        JSON.stringify({ state: { theme: t }, version: 0 }),
+      );
+    } catch {
+      /* no storage on this origin */
+    }
+  }, o.theme);
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
+  await page.emulateMedia({
+    colorScheme: o.theme === "dark" ? "dark" : "light",
+  });
   await page.goto(o.url, { waitUntil: "networkidle" });
   const want = new URL(o.url);
   if (
@@ -106,7 +120,9 @@ try {
   await page.evaluate(
     ({ dark, lang, piste }) => {
       const html = document.documentElement;
-      html.classList.toggle("dark", dark);
+      html.classList.remove("light", "dark");
+      html.classList.add(dark ? "dark" : "light");
+      html.style.colorScheme = dark ? "dark" : "light";
       if (html.hasAttribute("data-theme"))
         html.dataset.theme = dark ? "dark" : "light";
       if (lang) {
@@ -141,6 +157,14 @@ try {
             piste:
               document.querySelector(".piste[data-current]")?.dataset.piste ??
               null,
+            storeTheme: (() => {
+              try {
+                return JSON.parse(localStorage.getItem("theme-storage")).state
+                  .theme;
+              } catch {
+                return null;
+              }
+            })(),
             hidden: hide.length
               ? document.querySelectorAll(hide.join(",")).length
               : 0,
@@ -150,5 +174,11 @@ try {
       ),
     );
 } finally {
+  // Sessions rotate on use: keep the newest one for the next capture or audit.
+  if (o.storage)
+    await browser
+      .contexts()[0]
+      ?.storageState({ path: o.storage })
+      .catch(() => {});
   await browser.close();
 }

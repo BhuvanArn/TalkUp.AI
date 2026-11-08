@@ -29,7 +29,7 @@ Track these seven phases as a checklist. Each produces something; do not skip a 
 | 1 | **References** | Real products that solved it, each with what you take and what you leave; the seminar principles and designer quotes that apply | 1–2 | 3–5 |
 | 2 | **Pistes** | `docs/design/pistes/<slug>/index.html`, every slot filled, FR + EN, light + dark, *Recommandation* and *Questions bloquantes* filled | 2 variants placed in a cropped capture of the real screen | 3 pistes that differ on a decision: safe, TalkUp, forward-looking |
 | 3 | **Stop** | Message to the human: the page path, one line per piste, your recommendation and the blocking questions. **End your turn.** | yes | yes |
-| 4 | **Implement** | The chosen piste with existing components and tokens; i18n keys in `en` and `fr`; decision recorded in the page's *Décision* block | yes | yes |
+| 4 | **Implement** | The chosen piste with existing components and tokens; new copy in FR and EN (i18n keys if `web/src/locales/` exists on your branch, otherwise in the PR description); the team's choice recorded in the page's *Décision* block | yes | yes |
 | 5 | **Audit** | `run-audit.mjs` (light + dark, 1440 + 390, `--axe`) and `tells.mjs --diff`: every FAIL fixed, every WARN fixed or justified | yes | yes |
 | 6 | **Critique** | Screenshots 1440 + 390, light + dark, FR + EN; your critique in the designer's form (element, measurement, why it matters, proposal); fixes applied | yes | yes |
 
@@ -80,14 +80,14 @@ Present the pistes and end your turn. Do not start phase 4 in the same turn, eve
 ```bash
 S=.agents/skills/talkup-design/scripts      # run from the repo root
 node $S/new-pistes.mjs <slug> --title "<titre>" [--count 2|3] [--out dir]
-node $S/login.mjs http://localhost:8081 --email <e> --password <p> --out state.json   # right before signed-in captures
+TALKUP_PASSWORD=… node $S/login.mjs http://localhost:8081 --email <e>   # prints the state file (system temp folder)
 node $S/capture.mjs <url> --out shot.png [--theme light|dark] [--width 1440] [--clip sel] [--click sel] [--hide sel,sel] [--full] [--storage state.json] [--lang fr|en] [--piste A]
 node $S/run-audit.mjs <url> --themes light,dark --width 1440,390 --axe [--root main] [--storage state.json]
 node $S/tells.mjs --diff origin/staging        # or: node $S/tells.mjs <files>
 node $S/fr-typo.mjs <page.html>                # French no-break spaces in data-lang="fr" text
 ```
 
-The app: `VITE_PORT=8081 npm run dev:web` (signed-in pages also need the server; `LOCAL_DEV.md` if present). Signed-in captures and audits need a storage state from `login.mjs`. Sessions rotate and expire within minutes: log in right before each batch; `capture.mjs` and `run-audit.mjs` exit with code 3 and say so when they land on /login. For your own Playwright scripts, prefer the bundled ones; otherwise write a `.cjs` file and run it with `NODE_PATH=<repo>/node_modules` (ES modules ignore `NODE_PATH`; use `createRequire` there). Tests of the scripts: `node --test '.agents/skills/talkup-design/scripts/test/*.test.mjs'`.
+The app: `VITE_PORT=8081 npm run dev:web` (signed-in pages also need the server; `LOCAL_DEV.md` if present). Signed-in captures and audits need the storage state written by `login.mjs` (password from the environment; the state is a live session, it lives in the temp folder and is never committed). `capture.mjs` and `run-audit.mjs` save the rotated session back after each run; if one still lands on /login it exits with code 3: log in again. For your own Playwright scripts, prefer the bundled ones; otherwise write a `.cjs` file and run it with `NODE_PATH=<repo>/node_modules` (ES modules ignore `NODE_PATH`; use `createRequire` there). Tests of the scripts: `node --test '.agents/skills/talkup-design/scripts/test/*.test.mjs'`.
 
 ## Missing capabilities
 
@@ -101,7 +101,7 @@ The app: `VITE_PORT=8081 npm run dev:web` (signed-in pages also need the server;
 - [ ] Audit: no FAIL in light and dark at 1440 and 390; WARNs fixed or justified in the PR.
 - [ ] `tells.mjs --diff` clean, or each line justified with `design-ok: <why>`.
 - [ ] Screenshots (light/dark × 1440/390) in the PR.
-- [ ] i18n keys in both locales; French layout checked.
+- [ ] New copy in FR and EN (i18n keys once `web/src/locales/` exists); French layout checked.
 - [ ] Backlog item removed if implemented; token proposals applied only if approved.
 
 ## Red flags

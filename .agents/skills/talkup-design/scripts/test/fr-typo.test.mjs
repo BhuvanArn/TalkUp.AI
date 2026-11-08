@@ -61,3 +61,10 @@ test('lang="en" inside a French element is left alone', () => {
     `<p data-lang="fr">Angle${NBSP}: <q lang="en">limit it: correctness first</q>${NNBSP}?</p>`,
   );
 });
+
+test("HTML entities and ?! stay intact", () => {
+  assert.equal(
+    frTypo("Questions &amp; réponses&nbsp;: l&rsquo;offre ?!"),
+    `Questions &amp; réponses${NBSP}: l&rsquo;offre${NNBSP}?!`,
+  );
+});

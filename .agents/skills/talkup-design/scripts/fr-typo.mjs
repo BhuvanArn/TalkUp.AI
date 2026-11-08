@@ -31,13 +31,16 @@ const UNITS = [
 export function frTypo(text) {
   // Keep URLs untouched: swap them out, fix the rest, swap them back.
   const urls = [];
-  let t = text.replace(
-    /https?:\/\/\S+/g,
-    (u) => `\u0000${urls.push(u) - 1}\u0000`,
-  );
+  // Keep URLs and HTML entities (&amp; &nbsp; &rsquo;) untouched.
+  let t = text
+    .replace(/&nbsp;/g, NBSP)
+    .replace(
+      /https?:\/\/\S+|&[#\w]+;/g,
+      (u) => `\u0000${urls.push(u) - 1}\u0000`,
+    );
   t = t
     // At the very start of a text node with no space before, the mark follows an element: leave it.
-    .replace(/[ \u00a0\u202f]*([;!?\u00bb])/g, (m, p, off) =>
+    .replace(/[ \u00a0\u202f]*([;!?\u00bb]+)/g, (m, p, off) =>
       off === 0 && m === p ? p : `${NNBSP}${p}`,
     )
     .replace(/\u00ab[ \u00a0\u202f]*/g, `\u00ab${NNBSP}`)

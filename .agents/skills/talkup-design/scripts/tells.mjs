@@ -213,26 +213,38 @@ const SCANNED = (f) =>
     /^docs\/design\/pistes\/.*\.html$/.test(f)) &&
   !/\.(test|spec)\.tsx?$/.test(f);
 
+// Lines added on this branch, staged, unstaged or in new files, numbered as in the working
+// tree. Each file is scanned whole (so state like the pistes token block is kept) and only
+// findings on added lines are reported.
 function diffTells(base) {
   const git = (args) =>
     execFileSync("git", args, {
       encoding: "utf8",
       maxBuffer: 64 * 1024 * 1024,
     });
-  const added = {
-    ...addedLines(git(["diff", "-U0", "--no-color", `${base}...HEAD`])),
-  };
+  const fork = git(["merge-base", base, "HEAD"]).trim();
+  const added = {};
   for (const [f, lines] of Object.entries(
-    addedLines(git(["diff", "-U0", "--no-color"])),
+    addedLines(git(["diff", "-U0", "--no-color", fork])),
   ))
-    added[f] = (added[f] || []).concat(lines);
+    added[f] = new Set(lines.map(([n]) => n));
+  for (const f of git(["ls-files", "--others", "--exclude-standard"])
+    .split("\n")
+    .filter(Boolean))
+    added[f] = "all";
   const tells = [];
-  for (const [f, lines] of Object.entries(added)) {
-    if (!SCANNED(f)) continue;
-    for (const [n, text] of lines)
-      for (const t of scanText(f, text)) tells.push({ ...t, line: n });
+  const files = Object.keys(added).filter(SCANNED);
+  for (const f of files) {
+    let text;
+    try {
+      text = readFileSync(f, "utf8");
+    } catch {
+      continue; // deleted in the working tree
+    }
+    for (const t of scanText(f, text))
+      if (added[f] === "all" || added[f].has(t.line)) tells.push(t);
   }
-  return { tells, files: Object.keys(added).filter(SCANNED).length };
+  return { tells, files: files.length };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
