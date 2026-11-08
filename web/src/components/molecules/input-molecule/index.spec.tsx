@@ -113,4 +113,17 @@ describe('InputMolecule', () => {
     fireEvent.click(checkbox);
     expect(handleChange).toHaveBeenCalledTimes(1);
   });
+  it('uses the visible label as the accessible name (no name fallback)', () => {
+    render(
+      <InputMolecule
+        id="email"
+        inputType="base"
+        name="email-field"
+        label="Email"
+        placeholder="you@example.com"
+      />,
+    );
+    const input = screen.getByRole('textbox', { name: 'Email' });
+    expect(input).not.toHaveAttribute('aria-label');
+  });
 });

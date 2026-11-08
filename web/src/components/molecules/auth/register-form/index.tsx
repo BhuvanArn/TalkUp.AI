@@ -72,13 +72,13 @@ export const RegisterForm = ({
   });
 
   return (
-    <div className="flex flex-col w-full gap-3 max-w-96">
+    <div className="flex flex-col w-full gap-6 max-w-96">
       <header className="flex items-center justify-start gap-4">
         <h2 className="text-h3 text-idle">Register</h2>
         <p className="text-body-l text-idle mt-1">Create your account</p>
       </header>
       <form
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-4"
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -100,7 +100,8 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Choose a username"
+                label="Username"
+                placeholder="e.g. camille_dev"
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
@@ -125,7 +126,8 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Your email address"
+                label="Email"
+                placeholder="you@example.com"
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
@@ -148,7 +150,8 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Create a secure password"
+                label="Password"
+                placeholder="8+ characters: upper, lower, digit, symbol"
                 autoComplete="new-password"
                 showStrength
               />
@@ -178,7 +181,8 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Organization code (optional)"
+                label="Organization code (optional)"
+                placeholder="e.g. TALKUP-2026"
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
@@ -207,7 +211,8 @@ export const RegisterForm = ({
         >
           Learn about our Terms of Service
         </Link>
-        <Button color="accent" type="submit">
+        {/* Figma A2: 32px before the primary button (16px gap + 16px). */}
+        <Button color="accent" type="submit" className="mt-4">
           <Icon icon="register" color="inherit" />
           Register
         </Button>

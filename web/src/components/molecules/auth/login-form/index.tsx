@@ -61,13 +61,13 @@ export const LoginForm = () => {
   });
 
   return (
-    <div className="flex flex-col w-full gap-3 max-w-96">
+    <div className="flex flex-col w-full gap-6 max-w-96">
       <header className="flex items-center justify-start gap-4">
         <h2 className="text-h3 text-idle">Login</h2>
         <p className="text-body-l text-idle mt-1">Get back to your account</p>
       </header>
       <form
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-4"
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -89,7 +89,8 @@ export const LoginForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="What email did you use?"
+                label="Email"
+                placeholder="you@example.com"
               />
               {field.state.meta.errors.length > 0 && (
                 <span className="text-label-m text-error font-medium ml-1">
@@ -113,7 +114,8 @@ export const LoginForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Please type your password"
+                label="Password"
+                placeholder="Your password"
                 autoComplete="current-password"
               />
               {field.state.meta.errors.length > 0 && (
@@ -143,7 +145,8 @@ export const LoginForm = () => {
         >
           Forgot your password?
         </Link>
-        <Button color="accent" type="submit">
+        {/* Figma A1: 32px before the primary button (16px gap + 16px). */}
+        <Button color="accent" type="submit" className="mt-4">
           <Icon icon="login" color="inherit" />
           Log In
         </Button>

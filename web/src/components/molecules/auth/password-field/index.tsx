@@ -44,9 +44,9 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
   const { score, label: strengthLabel } = scorePassword(strValue);
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       {label && (
-        <label htmlFor={inputId} className="text-label-m text-idle">
+        <label htmlFor={inputId} className="text-label-m text-text-weak">
           {label}
         </label>
       )}
@@ -58,6 +58,7 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
           value={strValue}
           type={revealed ? 'text' : 'password'}
           aria-describedby={strengthId}
+          hasVisibleLabel={Boolean(label)}
           className={cn('w-full', showToggle && 'pr-10', className)}
         />
 

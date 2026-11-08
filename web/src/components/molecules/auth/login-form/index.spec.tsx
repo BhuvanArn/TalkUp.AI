@@ -81,12 +81,8 @@ describe('LoginForm', () => {
         screen.getByRole('heading', { name: /Login/i }),
       ).toBeInTheDocument();
       expect(screen.getByText(/Get back to your account/i)).toBeInTheDocument();
-      expect(
-        screen.getByPlaceholderText(/What email did you use\?/i),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByPlaceholderText(/Please type your password/i),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
       expect(
         screen.getByRole('button', { name: /Log In/i }),
       ).toBeInTheDocument();
@@ -98,6 +94,18 @@ describe('LoginForm', () => {
    * This group focuses on testing the immediate, synchronous validation rules
    * applied to the form fields on submission.
    */
+  describe('Figma A1 layout', () => {
+    it('keeps visible labels and uses example placeholders', () => {
+      renderWithProviders(<LoginForm />);
+      expect(screen.getByText('Email', { selector: 'label' })).toBeVisible();
+      expect(screen.getByText('Password', { selector: 'label' })).toBeVisible();
+      expect(screen.getByLabelText(/^email$/i)).toHaveAttribute(
+        'placeholder',
+        'you@example.com',
+      );
+    });
+  });
+
   describe('Client-Side Validation (Sync Validators)', () => {
     it('displays field errors when both fields are empty on submit', async () => {
       renderWithProviders(<LoginForm />);
@@ -115,17 +123,13 @@ describe('LoginForm', () => {
 
     it('displays "Email is required" error when only email is empty on submit', async () => {
       renderWithProviders(<LoginForm />);
-      const passwordInput = screen.getByPlaceholderText(
-        /Please type your password/i,
-      );
+      const passwordInput = screen.getByLabelText(/^password$/i);
       const loginButton = screen.getByRole('button', { name: /Log In/i });
       await act(async () => {
         fireEvent.change(passwordInput, { target: { value: 'password123' } });
         fireEvent.click(loginButton);
       });
-      const emailInput = screen.getByPlaceholderText(
-        /What email did you use\?/i,
-      );
+      const emailInput = screen.getByLabelText(/^email$/i);
 
       await act(async () => {
         fireEvent.change(passwordInput, { target: { value: 'Password1!' } });
@@ -146,9 +150,7 @@ describe('LoginForm', () => {
 
     it('displays "Password is required" error when only password is empty on submit', async () => {
       renderWithProviders(<LoginForm />);
-      const emailInput = screen.getByPlaceholderText(
-        /What email did you use\?/i,
-      );
+      const emailInput = screen.getByLabelText(/^email$/i);
       const loginButton = screen.getByRole('button', { name: /Log In/i });
 
       await act(async () => {
@@ -178,12 +180,8 @@ describe('LoginForm', () => {
   describe('User Interactions', () => {
     it('allows typing into email and password fields', async () => {
       renderWithProviders(<LoginForm />);
-      const emailInput = screen.getByPlaceholderText(
-        /What email did you use\?/i,
-      );
-      const passwordInput = screen.getByPlaceholderText(
-        /Please type your password/i,
-      );
+      const emailInput = screen.getByLabelText(/^email$/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
 
       await act(async () => {
         fireEvent.change(emailInput, {
@@ -200,12 +198,8 @@ describe('LoginForm', () => {
 
     it('submits the form with valid credentials', async () => {
       renderWithProviders(<LoginForm />);
-      const emailInput = screen.getByPlaceholderText(
-        /What email did you use\?/i,
-      );
-      const passwordInput = screen.getByPlaceholderText(
-        /Please type your password/i,
-      );
+      const emailInput = screen.getByLabelText(/^email$/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
       const loginButton = screen.getByRole('button', { name: /Log In/i });
 
       await act(async () => {
@@ -227,14 +221,10 @@ describe('LoginForm', () => {
     it('ensures correct htmlFor attributes on labels and id on inputs', () => {
       renderWithProviders(<LoginForm />);
 
-      const emailInput = screen.getByPlaceholderText(
-        /What email did you use\?/i,
-      );
+      const emailInput = screen.getByLabelText(/^email$/i);
       expect(emailInput).toHaveAttribute('id', 'email');
 
-      const passwordInput = screen.getByPlaceholderText(
-        /Please type your password/i,
-      );
+      const passwordInput = screen.getByLabelText(/^password$/i);
       expect(passwordInput).toHaveAttribute('id', 'password');
     });
   });

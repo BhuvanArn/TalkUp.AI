@@ -41,7 +41,7 @@ test.describe('organization flows', () => {
     ).toHaveAttribute('href', /\/register-organization/);
     await orgs.getByRole('link', { name: 'I have an invite code' }).click();
     await expect(page).toHaveURL(/\/register\?code=/);
-    await expect(page.getByPlaceholder(/organization code/i)).toBeVisible();
+    await expect(page.getByLabel(/organization code/i)).toBeVisible();
   });
 
   test('org signup lands on the created page then hands off to verify-email', async ({
@@ -80,14 +80,14 @@ test.describe('organization flows', () => {
   }) => {
     const suffix = Date.now();
     await page.goto('/register?code=BOGUSBOGUS22');
-    await expect(page.getByPlaceholder(/organization code/i)).toHaveValue(
+    await expect(page.getByLabel(/organization code/i)).toHaveValue(
       'BOGUSBOGUS22',
     );
-    await page.getByPlaceholder('Choose a username').fill(`pw${suffix}`);
+    await page.getByLabel('Username', { exact: true }).fill(`pw${suffix}`);
     await page
-      .getByPlaceholder('Your email address')
+      .getByLabel('Email', { exact: true })
       .fill(`pwm_${suffix}@example.com`);
-    await page.getByPlaceholder('Create a secure password').fill('Abcdefg1*');
+    await page.getByLabel('Password', { exact: true }).fill('Abcdefg1*');
     await page.getByRole('button', { name: /register/i }).click();
     await expect(page.getByRole('alert')).toContainText(/organization code/i);
   });
