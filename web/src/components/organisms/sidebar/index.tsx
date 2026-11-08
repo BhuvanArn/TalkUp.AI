@@ -81,6 +81,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
               variant="text"
               color="sidebar"
               squared
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-expanded={!isCollapsed}
               onClick={() => setIsCollapsed(!isCollapsed)}
             >
               <Icon
@@ -93,8 +95,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
             <div className="flex w-full justify-between items-center">
               <p className="text-label-s text-idle">Link Integrations</p>
               <div className="flex gap-1 p-1 bg-surface-sidebar-active rounded-md">
-                <IconAction icon="google" size="sm" />
-                <IconAction icon="linkedin" size="sm" color="accent" />
+                <IconAction
+                  icon="google"
+                  size="sm"
+                  ariaLabel="Google integration"
+                />
+                <IconAction
+                  icon="linkedin"
+                  size="sm"
+                  color="accent"
+                  ariaLabel="LinkedIn integration"
+                />
               </div>
             </div>
           )}

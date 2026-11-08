@@ -147,7 +147,7 @@ export const ApplicationCard = ({
         <div
           {...listeners}
           {...attributes}
-          className="bg-surface-raised border-border hover:border-border-strong group flex min-w-0 flex-1 cursor-grab items-center gap-2.5 rounded-lg border p-2 transition-colors active:cursor-grabbing focus-ring"
+          className="bg-surface-raised border-border hover:border-border-strong group flex min-w-6 flex-1 cursor-grab items-center gap-2.5 rounded-lg border p-2 transition-colors active:cursor-grabbing focus-ring"
         >
           <span
             aria-hidden="true"

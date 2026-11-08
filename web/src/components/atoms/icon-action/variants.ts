@@ -20,7 +20,8 @@ import { type VariantProps, cva } from 'class-variance-authority';
  */
 export const iconActionVariants = cva(
   [
-    'inline-flex items-center justify-center',
+    // 24px minimum target (WCAG 2.5.8), whatever the icon size.
+    'inline-flex items-center justify-center min-h-6 min-w-6',
     'bg-transparent border-none',
     'cursor-pointer',
     'transition-colors duration-200 ease-in-out',

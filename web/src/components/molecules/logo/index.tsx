@@ -37,7 +37,11 @@ const Logo = ({
       className={cn(logoVariants({ variant }), className)}
       data-testid={`${variant}-logo`}
     >
-      <LogoSvg color={color} size={logoSize} />
+      <LogoSvg
+        color={color}
+        size={logoSize}
+        label={showText ? undefined : 'TalkUp'}
+      />
       {showText && (
         <span className={cn(`text-${color}`, 'text-h4')}>TALKUP</span>
       )}

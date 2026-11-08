@@ -68,7 +68,12 @@ const CalendarModal = () => {
               <Icon icon="schedule" size="lg" />
               {modalEventToEdit ? 'Edit Event' : 'Create Event'}
             </h2>
-            <IconAction icon="times" size="md" onClick={closeModal} />
+            <IconAction
+              icon="times"
+              size="md"
+              onClick={closeModal}
+              ariaLabel="Close"
+            />
           </div>
 
           {errorMessage && (
