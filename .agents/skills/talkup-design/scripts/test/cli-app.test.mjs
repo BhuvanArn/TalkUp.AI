@@ -26,6 +26,14 @@ const FOCUS = `<!doctype html><html><head>${STYLE}<style>button{outline:0 solid 
 // Two controls share a label: the Tab walk must not take the second for a wrap-around.
 const FOCUS_DUPES = `<!doctype html><html><head>${STYLE}<style>button:focus-visible{outline:2px solid #2b70c9}#bare{outline:none}</style></head><body><button>Edit</button><button>Edit</button><button id="bare">Last</button></body></html>`;
 
+// Like the app: nothing is drawn until an auth call made after load (past networkidle).
+const LATE = `<!doctype html><html><head>${STYLE}</head><body><script>
+  setTimeout(() => { document.body.innerHTML = '<p style="color:#ddd">Late text</p>'; }, 900);
+</script></body></html>`;
+const LATE_REDIRECT = `<!doctype html><html><head>${STYLE}</head><body><script>
+  setTimeout(() => { location.href = '/login'; }, 900);
+</script></body></html>`;
+
 let server;
 let base;
 let session = 1;
@@ -34,6 +42,8 @@ before(async () => {
     if (req.url === "/themed") return res.end(THEMED);
     if (req.url === "/focus") return res.end(FOCUS);
     if (req.url === "/focus-dupes") return res.end(FOCUS_DUPES);
+    if (req.url === "/late") return res.end(LATE);
+    if (req.url === "/late-redirect") return res.end(LATE_REDIRECT);
     if (req.url === "/app") {
       const m = /session=(\d+)/.exec(req.headers.cookie || "");
       if (!m || Number(m[1]) !== session) {
@@ -196,4 +206,47 @@ test("controls with the same label do not end the focus walk", async () => {
       .map((f) => f.selector),
     ["#bare"],
   );
+});
+
+test("the audit waits for an app that renders after networkidle", async () => {
+  const runs = await audit(
+    `${base}/late`,
+    "--themes",
+    "light",
+    "--width",
+    "1440",
+    "--no-focus",
+  );
+  assert.ok(
+    runs[0].findings.some((f) => f.rule === "contrast.text"),
+    JSON.stringify(runs[0].findings),
+  );
+});
+
+test("a late redirect to /login exits 3 in audit and capture", async () => {
+  const CAPTURE = join(here, "..", "capture.mjs");
+  const dir = await mkdtemp(join(tmpdir(), "late-"));
+  for (const args of [
+    [AUDIT, `${base}/late-redirect`, "--themes", "light", "--width", "1440"],
+    [CAPTURE, `${base}/late-redirect`, "--out", join(dir, "x.png")],
+  ]) {
+    const r = await run(process.execPath, args).catch((e) => e);
+    assert.equal(r.code, 3, `${args[0]}: ${r.stderr}`);
+    assert.match(r.stderr, /session expired/);
+  }
+});
+
+test("a --root that matches nothing is a usage error", async () => {
+  const r = await run(process.execPath, [
+    AUDIT,
+    `${base}/focus`,
+    "--root",
+    "#nope",
+    "--themes",
+    "light",
+    "--width",
+    "1440",
+  ]).catch((e) => e);
+  assert.equal(r.code, 2, r.stderr);
+  assert.match(r.stderr, /#nope/);
 });

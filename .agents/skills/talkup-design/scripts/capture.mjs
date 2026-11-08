@@ -10,7 +10,13 @@
 // stays readable at real size in the pistes page.
 import { chromium } from "@playwright/test";
 import { fileURLToPath } from "node:url";
-import { DEV_OVERLAYS, SessionExpired, checkSession, settle } from "./app.mjs";
+import {
+  DEV_OVERLAYS,
+  SessionExpired,
+  openApp,
+  settle,
+  trackNetwork,
+} from "./app.mjs";
 import { saveSession, warnSaveFailed } from "./session.mjs";
 
 function parse(argv) {
@@ -76,13 +82,13 @@ try {
     }
   }, o.theme);
   const page = await context.newPage();
+  trackNetwork(page);
   page.setDefaultTimeout(15000);
   await page.emulateMedia({
     colorScheme: o.theme === "dark" ? "dark" : "light",
   });
-  await page.goto(o.url, { waitUntil: "networkidle" });
   try {
-    checkSession(page, o.url);
+    await openApp(page, o.url);
   } catch (e) {
     if (!(e instanceof SessionExpired)) throw e;
     console.error(e.message);

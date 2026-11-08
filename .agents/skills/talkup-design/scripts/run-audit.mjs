@@ -11,7 +11,15 @@
 import { chromium } from "@playwright/test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEV_OVERLAYS, SessionExpired, checkSession, settle } from "./app.mjs";
+import {
+  DEV_OVERLAYS,
+  SessionExpired,
+  checkSession,
+  openApp,
+  settle,
+  trackNetwork,
+  waitForApp,
+} from "./app.mjs";
 import { saveSession, warnSaveFailed } from "./session.mjs";
 
 const AUDIT = join(dirname(fileURLToPath(import.meta.url)), "audit.js");
@@ -178,6 +186,7 @@ async function applyTheme(page, theme) {
   }, theme);
   if (stored && /^https?:/.test(page.url())) {
     await page.reload({ waitUntil: "networkidle" });
+    await waitForApp(page);
     await page.addStyleTag({
       content: `${DEV_OVERLAYS}{display:none!important}`,
     });
@@ -193,6 +202,8 @@ async function applyTheme(page, theme) {
   await settle(page);
 }
 
+export class UsageError extends Error {}
+
 export async function runAudit(o) {
   const browser = await chromium.launch();
   const runs = [];
@@ -203,8 +214,10 @@ export async function runAudit(o) {
   });
   try {
     const page = await context.newPage();
-    await page.goto(o.url, { waitUntil: "networkidle" });
-    checkSession(page, o.url);
+    trackNetwork(page);
+    await openApp(page, o.url);
+    if (!(await page.$(o.root)))
+      throw new UsageError(`--root ${o.root} matches nothing on ${o.url}.`);
     // Dev-only overlays never ship: remove them so they don't skew layout or focus checks.
     await page.addStyleTag({
       content: `${DEV_OVERLAYS}{display:none!important}`,
@@ -286,6 +299,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     runs = await runAudit(o);
   } catch (e) {
+    if (e instanceof UsageError) {
+      console.error(e.message);
+      process.exit(2);
+    }
     if (!(e instanceof SessionExpired)) throw e;
     console.error(e.message);
     process.exit(3);
