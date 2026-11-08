@@ -61,10 +61,14 @@ The landing H1 is split 50/50 between two headlines (`HERO_HEADLINES` in
 redesign drops the previous headline, so the test picks between the two
 candidates for it. It does not measure the gain over the old headline.
 
-| Variant | Headline                              |
-| ------- | ------------------------------------- |
-| `a`     | The interview before the interview.   |
-| `b`     | Speak right. Land the job.            |
+| Variant | Headline (`en`)                       | Headline (`fr`)                   |
+| ------- | ------------------------------------- | --------------------------------- |
+| `a`     | The interview before the interview.   | L’entretien avant l’entretien.    |
+| `b`     | Speak right. Land the job.            | Parlez juste. Décrochez le poste. |
+
+The text comes from `hero.headline.a` / `hero.headline.b` in
+`web/src/locales/<language>/landing.json`. The variant ids are shared across
+languages, so the Umami results for a variant mix English and French visitors.
 
 The variant is drawn on the first landing visit and stored in `localStorage`
 (`talkup.heroVariant` = `<variant>:<timestamp>`), so a returning visitor keeps
@@ -109,7 +113,9 @@ instead of one (page view, `hero_view`, its property).
 `HERO_HEADLINES`, `getHeroVariant` / `peekHeroVariant` / `heroVariantData` /
 `trackHeroView`,
 the `hero_view` event and the `heroVariant` tags, the A/B sentence of the
-privacy policy, and this section. Add a one-off
+privacy policy, the `hero.headline.*` keys of both landing files
+(`web/src/locales/{en,fr}/landing.json`, the winning text moving to a single
+key), and this section. Add a one-off
 `localStorage.removeItem('talkup.heroVariant')` for returning visitors.
 
 ## Landing conversion table
