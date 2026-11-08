@@ -1,4 +1,6 @@
 import { CalendarListDayData } from '@/components/organisms/calendar-list/types';
+import { getLanguage } from '@/i18n';
+import { getLocale } from '@/i18n/locale';
 import { CalendarEvent } from '@/stores/useCalendarStore';
 import {
   addDays,
@@ -103,11 +105,13 @@ export const getMiniCalendarDays = (targetDate: Date): MiniCalendarDay[] => {
  *
  * @param startDate - The start date of the week.
  * @param allEvents - An array of all calendar events to filter from.
+ * @param intlLocale - BCP-47 tag for the day names; defaults to the active UI language.
  * @returns An array of `CalendarListDayData` objects representing each day of the week.
  */
 export const getListWeekDaysData = (
   startDate: Date,
   allEvents: CalendarEvent[],
+  intlLocale: string = getLocale(getLanguage()).intlLocale,
 ): CalendarListDayData[] => {
   const days: CalendarListDayData[] = [];
   const today = new Date();
@@ -132,7 +136,7 @@ export const getListWeekDaysData = (
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
     days.push({
-      dayName: date.toLocaleDateString('en-US', { weekday: 'long' }),
+      dayName: date.toLocaleDateString(intlLocale, { weekday: 'long' }),
       date: date.getDate(),
       fullDate: date,
       isToday,

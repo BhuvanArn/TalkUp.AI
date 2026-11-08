@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { useTranslation } from 'react-i18next';
 
 interface VideoAreaControlsBarProps {
   toggleStream: () => void | Promise<void>;
@@ -26,6 +27,8 @@ function VideoAreaControlsBar({
   toggleSpeaker,
   toggleCamera,
 }: VideoAreaControlsBarProps): React.ReactElement {
+  const { t } = useTranslation('app');
+
   return (
     <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 transform items-center space-x-6">
       <Button
@@ -37,7 +40,11 @@ function VideoAreaControlsBar({
             ? 'bg-neutral hover:bg-neutral-hover'
             : 'bg-error hover:bg-error-hover'
         }`}
-        aria-label={isSpeakerActive ? 'Mute speaker' : 'Unmute speaker'}
+        aria-label={
+          isSpeakerActive
+            ? t('videoControls.muteSpeaker')
+            : t('videoControls.unmuteSpeaker')
+        }
       >
         <Icon
           icon={isSpeakerActive ? 'speaker' : 'speaker-off'}
@@ -54,7 +61,11 @@ function VideoAreaControlsBar({
             ? 'bg-success hover:bg-success-hover'
             : 'bg-error hover:bg-error-hover'
         }`}
-        aria-label={!isStreaming ? 'Start new call' : 'End call'}
+        aria-label={
+          !isStreaming
+            ? t('videoControls.startCall')
+            : t('videoControls.endCall')
+        }
       >
         <Icon
           icon={!isStreaming ? 'call' : 'hang-up'}
@@ -72,7 +83,11 @@ function VideoAreaControlsBar({
             ? 'bg-neutral hover:bg-neutral-hover'
             : 'bg-error hover:bg-error-hover'
         }`}
-        aria-label={isCameraActive ? 'Turn off camera' : 'Turn on camera'}
+        aria-label={
+          isCameraActive
+            ? t('videoControls.cameraOff')
+            : t('videoControls.cameraOn')
+        }
       >
         <Icon
           icon={isCameraActive ? 'video' : 'video-off'}
@@ -90,7 +105,11 @@ function VideoAreaControlsBar({
             ? 'bg-neutral hover:bg-neutral-hover'
             : 'bg-error hover:bg-error-hover'
         }`}
-        aria-label={isMicActive ? 'Mute microphone' : 'Unmute microphone'}
+        aria-label={
+          isMicActive
+            ? t('videoControls.muteMic')
+            : t('videoControls.unmuteMic')
+        }
       >
         <Icon
           icon={isMicActive ? 'mic-on' : 'mic-off'}

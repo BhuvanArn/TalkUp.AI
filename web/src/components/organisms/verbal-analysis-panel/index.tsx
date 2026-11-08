@@ -1,5 +1,7 @@
 import { Icon } from '@/components/atoms/icon';
 import type { VerbalAnalysisState } from '@/hooks/simulation/useVerbalAnalysis';
+import type { ParseKeys } from 'i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 export interface VerbalAnalysisPanelProps {
   analysis: VerbalAnalysisState;
@@ -51,17 +53,18 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
   );
 }
 
-const REGISTER_LABELS: Record<string, string> = {
-  professional: 'Professionnel',
-  neutral: 'Neutre',
-  informal: 'Familier',
-  mixed: 'Mixte',
-  inappropriate: 'Inadapté',
+const REGISTER_LABEL_KEYS: Partial<Record<string, ParseKeys<'app'>>> = {
+  professional: 'verbalAnalysis.registers.professional',
+  neutral: 'verbalAnalysis.registers.neutral',
+  informal: 'verbalAnalysis.registers.informal',
+  mixed: 'verbalAnalysis.registers.mixed',
+  inappropriate: 'verbalAnalysis.registers.inappropriate',
 };
 
 export default function VerbalAnalysisPanel({
   analysis,
 }: VerbalAnalysisPanelProps) {
+  const { t } = useTranslation('app');
   const { latest, aggregate } = analysis;
 
   if (!latest || !aggregate) {
@@ -69,25 +72,27 @@ export default function VerbalAnalysisPanel({
       <div className="p-6 bg-white rounded-lg shadow-md border border-gray-100">
         <div className="flex items-center gap-2 mb-4">
           <Icon icon="notifications" size="md" color="accent" />
-          <h3 className="text-lg font-bold text-gray-800">Analyse verbale</h3>
+          <h3 className="text-lg font-bold text-gray-800">
+            {t('verbalAnalysis.title')}
+          </h3>
         </div>
-        <p className="text-sm text-gray-600">
-          L&apos;analyse apparaîtra après votre première prise de parole.
-        </p>
+        <p className="text-sm text-gray-600">{t('verbalAnalysis.empty')}</p>
       </div>
     );
   }
 
   const turn = latest.turn;
-  const registerLabel =
-    REGISTER_LABELS[turn.speech_register] ?? turn.speech_register;
+  const registerKey = REGISTER_LABEL_KEYS[turn.speech_register];
+  const registerLabel = registerKey ? t(registerKey) : turn.speech_register;
 
   return (
     <div className="space-y-4">
       <div className="p-6 bg-white rounded-lg shadow-md border border-gray-100">
         <div className="flex items-center gap-2 mb-4">
           <Icon icon="notifications" size="md" color="accent" />
-          <h3 className="text-lg font-bold text-gray-800">Analyse verbale</h3>
+          <h3 className="text-lg font-bold text-gray-800">
+            {t('verbalAnalysis.title')}
+          </h3>
         </div>
 
         <div className="flex items-baseline gap-2 mb-4">
@@ -96,17 +101,34 @@ export default function VerbalAnalysisPanel({
           >
             {Math.round(aggregate.avg_overall_score)}
           </span>
-          <span className="text-sm text-gray-500">/ 100 session</span>
+          <span className="text-sm text-gray-500">
+            {t('verbalAnalysis.sessionScore')}
+          </span>
         </div>
 
         <div className="space-y-3 mb-4">
-          <ScoreBar label="Clarté" value={turn.clarity_score} />
-          <ScoreBar label="Politesse" value={turn.politeness_score} />
-          <ScoreBar label="Vocabulaire" value={turn.vocabulary_score} />
+          <ScoreBar
+            label={t('verbalAnalysis.clarity')}
+            value={turn.clarity_score}
+          />
+          <ScoreBar
+            label={t('verbalAnalysis.politeness')}
+            value={turn.politeness_score}
+          />
+          <ScoreBar
+            label={t('verbalAnalysis.vocabulary')}
+            value={turn.vocabulary_score}
+          />
         </div>
 
         <p className="text-sm text-gray-600">
-          Registre: <strong>{registerLabel}</strong> · Tour {latest.turn_index}
+          <Trans
+            ns="app"
+            i18nKey="verbalAnalysis.register"
+            values={{ turn: latest.turn_index }}
+            // registerLabel can be the raw server value: pass it as a child.
+            components={{ register: <strong>{registerLabel}</strong> }}
+          />
         </p>
       </div>
 
@@ -114,7 +136,9 @@ export default function VerbalAnalysisPanel({
         <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
           <div className="flex items-center gap-2 mb-2">
             <Icon icon="notifications" size="sm" color="accent" />
-            <h4 className="text-sm font-semibold text-amber-900">Alertes</h4>
+            <h4 className="text-sm font-semibold text-amber-900">
+              {t('verbalAnalysis.warnings')}
+            </h4>
           </div>
           <ul className="text-sm text-amber-800 space-y-1 list-disc list-inside">
             {turn.warnings.map((w) => (
@@ -128,15 +152,17 @@ export default function VerbalAnalysisPanel({
         <div className="flex items-center gap-2 mb-2">
           <Icon icon="check" size="sm" color="accent" />
           <h4 className="text-sm font-semibold text-gray-800">
-            Conseil en direct
+            {t('verbalAnalysis.liveAdvice')}
           </h4>
         </div>
         <p className="text-sm text-gray-600">
-          {turn.advice[0] ?? 'Continuez à structurer vos réponses.'}
+          {turn.advice[0] ?? t('verbalAnalysis.adviceFallback')}
         </p>
         {aggregate.top_tics.length > 0 && (
           <p className="text-xs text-gray-500 mt-2">
-            Tics fréquents: {aggregate.top_tics.join(', ')}
+            {t('verbalAnalysis.topTics', {
+              tics: aggregate.top_tics.join(', '),
+            })}
           </p>
         )}
       </div>

@@ -5,8 +5,10 @@ import type {
   CvExperience,
   CvLanguage,
 } from '@/services/applications/types';
+import { formatJobAtCompany } from '@/utils/jobAtCompany';
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 const CloseIcon = iconMap.times;
 const ExternalIcon = iconMap['arrow-right-up'];
@@ -44,6 +46,8 @@ export function RoadmapSourcesModal({
   application: Application;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('app');
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -53,9 +57,8 @@ export function RoadmapSourcesModal({
   }, [onClose]);
 
   const heading =
-    [application.jobTitle, application.companyName]
-      .filter(Boolean)
-      .join(' at ') || 'Job offer';
+    formatJobAtCompany(application.jobTitle, application.companyName) ||
+    t('roadmap.sourcesModal.jobOffer');
   const cv = application.cvDetails;
 
   const experiences = (cv?.experiences ?? []).filter((e) => expLabel(e) !== '');
@@ -66,7 +69,7 @@ export function RoadmapSourcesModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button
         type="button"
-        aria-label="Dismiss sources"
+        aria-label={t('roadmap.sourcesModal.dismiss')}
         onClick={onClose}
         className="absolute inset-0 h-full w-full bg-scrim/40"
       />
@@ -87,11 +90,11 @@ export function RoadmapSourcesModal({
             >
               <SourcesIcon size={18} />
             </span>
-            Sources used
+            {t('roadmap.sourcesModal.title')}
           </h2>
           <button
             type="button"
-            aria-label="Close sources"
+            aria-label={t('roadmap.sourcesModal.close')}
             onClick={onClose}
             className="text-text-weaker hover:text-text hover:bg-surface focus-visible:ring-accent -m-1.5 rounded-lg p-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
@@ -102,7 +105,7 @@ export function RoadmapSourcesModal({
         {/* Job offer */}
         <section className="bg-surface border-border flex flex-col gap-2 rounded-xl border p-4">
           <h3 className="text-label-s text-text-weaker uppercase tracking-wider">
-            Job offer
+            {t('roadmap.sourcesModal.jobOffer')}
           </h3>
           <p className="text-body-l-strong text-text">{heading}</p>
           {application.offerUrl ? (
@@ -112,24 +115,25 @@ export function RoadmapSourcesModal({
               rel="noopener noreferrer"
               className="text-accent hover:text-accent-hover text-body-m focus-visible:ring-accent inline-flex w-fit items-center gap-1 rounded-sm underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:outline-none"
             >
-              Open job offer
+              {t('roadmap.sourcesModal.openJobOffer')}
               <ExternalIcon size={14} aria-hidden="true" />
             </a>
           ) : (
-            <p className="text-body-s text-text-weaker">URL not available</p>
+            <p className="text-body-s text-text-weaker">
+              {t('roadmap.sourcesModal.noUrl')}
+            </p>
           )}
         </section>
 
         {/* CV used */}
         <section className="bg-surface border-border flex flex-col gap-3 rounded-xl border p-4">
           <h3 className="text-label-s text-text-weaker uppercase tracking-wider">
-            CV used
+            {t('roadmap.sourcesModal.cvUsed')}
           </h3>
           {cv ? (
             <>
               <p className="text-body-s text-text-weaker">
-                Parsed from your CV at analysis time — the original file isn't
-                stored.
+                {t('roadmap.sourcesModal.cvSnapshotNote')}
               </p>
               {cv.desired_job && (
                 <p className="text-body-l-strong text-text">{cv.desired_job}</p>
@@ -164,7 +168,9 @@ export function RoadmapSourcesModal({
               {experiences.length > 0 && (
                 <details className="text-text">
                   <summary className="text-body-s-strong text-text-weak hover:text-text marker:text-text-weakest w-fit transition-colors">
-                    Experiences ({experiences.length})
+                    {t('roadmap.sourcesModal.experiences', {
+                      count: experiences.length,
+                    })}
                   </summary>
                   <ul className="mt-2 flex flex-col gap-2">
                     {experiences.map((e, i) => (
@@ -182,7 +188,9 @@ export function RoadmapSourcesModal({
               {education.length > 0 && (
                 <details className="text-text">
                   <summary className="text-body-s-strong text-text-weak hover:text-text marker:text-text-weakest w-fit transition-colors">
-                    Education ({education.length})
+                    {t('roadmap.sourcesModal.education', {
+                      count: education.length,
+                    })}
                   </summary>
                   <ul className="mt-2 flex flex-col gap-2">
                     {education.map((e, i) => (
@@ -200,7 +208,7 @@ export function RoadmapSourcesModal({
             </>
           ) : (
             <p className="text-body-s text-text-weaker">
-              No CV snapshot stored for this application.
+              {t('roadmap.sourcesModal.noCv')}
             </p>
           )}
         </section>

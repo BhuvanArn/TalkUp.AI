@@ -1,4 +1,5 @@
 import { Icon } from '@/components/atoms/icon';
+import { useTranslation } from 'react-i18next';
 
 import { CalendarListAddButtonProps } from './types';
 
@@ -10,6 +11,8 @@ import { CalendarListAddButtonProps } from './types';
  * @returns The rendered add event button.
  */
 const CalendarListAddButton = ({ onClick }: CalendarListAddButtonProps) => {
+  const { t } = useTranslation('app');
+
   return (
     <div className="flex justify-start w-full py-1">
       <button
@@ -17,7 +20,7 @@ const CalendarListAddButton = ({ onClick }: CalendarListAddButtonProps) => {
         className="group flex items-center gap-2 px-3 py-2 rounded-[5px] border border-dashed border-border bg-transparent hover:bg-surface hover:border-idle/50 text-idle/70 hover:text-idle transition-colors cursor-pointer"
       >
         <Icon icon="plus" />
-        <span className="text-body-s-strong">Add Event</span>
+        <span className="text-body-s-strong">{t('agenda.addEvent')}</span>
       </button>
     </div>
   );

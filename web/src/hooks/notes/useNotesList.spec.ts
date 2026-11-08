@@ -102,9 +102,7 @@ describe('useNotesList', () => {
     });
 
     expect(result.current.notes).toEqual([]);
-    expect(result.current.error).toBe(
-      'Failed to load notes. Please try again.',
-    );
+    expect(result.current.error).toBe('notes.errors.load');
     expect(consoleSpy).toHaveBeenCalledWith(
       'Error fetching notes:',
       expect.any(Error),
@@ -120,9 +118,7 @@ describe('useNotesList', () => {
     const { result, rerender } = renderHook(() => useNotesList());
 
     await waitFor(() => {
-      expect(result.current.error).toBe(
-        'Failed to load notes. Please try again.',
-      );
+      expect(result.current.error).toBe('notes.errors.load');
     });
 
     // Mock successful response and trigger re-fetch by unmounting/remounting
@@ -306,10 +302,10 @@ describe('useNotesList', () => {
       expect(result.current.error).toBeNull();
 
       act(() => {
-        result.current.setError('Custom error message');
+        result.current.setError('notes.errors.create');
       });
 
-      expect(result.current.error).toBe('Custom error message');
+      expect(result.current.error).toBe('notes.errors.create');
     });
 
     it('allows clearing error manually', async () => {
@@ -321,9 +317,7 @@ describe('useNotesList', () => {
       const { result } = renderHook(() => useNotesList());
 
       await waitFor(() => {
-        expect(result.current.error).toBe(
-          'Failed to load notes. Please try again.',
-        );
+        expect(result.current.error).toBe('notes.errors.load');
       });
 
       act(() => {

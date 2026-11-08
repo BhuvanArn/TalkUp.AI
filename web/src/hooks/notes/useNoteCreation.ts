@@ -1,5 +1,6 @@
 import { createNote } from '@/services/notes/http';
 import type { Note } from '@/services/notes/types';
+import i18next from 'i18next';
 import { useRef, useState } from 'react';
 
 /** Custom hook for creating notes */
@@ -13,7 +14,7 @@ export const useNoteCreation = () => {
    */
   const createNewNote = async (
     applicationId?: string,
-    title: string = 'Untitled Note',
+    title: string = i18next.t('app:notes.untitled'),
     content: string = '',
     color: string = 'blue',
   ): Promise<Note | null> => {

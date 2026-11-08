@@ -1,6 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useLocale } from '@/hooks/i18n/useLocale';
+import type { ParseKeys } from 'i18next';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import reviews from './reviews.json';
+/** Testimonials: the review text is translated, the name and rating are not. */
+const REVIEWS = [
+  { name: 'Florent', rating: 5, textKey: 'convincingBanner.reviews.florent' },
+  { name: 'Tom', rating: 5, textKey: 'convincingBanner.reviews.tom' },
+  { name: 'Agathe', rating: 4.5, textKey: 'convincingBanner.reviews.agathe' },
+] as const satisfies readonly {
+  name: string;
+  rating: number;
+  textKey: ParseKeys<'auth'>;
+}[];
 
 /** True when the user asked the OS for less motion. */
 const prefersReducedMotion = () =>
@@ -14,13 +26,19 @@ const prefersReducedMotion = () =>
  * reads in both themes (white on blue, navy on pastel blue).
  */
 const ConvincingBanner = () => {
+  const { t } = useTranslation('auth');
+  const { intlLocale } = useLocale();
+  const ratingFormat = useMemo(
+    () => new Intl.NumberFormat(intlLocale),
+    [intlLocale],
+  );
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {
     // Auto-advance is motion too: hold still for reduced-motion users.
     if (prefersReducedMotion()) return;
     const timer = setInterval(() => {
-      setSlide((prev) => (prev + 1) % reviews.length);
+      setSlide((prev) => (prev + 1) % REVIEWS.length);
     }, 10000);
     return () => clearInterval(timer);
   }, [slide]);
@@ -29,28 +47,31 @@ const ConvincingBanner = () => {
     setSlide(index);
   };
 
-  const currentReview = reviews[slide];
+  const currentReview = REVIEWS[slide];
+  const rating = ratingFormat.format(currentReview.rating);
 
   return (
     <div className="bg-accent flex justify-center items-center py-12 px-4 overflow-hidden relative">
       <div className="max-w-3xl text-center flex flex-col items-center gap-4">
         <h2 className="text-h2 text-on-accent font-bold mb-2">
-          Our users love us
+          {t('convincingBanner.title')}
         </h2>
         <p className="text-body-l text-on-accent">
-          {currentReview.name} recently published this {currentReview.review}{' '}
-          stars review
+          {t('convincingBanner.recentReview', {
+            name: currentReview.name,
+            rating,
+          })}
         </p>
         <figure className="bg-accent-hover/50 border-on-accent/30 flex w-full max-w-[420px] flex-col gap-3 rounded-card border p-4">
           <p
             className="text-body-xl-strong text-on-accent tracking-widest"
             role="img"
-            aria-label={`${currentReview.review} out of 5 stars`}
+            aria-label={t('convincingBanner.starsLabel', { rating })}
           >
-            {'★'.repeat(currentReview.review)}
+            {'★'.repeat(Math.floor(currentReview.rating))}
           </p>
           <blockquote className="text-body-m italic text-on-accent min-h-[66px]">
-            "{currentReview.text}"
+            {t('convincingBanner.quote', { text: t(currentReview.textKey) })}
           </blockquote>
           <hr className="border-on-accent/20" />
           <figcaption className="flex items-center gap-2">
@@ -66,15 +87,17 @@ const ConvincingBanner = () => {
           </figcaption>
         </figure>
         <div className="flex gap-4 justify-center mt-2">
-          {reviews.map((_, index) => (
+          {REVIEWS.map((review, index) => (
             // 48x24 hit area around a 6px bar (WCAG 2.5.8), with a focus ring
             // in the label colour so it shows on the accent panel.
             <button
-              key={index}
+              key={review.name}
               type="button"
               onClick={() => handleClick(index)}
               className="group flex h-6 w-12 cursor-pointer items-center rounded-button focus:outline-none focus-visible:ring-2 focus-visible:ring-on-accent focus-visible:ring-offset-2 focus-visible:ring-offset-accent"
-              aria-label={`Go to slide ${index + 1}`}
+              aria-label={t('convincingBanner.goToSlide', {
+                number: index + 1,
+              })}
               aria-current={index === slide ? 'true' : undefined}
             >
               <span

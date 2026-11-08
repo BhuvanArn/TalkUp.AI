@@ -10,9 +10,12 @@ import {
   useRoadmap,
 } from '@/services/applications/hooks';
 import { createAuthGuard } from '@/utils/auth.guards';
+import { formatJobAtCompany } from '@/utils/jobAtCompany';
 import { Link, createFileRoute } from '@tanstack/react-router';
+import type { ParseKeys } from 'i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const RegenerateIcon = iconMap.redo;
 const SourcesIcon = iconMap.cv;
@@ -61,6 +64,7 @@ function ApplicationRoadmap() {
 export function RoadmapPage({ applicationId }: { applicationId: string }) {
   // Sim-route pattern: read the application from the cached list (renders on
   // stale cache and on deep links; header/date are cosmetic until it lands).
+  const { t } = useTranslation(['app', 'common']);
   const { data: applications } = useApplications();
   const application = applications?.find(
     (item) => item.applicationId === applicationId,
@@ -78,11 +82,10 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
     if (!application) setSourcesOpen(false);
   }, [application]);
 
-  const heading = application
-    ? [application.jobTitle, application.companyName]
-        .filter(Boolean)
-        .join(' at ') || 'Preparation path'
-    : 'Preparation path';
+  const heading =
+    (application &&
+      formatJobAtCompany(application.jobTitle, application.companyName)) ||
+    t('roadmap.defaultHeading');
 
   if (isLoading) {
     // Skeleton of the rail (title + step cards) so the loading state shares the
@@ -104,9 +107,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
             />
           ))}
         </div>
-        <p className="text-body-s text-text-weak">
-          Building your preparation path…
-        </p>
+        <p className="text-body-s text-text-weak">{t('roadmap.loading')}</p>
       </RoadmapShell>
     );
   }
@@ -117,19 +118,19 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
         header={<h1 className="text-h1 text-text-idle">{heading}</h1>}
       >
         <div className="border-border flex flex-col items-center gap-3 rounded-2xl border border-dashed p-10 text-center">
-          <p className="text-body-l text-error">
-            Could not load your preparation path.
-          </p>
+          <p className="text-body-l text-error">{t('roadmap.loadError')}</p>
           <Button
             color="accent"
             onClick={() => regenerate.mutate()}
             disabled={regenerate.isPending}
           >
-            {regenerate.isPending ? 'Retrying…' : 'Retry'}
+            {regenerate.isPending
+              ? t('roadmap.retrying')
+              : t('common:actions.retry')}
           </Button>
           {regenerate.isError && (
             <p className="text-body-s text-error">
-              Couldn't regenerate — try again in a minute.
+              {t('roadmap.regenerateError')}
             </p>
           )}
         </div>
@@ -153,14 +154,14 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
           to="/applications/$applicationId/simulations"
           params={{ applicationId }}
         >
-          Start simulation
+          {t('roadmap.startSimulation')}
           <StartIcon size={16} aria-hidden="true" />
         </Link>
       </Button>
       <Button asChild variant="outlined" color="accent" className="border px-8">
         <Link to="/notes" search={{ applicationId }}>
           <NotesIcon size={16} aria-hidden="true" />
-          My notes
+          {t('roadmap.myNotes')}
         </Link>
       </Button>
       <div className="ml-auto flex flex-col items-end gap-1">
@@ -173,7 +174,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
               onClick={() => setSourcesOpen(true)}
             >
               <SourcesIcon size={16} aria-hidden="true" />
-              Sources
+              {t('roadmap.sources')}
             </Button>
           )}
           <Button
@@ -188,12 +189,14 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
               aria-hidden="true"
               className={regenerate.isPending ? 'animate-spin' : ''}
             />
-            {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
+            {regenerate.isPending
+              ? t('roadmap.regenerating')
+              : t('roadmap.regenerate')}
           </Button>
         </div>
         {regenerate.isError && (
           <p className="text-body-s text-error">
-            Couldn't regenerate — try again in a minute.
+            {t('roadmap.regenerateError')}
           </p>
         )}
       </div>
@@ -227,23 +230,25 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
               {hasOfferButEmpty ? (
                 <>
                   <p className="text-body-l text-text-weak">
-                    Couldn't build a path from this offer yet — try Regenerate.
+                    {t('roadmap.emptyWithOffer')}
                   </p>
                   <Button
                     color="accent"
                     onClick={() => regenerate.mutate()}
                     disabled={regenerate.isPending}
                   >
-                    {regenerate.isPending ? 'Regenerating…' : 'Regenerate'}
+                    {regenerate.isPending
+                      ? t('roadmap.regenerating')
+                      : t('roadmap.regenerate')}
                   </Button>
                 </>
               ) : (
                 <>
                   <p className="text-body-l text-text-weak">
-                    No preparation path yet. Analyze an offer first.
+                    {t('roadmap.emptyNoOffer')}
                   </p>
                   <Link to="/cv-analysis" className="text-button-m text-accent">
-                    Go to CV analysis
+                    {t('roadmap.goToCvAnalysis')}
                   </Link>
                 </>
               )}
@@ -286,9 +291,12 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
 }
 
 const TABS = [
-  { key: 'path', label: 'Preparation path' },
-  { key: 'talking', label: 'Interview talking points' },
-] as const;
+  { key: 'path', labelKey: 'roadmap.tabs.path' },
+  { key: 'talking', labelKey: 'roadmap.tabs.talking' },
+] as const satisfies readonly {
+  key: 'path' | 'talking';
+  labelKey: ParseKeys<'app'>;
+}[];
 
 /**
  * Two-view switcher implementing the full ARIA tabs pattern: a `tablist` of
@@ -307,6 +315,7 @@ function RoadmapTabs({
   timeline: ReactNode;
   talkingPoints: ReactNode;
 }) {
+  const { t } = useTranslation('app');
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const focusTab = (index: number) => {
@@ -335,7 +344,7 @@ function RoadmapTabs({
     <>
       <div
         role="tablist"
-        aria-label="Roadmap views"
+        aria-label={t('roadmap.tabs.label')}
         className="border-border flex shrink-0 gap-1 border-b"
       >
         {TABS.map((tab, index) => {
@@ -360,7 +369,7 @@ function RoadmapTabs({
                   : 'text-text-weaker hover:text-text border-transparent'
               }`}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           );
         })}

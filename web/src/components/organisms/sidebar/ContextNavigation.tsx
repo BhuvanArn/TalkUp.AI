@@ -6,6 +6,7 @@ import { useApplications } from '@/services/applications/hooks';
 import type { ApplicationStatus } from '@/services/applications/types';
 import { NavItem } from '@/types/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { NavigationProps } from './types';
 
@@ -30,6 +31,7 @@ const STATUS_COLORS: Record<ApplicationStatus, string> = {
  * - Other contexts: To be defined
  */
 export const ContextNavigation = ({ isCollapsed = false }: NavigationProps) => {
+  const { t } = useTranslation('app');
   const { contextType, contextData } = useNavigation();
   // Only the application context renders the applications list, so gate the
   // query on it — otherwise the sidebar fires GET /applications on every
@@ -108,7 +110,9 @@ export const ContextNavigation = ({ isCollapsed = false }: NavigationProps) => {
               className="flex flex-col gap-2"
             >
               <NavSelector
-                label={application.companyName ?? 'Application'}
+                label={
+                  application.companyName ?? t('sidebar.applicationFallback')
+                }
                 color={STATUS_COLORS[application.status] ?? '#2b70c9'}
                 isExpanded={isExpanded}
                 onToggle={() => {

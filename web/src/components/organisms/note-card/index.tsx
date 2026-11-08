@@ -4,6 +4,7 @@ import { Icon } from '@/components/atoms/icon';
 import { formatRelativeDate } from '@/utils/time';
 import DOMPurify from 'dompurify';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { NoteCardProps } from './types';
 
@@ -58,6 +59,7 @@ export const NoteCard = ({
   onToggleFavorite,
   onClick,
 }: NoteCardProps) => {
+  const { t } = useTranslation('app');
   const [isHovered, setIsHovered] = useState(false);
   const [isBtnHovered, setIsBtnHovered] = useState(false);
 
@@ -107,7 +109,9 @@ export const NoteCard = ({
           onMouseLeave={() => setIsBtnHovered(false)}
           onFocus={() => setIsBtnHovered(true)}
           onBlur={() => setIsBtnHovered(false)}
-          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          aria-label={
+            isFavorite ? t('notes.favorites.remove') : t('notes.favorites.add')
+          }
         >
           <Icon
             icon={isFavorite ? 'bookmark-filled' : 'bookmark'}
@@ -149,7 +153,7 @@ export const NoteCard = ({
       <div className="bg-white text-text-idle p-3 h-40 rounded-[10px] overflow-hidden relative">
         {isPreviewEmpty ? (
           <p className="text-text-weakest italic text-xs">
-            Start writing your note...
+            {t('editor.placeholder')}
           </p>
         ) : (
           <div
@@ -172,7 +176,11 @@ export const NoteCard = ({
 
       <div className="flex items-center gap-1 text-body-s text-text-weakest mt-auto">
         <Icon icon="clock" className="w-3 h-3" />
-        <span>Updated {formatRelativeDate(lastUpdatedAt)}</span>
+        <span>
+          {t('notes.card.updated', {
+            date: formatRelativeDate(lastUpdatedAt),
+          })}
+        </span>
       </div>
     </div>
   );
