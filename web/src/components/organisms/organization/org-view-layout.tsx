@@ -1,6 +1,7 @@
 import { Avatar } from '@/components/atoms/avatar';
 import { useGetMyOrganization } from '@/hooks/organization/useServices';
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /** Up to two initials from the org name, e.g. "Acme Corp" -> "AC". */
 const orgInitials = (name: string) =>
@@ -20,12 +21,15 @@ const orgInitials = (name: string) =>
  * effectively free.
  */
 export function OrgViewLayout({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('settings');
   const { data: org, isLoading, isError } = useGetMyOrganization();
 
   if (isLoading) {
     return (
       <main className="mx-auto max-w-7xl px-6 py-10">
-        <p className="text-body-m text-text-weaker">Loading organization…</p>
+        <p className="text-body-m text-text-weaker">
+          {t('orgViewLayout.loading')}
+        </p>
       </main>
     );
   }
@@ -35,9 +39,7 @@ export function OrgViewLayout({ children }: { children: ReactNode }) {
   if (isError) {
     return (
       <main className="mx-auto max-w-7xl px-6 py-10">
-        <p className="text-body-m text-error">
-          Couldn&apos;t load your organization. Please try again in a moment.
-        </p>
+        <p className="text-body-m text-error">{t('orgViewLayout.loadError')}</p>
       </main>
     );
   }
@@ -46,7 +48,7 @@ export function OrgViewLayout({ children }: { children: ReactNode }) {
     return (
       <main className="mx-auto max-w-7xl px-6 py-10">
         <p className="text-body-m text-text-weaker">
-          You are not affiliated with an organization.
+          {t('orgViewLayout.notAffiliated')}
         </p>
       </main>
     );
@@ -58,13 +60,15 @@ export function OrgViewLayout({ children }: { children: ReactNode }) {
         <header className="flex items-center gap-3 border-b border-border pb-4">
           <Avatar
             src={org.profile_picture ?? undefined}
-            alt={`${org.organization_name} logo`}
+            alt={t('organization.logoAlt', { name: org.organization_name })}
             fallback={orgInitials(org.organization_name)}
             size="md"
             className="shrink-0 border border-border bg-accent-weak text-accent"
           />
           <div className="flex flex-col">
-            <span className="text-label-s text-accent">Organization</span>
+            <span className="text-label-s text-accent">
+              {t('organization.label')}
+            </span>
             <h2 className="text-h3 text-text">{org.organization_name}</h2>
           </div>
         </header>
