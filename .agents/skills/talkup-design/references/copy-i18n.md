@@ -37,7 +37,7 @@
 | Sentence case, no Title Case | « Toutes les candidatures » |
 | Ellipsis character | Chargement… |
 | Apostrophe | ’ (typographic) in copy, consistent with existing locale files |
-| **Vous** | The existing `fr` strings use *vous* ("Veuillez réessayer", "Vérifiez votre connexion"). Read the locale files of the area you touch and follow them; never mix tu and vous on one screen. |
+| **Vous** | The existing `fr` strings use *vous* ("Veuillez réessayer", "Vérifiez votre connexion"). Read the locale files of the area you touch and follow them; with no `fr` file on your branch, use *vous*. Never mix tu and vous on one screen. |
 
 ## 3. i18n mechanics (from `web/I18N.md`)
 

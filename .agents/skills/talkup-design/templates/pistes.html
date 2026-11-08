@@ -114,7 +114,7 @@
         padding: 32px;
       }
       .brief {
-        max-width: 65ch;
+        max-width: 44rem;
         margin: 0 0 32px;
       }
       .brief h2,
@@ -202,8 +202,36 @@
         outline-offset: 4px;
       }
 
+      /* "Avant": captures of today's screen, side by side, never at full page width. */
+      .avant {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+        gap: 16px;
+        margin: 0 0 32px;
+      }
+      .avant figure {
+        margin: 0;
+      }
+      .avant img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+      }
+      .avant figcaption {
+        margin-top: 4px;
+        font-size: 13px;
+        color: var(--color-text-weak);
+      }
+      /* A change that pushes content: the real capture above, the mockup below, same width. */
+      .stack > img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
       .decision {
-        max-width: 65ch;
+        max-width: 44rem;
         margin-top: 48px;
         padding: 24px;
         background: var(--color-background);
@@ -271,6 +299,22 @@
         <p><strong>Tâche principale :</strong> …</p>
         <p><strong>Le concept, remis en question :</strong> …</p>
         <p><strong>Registre Figma :</strong> …</p>
+      </section>
+
+      <!-- Phase 0 captures (capture.mjs). Delete the block if the screen does not exist yet. -->
+      <section class="avant" aria-label="Avant">
+        <figure>
+          <img src="avant-light-1440.png" alt="Écran actuel, clair, 1440 px" />
+          <figcaption>Aujourd'hui, clair, 1440 px</figcaption>
+        </figure>
+        <figure>
+          <img src="avant-dark-1440.png" alt="Écran actuel, sombre, 1440 px" />
+          <figcaption>Aujourd'hui, sombre, 1440 px</figcaption>
+        </figure>
+        <figure>
+          <img src="avant-light-390.png" alt="Écran actuel, clair, 390 px" />
+          <figcaption>Aujourd'hui, clair, 390 px</figcaption>
+        </figure>
       </section>
 
       <div class="pistes">

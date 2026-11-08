@@ -363,3 +363,12 @@ test("dev overlays do not count as page overflow", async () => {
     [],
   );
 });
+
+test("text nested in an sr-only label is not clipped text", async () => {
+  const r = await audit(
+    page(
+      `<label for="d" style="${SR_ONLY}"><span data-lang="fr">Date de l'entretien</span><span data-lang="en">Interview date</span></label><input id="d">`,
+    ),
+  );
+  assert.deepEqual(byRule(r, "layout.clipped-text"), []);
+});

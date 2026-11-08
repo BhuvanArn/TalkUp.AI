@@ -74,6 +74,32 @@ test("captures one piste of a pistes page in English and dark", async () => {
     "--report",
   ]);
   const state = JSON.parse(stdout.trim().split("\n").pop());
-  assert.deepEqual(state, { theme: "dark", lang: "en", piste: "B" });
+  assert.deepEqual(state, { theme: "dark", lang: "en", piste: "B", hidden: 0 });
   assert.deepEqual(await png(out), { w: 200, h: 50 });
+});
+
+test("clicks before capturing and hides extra selectors", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "cap-"));
+  const page = join(dir, "tabs.html");
+  await writeFile(
+    page,
+    `<!doctype html><html><head><style>body{margin:0} #panel{display:none;width:120px;height:40px} #panel.on{display:block} .fab{position:fixed;right:0;top:0}</style></head>
+    <body><button id="tab" onclick="document.querySelector('#panel').classList.add('on')">Talking points</button><div id="panel"></div><button class="fab">Chat</button></body></html>`,
+  );
+  const out = join(dir, "p.png");
+  const { stdout } = await run(process.execPath, [
+    CAPTURE,
+    pathToFileURL(page).href,
+    "--out",
+    out,
+    "--click",
+    "#tab",
+    "--hide",
+    ".fab",
+    "--clip",
+    "#panel",
+    "--report",
+  ]);
+  assert.deepEqual(await png(out), { w: 120, h: 40 });
+  assert.match(stdout, /"hidden":1/);
 });

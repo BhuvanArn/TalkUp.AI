@@ -27,6 +27,8 @@ function parse(argv) {
     lang: null,
     piste: null,
     report: false,
+    click: [],
+    hide: [],
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -40,7 +42,12 @@ function parse(argv) {
     else if (a === "--lang") o.lang = argv[++i];
     else if (a === "--piste") o.piste = argv[++i];
     else if (a === "--report") o.report = true;
-    else o.url = a;
+    else if (a === "--click") o.click.push(argv[++i]);
+    else if (a === "--hide") o.hide.push(...argv[++i].split(","));
+    else if (a.startsWith("--")) {
+      console.error(`unknown option ${a}`);
+      process.exit(2);
+    } else o.url = a;
   }
   return o;
 }
@@ -72,6 +79,7 @@ try {
     storageState: o.storage || undefined,
   });
   const page = await context.newPage();
+  page.setDefaultTimeout(15000);
   await page.goto(o.url, { waitUntil: "networkidle" });
   const want = new URL(o.url);
   if (
@@ -87,8 +95,13 @@ try {
     process.exit(3);
   }
   await page.addStyleTag({
-    content: `${DEV_OVERLAYS}{display:none!important}`,
+    content: `${[DEV_OVERLAYS, ...o.hide].join(",")}{display:none!important}`,
   });
+  // Open a tab, a menu, a panel… before the shot.
+  for (const sel of o.click) {
+    await page.click(sel);
+    await settle(page);
+  }
   // The app reads the `dark` class; pistes pages read data-theme / data-lang / data-current.
   await page.evaluate(
     ({ dark, lang, piste }) => {
@@ -117,17 +130,23 @@ try {
   if (o.report)
     console.log(
       JSON.stringify(
-        await page.evaluate(() => ({
-          theme: document.documentElement.classList.contains("dark")
-            ? "dark"
-            : "light",
-          lang:
-            document.documentElement.dataset.lang ||
-            document.documentElement.lang,
-          piste:
-            document.querySelector(".piste[data-current]")?.dataset.piste ??
-            null,
-        })),
+        await page.evaluate(
+          (hide) => ({
+            theme: document.documentElement.classList.contains("dark")
+              ? "dark"
+              : "light",
+            lang:
+              document.documentElement.dataset.lang ||
+              document.documentElement.lang,
+            piste:
+              document.querySelector(".piste[data-current]")?.dataset.piste ??
+              null,
+            hidden: hide.length
+              ? document.querySelectorAll(hide.join(",")).length
+              : 0,
+          }),
+          o.hide,
+        ),
       ),
     );
 } finally {

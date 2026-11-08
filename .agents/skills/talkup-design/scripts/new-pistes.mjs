@@ -38,8 +38,8 @@ const pisteSkeleton = (letter) => `
                  <span data-lang="fr">Toutes les candidatures</span><span data-lang="en">All applications</span>
                  Check it at 390 px: nothing cut off. Same persona and data in every piste.
                  Small change: a capture of the real screen cropped to the zone at real size (capture.mjs --clip) in
-                 <div class="context"><img src="context.png" alt="…">
-                 <div class="slot" style="left:…;top:…;width:…">variant</div></div>. -->
+                 <div class="context"><img src="context.png" alt="…"><div class="slot" style="…">variant</div></div> (overlay),
+                 or <div class="stack"><img src="context.png" alt="…"><div>variant that pushes content</div></div>. -->
             <p data-lang="fr">Maquette de la piste ${letter}</p>
             <p data-lang="en">Piste ${letter} mockup</p>
           </div>

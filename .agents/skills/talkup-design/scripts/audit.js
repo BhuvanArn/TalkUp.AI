@@ -137,8 +137,12 @@
   // A label hidden for screen readers only (sr-only, 1px) does not count as a visible label.
   const seen = (el) => {
     if (!el || !isVisible(el)) return false;
-    const r = el.getBoundingClientRect();
-    return r.width > 2 && r.height > 2;
+    // Inside an sr-only box (1px, clipped) counts as hidden too.
+    for (let e = el, i = 0; e && i < 4; e = e.parentElement, i++) {
+      const r = e.getBoundingClientRect();
+      if (r.width <= 2 || r.height <= 2) return false;
+    }
+    return true;
   };
 
   const ownText = (el) =>
