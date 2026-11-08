@@ -3,6 +3,7 @@ import { Icon } from '@/components/atoms/icon';
 import Logo from '@/components/molecules/logo';
 import { APP_HOME } from '@/config/routes.config';
 import { Link, useRouter } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 interface NotFoundPageProps {
   isAuthenticated?: boolean;
@@ -13,6 +14,7 @@ interface NotFoundPageProps {
  * and passes the auth state down.
  */
 const NotFoundPage = ({ isAuthenticated = false }: NotFoundPageProps) => {
+  const { t } = useTranslation('landing');
   const router = useRouter();
 
   return (
@@ -20,7 +22,7 @@ const NotFoundPage = ({ isAuthenticated = false }: NotFoundPageProps) => {
       {!isAuthenticated && (
         <Link
           to="/"
-          aria-label="TalkUp home"
+          aria-label={t('nav.home')}
           className="mb-10"
           data-testid="not-found-logo"
         >
@@ -41,16 +43,17 @@ const NotFoundPage = ({ isAuthenticated = false }: NotFoundPageProps) => {
       {/* The page's only h1. The logo above uses `no-text` so it renders no
           competing heading, and the sidebar's h1 disappears when collapsed. */}
       <h1 className="text-h2 text-text-idle mb-2 text-center">
-        Page not found
+        {t('notFound.title')}
       </h1>
       <p className="text-body-m text-text-weaker mb-8 text-center max-w-md">
-        This page doesn&apos;t exist, or it moved somewhere else. Check the
-        address, or head back to familiar ground.
+        {t('notFound.description')}
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button variant="contained" color="accent" asChild>
-          <Link to={isAuthenticated ? APP_HOME : '/'}>Go home</Link>
+          <Link to={isAuthenticated ? APP_HOME : '/'}>
+            {t('notFound.goHome')}
+          </Link>
         </Button>
 
         {isAuthenticated ? (
@@ -60,11 +63,11 @@ const NotFoundPage = ({ isAuthenticated = false }: NotFoundPageProps) => {
             onClick={() => router.history.back()}
           >
             <Icon icon="arrow-left" size="sm" aria-hidden focusable={false} />
-            Go back
+            {t('notFound.goBack')}
           </Button>
         ) : (
           <Button variant="text" color="accent" asChild>
-            <Link to="/login">Log in</Link>
+            <Link to="/login">{t('actions.logIn')}</Link>
           </Button>
         )}
       </div>

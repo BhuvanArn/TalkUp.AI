@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { changeLanguage } from '@/i18n';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import i18next from 'i18next';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import LandingNav from './index';
@@ -272,5 +274,49 @@ describe('LandingNav', () => {
       expect(screen.queryByText('Log in')).toBeNull();
       expect(screen.queryByText('Create an account')).toBeNull();
     });
+  });
+});
+
+describe('LandingNav in French', () => {
+  beforeEach(async () => {
+    useAuthStatusMock.mockReset();
+    useAuthStatusMock.mockReturnValue(authState(false));
+    await act(() => changeLanguage('fr'));
+  });
+
+  // setupTests pins English for every other test.
+  afterEach(async () => {
+    document.removeEventListener('click', stayOnPage);
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders the links, CTAs and labels in French', () => {
+    render(<LandingNav />);
+    expect(
+      screen.getByRole('navigation', { name: 'Principale' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Comment ça marche' }),
+    ).toHaveAttribute('href', '#how');
+    expect(screen.getByRole('link', { name: 'À propos' })).toHaveAttribute(
+      'href',
+      '/about',
+    );
+    expect(screen.getByRole('link', { name: 'Se connecter' })).toHaveAttribute(
+      'href',
+      '/login',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Ouvrir ou fermer le menu' }),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps the nav CTA tracking in French', () => {
+    document.addEventListener('click', stayOnPage);
+    ctaClicks.length = 0;
+    render(<LandingNav />);
+    fireEvent.click(screen.getByRole('link', { name: 'Créer un compte' }));
+    expect(ctaClicks).toEqual([['nav', '/register']]);
   });
 });
