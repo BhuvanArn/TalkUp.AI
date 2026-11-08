@@ -1,6 +1,7 @@
 import { Icon } from '@/components/atoms/icon';
 import VideoAreaControlsBar from '@/components/molecules/video-area-controls-bar';
 import RecruiterAvatarPanel from '@/components/organisms/recruiter-avatar';
+import type { RecruiterFallbackReasonKey } from '@/components/organisms/recruiter-avatar/types';
 import type { AiSpeechTurn } from '@/hooks/simulation/useAudioPlayback';
 import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
 import { cn } from '@/utils/cn';
@@ -18,7 +19,7 @@ interface SimulationVideoAreaProps {
   avatarUrl?: string;
   avatarMode?: RecruiterAvatarMode;
   avatarFallbackReason?: string | null;
-  onAvatarFallbackRequest?: (reason: string) => void;
+  onAvatarFallbackRequest?: (reasonKey: RecruiterFallbackReasonKey) => void;
   onStreamToggle?: (streaming: boolean) => void;
   onStreamChange?: (stream: MediaStream | null) => void;
   onToggleRef?: (toggleFn: (() => void) | null) => void;
@@ -125,8 +126,10 @@ const SimulationVideoArea = ({
     }
   }, [isStreaming, isSpeakerActive, videoRef]);
 
-  const handleAvatarFallbackRequest = (reason: string) => {
-    onAvatarFallbackRequest?.(reason);
+  const handleAvatarFallbackRequest = (
+    reasonKey: RecruiterFallbackReasonKey,
+  ) => {
+    onAvatarFallbackRequest?.(reasonKey);
   };
 
   return (

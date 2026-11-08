@@ -1,4 +1,5 @@
 import { useChatContext } from '@/hooks/ui/useChatContext';
+import { changeLanguage } from '@/i18n';
 import { sendChatMessage } from '@/services/ai/http';
 import {
   act,
@@ -7,6 +8,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import i18next from 'i18next';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ChatWidget } from './ChatWidget';
@@ -81,8 +83,76 @@ describe('ChatWidget', () => {
     render(<ChatWidget />);
     openChat();
     expect(screen.getByText(/Ask me anything/)).toBeInTheDocument();
-    // A HH:MM timestamp is rendered alongside the welcome bubble.
-    expect(screen.getByText(/^\d{2}:\d{2}$/)).toBeInTheDocument();
+    // A time in the active locale is rendered alongside the welcome bubble.
+    expect(screen.getByText(/^\d{2}:\d{2}\s[AP]M$/)).toBeInTheDocument();
+  });
+
+  describe('in French', () => {
+    afterEach(async () => {
+      await act(() => i18next.changeLanguage('en'));
+      localStorage.clear();
+    });
+
+    it('greets in French with a 24-hour timestamp', async () => {
+      await act(() => changeLanguage('fr'));
+      render(<ChatWidget />);
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Ouvrir le chat TalkUp' }),
+      );
+
+      expect(screen.getByText(/Posez-moi vos questions/)).toBeInTheDocument();
+      expect(screen.getByText(/^\d{2}:\d{2}$/)).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Envoyer le message' }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('language switch', () => {
+    afterEach(async () => {
+      await act(() => i18next.changeLanguage('en'));
+      localStorage.clear();
+    });
+
+    it('re-renders the welcome text, timestamp and error reply in the new language', async () => {
+      mockedSendChatMessage.mockRejectedValueOnce(new Error('network'));
+      render(<ChatWidget />);
+      openChat();
+
+      fireEvent.change(screen.getByLabelText('Chat message input'), {
+        target: { value: 'hi' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+      await waitFor(() =>
+        expect(
+          screen.getByText(/could not reach the assistant/),
+        ).toBeInTheDocument(),
+      );
+      expect(screen.getAllByText(/^\d{2}:\d{2}\s[AP]M$/)).toHaveLength(3);
+
+      await act(() => changeLanguage('fr'));
+
+      expect(screen.getByText(/Posez-moi vos questions/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/impossible de joindre l’assistant/),
+      ).toBeInTheDocument();
+      expect(screen.getAllByText(/^\d{2}:\d{2}$/)).toHaveLength(3);
+      expect(screen.queryByText(/[AP]M$/)).not.toBeInTheDocument();
+    });
+  });
+
+  it('does not scroll the message list again while the user types', () => {
+    render(<ChatWidget />);
+    openChat();
+    const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView');
+
+    const input = screen.getByLabelText('Chat message input');
+    fireEvent.change(input, { target: { value: 'h' } });
+    fireEvent.change(input, { target: { value: 'he' } });
+    fireEvent.change(input, { target: { value: 'hey' } });
+
+    expect(scrollSpy).not.toHaveBeenCalled();
+    scrollSpy.mockRestore();
   });
 
   it('sends a user message and shows the assistant reply from the API', async () => {

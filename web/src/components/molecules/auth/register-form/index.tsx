@@ -1,10 +1,12 @@
 import { Button } from '@/components/atoms/button';
 import { Icon } from '@/components/atoms/icon';
+import { FieldErrors } from '@/components/molecules/auth/field-errors';
 import { PasswordField } from '@/components/molecules/auth/password-field';
 import { InputMolecule } from '@/components/molecules/input-molecule';
 import { usePostRegister } from '@/hooks/auth/useServices';
 import { extractErrorMessage } from '@/utils/error';
 import {
+  type ValidationKey,
   emailSchema,
   passwordSchema,
   usernameSchema,
@@ -13,6 +15,7 @@ import {
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 /**
  * A component that renders a registration form with username, email, and password fields.
@@ -24,7 +27,6 @@ import { useState } from 'react';
  * - Username input field with validation
  * - Email input field with validation
  * - Password input field with validation
- * - Form-level error messages
  * - Loading indicators during validation
  * - Submit button
  *
@@ -37,6 +39,7 @@ import { useState } from 'react';
 export const RegisterForm = ({
   initialCode,
 }: { initialCode?: string } = {}) => {
+  const { t } = useTranslation(['auth', 'common']);
   const postRegister = usePostRegister();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -59,10 +62,7 @@ export const RegisterForm = ({
         {
           onError: (error: unknown) => {
             setServerError(
-              extractErrorMessage(
-                error,
-                'Registration failed. Please try again.',
-              ),
+              extractErrorMessage(error, t('registerForm.errors.failed')),
             );
           },
           onSuccess: () => setServerError(null),
@@ -74,8 +74,10 @@ export const RegisterForm = ({
   return (
     <div className="flex flex-col w-full gap-6 max-w-96">
       <header className="flex items-center justify-start gap-4">
-        <h2 className="text-h3 text-idle">Register</h2>
-        <p className="text-body-l text-idle mt-1">Create your account</p>
+        <h2 className="text-h3 text-idle">{t('registerForm.title')}</h2>
+        <p className="text-body-l text-idle mt-1">
+          {t('registerForm.subtitle')}
+        </p>
       </header>
       <form
         className="flex flex-col gap-4"
@@ -100,14 +102,10 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                label="Username"
-                placeholder="e.g. camille_dev"
+                label={t('registerForm.usernameLabel')}
+                placeholder={t('registerForm.usernamePlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -126,14 +124,10 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                label="Email"
-                placeholder="you@example.com"
+                label={t('registerForm.emailLabel')}
+                placeholder={t('registerForm.emailPlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -150,16 +144,12 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                label="Password"
-                placeholder="8+ characters: upper, lower, digit, symbol"
+                label={t('registerForm.passwordLabel')}
+                placeholder={t('registerForm.passwordPlaceholder')}
                 autoComplete="new-password"
                 showStrength
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
@@ -168,7 +158,7 @@ export const RegisterForm = ({
           validators={{
             onChange: ({ value }) =>
               value && value.trim().length > 32
-                ? 'Organization code is too long'
+                ? ('auth:validation.organizationCodeTooLong' satisfies ValidationKey)
                 : undefined,
           }}
         >
@@ -181,25 +171,13 @@ export const RegisterForm = ({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                label="Organization code (optional)"
-                placeholder="e.g. TALKUP-2026"
+                label={t('registerForm.organizationCodeLabel')}
+                placeholder={t('registerForm.organizationCodePlaceholder')}
               />
-              {field.state.meta.errors.length > 0 && (
-                <span className="text-label-m text-error font-medium ml-1">
-                  {field.state.meta.errors}
-                </span>
-              )}
+              <FieldErrors errors={field.state.meta.errors} />
             </div>
           )}
         </form.Field>
-        <form.Subscribe selector={(state) => state.errors}>
-          {(errors) =>
-            errors.length > 0 && (
-              <span className="text-sm text-red-500 text-center">{errors}</span>
-            )
-          }
-        </form.Subscribe>
-
         {serverError && (
           <div className="text-sm text-red-600 text-center" role="alert">
             {serverError}
@@ -209,21 +187,26 @@ export const RegisterForm = ({
           to="/about"
           className="text-idle text-label-m underline hover:text-active cursor-pointer"
         >
-          Learn about our Terms of Service
+          {t('registerForm.terms')}
         </Link>
         {/* Figma A2: 32px before the primary button (16px gap + 16px). */}
         <Button color="accent" type="submit" className="mt-4">
           <Icon icon="register" color="inherit" />
-          Register
+          {t('registerForm.submit')}
         </Button>
         <p className="text-idle text-label-m">
-          Already have an account?{' '}
-          <Link
-            to="/login"
-            className="underline hover:text-active cursor-pointer"
-          >
-            Let's get you back in!
-          </Link>
+          <Trans
+            t={t}
+            i18nKey="registerForm.hasAccount"
+            components={{
+              signin: (
+                <Link
+                  to="/login"
+                  className="underline hover:text-active cursor-pointer"
+                />
+              ),
+            }}
+          />
         </p>
       </form>
     </div>

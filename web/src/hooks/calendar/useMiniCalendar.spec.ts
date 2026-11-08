@@ -1,5 +1,7 @@
+import { changeLanguage } from '@/i18n';
 import { useCalendarStore } from '@/stores/useCalendarStore';
 import { act, renderHook } from '@testing-library/react';
+import i18next from 'i18next';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useMiniCalendar } from './useMiniCalendar';
@@ -19,8 +21,35 @@ describe('useMiniCalendar', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.useRealTimers();
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('labels the weekdays Monday first', () => {
+    const { result } = renderHook(() => useMiniCalendar());
+
+    expect(result.current.daysOfWeek).toEqual([
+      'Mon',
+      'Tue',
+      'Wed',
+      'Thu',
+      'Fri',
+      'Sat',
+      'Sun',
+    ]);
+  });
+
+  it('labels the month and the weekdays in French', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 6, 15));
+    await act(() => changeLanguage('fr'));
+    const { result } = renderHook(() => useMiniCalendar());
+
+    expect(result.current.monthYear).toBe('juillet 2026');
+    expect(result.current.daysOfWeek[0]).toBe('lun.');
+    expect(result.current.daysOfWeek[6]).toBe('dim.');
   });
 
   it('should initialize correctly', () => {

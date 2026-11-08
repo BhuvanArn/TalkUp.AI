@@ -9,7 +9,9 @@ import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import i18next, { type ParseKeys } from 'i18next';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -75,9 +77,17 @@ const FontSize = Extension.create({
   },
 });
 
-// Default font (Inter) shown in label so users know what's used without explicit font-family
-export const FONT_FAMILIES = [
-  { label: 'Default (Inter)', value: '' },
+/**
+ * Font names are proper nouns and stay as-is. The default entry (Inter, no
+ * explicit font-family) has a translated label instead, resolved at render.
+ */
+type FontFamilyEntry = { value: string } & (
+  | { label: string; labelKey?: never }
+  | { labelKey: ParseKeys<'app'>; label?: never }
+);
+
+export const FONT_FAMILIES: readonly FontFamilyEntry[] = [
+  { labelKey: 'editor.defaultFont', value: '' },
   { label: 'Saira', value: 'Saira, sans-serif' },
   { label: 'Arial', value: 'Arial, sans-serif' },
   { label: 'Times New Roman', value: 'Times New Roman, serif' },
@@ -108,6 +118,7 @@ export const FONT_SIZES = FONT_SIZE_VALUES.map((size) => ({
  * @returns Editor instance, state, and formatting handler functions
  */
 export const useRichTextEditor = (initialContent?: string) => {
+  const { t } = useTranslation('app');
   const [fontSize, setFontSize] = useState(16);
   const [fontFamily, setFontFamily] = useState('');
   const [, forceUpdate] = useState({});
@@ -184,7 +195,8 @@ export const useRichTextEditor = (initialContent?: string) => {
         nested: true,
       }),
       Placeholder.configure({
-        placeholder: 'Start writing your note...',
+        // A function so the placeholder follows a language switch.
+        placeholder: () => i18next.t('app:editor.placeholder'),
         emptyEditorClass: 'is-editor-empty',
       }),
     ],
@@ -344,15 +356,17 @@ export const useRichTextEditor = (initialContent?: string) => {
     editor.chain().focus().redo().run();
   };
 
+  const fontFamilies = FONT_FAMILIES.map((font) => ({
+    label: font.labelKey ? t(font.labelKey) : font.label,
+    value: font.value,
+  }));
+  const mixedOption = { label: t('editor.mixed'), value: 'mixed' };
+
   const fontFamilyOptions =
-    fontFamily === 'mixed'
-      ? [{ label: 'Mixed', value: 'mixed' }, ...FONT_FAMILIES]
-      : FONT_FAMILIES;
+    fontFamily === 'mixed' ? [mixedOption, ...fontFamilies] : fontFamilies;
 
   const fontSizeOptions =
-    fontSize === 0
-      ? [{ label: 'Mixed', value: 'mixed' }, ...FONT_SIZES]
-      : FONT_SIZES;
+    fontSize === 0 ? [mixedOption, ...FONT_SIZES] : FONT_SIZES;
 
   return {
     editor,

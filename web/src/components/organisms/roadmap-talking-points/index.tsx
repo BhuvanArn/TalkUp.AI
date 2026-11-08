@@ -1,5 +1,6 @@
 import { iconMap } from '@/components/atoms/icon/icon-map';
 import type { RoadmapTalkingPoint } from '@/services/applications/types';
+import { useTranslation } from 'react-i18next';
 
 const PointIcon = iconMap['arrow-right'];
 
@@ -18,6 +19,8 @@ interface RoadmapTalkingPointsProps {
  * unconditionally. Token-only styling; theme-flips with the palette.
  */
 export const RoadmapTalkingPoints = ({ points }: RoadmapTalkingPointsProps) => {
+  const { t } = useTranslation('app');
+
   if (points.length === 0) return null;
 
   return (
@@ -27,11 +30,10 @@ export const RoadmapTalkingPoints = ({ points }: RoadmapTalkingPointsProps) => {
     >
       <div>
         <h2 id="talking-points-heading" className="text-h5 text-text">
-          Bring these to your interview
+          {t('roadmap.talkingPoints.title')}
         </h2>
         <p className="text-body-s text-text-weak mt-1">
-          Talking points from the role's responsibilities, matched to your
-          experience.
+          {t('roadmap.talkingPoints.description')}
         </p>
       </div>
 

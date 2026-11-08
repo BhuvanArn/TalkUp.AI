@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { changeLanguage } from '@/i18n';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OrganizationSettings } from './OrganizationSettings';
 
@@ -217,5 +218,39 @@ describe('OrganizationSettings Component', () => {
     );
 
     expect(screen.getByTestId('org-error')).toBeInTheDocument();
+  });
+});
+
+describe('OrganizationSettings in French', () => {
+  beforeEach(() => {
+    useGetMyOrganizationMock.mockReturnValue(orgQuery());
+    useGetMemberDetailMock.mockReturnValue(memberQuery());
+  });
+
+  afterEach(async () => {
+    await act(() => changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders the labels, role and last activity in French', async () => {
+    await act(() => changeLanguage('fr'));
+    render(
+      <OrganizationSettings
+        organizationId="org-1"
+        userId="user-1"
+        userRole="admin"
+      />,
+    );
+    expect(screen.getByText('Votre organisation')).toBeInTheDocument();
+    expect(screen.getByText('Score moyen')).toBeInTheDocument();
+    expect(screen.getByTestId('org-role-label')).toHaveTextContent(
+      'Administrateur',
+    );
+    expect(screen.getByTestId('stat-last-activity').textContent).toBe(
+      new Date('2024-06-01T12:00:00.000Z').toLocaleString('fr-FR'),
+    );
+    expect(screen.getByTestId('stat-last-activity')).toHaveTextContent(
+      /^01\/06\/2024/,
+    );
   });
 });

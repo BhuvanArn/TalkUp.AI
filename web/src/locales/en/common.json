@@ -1,0 +1,66 @@
+{
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "retry": "Retry"
+  },
+  "status": {
+    "loading": "Loading…"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Network error. Check your connection and try again."
+  },
+  "languages": {
+    "en": "English",
+    "fr": "Français"
+  },
+  "languageSwitcher": {
+    "switchTo": "Switch to",
+    "current": "(current language: {{current}})"
+  },
+  "avatar": {
+    "alt": "Avatar"
+  },
+  "colorPicker": {
+    "title": "Select color",
+    "select": {
+      "blue": "Select blue color",
+      "green": "Select green color",
+      "red": "Select red color",
+      "yellow": "Select yellow color"
+    }
+  },
+  "confirmModal": {
+    "close": "Close modal"
+  },
+  "input": {
+    "placeholder": "Enter text"
+  },
+  "notificationBanner": {
+    "dismiss": "Dismiss notification"
+  },
+  "saveStatus": {
+    "saving": "Saving...",
+    "saved": "Saved",
+    "unsaved": "Unsaved changes",
+    "error": "Failed to save"
+  },
+  "themeToggle": {
+    "toggle": "Toggle theme",
+    "dark": "Dark Mode",
+    "light": "Light Mode"
+  },
+  "unsavedChanges": {
+    "message": "You have unsaved changes",
+    "save": "Save changes",
+    "saved": "Saved",
+    "reset": "Reset"
+  }
+}

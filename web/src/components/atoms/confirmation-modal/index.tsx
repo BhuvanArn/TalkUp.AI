@@ -1,6 +1,7 @@
 import { Button } from '@/components/atoms/button';
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -18,9 +19,11 @@ const ConfirmationModal = ({
   message,
   onConfirm,
   onCancel,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText,
+  cancelText,
 }: ConfirmationModalProps) => {
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -67,10 +70,10 @@ const ConfirmationModal = ({
             className="border border-border text-idle"
             onClick={onCancel}
           >
-            {cancelText}
+            {cancelText ?? t('actions.cancel')}
           </Button>
           <Button color="error" onClick={onConfirm}>
-            {confirmText}
+            {confirmText ?? t('actions.confirm')}
           </Button>
         </div>
       </div>

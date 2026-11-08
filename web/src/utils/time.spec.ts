@@ -1,3 +1,5 @@
+import { changeLanguage } from '@/i18n';
+import i18next from 'i18next';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { formatDurationISO, formatRelativeDate, formatTime } from './time';
@@ -50,6 +52,27 @@ describe('formatRelativeDate', () => {
   it('returns locale date for older than a week', () => {
     const d = new Date('2025-05-01T12:00:00.000Z');
     expect(formatRelativeDate(d)).toMatch(/May/);
+  });
+
+  describe('in French', () => {
+    afterEach(async () => {
+      await i18next.changeLanguage('en');
+      localStorage.clear();
+    });
+
+    it('formats relative and absolute dates in French', async () => {
+      await changeLanguage('fr');
+
+      expect(formatRelativeDate(new Date('2025-06-15T11:30:00.000Z'))).toBe(
+        'À l’instant',
+      );
+      expect(formatRelativeDate(new Date('2025-06-15T07:00:00.000Z'))).toBe(
+        'il y a 5 h',
+      );
+      expect(formatRelativeDate(new Date('2025-05-01T12:00:00.000Z'))).toBe(
+        '1 mai',
+      );
+    });
   });
 
   it('includes year when date is from another calendar year', () => {

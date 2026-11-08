@@ -1,4 +1,5 @@
 import { IconName } from '@/components/atoms/icon/icon-map';
+import type { ParseKeys } from 'i18next';
 
 /**
  * Navigation item type definitions
@@ -6,8 +7,8 @@ import { IconName } from '@/components/atoms/icon/icon-map';
 export interface NavItem {
   /** Route path */
   to: string;
-  /** Display label */
-  label: string;
+  /** `app` translation key of the display label */
+  labelKey: ParseKeys<'app'>;
   /** Icon name from icon-map */
   icon: IconName;
   /** Whether this item is visible in navigation */

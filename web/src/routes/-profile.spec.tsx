@@ -1,3 +1,4 @@
+import { changeLanguage } from '@/i18n';
 import type { UserProfile } from '@/services/users/types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
@@ -7,7 +8,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Profile from './profile';
 
@@ -67,11 +68,11 @@ vi.mock('@tanstack/react-router', () => ({
     options,
 }));
 
-function renderProfile() {
+function renderProfile(overrides: Partial<UserProfile> = {}) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  client.setQueryData(['user-profile'], { ...mockProfile });
+  client.setQueryData(['user-profile'], { ...mockProfile, ...overrides });
   return render(
     <QueryClientProvider client={client}>
       <Profile />
@@ -85,19 +86,23 @@ vi.mock('@/components/organisms/profile-settings/GeneralSettings', () => ({
     lastName,
     bio,
     phoneNumber,
+    jobTitle,
     onFirstNameChange,
     onLastNameChange,
     onBioChange,
     onPhoneNumberChange,
+    onJobTitleChange,
   }: {
     firstName: string;
     lastName: string;
     bio: string;
     phoneNumber: string;
+    jobTitle: string;
     onFirstNameChange: (v: string) => void;
     onLastNameChange: (v: string) => void;
     onBioChange: (v: string) => void;
     onPhoneNumberChange: (v: string) => void;
+    onJobTitleChange: (v: string) => void;
   }) => (
     <div data-testid="general-settings">
       <input
@@ -120,6 +125,16 @@ vi.mock('@/components/organisms/profile-settings/GeneralSettings', () => ({
         value={phoneNumber}
         onChange={(e) => onPhoneNumberChange(e.target.value)}
       />
+      <select
+        data-testid="input-jobtitle"
+        value={jobTitle}
+        onChange={(e) => onJobTitleChange(e.target.value)}
+      >
+        <option value="">No job title</option>
+        <option value="Product Manager Candidate">
+          Product Manager Candidate
+        </option>
+      </select>
     </div>
   ),
 }));
@@ -224,6 +239,12 @@ describe('Profile page', () => {
       expect(
         screen.getByText('Product Manager Candidate · TalkUp Pro'),
       ).toBeInTheDocument();
+    });
+
+    it('falls back to "Member" in the subtitle when no job title is stored', () => {
+      fetchMyProfile.mockResolvedValue({ ...mockProfile, jobTitle: null });
+      renderProfile({ jobTitle: null });
+      expect(screen.getByText('Member · TalkUp Pro')).toBeInTheDocument();
     });
 
     it('renders the General tab as active by default', () => {
@@ -573,6 +594,22 @@ describe('Profile page', () => {
       });
     });
 
+    it('sends an empty job title when saving after choosing "No job title"', async () => {
+      renderProfile();
+      fireEvent.change(screen.getByTestId('input-jobtitle'), {
+        target: { value: '' },
+      });
+      expect(screen.getByText('Member · TalkUp Pro')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('save-button'));
+      });
+      await waitFor(() => {
+        expect(updateMyProfile).toHaveBeenCalledWith(
+          expect.objectContaining({ jobTitle: '' }),
+        );
+      });
+    });
+
     it('reset reverts unsaved form value', () => {
       renderProfile();
       fireEvent.change(screen.getByTestId('input-firstname'), {
@@ -613,5 +650,56 @@ describe('Profile page', () => {
       expect(cta).toHaveAttribute('data-attention', 'false');
       vi.useRealTimers();
     });
+  });
+});
+
+describe('Profile page in French', () => {
+  afterEach(async () => {
+    await act(() => changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders the tabs, side cards and goal percentage in French', async () => {
+    await act(() => changeLanguage('fr'));
+    renderProfile();
+    expect(screen.getByTestId('tab-general')).toHaveTextContent('Général');
+    expect(screen.getByTestId('tab-appearance')).toHaveTextContent('Apparence');
+    expect(screen.getByText('Présentation')).toBeInTheDocument();
+    expect(screen.getByText('Objectif')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Changer le style de la bannière' }),
+    ).toBeInTheDocument();
+    // fr-FR puts a no-break space before the percent sign (U+00A0 or U+202F
+    // depending on the ICU version). Trim only: the default normalizer would
+    // turn it into a plain space and hide a regression.
+    expect(
+      screen.getByText(/^78[  ]%$/, {
+        normalizer: (text) => text.trim(),
+      }),
+    ).toBeInTheDocument();
+    // A listed job title is stored in English and shown translated.
+    expect(
+      screen.getByText('Candidat Product Manager · TalkUp Pro'),
+    ).toBeInTheDocument();
+  });
+
+  it('translates a save error banner already shown when switching to French', async () => {
+    vi.useRealTimers();
+    updateMyProfile.mockRejectedValueOnce(new Error('network'));
+    renderProfile();
+    fireEvent.change(screen.getByTestId('input-firstname'), {
+      target: { value: 'Marie' },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('save-button'));
+    });
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not save your profile. Please try again.',
+    );
+
+    await act(() => changeLanguage('fr'));
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Impossible d’enregistrer votre profil. Veuillez réessayer.',
+    );
   });
 });

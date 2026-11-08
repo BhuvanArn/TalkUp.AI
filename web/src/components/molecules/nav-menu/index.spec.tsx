@@ -1,5 +1,8 @@
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { changeLanguage } from '@/i18n';
+import type { NavItem } from '@/types/navigation';
+import { act, render, screen } from '@testing-library/react';
+import i18next from 'i18next';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NavMenu } from './index';
 
@@ -58,10 +61,14 @@ describe('NavMenu Component', () => {
     mockPathname = '/';
   });
 
-  const mockNavigationItems = [
-    { to: '/home', label: 'Home', icon: 'home' as const },
-    { to: '/notes', label: 'Notes', icon: 'notes' as const },
-    { to: '/settings', label: 'Settings', icon: 'settings' as const },
+  const mockNavigationItems: NavItem[] = [
+    { to: '/home', labelKey: 'navigation.home', icon: 'home' as const },
+    { to: '/notes', labelKey: 'navigation.notes', icon: 'notes' as const },
+    {
+      to: '/settings',
+      labelKey: 'navigation.settings',
+      icon: 'settings' as const,
+    },
   ];
 
   /**
@@ -69,6 +76,19 @@ describe('NavMenu Component', () => {
    * Ensures the NavMenu component renders correctly with navigation items.
    */
   describe('Basic Rendering', () => {
+    afterEach(async () => {
+      await act(() => i18next.changeLanguage('en'));
+      localStorage.clear();
+    });
+
+    it('renders the labels in French', async () => {
+      await act(() => changeLanguage('fr'));
+      render(<NavMenu items={mockNavigationItems} />);
+
+      expect(screen.getByText('Accueil')).toBeInTheDocument();
+      expect(screen.getByText('Paramètres')).toBeInTheDocument();
+    });
+
     it('renders navigation items', () => {
       render(<NavMenu items={mockNavigationItems} />);
 

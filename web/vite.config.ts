@@ -19,6 +19,7 @@ const aliases = {
   '@/services': path.resolve(__dirname, 'src/services'),
   '@/config': path.resolve(__dirname, 'src/config'),
   '@/contexts': path.resolve(__dirname, 'src/contexts'),
+  '@/i18n': path.resolve(__dirname, 'src/i18n'),
 };
 
 export default defineConfig({

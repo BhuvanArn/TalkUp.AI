@@ -1,3 +1,5 @@
+import { Trans, useTranslation } from 'react-i18next';
+
 type SimulationQueueBannerProps = {
   queuePosition: number;
   estimatedWaitSec?: number;
@@ -11,6 +13,7 @@ export default function SimulationQueueBanner({
   activeCount,
   maxConcurrent,
 }: SimulationQueueBannerProps) {
+  const { t } = useTranslation('app');
   const waitMin =
     estimatedWaitSec != null
       ? Math.max(1, Math.ceil(estimatedWaitSec / 60))
@@ -22,20 +25,31 @@ export default function SimulationQueueBanner({
       role="status"
       aria-live="polite"
     >
-      <p className="font-medium">File d&apos;attente simulation</p>
+      <p className="font-medium">{t('simulations.queue.title')}</p>
       <p className="text-sm mt-1">
-        Position&nbsp;: <strong>{queuePosition}</strong>
-        {waitMin != null && (
-          <>
-            {' '}
-            — attente estimée ~<strong>{waitMin}</strong> min
-          </>
+        {/* One whole sentence per case, so translators never see a fragment. */}
+        {waitMin != null ? (
+          <Trans
+            ns="app"
+            i18nKey="simulations.queue.positionWithWait"
+            values={{ position: queuePosition, minutes: waitMin }}
+            components={{ strong: <strong /> }}
+          />
+        ) : (
+          <Trans
+            ns="app"
+            i18nKey="simulations.queue.position"
+            values={{ position: queuePosition }}
+            components={{ strong: <strong /> }}
+          />
         )}
       </p>
       {activeCount != null && maxConcurrent != null && (
         <p className="text-xs mt-2 text-amber-800">
-          {activeCount}/{maxConcurrent} créneaux GPU utilisés. Votre session
-          démarrera automatiquement.
+          {t('simulations.queue.slots', {
+            active: activeCount,
+            max: maxConcurrent,
+          })}
         </p>
       )}
     </div>

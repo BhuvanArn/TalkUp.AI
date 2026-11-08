@@ -233,7 +233,7 @@ describe('NavigationContext', () => {
       const mockDynamicItems: NavItem[] = [
         {
           to: '/dynamic-1',
-          label: 'Dynamic Item 1',
+          labelKey: 'navigation.settings',
           icon: 'settings',
           showInNav: true,
           order: 10,
