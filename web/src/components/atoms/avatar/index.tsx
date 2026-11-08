@@ -1,5 +1,6 @@
 import { cn } from '@/utils/cn';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { AvatarProps } from './types';
 import { avatarVariants } from './variants';
@@ -19,6 +20,7 @@ import { avatarVariants } from './variants';
  */
 export const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
   ({ src, alt, fallback, size, className, ...props }, ref) => {
+    const { t } = useTranslation();
     const [imageError, setImageError] = useState(false);
 
     const handleImageError = () => {
@@ -36,7 +38,7 @@ export const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
         {!showFallback ? (
           <img
             src={src}
-            alt={alt || 'Avatar'}
+            alt={alt || t('avatar.alt')}
             className="w-full h-full object-cover"
             onError={handleImageError}
           />

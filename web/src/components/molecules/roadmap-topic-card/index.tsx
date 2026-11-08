@@ -1,5 +1,7 @@
 import type { RoadmapTopic } from '@/services/applications/types';
+import type { ParseKeys } from 'i18next';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface RoadmapTopicCardProps {
   /** 1-based position of this topic on the timeline. */
@@ -26,7 +28,14 @@ export const PRIORITY_STYLES: Record<RoadmapTopic['priority'], string> = {
  * button that opens a popover with the full title + rationale, so nothing is
  * permanently hidden.
  */
+const PRIORITY_LABEL_KEYS = {
+  HIGH: 'roadmap.priority.high',
+  MED: 'roadmap.priority.med',
+  LOW: 'roadmap.priority.low',
+} as const satisfies Record<RoadmapTopic['priority'], ParseKeys<'app'>>;
+
 export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
+  const { t } = useTranslation(['app', 'common']);
   const rationaleRef = useRef<HTMLParagraphElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -79,7 +88,7 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
     <span
       className={`text-label-s rounded-full px-2 py-0.5 ${PRIORITY_STYLES[topic.priority]}`}
     >
-      {topic.priority}
+      {t(PRIORITY_LABEL_KEYS[topic.priority])}
     </span>
   );
 
@@ -113,7 +122,9 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
         }
       >
         <div className="flex items-center justify-between gap-2">
-          <p className="text-label-s text-text-weaker">Step {step}</p>
+          <p className="text-label-s text-text-weaker">
+            {t('roadmap.topic.step', { step })}
+          </p>
           {priorityChip}
         </div>
         <h3 ref={titleRef} className="text-h6 text-text line-clamp-2">
@@ -127,12 +138,14 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
         </p>
         <div className="mt-auto flex items-center justify-between gap-2 pt-1">
           {topic.gap ? (
-            <p className="text-body-s text-error">Gap to close</p>
+            <p className="text-body-s text-error">{t('roadmap.topic.gap')}</p>
           ) : (
             <span />
           )}
           {isTruncated && (
-            <span className="text-body-s text-accent">Read more</span>
+            <span className="text-body-s text-accent">
+              {t('roadmap.topic.readMore')}
+            </span>
           )}
         </div>
       </article>
@@ -143,22 +156,26 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
           ref={panelRef}
           tabIndex={-1}
           role="region"
-          aria-label={`${topic.title} details`}
+          aria-label={t('roadmap.topic.details', { title: topic.title })}
           className="bg-surface-raised border-border absolute top-0 left-0 z-30 flex w-[min(20rem,80vw)] min-w-full flex-col gap-2 rounded-2xl border p-4 shadow-lg"
         >
           <div className="flex items-center justify-between gap-2">
-            <p className="text-label-s text-text-weaker">Step {step}</p>
+            <p className="text-label-s text-text-weaker">
+              {t('roadmap.topic.step', { step })}
+            </p>
             {priorityChip}
           </div>
           <h3 className="text-h6 text-text">{topic.title}</h3>
           <p className="text-body-s text-text-weak">{topic.rationale}</p>
-          {topic.gap && <p className="text-body-s text-error">Gap to close</p>}
+          {topic.gap && (
+            <p className="text-body-s text-error">{t('roadmap.topic.gap')}</p>
+          )}
           <button
             type="button"
             onClick={() => setIsOpen(false)}
             className="text-body-s text-accent self-start pt-1"
           >
-            Close
+            {t('common:actions.close')}
           </button>
         </div>
       )}

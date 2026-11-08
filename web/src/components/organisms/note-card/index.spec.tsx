@@ -1,6 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { changeLanguage } from '@/i18n';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import i18next from 'i18next';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { NoteCard } from './index';
 
@@ -27,6 +29,26 @@ describe('NoteCard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('in French', () => {
+    afterEach(async () => {
+      await act(() => i18next.changeLanguage('en'));
+      localStorage.clear();
+    });
+
+    it('renders the empty preview, favorite label and badge in French', async () => {
+      await act(() => changeLanguage('fr'));
+      render(<NoteCard {...defaultProps} preview="" />);
+
+      expect(
+        screen.getByText('Commencez à rédiger votre note…'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Ajouter aux favoris' }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/^Mise à jour/)).toBeInTheDocument();
+    });
   });
 
   it('renders title and preview content', () => {

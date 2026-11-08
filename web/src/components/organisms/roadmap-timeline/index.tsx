@@ -1,10 +1,12 @@
 import { iconMap } from '@/components/atoms/icon/icon-map';
 import { MatchGauge } from '@/components/atoms/match-gauge';
 import { RoadmapTopicCard } from '@/components/molecules/roadmap-topic-card';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import type { Roadmap } from '@/services/applications/types';
 import { format } from 'date-fns';
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const ScrollHintIcon = iconMap['arrow-right'];
 
@@ -66,9 +68,15 @@ export const RoadmapTimeline = ({
   interviewAt,
   actions,
 }: RoadmapTimelineProps) => {
+  const { t } = useTranslation('app');
+  const { dateFnsLocale } = useLocale();
   const goalLabel = interviewAt
-    ? `Job-ready by ${format(new Date(interviewAt), 'd MMM yyyy')}`
-    : 'Job-ready goal';
+    ? t('roadmap.timeline.goalBy', {
+        date: format(new Date(interviewAt), 'd MMM yyyy', {
+          locale: dateFnsLocale,
+        }),
+      })
+    : t('roadmap.timeline.goal');
 
   // Scroll-affordance: show a right-edge fade + animated chevron only while the
   // rail can still scroll right (there's off-screen content and we're not at the
@@ -138,7 +146,9 @@ export const RoadmapTimeline = ({
             payload={
               <div className="flex flex-col items-center gap-1">
                 <MatchGauge score={roadmap.match_score} />
-                <p className="text-label-m text-text-weak">Match score</p>
+                <p className="text-label-m text-text-weak">
+                  {t('roadmap.timeline.matchScore')}
+                </p>
               </div>
             }
           />

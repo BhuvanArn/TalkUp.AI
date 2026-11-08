@@ -1,6 +1,7 @@
 import InfoBox from '@/components/molecules/info-box';
 import NotesEditor from '@/components/molecules/notes-editor/notes-editor';
 import SimulationQueueBanner from '@/components/molecules/simulation-queue-banner';
+import type { RecruiterFallbackReasonKey } from '@/components/organisms/recruiter-avatar/types';
 import SimulationTranscriptionArea from '@/components/organisms/simulation-transcription-area';
 import { TranscriptionProps } from '@/components/organisms/simulation-transcription-area/types';
 import SimulationVideoArea from '@/components/organisms/simulation-video-area';
@@ -8,7 +9,7 @@ import VerbalAnalysisPanel from '@/components/organisms/verbal-analysis-panel';
 import { WebSocketDebugPanel } from '@/components/organisms/websocket-debug-panel';
 import {
   RECRUITER_DISPLAY_NAME,
-  RECRUITER_DISPLAY_ROLE,
+  RECRUITER_DISPLAY_ROLE_KEY,
   clearAvatarFallbackForced,
 } from '@/config/recruiter-avatar';
 import {
@@ -21,8 +22,10 @@ import {
   useVerbalAnalysis,
 } from '@/hooks/simulation';
 import type { RecruiterAvatarMode } from '@/hooks/simulation/useRecruiterAvatarCapability';
+import i18next from 'i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { ReadyState } from 'react-use-websocket';
 
 export interface SimulationWorkspaceProps {
@@ -35,10 +38,11 @@ export interface SimulationWorkspaceProps {
 
 export function SimulationWorkspace({
   applicationId,
-  title = 'Simulations',
-  description = 'Practice interview scenarios in a safe environment.',
+  title,
+  description,
   contextLabel,
 }: SimulationWorkspaceProps) {
+  const { t } = useTranslation('app');
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [wsError, setWsError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
@@ -46,7 +50,7 @@ export function SimulationWorkspace({
   const [avatarModeOverride, setAvatarModeOverride] =
     useState<RecruiterAvatarMode | null>(null);
   const [avatarRuntimeFallbackReason, setAvatarRuntimeFallbackReason] =
-    useState<string | null>(null);
+    useState<RecruiterFallbackReasonKey | null>(null);
   const packetsSentRef = useRef(0);
   const videoStreamToggleRef = useRef<(() => void) | null>(null);
   const connectRef = useRef<(url?: string) => void>(() => {});
@@ -178,10 +182,16 @@ export function SimulationWorkspace({
       interviewID,
     });
 
-  const handleAvatarFallbackRequest = useCallback((reason: string) => {
-    setAvatarModeOverride('fallback');
-    setAvatarRuntimeFallbackReason(reason);
-  }, []);
+  const handleAvatarFallbackRequest = useCallback(
+    (reasonKey: RecruiterFallbackReasonKey) => {
+      setAvatarModeOverride('fallback');
+      setAvatarRuntimeFallbackReason(reasonKey);
+    },
+    [],
+  );
+  const runtimeFallbackReason = avatarRuntimeFallbackReason
+    ? t(avatarRuntimeFallbackReason)
+    : null;
 
   const { analysis } = useVerbalAnalysis({
     message: lastJsonMessage,
@@ -200,18 +210,18 @@ export function SimulationWorkspace({
     setAvatarRuntimeFallbackReason(null);
   }, [interviewID]);
 
+  // These effects must not depend on `t`: its identity changes on every
+  // language switch, which would replay the last turn and the toasts. Turns
+  // keep only `isIA` (the speaker is translated at render) and the toasts
+  // translate with `i18next.t` when they fire.
   useEffect(() => {
     if (!transcript) return;
     const turns: TranscriptionProps[] = [];
     if (transcript.transcription) {
-      turns.push({
-        isIA: false,
-        speaker: 'You',
-        text: transcript.transcription,
-      });
+      turns.push({ isIA: false, text: transcript.transcription });
     }
     if (transcript.response) {
-      turns.push({ isIA: true, speaker: 'AI', text: transcript.response });
+      turns.push({ isIA: true, text: transcript.response });
     }
     if (turns.length > 0) {
       setTranscriptions((prev) => [...prev, ...turns]);
@@ -220,7 +230,7 @@ export function SimulationWorkspace({
 
   useEffect(() => {
     if (!simulationComplete || isAiSpeaking) return;
-    toast.success('Entretien terminé. Merci pour votre participation !');
+    toast.success(i18next.t('app:simulations.toasts.interviewEnded'));
     void handleStreamToggle(false);
   }, [simulationComplete, isAiSpeaking, handleStreamToggle]);
 
@@ -234,7 +244,7 @@ export function SimulationWorkspace({
     const text =
       typeof packet.text === 'string' && packet.text.trim()
         ? packet.text
-        : 'Une erreur est survenue pendant la transcription.';
+        : i18next.t('app:simulations.toasts.transcriptionError');
     toast.error(text);
   }, [lastJsonMessage]);
 
@@ -273,22 +283,25 @@ export function SimulationWorkspace({
 
   const avatarStatusText =
     effectiveAvatarMode === '3d'
-      ? 'Interactive 3D avatar active.'
-      : (avatarRuntimeFallbackReason ??
+      ? t('recruiter.status.interactive')
+      : (runtimeFallbackReason ??
         capabilityFallbackReason ??
-        'Static interviewer image active.');
+        t('recruiter.status.static'));
+  const heading = title ?? t('simulations.title');
 
   return (
     <div className="p-6 h-full">
       <div className="flex justify-between items-start mb-6">
         <div>
-          {title ? (
-            <h1 className="text-2xl font-bold text-text">{title}</h1>
+          {heading ? (
+            <h1 className="text-2xl font-bold text-text">{heading}</h1>
           ) : null}
-          <p className="text-text-weak">{description}</p>
+          <p className="text-text-weak">
+            {description ?? t('simulations.description')}
+          </p>
           {contextLabel ? (
             <p className="mt-2 text-sm text-idle">
-              Interview context: {contextLabel}
+              {t('simulations.interviewContext', { label: contextLabel })}
             </p>
           ) : null}
         </div>
@@ -312,7 +325,7 @@ export function SimulationWorkspace({
             avatarUrl={avatarUrl}
             avatarMode={effectiveAvatarMode}
             avatarFallbackReason={
-              avatarRuntimeFallbackReason ?? capabilityFallbackReason
+              runtimeFallbackReason ?? capabilityFallbackReason
             }
             onAvatarFallbackRequest={handleAvatarFallbackRequest}
             onStreamToggle={handleStreamToggle}
@@ -348,7 +361,7 @@ export function SimulationWorkspace({
 
           <InfoBox
             title={RECRUITER_DISPLAY_NAME}
-            text={`${RECRUITER_DISPLAY_ROLE}. ${avatarStatusText}`}
+            text={`${t(RECRUITER_DISPLAY_ROLE_KEY)}. ${avatarStatusText}`}
             icon="members"
           />
 

@@ -8,6 +8,7 @@ import { useCalendarStore } from '@/stores/useCalendarStore';
 import { createAuthGuard } from '@/utils/auth.guards';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/agenda')({
   beforeLoad: createAuthGuard('/agenda'),
@@ -30,55 +31,66 @@ const ExternalAppConnector = ({
   onConnectGoogle,
   isAppleConnected,
   onConnectApple,
-}: ExternalAppConnectorProps) => (
-  <div className="bg-white p-4 rounded-[10px] border border-gray-100 space-y-4 shadow-sm">
-    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-      Connections
-    </h3>
-    <div className="space-y-2">
-      {/* Google Connector */}
-      <Button
-        variant={isGoogleConnected ? 'text' : 'outlined'}
-        className={`w-full flex justify-start items-center transition-all ${
-          isGoogleConnected ? 'bg-green-50 border-green-200' : 'border-gray-200'
-        }`}
-        onClick={onConnectGoogle}
-      >
-        <Icon icon="google" className="mr-3" />
-        <span className="text-button-s text-idle">
-          {isGoogleConnected ? 'Google Connected' : 'Connect Google'}
-        </span>
-        {isGoogleConnected && (
-          <Icon icon="check" className="ml-auto text-green-600 w-4 h-4" />
-        )}
-      </Button>
+}: ExternalAppConnectorProps) => {
+  const { t } = useTranslation('app');
 
-      {/* Apple Connector */}
-      <Button
-        variant={isAppleConnected ? 'text' : 'outlined'}
-        className={`w-full flex justify-start items-center transition-all ${
-          isAppleConnected ? 'bg-blue-50 border-blue-200' : 'border-gray-200'
-        }`}
-        onClick={onConnectApple}
-      >
-        <Icon icon="apple" className="mr-3" />
-        <span className="text-button-s text-idle">
-          {isAppleConnected ? 'iOS Connected' : 'Connect Apple'}
-        </span>
-        {isAppleConnected && (
-          <Icon icon="check" className="ml-auto text-blue-600 w-4 h-4" />
-        )}
-      </Button>
+  return (
+    <div className="bg-white p-4 rounded-[10px] border border-gray-100 space-y-4 shadow-sm">
+      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+        {t('agenda.connections.title')}
+      </h3>
+      <div className="space-y-2">
+        {/* Google Connector */}
+        <Button
+          variant={isGoogleConnected ? 'text' : 'outlined'}
+          className={`w-full flex justify-start items-center transition-all ${
+            isGoogleConnected
+              ? 'bg-green-50 border-green-200'
+              : 'border-gray-200'
+          }`}
+          onClick={onConnectGoogle}
+        >
+          <Icon icon="google" className="mr-3" />
+          <span className="text-button-s text-idle">
+            {isGoogleConnected
+              ? t('agenda.connections.googleConnected')
+              : t('agenda.connections.connectGoogle')}
+          </span>
+          {isGoogleConnected && (
+            <Icon icon="check" className="ml-auto text-green-600 w-4 h-4" />
+          )}
+        </Button>
+
+        {/* Apple Connector */}
+        <Button
+          variant={isAppleConnected ? 'text' : 'outlined'}
+          className={`w-full flex justify-start items-center transition-all ${
+            isAppleConnected ? 'bg-blue-50 border-blue-200' : 'border-gray-200'
+          }`}
+          onClick={onConnectApple}
+        >
+          <Icon icon="apple" className="mr-3" />
+          <span className="text-button-s text-idle">
+            {isAppleConnected
+              ? t('agenda.connections.appleConnected')
+              : t('agenda.connections.connectApple')}
+          </span>
+          {isAppleConnected && (
+            <Icon icon="check" className="ml-auto text-blue-600 w-4 h-4" />
+          )}
+        </Button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /**
  * Main component for the Agenda page.
  * Displays the main calendar view, a mini-calendar, and the next upcoming event.
  * @returns {JSX.Element} The Agenda page component.
  */
-function Agenda() {
+export function Agenda() {
+  const { t } = useTranslation('app');
   const { fetchEvents, isLoading, error } = useCalendarStore();
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isAppleConnected, setIsAppleConnected] = useState(false);
@@ -115,18 +127,18 @@ function Agenda() {
       <div className="w-full min-w-0 flex flex-col justify-center">
         <div className="flex justify-between items-center w-full min-w-0 flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            <h1 className="text-h1 text-idle">Agenda TalkUp</h1>
+            <h1 className="text-h1 text-idle">{t('agenda.title')}</h1>
           </div>
           <div className="flex gap-2">
-            <Button variant="text" color="black" title="Share my agenda">
+            <Button variant="text" color="black" title={t('agenda.share')}>
               <Icon icon="share" />
               <span className="hidden sm:inline text-idle text-button-s">
-                Share my agenda
+                {t('agenda.share')}
               </span>
             </Button>
           </div>
         </div>
-        <p className="text-idle mt-2 text-h6">Plan and Organize your journey</p>
+        <p className="text-idle mt-2 text-h6">{t('agenda.subtitle')}</p>
       </div>
 
       {/* Main Content Grid */}
@@ -136,10 +148,10 @@ function Agenda() {
           <CalendarControlBar />
           {isLoading && (
             <p className="text-body-s text-gray-500" role="status">
-              Loading agenda events...
+              {t('agenda.loading')}
             </p>
           )}
-          {error && <p className="text-body-s text-red-500">{error}</p>}
+          {error && <p className="text-body-s text-red-500">{t(error)}</p>}
           <div className="flex-1 min-h-0">
             {/* CalendarContainer will eventually receive isGoogleConnected to fetch external events */}
             <CalendarContainer />

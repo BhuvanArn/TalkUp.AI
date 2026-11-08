@@ -4,13 +4,10 @@
 export interface TranscriptionProps {
   /**
    * Whether the speaker is the AI or the user.
-   * Determines the color and alignment of the bubble.
+   * Determines the color and alignment of the bubble, and the speaker label
+   * (translated at render, so it follows a language switch).
    */
   isIA: boolean;
-  /**
-   * The name/label to display for the speaker (e.g., "AI Assistant", "John", "User").
-   */
-  speaker: string;
   /**
    * The text content of the spoken message.
    */

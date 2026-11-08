@@ -1,4 +1,5 @@
 import { Icon } from '@/components/atoms/icon';
+import { useTranslation } from 'react-i18next';
 
 export interface AddNoteCardProps {
   onClick: () => void;
@@ -11,6 +12,8 @@ export interface AddNoteCardProps {
  * @returns JSX.Element
  */
 export const AddNoteCard = ({ onClick }: AddNoteCardProps) => {
+  const { t } = useTranslation('app');
+
   return (
     <button
       onClick={onClick}
@@ -23,7 +26,7 @@ export const AddNoteCard = ({ onClick }: AddNoteCardProps) => {
         />
       </div>
       <span className="text-body-md text-text-weaker group-hover:text-accent transition-colors font-medium">
-        Add new note
+        {t('notes.addNote')}
       </span>
     </button>
   );

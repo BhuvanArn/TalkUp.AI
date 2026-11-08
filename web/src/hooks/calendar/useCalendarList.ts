@@ -1,4 +1,5 @@
 import { ListEventItem } from '@/components/organisms/calendar-list/types';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import { useCalendarStore } from '@/stores/useCalendarStore';
 import { getListWeekDaysData } from '@/utils/calendarUtils';
 import { isSameDay } from 'date-fns';
@@ -22,10 +23,11 @@ export const useCalendarList = () => {
     currentDate,
     setCurrentDate,
   } = useCalendarStore();
+  const { intlLocale } = useLocale();
 
   const daysData = useMemo(
-    () => getListWeekDaysData(weekStart, events),
-    [weekStart, events],
+    () => getListWeekDaysData(weekStart, events, intlLocale),
+    [weekStart, events, intlLocale],
   );
 
   const filteredDaysData = useMemo(() => {

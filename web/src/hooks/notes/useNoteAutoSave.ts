@@ -2,6 +2,7 @@ import type { SaveStatusType } from '@/components/molecules/save-status';
 import { updateNote } from '@/services/notes/http';
 import type { Note } from '@/services/notes/types';
 import type { Editor } from '@tiptap/react';
+import i18next from 'i18next';
 import { useEffect, useRef, useState } from 'react';
 
 /** Custom hook for managing note auto-save functionality */
@@ -36,7 +37,7 @@ export const useNoteAutoSave = (
           const safeTitle =
             typeof title === 'string' && title.trim()
               ? title
-              : note?.title || 'Untitled Note';
+              : note?.title || i18next.t('app:notes.untitled');
 
           await updateNote(noteId, {
             title: safeTitle,
@@ -103,7 +104,7 @@ export const useNoteAutoSave = (
             const safeTitle =
               typeof title === 'string' && title.trim()
                 ? title
-                : note?.title || 'Untitled Note';
+                : note?.title || i18next.t('app:notes.untitled');
             await updateNote(noteId, {
               title: safeTitle,
               content,
@@ -127,7 +128,7 @@ export const useNoteAutoSave = (
         const safeTitle =
           typeof title === 'string' && title.trim()
             ? title
-            : note?.title || 'Untitled Note';
+            : note?.title || i18next.t('app:notes.untitled');
         await updateNote(noteId, {
           title: safeTitle,
           content,

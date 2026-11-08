@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /** When set, the dock is fixed to this viewport rectangle (e.g. main content column), not the full window. */
 export interface UnsavedChangesCtaAnchorRect {
@@ -32,11 +33,12 @@ export const UnsavedChangesCta = ({
   onReset,
   attentionTrigger = 0,
   anchorRect = null,
-  message = 'You have unsaved changes',
-  saveLabel = 'Save changes',
-  savedLabel = 'Saved',
-  resetLabel = 'Reset',
+  message,
+  saveLabel,
+  savedLabel,
+  resetLabel,
 }: UnsavedChangesCtaProps) => {
+  const { t } = useTranslation();
   const [isAttentionActive, setIsAttentionActive] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const attentionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -121,7 +123,7 @@ export const UnsavedChangesCta = ({
         data-attention={isAttentionActive ? 'true' : 'false'}
         aria-hidden={!isVisible}
       >
-        <span style={labelStyle}>{message}</span>
+        <span style={labelStyle}>{message ?? t('unsavedChanges.message')}</span>
         <div style={actionsStyle}>
           <Button
             type="button"
@@ -131,7 +133,7 @@ export const UnsavedChangesCta = ({
             data-testid="reset-changes-button"
             className="min-h-10 rounded-[10px] border-border bg-background px-[18px] text-sm font-medium text-text"
           >
-            {resetLabel}
+            {resetLabel ?? t('unsavedChanges.reset')}
           </Button>
           <Button
             type="button"
@@ -141,7 +143,9 @@ export const UnsavedChangesCta = ({
             data-testid="save-button"
             className="min-h-10 rounded-[10px] px-5 text-sm font-semibold"
           >
-            {isSaved ? savedLabel : saveLabel}
+            {isSaved
+              ? (savedLabel ?? t('unsavedChanges.saved'))
+              : (saveLabel ?? t('unsavedChanges.save'))}
           </Button>
         </div>
       </div>

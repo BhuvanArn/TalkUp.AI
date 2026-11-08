@@ -1,4 +1,5 @@
 import IconAction from '@/components/atoms/icon-action';
+import { useTranslation } from 'react-i18next';
 
 import { CalendarTableDayHeaderProps } from './types';
 
@@ -15,6 +16,8 @@ const CalendarTableDayHeader = ({
   view = 'week',
   onBackToWeek,
 }: CalendarTableDayHeaderProps) => {
+  const { t } = useTranslation('app');
+
   if (view === 'day') {
     return (
       <div className="pl-2 grid grid-cols-[100px_100px_1fr] items-center justify-center pt-3 pb-6">
@@ -32,7 +35,7 @@ const CalendarTableDayHeader = ({
               onBackToWeek?.();
             }}
             className="hover:bg-surface-raised z-10 mr-1 rounded-full p-1 text-idle"
-            title="Go back to Week"
+            title={t('agenda.backToWeek')}
             icon="arrow-left"
           />
         </div>

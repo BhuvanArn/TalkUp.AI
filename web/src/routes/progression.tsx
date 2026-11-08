@@ -3,7 +3,10 @@ import { Icon } from '@/components/atoms/icon';
 import GoalProgressCard from '@/components/molecules/goal-progress-card';
 import StatsCard from '@/components/molecules/stats-card';
 import SimulationHistoryTable from '@/components/organisms/simulation-history-table';
+import { useLocale } from '@/hooks/i18n/useLocale';
+import { formatPercent } from '@/utils/formatPercent';
 import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 /**
  * @interface GlobalStats
@@ -39,25 +42,32 @@ export const Route = createFileRoute('/progression')({
  * @returns {JSX.Element} The Progression page component.
  */
 function Progression() {
+  const { t } = useTranslation('app');
+  const { intlLocale } = useLocale();
+
   return (
     <div className="grid grid-rows-[96px_minmax(0,1fr)] px-4 sm:px-8 md:px-16 pt-11 pb-12 gap-11 h-screen w-full min-w-0">
       {/* Page Header (Title and Subtitle) */}
       <div className="w-full min-w-0 flex flex-col justify-center">
         <div className="flex justify-between items-center w-full min-w-0 flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            <h1 className="text-h1 text-idle">Progression and Statistics</h1>
+            <h1 className="text-h1 text-idle">{t('progression.title')}</h1>
           </div>
           <div className="flex gap-2">
-            <Button variant="text" color="black" title="Download Report">
+            <Button
+              variant="text"
+              color="black"
+              title={t('progression.downloadReport')}
+            >
               <Icon icon="download" />
               <span className="hidden sm:inline text-idle text-button-s">
-                Download Report
+                {t('progression.downloadReport')}
               </span>
             </Button>
           </div>
         </div>
         <p className="text-idle mt-2 text-body-m">
-          Visualize your evolution and identify your strengths
+          {t('progression.subtitle')}
         </p>
       </div>
 
@@ -66,42 +76,44 @@ function Progression() {
         {/* Inner Content Area (White background) */}
         <div className="bg-white rounded-[10px] px-6 py-6 h-full flex flex-col gap-6 shadow-lg">
           {/* Section 1: Key Stats Cards */}
-          <h2 className="text-h4 text-idle">Overview</h2>
+          <h2 className="text-h4 text-idle">{t('progression.overview')}</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <StatsCard
-              title="Average Score"
-              value={`${MOCK_STATS.averageScore}%`}
-              detail={`↑ ${MOCK_STATS.averageScoreChange}% over 30 days`}
+              title={t('progression.stats.averageScore')}
+              value={formatPercent(MOCK_STATS.averageScore, intlLocale)}
+              detail={t('progression.stats.averageScoreDetail', {
+                change: MOCK_STATS.averageScoreChange,
+              })}
               color="green"
             />
             <StatsCard
-              title="Total Simulations"
+              title={t('progression.stats.totalSimulations')}
               value={MOCK_STATS.totalSimulations.toString()}
-              detail="90% of goals achieved"
+              detail={t('progression.stats.totalSimulationsDetail')}
               color="blue"
             />
             <StatsCard
-              title="Total Time"
+              title={t('progression.stats.totalTime')}
               value={MOCK_STATS.totalTime}
-              detail="In practical interviews"
+              detail={t('progression.stats.totalTimeDetail')}
               color="purple"
             />
             <StatsCard
-              title="Overall Improvement"
-              value={`${MOCK_STATS.overallImprovement}%`}
-              detail="vs previous month"
+              title={t('progression.stats.improvement')}
+              value={formatPercent(MOCK_STATS.overallImprovement, intlLocale)}
+              detail={t('progression.stats.improvementDetail')}
               color="teal"
             />
             <GoalProgressCard
-              title="Next Goal"
+              title={t('progression.stats.nextGoal')}
               progress={MOCK_STATS.nextGoal}
               target={MOCK_STATS.targetGoal}
             />
           </div>
 
           {/* Section 2: Simulation History */}
-          <h2 className="text-h4 text-idle mt-6">Simulation History</h2>
+          <h2 className="text-h4 text-idle mt-6">{t('progression.history')}</h2>
 
           <div className="h-full flex flex-col min-h-0 overflow-hidden">
             <SimulationHistoryTable />

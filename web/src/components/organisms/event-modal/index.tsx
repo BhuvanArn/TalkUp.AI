@@ -9,6 +9,7 @@ import { InputMolecule } from '@/components/molecules/input-molecule';
 import { useCalendarEventModal } from '@/hooks/calendar/useCalendarEventModal';
 import { EVENT_COLORS, EventColorName } from '@/utils/eventColors';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * CalendarModal component.
@@ -17,6 +18,7 @@ import { useState } from 'react';
  * @returns The CalendarModal component for creating and editing calendar events.
  */
 const CalendarModal = () => {
+  const { t } = useTranslation(['app', 'common']);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
     useState(false);
 
@@ -60,13 +62,15 @@ const CalendarModal = () => {
           type="button"
           className="w-full h-full absolute bg-scrim/40"
           onClick={closeModal}
-          aria-label="Close event modal"
+          aria-label={t('agenda.eventModal.close')}
         />
         <div className="relative z-10 bg-white rounded-xl p-4 w-96 flex flex-col gap-3 animate-fadeIn">
           <div className="flex items-center justify-between">
             <h2 className="text-body-xl-strong text-active flex items-center gap-2">
               <Icon icon="schedule" size="lg" />
-              {modalEventToEdit ? 'Edit Event' : 'Create Event'}
+              {modalEventToEdit
+                ? t('agenda.eventModal.editTitle')
+                : t('agenda.eventModal.createTitle')}
             </h2>
             <IconAction icon="times" size="md" onClick={closeModal} />
           </div>
@@ -77,12 +81,12 @@ const CalendarModal = () => {
 
           <div className="flex flex-col gap-3 mb-3">
             <InputMolecule
-              label="Event Title"
+              label={t('agenda.eventModal.titleLabel')}
               inputType="base"
               name="title"
               value={title}
               onChange={(e) => handleChange('title', e.target.value)}
-              placeholder="Add title"
+              placeholder={t('agenda.eventModal.titlePlaceholder')}
             />
 
             <div>
@@ -90,13 +94,13 @@ const CalendarModal = () => {
                 className="text-label-m text-idle"
                 htmlFor="event-modal-description-text-area"
               >
-                Description
+                {t('agenda.eventModal.description')}
               </label>
               <TextArea
                 id="event-modal-description-text-area"
                 value={description}
                 onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="Add description"
+                placeholder={t('agenda.eventModal.descriptionPlaceholder')}
                 rows={3}
                 className="w-full"
               />
@@ -108,7 +112,7 @@ const CalendarModal = () => {
                   className="text-label-m text-idle"
                   htmlFor="event-modal-start-inputs"
                 >
-                  Start
+                  {t('agenda.eventModal.start')}
                 </label>
                 <div
                   className="flex flex-col gap-2"
@@ -130,7 +134,7 @@ const CalendarModal = () => {
                   className="text-label-m text-idle"
                   htmlFor="event-modal-start-inputs"
                 >
-                  End
+                  {t('agenda.eventModal.end')}
                 </label>
                 <div
                   className="flex flex-col gap-2"
@@ -154,7 +158,7 @@ const CalendarModal = () => {
                 className="text-label-m text-idle"
                 htmlFor="event-modal-color-inputs"
               >
-                Color
+                {t('agenda.eventModal.color')}
               </label>
               <div
                 className="flex gap-1 flex-wrap"
@@ -186,18 +190,20 @@ const CalendarModal = () => {
                 onClick={handleDeleteClick}
                 className="mr-auto"
               >
-                Delete
+                {t('common:actions.delete')}
               </Button>
             )}
             <Button color="sidebar" onClick={closeModal}>
-              Cancel
+              {t('common:actions.cancel')}
             </Button>
             <Button
               color="accent"
               onClick={handleSubmit}
               disabled={!title.trim()}
             >
-              {modalEventToEdit ? 'Update' : 'Create'}
+              {modalEventToEdit
+                ? t('agenda.eventModal.update')
+                : t('agenda.eventModal.create')}
               <Icon icon="save" size="sm" color="white" />
             </Button>
           </div>
@@ -206,12 +212,12 @@ const CalendarModal = () => {
 
       <ConfirmationModal
         isOpen={isDeleteConfirmationOpen}
-        title="Delete Event"
-        message="Are you sure you want to delete this event? This action cannot be undone."
+        title={t('agenda.eventModal.deleteTitle')}
+        message={t('agenda.eventModal.deleteMessage')}
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
-        confirmText="Delete"
-        cancelText="Cancel"
+        confirmText={t('common:actions.delete')}
+        cancelText={t('common:actions.cancel')}
       />
     </>
   );

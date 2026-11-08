@@ -1,4 +1,5 @@
 import type { Application } from '@/services/applications/types';
+import { useTranslation } from 'react-i18next';
 
 import { iconMap } from '../../atoms/icon/icon-map';
 
@@ -30,6 +31,7 @@ export const AnalysisResultCard = ({
   onRetry,
   onStartCourse,
 }: AnalysisResultProps) => {
+  const { t } = useTranslation('app');
   const SuccessIcon = iconMap['check-circle'];
   const SkillsIcon = iconMap['tasks'];
   const PathIcon = iconMap['progression'];
@@ -52,15 +54,13 @@ export const AnalysisResultCard = ({
         </div>
       </div>
 
-      <h2 className="text-h4 text-text mb-3">Analysis Complete!</h2>
+      <h2 className="text-h4 text-text mb-3">{t('cv.result.title')}</h2>
       <p className="text-body-l-strong text-text mb-1">
-        {application.jobTitle ?? 'Your target role'}
+        {application.jobTitle ?? t('cv.result.targetRole')}
         {application.companyName ? ` · ${application.companyName}` : ''}
       </p>
       <p className="text-body-l text-text-weaker mb-8 leading-relaxed">
-        Your profile has been fully processed. TalkUp has generated a
-        personalized action plan based on your strengths and recruiter
-        expectations.
+        {t('cv.result.description')}
       </p>
 
       {/* Highlights Grid */}
@@ -83,14 +83,14 @@ export const AnalysisResultCard = ({
       {/* Primary Action Zone */}
       <div className="bg-accent-weaker mb-6 rounded-3xl p-8">
         <p className="text-body-l-strong text-accent mb-5">
-          Your custom training is ready.
+          {t('cv.result.ready')}
         </p>
         <button
           type="button"
           onClick={onStartCourse}
           className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent w-full cursor-pointer rounded-xl px-8 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
-          Start My Training
+          {t('cv.result.start')}
         </button>
       </div>
 
@@ -102,7 +102,7 @@ export const AnalysisResultCard = ({
       >
         <span className="flex items-center justify-center gap-1.5">
           <RetryIcon size={14} />
-          Analyze another profile
+          {t('cv.result.retry')}
         </span>
       </button>
     </div>

@@ -1,3 +1,7 @@
+import { getLanguage } from '@/i18n';
+import { getLocale } from '@/i18n/locale';
+import i18next from 'i18next';
+
 /**
  * Formats a time duration (e.g., seconds) into a human-readable string (e.g., 00:03:45).
  * (Assuming this is your original function)
@@ -35,6 +39,7 @@ export const formatDurationISO = (seconds: number): string => {
 
 /**
  * Formats a date relative to now (e.g., "Just now", "5h ago", "3d ago", "Jan 15")
+ * in the active UI language.
  */
 export const formatRelativeDate = (date: Date): string => {
   const now = new Date();
@@ -43,13 +48,13 @@ export const formatRelativeDate = (date: Date): string => {
   const diffInDays = Math.floor(diffInHours / 24);
 
   if (diffInHours < 1) {
-    return 'Just now';
+    return i18next.t('app:time.justNow');
   } else if (diffInHours < 24) {
-    return `${diffInHours}h ago`;
+    return i18next.t('app:time.hoursAgo', { hours: diffInHours });
   } else if (diffInDays < 7) {
-    return `${diffInDays}d ago`;
+    return i18next.t('app:time.daysAgo', { days: diffInDays });
   } else {
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(getLocale(getLanguage()).intlLocale, {
       month: 'short',
       day: 'numeric',
       year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,

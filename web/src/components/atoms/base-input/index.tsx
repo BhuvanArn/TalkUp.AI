@@ -1,5 +1,6 @@
 import { cn } from '@/utils/cn';
 import React, { useId } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { BaseInputProps } from './types';
 
@@ -30,7 +31,7 @@ export const BaseInput = React.forwardRef<HTMLInputElement, BaseInputProps>(
       name = 'input',
       value = '',
       type = 'text',
-      placeholder = 'Enter text',
+      placeholder,
       disabled = false,
       readOnly = false,
       required = false,
@@ -38,6 +39,7 @@ export const BaseInput = React.forwardRef<HTMLInputElement, BaseInputProps>(
       className,
       ...rest
     } = props as BaseInputProps;
+    const { t } = useTranslation();
     const generatedId = useId();
     const inputId = id || generatedId;
 
@@ -49,7 +51,7 @@ export const BaseInput = React.forwardRef<HTMLInputElement, BaseInputProps>(
         name={name}
         type={type}
         role="textbox"
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('input.placeholder')}
         value={value}
         onChange={onChange}
         disabled={disabled}

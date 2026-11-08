@@ -1,6 +1,6 @@
 import {
   ApplicationCard,
-  STATUS_LABELS,
+  STATUS_LABEL_KEYS,
 } from '@/components/molecules/application-card';
 import type {
   Application,
@@ -15,6 +15,8 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import type { ParseKeys } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 import { iconMap } from '../../atoms/icon/icon-map';
 
@@ -24,31 +26,31 @@ const COLUMNS: {
   status: ApplicationStatus;
   dotClass: string;
   Icon: IconComponent;
-  emptyHint: string;
+  emptyHintKey: ParseKeys<'app'>;
 }[] = [
   {
     status: 'sent',
     dotClass: 'bg-accent',
     Icon: iconMap.send,
-    emptyHint: 'Drop a card here, or start a new analysis',
+    emptyHintKey: 'applications.board.emptyHints.sent',
   },
   {
     status: 'interview',
     dotClass: 'bg-warning',
     Icon: iconMap.schedule,
-    emptyHint: 'Drop a card here when an interview is scheduled',
+    emptyHintKey: 'applications.board.emptyHints.interview',
   },
   {
     status: 'accepted',
     dotClass: 'bg-success',
     Icon: iconMap['check-circle'],
-    emptyHint: "Drop a card here when it's a win 🎉",
+    emptyHintKey: 'applications.board.emptyHints.accepted',
   },
   {
     status: 'rejected',
     dotClass: 'bg-error',
     Icon: iconMap.times,
-    emptyHint: 'Rejections archive here. The training stays yours',
+    emptyHintKey: 'applications.board.emptyHints.rejected',
   },
 ];
 
@@ -69,14 +71,14 @@ const KanbanColumn = ({
   status,
   dotClass,
   Icon,
-  emptyHint,
+  emptyHintKey,
   applications,
   ...cardHandlers
 }: {
   status: ApplicationStatus;
   dotClass: string;
   Icon: IconComponent;
-  emptyHint: string;
+  emptyHintKey: ParseKeys<'app'>;
   applications: Application[];
   pendingIds: Set<string>;
   onStatusChange: (applicationId: string, status: ApplicationStatus) => void;
@@ -87,13 +89,14 @@ const KanbanColumn = ({
   ) => void;
   onOpenTraining: (applicationId: string) => void;
 }) => {
+  const { t } = useTranslation('app');
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
     <section
       ref={setNodeRef}
       data-testid={`kanban-column-${status}`}
-      aria-label={STATUS_LABELS[status]}
+      aria-label={t(STATUS_LABEL_KEYS[status])}
       className={`bg-surface-raised flex h-full min-h-[180px] flex-col gap-2.5 rounded-xl p-3 ${
         isOver ? 'ring-accent ring-2' : ''
       }`}
@@ -108,7 +111,7 @@ const KanbanColumn = ({
           aria-hidden="true"
           className="text-text-weak shrink-0"
         />
-        {STATUS_LABELS[status]}
+        {t(STATUS_LABEL_KEYS[status])}
         <span className="bg-background ml-auto rounded-full px-2">
           {applications.length}
         </span>
@@ -128,7 +131,7 @@ const KanbanColumn = ({
 
       {applications.length === 0 && (
         <p className="border-border-strong text-body-s text-text-weakest rounded-lg border-2 border-dashed p-3.5 text-center">
-          {emptyHint}
+          {t(emptyHintKey)}
         </p>
       )}
     </section>
@@ -175,13 +178,13 @@ export const ApplicationsKanban = ({
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="grid min-h-full flex-1 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {COLUMNS.map(({ status, dotClass, Icon, emptyHint }) => (
+        {COLUMNS.map(({ status, dotClass, Icon, emptyHintKey }) => (
           <KanbanColumn
             key={status}
             status={status}
             dotClass={dotClass}
             Icon={Icon}
-            emptyHint={emptyHint}
+            emptyHintKey={emptyHintKey}
             applications={applications.filter((app) => app.status === status)}
             pendingIds={pendingIds}
             onStatusChange={onStatusChange}

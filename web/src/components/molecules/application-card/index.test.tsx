@@ -1,9 +1,11 @@
+import { changeLanguage } from '@/i18n';
 import type { Application } from '@/services/applications/types';
 import { DndContext } from '@dnd-kit/core';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18next from 'i18next';
 import { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ApplicationCard } from './index';
 
@@ -144,5 +146,29 @@ describe('ApplicationCard', () => {
       />,
     );
     expect(screen.getByLabelText('Application actions')).toBeDisabled();
+  });
+});
+
+describe('ApplicationCard in French', () => {
+  afterEach(async () => {
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('formats the interview date and the sent time in French', async () => {
+    await act(() => changeLanguage('fr'));
+    wrap(
+      <ApplicationCard
+        application={{ ...app, interviewAt: '2026-07-26T10:00:00.000Z' }}
+        isPending={false}
+        onStatusChange={noop}
+        onDelete={noop}
+        onInterviewAtChange={noop}
+        onOpenTraining={noop}
+      />,
+    );
+    expect(screen.getByText('Entretien le 26 juil. 2026')).toBeInTheDocument();
+    expect(screen.getByText(/^Envoyée il y a /)).toBeInTheDocument();
+    expect(screen.getByText('Reprendre l’entraînement')).toBeInTheDocument();
   });
 });

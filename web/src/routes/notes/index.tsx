@@ -5,6 +5,7 @@ import { AddNoteCard } from '@/components/molecules/add-note-card';
 import { EmptyState } from '@/components/molecules/empty-state';
 import { NoteCard } from '@/components/organisms/note-card';
 import type { NoteCardBadge } from '@/components/organisms/note-card/types';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import { useNoteCreation } from '@/hooks/notes/useNoteCreation';
 import { useNoteFavorite } from '@/hooks/notes/useNoteFavorite';
 import { useNoteNavigation } from '@/hooks/notes/useNoteNavigation';
@@ -12,8 +13,11 @@ import { useNotesList } from '@/hooks/notes/useNotesList';
 import { useApplications } from '@/services/applications/hooks';
 import { type Note, type NoteKind, getNoteKind } from '@/services/notes/types';
 import { createAuthGuard } from '@/utils/auth.guards';
+import { formatJobAtCompany } from '@/utils/jobAtCompany';
 import { Link, createFileRoute } from '@tanstack/react-router';
+import type { ParseKeys } from 'i18next';
 import { useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 export interface NotesSearch {
   applicationId?: string;
@@ -33,22 +37,24 @@ export const Route = createFileRoute('/notes/')({
 
 type KindFilter = 'all' | NoteKind;
 
-const FILTERS: { key: KindFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'general', label: 'General' },
-  { key: 'application', label: 'Application' },
-  { key: 'simulation', label: 'Simulation' },
+const FILTERS: { key: KindFilter; labelKey: ParseKeys<'app'> }[] = [
+  { key: 'all', labelKey: 'notes.filters.all' },
+  { key: 'general', labelKey: 'notes.filters.general' },
+  { key: 'application', labelKey: 'notes.filters.application' },
+  { key: 'simulation', labelKey: 'notes.filters.simulation' },
 ];
 
 /** Human date for a note's simulation/creation moment. */
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, {
+const formatDate = (iso: string, intlLocale: string) =>
+  new Date(iso).toLocaleDateString(intlLocale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   });
 
 export function Notes() {
+  const { t } = useTranslation(['app', 'common']);
+  const { intlLocale } = useLocale();
   const { applicationId } = Route.useSearch();
   const {
     notes,
@@ -66,13 +72,11 @@ export function Notes() {
   const appLabelById = useMemo(() => {
     const map = new Map<string, string>();
     for (const app of applications ?? []) {
-      const label = [app.jobTitle, app.companyName]
-        .filter(Boolean)
-        .join(' at ');
-      map.set(app.applicationId, label || 'this application');
+      const label = formatJobAtCompany(app.jobTitle, app.companyName);
+      map.set(app.applicationId, label || t('notes.thisApplication'));
     }
     return map;
-  }, [applications]);
+  }, [applications, t]);
 
   const [filter, setFilter] = useState<KindFilter>('all');
 
@@ -102,15 +106,19 @@ export function Notes() {
       : undefined;
     if (kind === 'simulation') {
       return {
-        label: 'Taken during simulation',
+        label: t('notes.badges.simulation'),
         tone: 'simulation',
         // created_at is when the note was written during the simulation.
-        sublabel: [appLabel, formatDate(note.created_at)]
+        sublabel: [appLabel, formatDate(note.created_at, intlLocale)]
           .filter(Boolean)
           .join(' · '),
       };
     }
-    return { label: 'Application', tone: 'application', sublabel: appLabel };
+    return {
+      label: t('notes.badges.application'),
+      tone: 'application',
+      sublabel: appLabel,
+    };
   };
 
   const handleToggleFavorite = async (id: string) => {
@@ -133,7 +141,7 @@ export function Notes() {
         navigateToNote(newNote.note_id);
       }
     } catch {
-      setError('Failed to create note. Please try again.');
+      setError('notes.errors.create');
     }
   };
 
@@ -142,17 +150,17 @@ export function Notes() {
       <div className="w-full min-w-0 flex flex-col justify-center gap-4">
         <div className="flex justify-between items-center w-full min-w-0 flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            <h1 className="text-h1 text-text-idle">My Notes</h1>
+            <h1 className="text-h1 text-text-idle">{t('notes.title')}</h1>
           </div>
           <div className="flex gap-2">
             <Button
               variant="text"
               color="black"
-              title="Add new note"
+              title={t('notes.addNote')}
               onClick={handleAddNewNote}
             >
               <Icon icon="plus" />
-              <span className="hidden sm:inline">Add new note</span>
+              <span className="hidden sm:inline">{t('notes.addNote')}</span>
             </Button>
           </div>
         </div>
@@ -160,23 +168,29 @@ export function Notes() {
         {applicationId ? (
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-body-m text-text-weak">
-              Showing notes for{' '}
-              <span className="font-semibold text-text-idle">
-                {scopedAppLabel ?? 'this application'}
-              </span>
+              {/* The label is user data: pass it as a child, never in `values`. */}
+              <Trans
+                ns="app"
+                i18nKey="notes.showingFor"
+                components={{
+                  application: (
+                    <span className="font-semibold text-text-idle">
+                      {scopedAppLabel ?? t('notes.thisApplication')}
+                    </span>
+                  ),
+                }}
+              />
             </span>
             <Link
               to="/notes"
               className="text-button-m text-accent hover:text-accent-hover inline-flex items-center gap-1"
             >
               <Icon icon="arrow-left" className="w-4 h-4" aria-hidden="true" />
-              Back to all notes
+              {t('notes.backToAll')}
             </Link>
           </div>
         ) : (
-          <p className="text-text-idle">
-            Add Notes, Share them and Access them during Practice !
-          </p>
+          <p className="text-text-idle">{t('notes.subtitle')}</p>
         )}
 
         {/* Kind filter. Application scope is applied server-side; these chips
@@ -196,7 +210,7 @@ export function Notes() {
                     : 'border-border text-text-weak hover:border-accent hover:text-accent'
                 }`}
               >
-                {f.label}
+                {t(f.labelKey)}
               </button>
             );
           })}
@@ -205,33 +219,33 @@ export function Notes() {
       <div className="w-full min-w-0 h-full overflow-auto">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-text-weaker">Loading notes...</p>
+            <p className="text-text-weaker">{t('notes.loading')}</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-error mb-4">{error}</p>
+            <p className="text-error mb-4">{t(error)}</p>
             <Button
               variant="contained"
               color="accent"
               onClick={() => window.location.reload()}
             >
-              Retry
+              {t('common:actions.retry')}
             </Button>
           </div>
         ) : notes.length === 0 ? (
           <EmptyState
             icon="notes"
-            title="No notes yet"
-            description="Create your first note to get started. Notes help you organize your thoughts and prepare for practice sessions."
-            actionLabel="Create your first note"
+            title={t('notes.empty.title')}
+            description={t('notes.empty.description')}
+            actionLabel={t('notes.empty.cta')}
             onAction={handleAddNewNote}
           />
         ) : visibleNotes.length === 0 ? (
           <EmptyState
             icon="notes"
-            title="No notes of this kind"
-            description="Nothing matches this filter yet. Pick another kind or create a new note."
-            actionLabel="Show all notes"
+            title={t('notes.emptyFilter.title')}
+            description={t('notes.emptyFilter.description')}
+            actionLabel={t('notes.emptyFilter.cta')}
             onAction={() => setFilter('all')}
           />
         ) : (
