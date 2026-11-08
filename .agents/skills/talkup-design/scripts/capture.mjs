@@ -10,10 +10,8 @@
 // stays readable at real size in the pistes page.
 import { chromium } from "@playwright/test";
 import { fileURLToPath } from "node:url";
+import { DEV_OVERLAYS, SessionExpired, checkSession, settle } from "./app.mjs";
 import { saveSession, warnSaveFailed } from "./session.mjs";
-
-const DEV_OVERLAYS =
-  ".TanStackRouterDevtools,.tsqd-parent-container,[data-talkup-audit-ignore]";
 
 function parse(argv) {
   const o = {
@@ -53,19 +51,6 @@ function parse(argv) {
   return o;
 }
 
-const settle = (page) =>
-  page.evaluate(() =>
-    Promise.race([
-      Promise.all(
-        document
-          .getAnimations()
-          .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
-          .map((a) => a.finished.catch(() => {})),
-      ),
-      new Promise((r) => setTimeout(r, 3000)),
-    ]),
-  );
-
 const o = parse(process.argv.slice(2));
 if (!o.url || !o.out) {
   console.error(
@@ -96,16 +81,11 @@ try {
     colorScheme: o.theme === "dark" ? "dark" : "light",
   });
   await page.goto(o.url, { waitUntil: "networkidle" });
-  const want = new URL(o.url);
-  if (
-    want.protocol.startsWith("http") &&
-    new URL(page.url()).pathname.startsWith("/login") &&
-    !want.pathname.startsWith("/login")
-  ) {
-    console.error(
-      `${o.url} redirected to /login: the session expired. Run login.mjs again and retry.`,
-    );
-    process.exitCode = 3;
+  try {
+    checkSession(page, o.url);
+  } catch (e) {
+    if (!(e instanceof SessionExpired)) throw e;
+    console.error(e.message);
     await browser.close();
     process.exit(3);
   }
