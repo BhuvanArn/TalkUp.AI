@@ -5,6 +5,7 @@ import { ConfirmModal } from '@/components/molecules/confirm-modal';
 import { cn } from '@/utils/cn';
 import { Laptop, Smartphone } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /** A browser or app session tied to the signed-in account (for display; API will replace mock data). */
 export interface AccountSession {
@@ -60,6 +61,7 @@ export function SecuritySettings({
   onRequestDataExport,
   onDeleteAccount,
 }: SecuritySettingsProps) {
+  const { t } = useTranslation(['settings', 'common']);
   const [localEmailOnNewDevice, setLocalEmailOnNewDevice] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [logoutEverywhereOpen, setLogoutEverywhereOpen] = useState(false);
@@ -70,10 +72,11 @@ export function SecuritySettings({
   return (
     <div className="flex flex-col gap-6">
       <section className={cardClass}>
-        <h3 className="mb-1 text-base font-bold text-text">Password</h3>
+        <h3 className="mb-1 text-base font-bold text-text">
+          {t('securitySettings.password.title')}
+        </h3>
         <p className="mb-4 text-sm text-text-weaker">
-          Use a unique password for TalkUp. If you reuse a password from another
-          service, change it here after any breach elsewhere.
+          {t('securitySettings.password.desc')}
         </p>
         <Button
           type="button"
@@ -82,23 +85,23 @@ export function SecuritySettings({
           size="md"
           onClick={onChangePassword}
         >
-          Change password
+          {t('securitySettings.password.change')}
         </Button>
       </section>
 
       <section className={cardClass}>
         <h3 className="mb-1 text-base font-bold text-text">
-          Sign-in notifications
+          {t('securitySettings.signIn.title')}
         </h3>
         <p className="mb-3 text-sm text-text-weaker">
-          Get an email when a new device or browser signs in to your account.
+          {t('securitySettings.signIn.desc')}
         </p>
         <div className="flex items-center justify-between gap-3">
           <label
             htmlFor="security-email-new-device"
             className="cursor-pointer text-sm text-text"
           >
-            Email me when a new device is used
+            {t('securitySettings.signIn.emailOnNewDevice')}
           </label>
           <Toggle
             id="security-email-new-device"
@@ -110,7 +113,7 @@ export function SecuritySettings({
                 setLocalEmailOnNewDevice(next);
               }
             }}
-            aria-label="Email me when a new device is used"
+            aria-label={t('securitySettings.signIn.emailOnNewDevice')}
           />
         </div>
       </section>
@@ -118,12 +121,11 @@ export function SecuritySettings({
       {sessions.length > 0 && (
         <section className={cardClass}>
           <h3 className="mb-1 text-base font-bold text-text">
-            Devices & sessions
+            {t('securitySettings.sessions.title')}
           </h3>
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <p className="min-w-0 flex-1 text-sm text-text-weaker">
-              These sessions can use your account. Revoke any you do not
-              recognize.
+              {t('securitySettings.sessions.desc')}
             </p>
             {onLogoutEverywhere && (
               <Button
@@ -134,13 +136,13 @@ export function SecuritySettings({
                 disabled={otherSessionCount === 0}
                 title={
                   otherSessionCount === 0
-                    ? 'No other devices to sign out'
+                    ? t('securitySettings.sessions.noOtherDevices')
                     : undefined
                 }
                 className="w-full shrink-0 sm:w-auto"
                 onClick={() => setLogoutEverywhereOpen(true)}
               >
-                Log out everywhere
+                {t('securitySettings.sessions.logoutEverywhere')}
               </Button>
             )}
           </div>
@@ -168,7 +170,7 @@ export function SecuritySettings({
                       </span>
                       {s.isCurrent && (
                         <Badge color="success" className="!h-5 !min-h-0 !py-0">
-                          This device
+                          {t('securitySettings.sessions.thisDevice')}
                         </Badge>
                       )}
                     </div>
@@ -191,7 +193,7 @@ export function SecuritySettings({
                     className="min-h-0 shrink-0 self-center py-1.5"
                     onClick={() => onRevokeSession?.(s.id)}
                   >
-                    Revoke
+                    {t('securitySettings.sessions.revoke')}
                   </Button>
                 )}
               </li>
@@ -202,10 +204,11 @@ export function SecuritySettings({
 
       {onRequestDataExport && (
         <section className={cardClass}>
-          <h3 className="mb-1 text-base font-bold text-text">Your data</h3>
+          <h3 className="mb-1 text-base font-bold text-text">
+            {t('securitySettings.data.title')}
+          </h3>
           <p className="mb-4 text-sm text-text-weaker">
-            Download a copy of the profile and activity data we store for your
-            account (subject to product limits).
+            {t('securitySettings.data.desc')}
           </p>
           <Button
             type="button"
@@ -214,7 +217,7 @@ export function SecuritySettings({
             size="md"
             onClick={onRequestDataExport}
           >
-            Request a copy of my data
+            {t('securitySettings.data.request')}
           </Button>
         </section>
       )}
@@ -224,10 +227,11 @@ export function SecuritySettings({
           'rounded-xl border-2 border-error/35 bg-error-weaker/40 px-5 py-5 md:px-6 dark:bg-error-weaker/20',
         )}
       >
-        <h3 className="mb-1 text-base font-bold text-error">Danger zone</h3>
+        <h3 className="mb-1 text-base font-bold text-error">
+          {t('securitySettings.danger.title')}
+        </h3>
         <p className="mb-4 text-sm text-text-weaker">
-          Deleting your account removes your profile, preferences, and access to
-          TalkUp. This cannot be undone.
+          {t('securitySettings.danger.desc')}
         </p>
         <Button
           type="button"
@@ -236,16 +240,16 @@ export function SecuritySettings({
           size="md"
           onClick={() => setDeleteModalOpen(true)}
         >
-          Delete my account
+          {t('securitySettings.danger.delete')}
         </Button>
       </section>
 
       <ConfirmModal
         isOpen={logoutEverywhereOpen}
-        title="Log out of other devices?"
-        message="You will be signed out everywhere except on this browser. Other devices will need to sign in again."
-        confirmLabel="Sign out other devices"
-        cancelLabel="Cancel"
+        title={t('securitySettings.logoutModal.title')}
+        message={t('securitySettings.logoutModal.message')}
+        confirmLabel={t('securitySettings.logoutModal.confirm')}
+        cancelLabel={t('common:actions.cancel')}
         confirmColor="accent"
         icon="warning"
         onConfirm={() => {
@@ -257,10 +261,10 @@ export function SecuritySettings({
 
       <ConfirmModal
         isOpen={deleteModalOpen}
-        title="Delete your account?"
-        message="You will lose access to TalkUp and your data will be scheduled for deletion according to our retention policy. This action cannot be undone."
-        confirmLabel="Delete account"
-        cancelLabel="Cancel"
+        title={t('securitySettings.deleteModal.title')}
+        message={t('securitySettings.deleteModal.message')}
+        confirmLabel={t('securitySettings.deleteModal.confirm')}
+        cancelLabel={t('common:actions.cancel')}
         confirmColor="error"
         icon="trash"
         onConfirm={() => {
