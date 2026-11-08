@@ -2,7 +2,7 @@
 
 **Read this when:** writing any visible string in a piste or in code.
 **Why:** copy is as visible as any pixel, and generic copy is the fastest AI tell. TalkUp is bilingual (FR/EN): French is 20–30 % longer and breaks layouts that were only checked in English.
-**Sources:** `web/I18N.md` (from the i18n work, issue #199), NN/g UX writing, `docs/design/research/research-taste-ai-look.md` §1.6 and §2.6.
+**Sources:** `web/I18N.md` (i18n conventions, issue #199), NN/g UX writing, `docs/design/research/research-taste-ai-look.md` §1.6 and §2.6.
 
 ## Contents
 1. Copy rules
@@ -28,7 +28,7 @@
 
 | Rule | Example |
 |---|---|
-| Narrow no-break space (U+202F) before `; ! ?` and no-break space (U+00A0) before `:` | « Prêt ? », « Statut : envoyée » |
+| No-break space before `; : ! ?` (in pistes `fr-typo.mjs` puts U+202F before `; ! ?`; locale files use U+00A0 everywhere, see §3) | « Prêt ? », « Statut : envoyée » |
 | Guillemets with no-break spaces inside | « Envoyer » |
 | No-break space between number and unit | 10 min, 3 h, 12 €, 5 Mo |
 | Euro after the number | 12 € |
@@ -41,12 +41,17 @@
 
 ## 3. i18n mechanics (from `web/I18N.md`)
 
-- Strings live in `web/src/locales/{en,fr}/<namespace>.json`; namespaces `common`, `landing`, `auth`, `app`, `settings`. `en` is the source; add every key to `fr` in the same change (a unit test fails otherwise; unknown keys fail `tsc`).
+The app is bilingual (i18next, issue #199): no visible string is hard-coded in a component. `web/I18N.md` is the reference; read it before the first string you add.
+
+- Strings live in `web/src/locales/{en,fr}/<namespace>.json`; namespaces `common`, `landing`, `auth`, `app`, `settings`. The *File ownership* table in `web/I18N.md` says which namespace a file writes to (shared atoms and molecules → `common`). `en` is the source; add every key to `fr` in the same change (a unit test fails otherwise; unknown keys fail `tsc`).
 - Keys: nested camelCase, by role not by text: `applications.detail.backLink`, not `applications.allApplications`.
 - `useTranslation('<ns>')`, `t('key')`; plurals `_one` / `_other` only, pass `count`; inline markup with `<Trans components={{…}}>`, never a sentence split into several keys; user or URL values as component children, never in `values`.
-- Translate `aria-label`, `alt`, `title`, `placeholder` too.
-- Dates and numbers: `useLocale()` / `getLocale()` for `date-fns` and `Intl`.
-- If `web/I18N.md` is not on your branch yet, the i18n work has not merged: still write keys-ready copy (EN + FR) in the piste, and flag it in the PR.
+- Translate `aria-label`, `ariaLabel`, `alt`, `title`, `placeholder` and visible `label`s too. A redesign that adds a label, a placeholder or an accessible name adds a key in both languages.
+- Constants outside components (option lists, steps, testimonials) hold typed keys (`ParseKeys<'<ns>'>`), not text; `t()` runs at render. Never store translated text in state: store the key, translate when rendering, so a language switch updates it.
+- Dates and numbers: `useLocale()` / `getLocale()` for `date-fns` and `Intl` (percentages, ratings, counts), never a hard-coded `'fr-FR'` / `'en-US'`.
+- French spacing in `fr` locale files: follow the shipped files, which use the no-break space U+00A0 before `; : ! ?` and inside « » (`fr` specs match on it). `fr-typo.mjs` is for pistes; do not run it on locale files.
+- Restyling a translated file: change the classes and the structure, keep the `t()` calls. Never bring back an English literal from an older version of the file.
+- Tests render the real translations, pinned to `en` (`web/src/tests/setupTests.ts`): select by the English text, do not mock `react-i18next`. A changed `fr` value can break `*/fr.spec.tsx`: run the tests of the area.
 
 ## 4. In pistes
 

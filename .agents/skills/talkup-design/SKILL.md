@@ -29,7 +29,7 @@ Track these seven phases as a checklist. Each produces something; do not skip a 
 | 1 | **References** | Real products that solved it, each with what you take and what you leave; the seminar principles and designer quotes that apply | 1–2 | 3–5 |
 | 2 | **Pistes** | `docs/design/pistes/<slug>/index.html`, every slot filled, FR + EN, light + dark, *Recommandation* and *Questions bloquantes* filled | 2 variants placed in a cropped capture of the real screen | 3 pistes that differ on a decision: safe, TalkUp, forward-looking |
 | 3 | **Stop** | Message to the human: the page path, one line per piste, your recommendation and the blocking questions. **End your turn.** | yes | yes |
-| 4 | **Implement** | The chosen piste with existing components and tokens; new copy in FR and EN (i18n keys if `web/src/locales/` exists on your branch, otherwise in the PR description); the team's choice recorded in the page's *Décision* block | yes | yes |
+| 4 | **Implement** | The chosen piste with existing components and tokens; new copy as i18n keys in `en` and `fr` (`references/copy-i18n.md` §3, `web/I18N.md`), no hard-coded string; the team's choice recorded in the page's *Décision* block | yes | yes |
 | 5 | **Audit** | `run-audit.mjs` (light + dark, 1440 + 390, `--axe`) and `tells.mjs --diff`: every FAIL fixed, every WARN fixed or justified | yes | yes |
 | 6 | **Critique** | Screenshots 1440 + 390, light + dark, FR + EN; your critique in the designer's form (element, measurement, why it matters, proposal); fixes applied | yes | yes |
 
@@ -45,7 +45,7 @@ The page inlines the real tokens and has slots per piste: **Intention, Idée for
 
 - **Backlog item?** Piste A is the Figma decision applied to today's screen, with the states the Figma lacks. Where the Figma itself breaks a rule of this skill (an unlabelled icon button, a tell, a missing prerequisite like R1), piste A keeps the intent, fixes the rule, and lists each fix in *Écarts*. B and C may depart from the decision; say so in *Écarts* and in the recommendation ("departs from Ap1: needs the designer's OK").
 - Draw the mockup with tokens (`var(--color-…)`, `.text-h3`, `--radius-button`), never hex. Mockups at the real width of their device: on desktop the content area (sidebar optional), 390 phone frames for mobile-only screens. While the mobile shell (backlog M1) is not built, draw a 390 screen on its own and name the M1 dependency in the questions; the page opens one piste at a time. Sample the real surfaces from your "Avant" captures: in dark, the signed-in main area is `--color-white` (the darkest navy), not `--color-background`.
-- Real content at real length, the **same persona and data in every piste**, both languages (`data-lang="fr|en"`), French first because it is longer. New copy exists in FR and EN even if the locale files are not on your branch yet; existing user data (job titles, summaries, generated talking points) stays as shipped: wrap it in `lang="en"` inside the FR view and note it. Run `node $S/fr-typo.mjs <page>` for French spacing (it only touches `data-lang="fr"` text, and skips `lang="en"`).
+- Real content at real length, the **same persona and data in every piste**, both languages (`data-lang="fr|en"`), French first because it is longer. New copy exists in FR and EN, ready to become keys; existing user data (job titles, summaries, generated talking points) stays as shipped: wrap it in `lang="en"` inside the FR view and note it. Run `node $S/fr-typo.mjs <page>` for French spacing (it only touches `data-lang="fr"` text, and skips `lang="en"`).
 - Show the states that matter (empty, error, loading, overflow, sent…), and write their numbers in *États et mesures* (a short list is fine there): contrast ratios, target sizes, gaps. Several states of one phone screen: lay them out side by side and let them wrap, never in a horizontally scrolling strip.
 - Emotional moments (empty, blocker, success): a simple inline SVG in the TalkUp style, or a placeholder that names the illustration and its Figma reference. Never an emoji.
 - Changes inside an existing screen (small or not): `node $S/capture.mjs <url> --out <page dir>/context.png --clip <selector of the zone> [--theme dark] [--storage "$STATE"]`, then place each variant in `.context > .slot` at real size, or in `.stack` (capture above, mockup below) when the variant pushes content down. `--click <sel>` opens a tab or menu first, `--hide <sel>` removes floating widgets.
@@ -101,7 +101,7 @@ The app: `VITE_PORT=8081 npm run dev:web` (signed-in pages also need the server;
 - [ ] Audit: no FAIL in light and dark at 1440 and 390; WARNs fixed or justified in the PR.
 - [ ] `tells.mjs --diff` clean, or each line justified with `design-ok: <why>`.
 - [ ] Screenshots (light/dark × 1440/390) in the PR.
-- [ ] New copy in FR and EN (i18n keys once `web/src/locales/` exists); French layout checked.
+- [ ] New copy as i18n keys in `en` and `fr` (labels, placeholders and `aria-label`s included), no hard-coded string; French layout checked.
 - [ ] Backlog item removed if implemented; token proposals applied only if approved.
 
 ## Red flags
