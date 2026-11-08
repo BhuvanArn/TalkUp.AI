@@ -1,4 +1,5 @@
 import { Button } from '@/components/atoms/button';
+import LanguageSwitcher from '@/components/molecules/language-switcher';
 import Logo from '@/components/molecules/logo';
 import ThemeToggle from '@/components/molecules/theme-toggle';
 import { APP_HOME } from '@/config/routes.config';
@@ -77,6 +78,7 @@ const LandingNav = () => {
 
         <div className="hidden items-center gap-3 lg:flex">
           <ThemeToggle />
+          <LanguageSwitcher className={FOCUS_RING} />
           {/* Sized to what it shows, so signed-in users get no gap next to
               Open the app. A signed-in user reloading /about or /privacy sees
               the links shift once when the status arrives: accepted, rather
@@ -164,6 +166,7 @@ const LandingNav = () => {
             </li>
             <li className="mt-2 flex flex-col gap-2">
               <ThemeToggle />
+              <LanguageSwitcher className={FOCUS_RING} />
               {/* As on desktop, nothing is reserved: if the status arrives while
                   the menu is open (slow network), the two guest buttons become one.
                   Accepted: the menu usually opens after the status is known. */}

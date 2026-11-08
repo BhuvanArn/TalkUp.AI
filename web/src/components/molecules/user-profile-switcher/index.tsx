@@ -1,5 +1,6 @@
 import { Avatar } from '@/components/atoms/avatar';
 import { Icon } from '@/components/atoms/icon';
+import LanguageSwitcher from '@/components/molecules/language-switcher';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { fetchMyProfile } from '@/services/users/http';
@@ -19,6 +20,10 @@ const menuPanelClass =
 
 const menuItemClass =
   'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-body-s font-medium text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
+// Shared by the compact theme and language buttons of the menu's bottom row.
+const menuIconButtonClass =
+  'h-9 rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer';
 // Falls back to the live brand accent token so the avatar follows the active
 // view (blue normally, emerald in the organization view). A user's explicit
 // avatarAccentColor still overrides it.
@@ -267,23 +272,36 @@ export const UserProfileSwitcher = ({
             <hr className="my-1 border-border" />
 
             <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-              <button
-                type="button"
-                role="menuitem"
-                className="flex size-9 items-center justify-center rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
-                aria-label={
-                  theme === 'light'
-                    ? 'Switch to dark theme'
-                    : 'Switch to light theme'
-                }
-                onClick={() => toggleTheme()}
-              >
-                <Icon
-                  icon={theme === 'light' ? 'moon' : 'sun'}
-                  size="sm"
-                  color="neutral"
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={cn(
+                    menuIconButtonClass,
+                    'flex w-9 items-center justify-center',
+                  )}
+                  aria-label={
+                    theme === 'light'
+                      ? 'Switch to dark theme'
+                      : 'Switch to light theme'
+                  }
+                  onClick={() => toggleTheme()}
+                >
+                  <Icon
+                    icon={theme === 'light' ? 'moon' : 'sun'}
+                    size="sm"
+                    color="neutral"
+                  />
+                </button>
+                <LanguageSwitcher
+                  unstyled
+                  role="menuitem"
+                  className={cn(
+                    menuIconButtonClass,
+                    'flex items-center px-2 text-body-s font-medium',
+                  )}
                 />
-              </button>
+              </div>
               <button
                 type="button"
                 role="menuitem"
