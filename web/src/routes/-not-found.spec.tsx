@@ -1,5 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { changeLanguage } from '@/i18n';
+import { act, render, screen } from '@testing-library/react';
+import i18next from 'i18next';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import NotFoundPage from './-not-found';
 
@@ -72,5 +74,32 @@ describe('NotFoundPage', () => {
     expect(screen.getByTestId('not-found-logo')).toBeInTheDocument();
     rerender(<NotFoundPage isAuthenticated />);
     expect(screen.queryByTestId('not-found-logo')).not.toBeInTheDocument();
+  });
+});
+
+describe('NotFoundPage in French', () => {
+  // setupTests pins English for every other test.
+  afterEach(async () => {
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders the copy and actions in French', async () => {
+    await act(() => changeLanguage('fr'));
+    const { rerender } = render(<NotFoundPage isAuthenticated={false} />);
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Page introuvable' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Se connecter' })).toHaveAttribute(
+      'href',
+      '/login',
+    );
+    expect(screen.getByTestId('not-found-logo')).toHaveAccessibleName(
+      'Accueil TalkUp',
+    );
+    rerender(<NotFoundPage isAuthenticated />);
+    expect(
+      screen.getByRole('button', { name: 'Revenir en arrière' }),
+    ).toBeInTheDocument();
   });
 });

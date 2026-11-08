@@ -1,5 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { changeLanguage } from '@/i18n';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import i18next from 'i18next';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import LandingFooter from './index';
 
@@ -129,5 +131,35 @@ describe('LandingFooter', () => {
     );
     expect(contactClicks).toEqual(['footer']);
     document.removeEventListener('click', stayOnPage);
+  });
+});
+
+describe('LandingFooter in French', () => {
+  // setupTests pins English for every other test.
+  afterEach(async () => {
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('renders the blurb, columns and links in French', async () => {
+    await act(() => changeLanguage('fr'));
+    render(<LandingFooter />);
+    expect(
+      screen.getByText(
+        `La préparation aux entretiens, conçue par quatre étudiants d’Epitech. © ${new Date().getFullYear()} Talkup.`,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Produit' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('navigation', { name: 'Entreprise' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Confidentialité' }),
+    ).toHaveAttribute('href', '/privacy');
+    expect(
+      screen.getByRole('list', { name: 'Réseaux sociaux' }),
+    ).toBeInTheDocument();
   });
 });

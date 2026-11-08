@@ -1,1 +1,337 @@
-{}
+{
+  "settingsPages": {
+    "billing": "Facturation",
+    "integrations": "Intégrations",
+    "security": "Sécurité"
+  },
+  "profile": {
+    "title": "Profil",
+    "loading": "Chargement du profil…",
+    "loadError": "Impossible de charger votre profil. Actualisez la page ou réessayez plus tard.",
+    "saveError": "Impossible d’enregistrer votre profil. Veuillez réessayer.",
+    "passwordResetError": "Impossible de lancer la réinitialisation du mot de passe pour le moment. Veuillez réessayer.",
+    "tabs": {
+      "general": "Général",
+      "appearance": "Apparence",
+      "notifications": "Notifications",
+      "security": "Sécurité",
+      "organization": "Organisation"
+    },
+    "banner": {
+      "changeStyle": "Changer de style",
+      "changeStyleLabel": "Changer le style de la bannière"
+    },
+    "avatar": {
+      "uploadTitle": "Importer une photo de profil",
+      "fallbackAlt": "Profil",
+      "change": "Changer la photo de profil",
+      "choose": "Choisir une photo",
+      "take": "Prendre une photo",
+      "remove": "Supprimer",
+      "imageError": "Impossible d’utiliser cette image. Essayez un autre fichier."
+    },
+    "header": {
+      "subtitle": "{{jobTitle}} · TalkUp Pro",
+      "defaultJobTitle": "Membre"
+    },
+    "intro": {
+      "title": "Présentation",
+      "bioLabel": "Profil utilisateur :"
+    },
+    "goal": {
+      "title": "Objectif"
+    },
+    "notifications": {
+      "training": {
+        "label": "Rappels d’entraînement",
+        "desc": "Une notification quotidienne pour vous entraîner"
+      },
+      "recruiters": {
+        "label": "Messages",
+        "desc": "Alertes pour les nouveaux messages"
+      },
+      "simulations": {
+        "label": "Résultats des simulations",
+        "desc": "Un bilan après chaque simulation"
+      },
+      "updates": {
+        "label": "Nouveautés TalkUp",
+        "desc": "Nouveaux outils et fonctionnalités"
+      },
+      "weekly": {
+        "label": "Résumé hebdomadaire",
+        "desc": "Le point sur vos progrès chaque lundi"
+      }
+    }
+  },
+  "generalSettings": {
+    "identity": "Identité",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "username": "Nom d’utilisateur",
+    "aboutContact": "À propos et contact",
+    "bio": "Bio",
+    "phone": "Numéro de téléphone",
+    "linkedin": "URL LinkedIn",
+    "jobTitle": "Poste",
+    "jobOptions": {
+      "productManagerCandidate": "Candidat Product Manager",
+      "productDesigner": "Product Designer",
+      "softwareEngineer": "Ingénieur logiciel"
+    },
+    "jobTitleNone": "Aucun poste"
+  },
+  "appearanceSettings": {
+    "color": {
+      "title": "Couleur du profil",
+      "desc": "Choisissez la couleur de votre avatar et la couleur d’accentuation",
+      "use": "Utiliser la couleur {{name}}",
+      "custom": "Couleur personnalisée",
+      "names": {
+        "blue": "bleue",
+        "green": "verte",
+        "orange": "orange",
+        "pink": "rose",
+        "yellow": "jaune",
+        "purple": "violette",
+        "gray": "grise"
+      }
+    },
+    "preview": {
+      "title": "Aperçu de l’avatar",
+      "alt": "Aperçu de l’avatar",
+      "banner": "Aperçu de la bannière",
+      "sizes": {
+        "large": "Grand",
+        "medium": "Moyen",
+        "small": "Petit"
+      }
+    },
+    "banner": {
+      "title": "Bannière du profil",
+      "desc": "Choisissez un thème pour votre bannière",
+      "presets": {
+        "minimal": "Minimaliste",
+        "ocean": "Océan",
+        "night": "Nuit"
+      }
+    },
+    "visibility": {
+      "title": "Visibilité du profil",
+      "desc": "Qui peut voir votre profil ?",
+      "public": {
+        "label": "Public",
+        "desc": "Visible par les recruteurs et la communauté"
+      },
+      "private": {
+        "label": "Privé",
+        "desc": "Visible uniquement par vous et les recruteurs qui vous sont associés"
+      },
+      "hidden": {
+        "label": "Masqué",
+        "desc": "Le profil n’est pas référencé"
+      }
+    }
+  },
+  "notifSettings": {
+    "toggleLabel": "Notifications : {{label}}"
+  },
+  "securitySettings": {
+    "password": {
+      "title": "Mot de passe",
+      "desc": "Utilisez un mot de passe propre à TalkUp. Si vous l’utilisez aussi sur un autre service, changez-le ici dès qu’une fuite y est signalée.",
+      "change": "Changer de mot de passe"
+    },
+    "signIn": {
+      "title": "Alertes de connexion",
+      "desc": "Recevez un e-mail quand un nouvel appareil ou navigateur se connecte à votre compte.",
+      "emailOnNewDevice": "M’avertir par e-mail lors de l’utilisation d’un nouvel appareil"
+    },
+    "sessions": {
+      "title": "Appareils et sessions",
+      "desc": "Ces sessions ont accès à votre compte. Révoquez celles que vous ne reconnaissez pas.",
+      "noOtherDevices": "Aucun autre appareil à déconnecter",
+      "logoutEverywhere": "Se déconnecter partout",
+      "thisDevice": "Cet appareil",
+      "revoke": "Révoquer"
+    },
+    "data": {
+      "title": "Vos données",
+      "desc": "Téléchargez une copie des données de profil et d’activité que nous conservons pour votre compte (dans les limites du produit).",
+      "request": "Demander une copie de mes données"
+    },
+    "danger": {
+      "title": "Zone sensible",
+      "desc": "La suppression de votre compte efface votre profil, vos préférences et votre accès à TalkUp. Cette action est irréversible.",
+      "delete": "Supprimer mon compte"
+    },
+    "logoutModal": {
+      "title": "Se déconnecter des autres appareils ?",
+      "message": "Votre session sera fermée partout, sauf sur ce navigateur. Les autres appareils devront se reconnecter.",
+      "confirm": "Déconnecter les autres appareils"
+    },
+    "deleteModal": {
+      "title": "Supprimer votre compte ?",
+      "message": "Vous perdrez l’accès à TalkUp et vos données seront supprimées conformément à notre politique de conservation. Cette action est irréversible.",
+      "confirm": "Supprimer le compte"
+    }
+  },
+  "languageSettings": {
+    "title": "Langues",
+    "french": "Français",
+    "english": "Anglais",
+    "add": "+ Ajouter",
+    "progress": "Progression"
+  },
+  "organizationSettings": {
+    "loading": "Chargement de l’organisation…",
+    "loadError": "Impossible de charger votre organisation pour le moment. Veuillez réessayer plus tard.",
+    "title": "Votre organisation",
+    "yourRole": "Votre rôle",
+    "roles": {
+      "admin": "Administrateur",
+      "employee": "Employé",
+      "user": "Membre"
+    },
+    "activity": {
+      "title": "Votre activité",
+      "unavailable": "Vos statistiques d’activité ne sont pas disponibles pour le moment."
+    }
+  },
+  "organization": {
+    "label": "Organisation",
+    "logoAlt": "Logo de l’organisation {{name}}",
+    "roleNames": {
+      "admin": "administrateur",
+      "employee": "employé",
+      "user": "utilisateur"
+    },
+    "stats": {
+      "interviews": "Entretiens",
+      "completed": "Terminés",
+      "avgScore": "Score moyen",
+      "lastActivity": "Dernière activité"
+    },
+    "adminOnly": "Seuls les administrateurs de l’organisation peuvent modifier ses paramètres.",
+    "toasts": {
+      "inviteCreated": "Code d’invitation généré",
+      "inviteCreateError": "Impossible de créer l’invitation",
+      "inviteRevoked": "Invitation révoquée",
+      "inviteRevokeError": "Impossible de révoquer l’invitation",
+      "roleUpdated": "Rôle du membre mis à jour",
+      "roleUpdateError": "Impossible de modifier le rôle",
+      "memberRemoved": "Membre retiré",
+      "memberRemoveError": "Impossible de retirer le membre",
+      "orgUpdated": "Organisation mise à jour",
+      "orgUpdateError": "Impossible de modifier l’organisation"
+    }
+  },
+  "orgViewLayout": {
+    "loading": "Chargement de l’organisation…",
+    "loadError": "Impossible de charger votre organisation. Veuillez réessayer dans un instant.",
+    "notAffiliated": "Votre compte n’est rattaché à aucune organisation."
+  },
+  "invitesPanel": {
+    "title": "Invitations",
+    "create": "Créer une invitation",
+    "columns": {
+      "code": "Code",
+      "role": "Rôle",
+      "status": "Statut",
+      "email": "E-mail",
+      "expires": "Expiration",
+      "actions": "Actions"
+    },
+    "statuses": {
+      "pending": "en attente",
+      "accepted": "acceptée",
+      "revoked": "révoquée",
+      "expired": "expirée"
+    },
+    "anyEmail": "toute adresse",
+    "copyCode": "Copier le code",
+    "revoke": "Révoquer",
+    "empty": "Aucune invitation pour l’instant. Créez-en une pour intégrer des membres.",
+    "codeCopied": "Code copié",
+    "copyError": "Impossible de copier le code"
+  },
+  "inviteCreateModal": {
+    "closeBackdrop": "Fermer la création d’invitation",
+    "title": "Créer une invitation",
+    "desc": "Générez un code pour intégrer un nouveau membre.",
+    "email": "E-mail (facultatif)",
+    "emailLabel": "E-mail de l’invité (facultatif)",
+    "role": "Rôle de l’invité",
+    "submit": "Générer l’invitation"
+  },
+  "memberDetail": {
+    "closeBackdrop": "Fermer le détail du membre",
+    "title": "Détail du membre",
+    "loadError": "Impossible de charger le détail de ce membre. Veuillez réessayer.",
+    "loading": "Chargement du membre…",
+    "recentInterviews": "Entretiens récents",
+    "noInterviews": "Aucun entretien pour l’instant."
+  },
+  "membersTable": {
+    "title": "Membres",
+    "filterByRole": "Filtrer par rôle",
+    "filters": {
+      "all": "Tous",
+      "employee": "Employés uniquement",
+      "user": "Utilisateurs uniquement"
+    },
+    "columns": {
+      "member": "Membre",
+      "role": "Rôle",
+      "interviews": "Entretiens",
+      "completed": "Terminés",
+      "avgScore": "Score moyen",
+      "lastActivity": "Dernière activité",
+      "actions": "Actions"
+    },
+    "roleFor": "Rôle du membre {{username}}",
+    "remove": "Retirer",
+    "view": "Voir",
+    "empty": {
+      "filtered": "Aucun membre ne correspond à ce filtre pour l’instant.",
+      "admin": "Aucun membre pour l’instant.",
+      "employee": "Aucun membre avec le rôle utilisateur pour l’instant."
+    }
+  },
+  "orgSettings": {
+    "title": "Paramètres de l’organisation",
+    "desc": "Modifiez l’apparence de votre organisation pour tous ses membres.",
+    "profile": "Profil",
+    "unsaved": "Modifications non enregistrées",
+    "logo": {
+      "title": "Logo",
+      "hint": "Privilégiez une image carrée. Elle est enregistrée en aperçu JPEG.",
+      "change": "Changer le logo",
+      "upload": "Importer un logo",
+      "undo": "Annuler",
+      "inputLabel": "Importer le logo de l’organisation",
+      "error": "Impossible de traiter cette image. Essayez un autre fichier."
+    },
+    "name": {
+      "label": "Nom de l’organisation",
+      "tooShort": "Saisissez au moins deux caractères.",
+      "hint": "Ce nom s’affiche dans tout l’espace de l’organisation."
+    },
+    "discard": "Annuler les modifications",
+    "save": "Enregistrer les modifications",
+    "glance": {
+      "title": "En bref",
+      "members": "Membres",
+      "employees": "Employés",
+      "users": "Utilisateurs",
+      "created": "Date de création",
+      "id": "Identifiant de l’organisation",
+      "memberCount_one": "{{count}} membre",
+      "memberCount_other": "{{count}} membres",
+      "employeeCount_one": "{{count}} employé",
+      "employeeCount_other": "{{count}} employés",
+      "userCount_one": "{{count}} utilisateur",
+      "userCount_other": "{{count}} utilisateurs"
+    }
+  }
+}

@@ -1,5 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { changeLanguage } from '@/i18n';
+import { act, render, screen } from '@testing-library/react';
+import i18next from 'i18next';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Route } from './__root';
 
@@ -184,5 +186,23 @@ describe('RootComponent not-found shell', () => {
     expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();
     expect(screen.getByTestId('outlet')).toBeInTheDocument();
     expect(screen.queryByTestId('not-found')).not.toBeInTheDocument();
+  });
+});
+
+describe('RootComponent in French', () => {
+  // setupTests pins English for every other test.
+  afterEach(async () => {
+    await act(() => i18next.changeLanguage('en'));
+    localStorage.clear();
+  });
+
+  it('labels the pending not-found shell in French', async () => {
+    await act(() => changeLanguage('fr'));
+    routerStateMock.mockReturnValue(notFoundState);
+    useAuthStatusMock.mockReturnValue({ data: undefined, isLoading: true });
+    render(<RootComponent />);
+    expect(screen.getByTestId('not-found-pending')).toHaveAccessibleName(
+      'Chargement',
+    );
   });
 });

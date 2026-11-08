@@ -5,6 +5,7 @@ import { type AuthStatus, checkAuthStatus } from '@/utils/auth.guards';
 import { extractErrorMessage } from '@/utils/error';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import i18next from 'i18next';
 import toast from 'react-hot-toast';
 
 const authService = new AuthService();
@@ -67,14 +68,14 @@ export const usePostRegister = () => {
         withOrganizationCode: Boolean(variables.organizationCode),
         ...heroVariantData(),
       });
-      toast.success('Check your email for a verification code');
+      toast.success(i18next.t('auth:toasts.verificationCodeSent'));
       router.navigate({
         to: '/verify-email',
         search: { email: variables.email, redirect: '/' },
       });
     },
     onError: (error) => {
-      toast.error('Registration failed');
+      toast.error(i18next.t('auth:toasts.registrationFailed'));
       console.error('Error during registration:', error);
     },
   });
@@ -106,7 +107,7 @@ export const usePostRegisterOrganization = () => {
     },
     onSuccess: (_data, variables) => {
       trackEvent('organization_created');
-      toast.success('Check your email for a verification code');
+      toast.success(i18next.t('auth:toasts.verificationCodeSent'));
       router.navigate({
         to: '/organization-created',
         search: {
@@ -119,7 +120,7 @@ export const usePostRegisterOrganization = () => {
       toast.error(
         extractErrorMessage(
           error,
-          'Organization signup failed. Please try again.',
+          i18next.t('auth:toasts.organizationSignupFailed'),
         ),
       );
       console.error('Error during organization signup:', error);
@@ -159,7 +160,7 @@ export const usePostVerifyEmail = () => {
       // Fresh session on this tab — drop any leftover cache (incl. role/org)
       // from a prior account so stale cross-account state can't render.
       queryClient.clear();
-      toast.success('Email verified');
+      toast.success(i18next.t('auth:toasts.emailVerified'));
       router.navigate({ to: data.redirectTo });
     },
   });
@@ -177,7 +178,7 @@ export const usePostResendOtp = () => {
       return await authService.postResendOtp(email, purpose);
     },
     onSuccess: () => {
-      toast.success('A new code has been sent');
+      toast.success(i18next.t('auth:toasts.codeResent'));
     },
   });
 };
@@ -213,7 +214,7 @@ export const usePasswordResetComplete = () => {
       await authService.patchPasswordUpdate(newPassword);
     },
     onSuccess: () => {
-      toast.success('Your password has been updated. You can sign in.');
+      toast.success(i18next.t('auth:toasts.passwordUpdated'));
       router.navigate({ to: '/login' });
     },
   });
@@ -249,14 +250,14 @@ export const usePostLogin = () => {
       // Discard any cache left over from a previous session on this tab (incl.
       // role/org) so the newly signed-in account fetches its own data fresh.
       queryClient.clear();
-      toast.success('Login successful');
+      toast.success(i18next.t('auth:toasts.loginSucceeded'));
 
       const search = new URLSearchParams(window.location.search);
       const redirectTo = search.get('redirect') || '/';
       router.navigate({ to: redirectTo });
     },
     onError: (error) => {
-      toast.error('Login failed');
+      toast.error(i18next.t('auth:toasts.loginFailed'));
       console.error('Error during login:', error);
     },
   });
@@ -285,14 +286,14 @@ export const usePostLogout = () => {
       // Drop every cached query so the next account to sign in on this tab never
       // sees the previous user's data (profile, role/org, applications, etc.).
       queryClient.clear();
-      toast.success('Logout successful');
+      toast.success(i18next.t('auth:toasts.logoutSucceeded'));
       router.navigate({ to: '/login' });
     },
     onError: (error) => {
       // Even if the server call fails we still log out locally — clear too.
       logout();
       queryClient.clear();
-      toast.error('Logout failed');
+      toast.error(i18next.t('auth:toasts.logoutFailed'));
       console.error('Error during logout:', error);
       router.navigate({ to: '/login' });
     },

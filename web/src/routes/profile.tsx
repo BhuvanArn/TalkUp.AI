@@ -13,8 +13,12 @@ import {
   // "Devices & sessions" state below is re-enabled.
   SecuritySettings,
 } from '@/components/organisms/profile-settings/SecuritySettings';
-import { BANNER_PRESETS } from '@/components/organisms/profile-settings/constants';
+import {
+  BANNER_PRESETS,
+  JOB_OPTIONS,
+} from '@/components/organisms/profile-settings/constants';
 import { useAuthStatus } from '@/hooks/auth/useServices';
+import { useLocale } from '@/hooks/i18n/useLocale';
 import AuthService from '@/services/auth/http';
 import {
   deleteMyAccount,
@@ -27,6 +31,7 @@ import { cn } from '@/utils/cn';
 import { resizeImageFileToJpegDataUrl } from '@/utils/resizeImageToJpegDataUrl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
+import type { ParseKeys } from 'i18next';
 import { Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
 import {
   type CSSProperties,
@@ -37,6 +42,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/profile')({
   beforeLoad: createAuthGuard('/profile'),
@@ -44,8 +50,9 @@ export const Route = createFileRoute('/profile')({
 });
 
 const THEME_ACCENT = '#2B70C9';
-const DEFAULT_JOB_TITLE = 'Product Manager Candidate';
 const SECURITY_SIGNIN_PREF_KEY = 'securityEmailOnNewDevice';
+/** Placeholder goal progress shown in the side card (0–1). */
+const GOAL_PROGRESS = 0.78;
 const authService = new AuthService();
 
 type Tab =
@@ -73,8 +80,8 @@ function namesFromUsername(username: string): { first: string; last: string } {
 
 interface NotifSetting {
   id: string;
-  label: string;
-  desc: string;
+  labelKey: ParseKeys<'settings'>;
+  descKey: ParseKeys<'settings'>;
   enabled: boolean;
 }
 
@@ -96,32 +103,32 @@ interface ProfileSnapshot {
 const DEFAULT_NOTIFS: NotifSetting[] = [
   {
     id: 'training',
-    label: 'Training reminders',
-    desc: 'Daily practice notification',
+    labelKey: 'profile.notifications.training.label',
+    descKey: 'profile.notifications.training.desc',
     enabled: true,
   },
   {
     id: 'recruiters',
-    label: 'Messages',
-    desc: 'Alerts for new messages',
+    labelKey: 'profile.notifications.recruiters.label',
+    descKey: 'profile.notifications.recruiters.desc',
     enabled: true,
   },
   {
     id: 'simulations',
-    label: 'Simulation results',
-    desc: 'Report after each simulation',
+    labelKey: 'profile.notifications.simulations.label',
+    descKey: 'profile.notifications.simulations.desc',
     enabled: true,
   },
   {
     id: 'updates',
-    label: 'TalkUp updates',
-    desc: 'New tools and features',
+    labelKey: 'profile.notifications.updates.label',
+    descKey: 'profile.notifications.updates.desc',
     enabled: false,
   },
   {
     id: 'weekly',
-    label: 'Weekly summary',
-    desc: 'Progress recap every Monday',
+    labelKey: 'profile.notifications.weekly.label',
+    descKey: 'profile.notifications.weekly.desc',
     enabled: true,
   },
 ];
@@ -145,7 +152,7 @@ function profileToSnapshot(p: UserProfile): ProfileSnapshot {
     bio: p.bio ?? '',
     phoneNumber: p.phone ?? '',
     linkedinUrl: p.linkedinUrl ?? '',
-    jobTitle: p.jobTitle ?? DEFAULT_JOB_TITLE,
+    jobTitle: p.jobTitle ?? '',
     avatarColor: p.avatarAccentColor ?? THEME_ACCENT,
     bannerGradient: p.bannerGradient ?? BANNER_PRESETS[0].value,
     profileVisibility: p.profileVisibility,
@@ -185,16 +192,21 @@ function profileToSnapshot(p: UserProfile): ProfileSnapshot {
 //   },
 // ];
 
-const BASE_TABS: { key: Tab; label: string }[] = [
-  { key: 'general', label: 'General' },
-  { key: 'appearance', label: 'Appearance' },
-  { key: 'notifications', label: 'Notifications' },
-  { key: 'security', label: 'Security' },
+interface TabDef {
+  key: Tab;
+  labelKey: ParseKeys<'settings'>;
+}
+
+const BASE_TABS: TabDef[] = [
+  { key: 'general', labelKey: 'profile.tabs.general' },
+  { key: 'appearance', labelKey: 'profile.tabs.appearance' },
+  { key: 'notifications', labelKey: 'profile.tabs.notifications' },
+  { key: 'security', labelKey: 'profile.tabs.security' },
 ];
 
-const ORGANIZATION_TAB: { key: Tab; label: string } = {
+const ORGANIZATION_TAB: TabDef = {
   key: 'organization',
-  label: 'Organization',
+  labelKey: 'profile.tabs.organization',
 };
 
 const emptySnapshot = (): ProfileSnapshot => ({
@@ -203,7 +215,7 @@ const emptySnapshot = (): ProfileSnapshot => ({
   bio: '',
   phoneNumber: '',
   linkedinUrl: '',
-  jobTitle: DEFAULT_JOB_TITLE,
+  jobTitle: '',
   avatarColor: THEME_ACCENT,
   bannerGradient: BANNER_PRESETS[0].value,
   profileVisibility: 'public',
@@ -213,6 +225,8 @@ const emptySnapshot = (): ProfileSnapshot => ({
 });
 
 function Profile() {
+  const { t } = useTranslation('settings');
+  const { intlLocale } = useLocale();
   const queryClient = useQueryClient();
   const { data: authStatus } = useAuthStatus();
   const organizationId = authStatus?.organizationId ?? null;
@@ -224,7 +238,13 @@ function Profile() {
   const [bio, setBio] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [jobTitle, setJobTitle] = useState(DEFAULT_JOB_TITLE);
+  const [jobTitle, setJobTitle] = useState('');
+  // The profile stores English titles: show the translated label of a listed
+  // title, a custom title as typed, and "Member" when there is none.
+  const jobOption = JOB_OPTIONS.find((option) => option.value === jobTitle);
+  const jobTitleLabel = jobOption
+    ? t(jobOption.labelKey)
+    : jobTitle || t('profile.header.defaultJobTitle');
   const [accountUsername, setAccountUsername] = useState('');
   const [avatarColor, setAvatarColor] = useState(THEME_ACCENT);
   const [bannerGradient, setBanner] = useState<string>(BANNER_PRESETS[0].value);
@@ -236,7 +256,10 @@ function Profile() {
   // TODO(sessions-api): session state for the hidden "Devices & sessions" UI.
   // const [sessions, setSessions] = useState<AccountSession[]>(DEFAULT_SESSIONS);
   const [saved, setSaved] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  // Keys, not text: a banner already shown follows a language switch.
+  const [saveError, setSaveError] = useState<ParseKeys<'settings'> | null>(
+    null,
+  );
   const [ctaAttentionTick, setCtaAttentionTick] = useState(0);
   const [ctaAnchorRect, setCtaAnchorRect] =
     useState<UnsavedChangesCtaAnchorRect | null>(null);
@@ -244,7 +267,8 @@ function Profile() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [emailOnNewDevice, setEmailOnNewDevice] = useState(true);
-  const [avatarImageError, setAvatarImageError] = useState<string | null>(null);
+  const [avatarImageError, setAvatarImageError] =
+    useState<ParseKeys<'settings'> | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
   const profileColumnRef = useRef<HTMLDivElement>(null);
@@ -323,7 +347,7 @@ function Profile() {
       saveTimeoutRef.current = setTimeout(() => setSaved(false), 2000);
     },
     onError: () => {
-      setSaveError('Could not save your profile. Please try again.');
+      setSaveError('profile.saveError');
     },
   });
   const deleteAccountMutation = useMutation({
@@ -340,9 +364,7 @@ function Profile() {
       );
     },
     onError: () => {
-      setSaveError(
-        'Could not start password reset right now. Please try again.',
-      );
+      setSaveError('profile.passwordResetError');
     },
   });
 
@@ -503,7 +525,7 @@ function Profile() {
       setProfilePicture(dataUrl);
       setShowAvatarMenu(false);
     } catch {
-      setAvatarImageError('Could not use this image. Try another file.');
+      setAvatarImageError('profile.avatar.imageError');
     }
   };
 
@@ -527,16 +549,14 @@ function Profile() {
   if (profileQuery.isPending) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center p-6 text-text-weaker">
-        Loading profile…
+        {t('profile.loading')}
       </div>
     );
   }
 
   if (profileQuery.isError || !profileQuery.data) {
     return (
-      <div className="p-6 text-body-s text-error">
-        We could not load your profile. Refresh the page or try again later.
-      </div>
+      <div className="p-6 text-body-s text-error">{t('profile.loadError')}</div>
     );
   }
 
@@ -554,7 +574,7 @@ function Profile() {
             ref={profileColumnRef}
             style={{ maxWidth: 1200, margin: '0 auto' }}
           >
-            <h1 style={srOnlyStyle}>Profile</h1>
+            <h1 style={srOnlyStyle}>{t('profile.title')}</h1>
 
             <div style={headerCardStyle}>
               <div
@@ -573,9 +593,9 @@ function Profile() {
                   size="xs"
                   className="absolute bottom-2.5 right-3 border-border bg-background text-[11px] text-text"
                   data-testid="banner-style-button"
-                  aria-label="Change banner style"
+                  aria-label={t('profile.banner.changeStyleLabel')}
                 >
-                  Change style
+                  {t('profile.banner.changeStyle')}
                 </Button>
               </div>
 
@@ -604,12 +624,15 @@ function Profile() {
                     tabIndex={-1}
                     onChange={handleAvatarFileChange}
                     data-testid="avatar-file-input"
-                    title="Upload profile photo"
+                    title={t('profile.avatar.uploadTitle')}
                   />
                   <Avatar
                     data-testid="user-avatar-initials"
                     src={profilePicture ?? undefined}
-                    alt={`${firstName} ${lastName}`.trim() || 'Profile'}
+                    alt={
+                      `${firstName} ${lastName}`.trim() ||
+                      t('profile.avatar.fallbackAlt')
+                    }
                     fallback={initials}
                     size="xl"
                     className="!h-24 !w-24 !border-4 !text-[28px] font-extrabold text-white shadow-md"
@@ -629,7 +652,7 @@ function Profile() {
                     className="absolute bottom-0.5 right-0.5 z-10 !h-7 !w-7 min-h-0 min-w-0 border-2 bg-background p-0 shadow-md"
                     style={{ borderColor: avatarColor, color: avatarColor }}
                     data-testid="avatar-camera-button"
-                    aria-label="Change profile picture"
+                    aria-label={t('profile.avatar.change')}
                   >
                     <Camera size={13} strokeWidth={2.5} />
                   </Button>
@@ -655,7 +678,7 @@ function Profile() {
                           queueMicrotask(() => openAvatarFilePicker());
                         }}
                       >
-                        <ImageIcon size={14} /> Choose photo
+                        <ImageIcon size={14} /> {t('profile.avatar.choose')}
                       </Button>
                       <Button
                         type="button"
@@ -673,7 +696,7 @@ function Profile() {
                           queueMicrotask(() => openAvatarFilePicker('user'));
                         }}
                       >
-                        <Camera size={14} /> Take photo
+                        <Camera size={14} /> {t('profile.avatar.take')}
                       </Button>
                       <div className="my-1 h-px bg-border" />
                       <Button
@@ -691,7 +714,7 @@ function Profile() {
                           setShowAvatarMenu(false);
                         }}
                       >
-                        <Trash2 size={14} /> Remove
+                        <Trash2 size={14} /> {t('profile.avatar.remove')}
                       </Button>
                     </div>
                   )}
@@ -701,7 +724,7 @@ function Profile() {
                     className="mt-2 text-center text-body-s text-error"
                     role="alert"
                   >
-                    {avatarImageError}
+                    {t(avatarImageError)}
                   </p>
                 ) : null}
 
@@ -722,12 +745,14 @@ function Profile() {
                     marginTop: 4,
                   }}
                 >
-                  {jobTitle || 'Member'} · TalkUp Pro
+                  {t('profile.header.subtitle', {
+                    jobTitle: jobTitleLabel,
+                  })}
                 </div>
               </div>
 
               <div style={tabsBarStyle} role="tablist">
-                {tabs.map(({ key, label }) => (
+                {tabs.map(({ key, labelKey }) => (
                   <Button
                     key={key}
                     type="button"
@@ -750,7 +775,7 @@ function Profile() {
                     )}
                     data-testid={`tab-${key}`}
                   >
-                    {label}
+                    {t(labelKey)}
                   </Button>
                 ))}
               </div>
@@ -768,7 +793,7 @@ function Profile() {
                 style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
               >
                 <div style={sideCardStyle}>
-                  <div style={cardTitleStyle}>Introduction</div>
+                  <div style={cardTitleStyle}>{t('profile.intro.title')}</div>
                   <p
                     style={{
                       fontSize: 13,
@@ -776,7 +801,7 @@ function Profile() {
                       lineHeight: 1.6,
                     }}
                   >
-                    <strong>User profile :</strong> {bio}
+                    <strong>{t('profile.intro.bioLabel')}</strong> {bio}
                   </p>
                 </div>
 
@@ -792,7 +817,7 @@ function Profile() {
                   <div
                     style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}
                   >
-                    Goal
+                    {t('profile.goal.title')}
                   </div>
                   <div
                     style={{
@@ -803,7 +828,7 @@ function Profile() {
                   >
                     <div
                       style={{
-                        width: '78%',
+                        width: `${GOAL_PROGRESS * 100}%`,
                         height: '100%',
                         background: 'white',
                         borderRadius: 10,
@@ -818,7 +843,9 @@ function Profile() {
                       textAlign: 'right',
                     }}
                   >
-                    78%
+                    {GOAL_PROGRESS.toLocaleString(intlLocale, {
+                      style: 'percent',
+                    })}
                   </div>
                 </div>
               </div>
@@ -854,7 +881,14 @@ function Profile() {
                   />
                 )}
                 {activeTab === 'notifications' && (
-                  <NotifSettings notifs={notifs} onToggle={toggleNotif} />
+                  <NotifSettings
+                    notifs={notifs.map(({ labelKey, descKey, ...n }) => ({
+                      ...n,
+                      label: t(labelKey),
+                      desc: t(descKey),
+                    }))}
+                    onToggle={toggleNotif}
+                  />
                 )}
                 {activeTab === 'security' && (
                   <SecuritySettings
@@ -896,7 +930,7 @@ function Profile() {
           className="fixed bottom-28 left-1/2 z-[121] max-w-md -translate-x-1/2 rounded-lg border border-error bg-background px-4 py-2 text-center text-body-s text-error shadow-lg"
           role="alert"
         >
-          {saveError}
+          {t(saveError)}
         </div>
       ) : null}
       <UnsavedChangesCta
