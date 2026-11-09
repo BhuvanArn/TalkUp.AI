@@ -1,3 +1,4 @@
+import { Button } from '@/components/atoms/button';
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -63,20 +64,17 @@ const ConfirmationModal = ({
         <p className="mt-2 text-body-m text-idle">{message}</p>
 
         <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
+          <Button
+            variant="outlined"
+            color="neutral"
+            className="border border-border text-idle"
             onClick={onCancel}
-            className="h-10 px-4 rounded-md border border-border text-idle hover:bg-surface-raised hover:text-active transition-colors"
           >
             {cancelText ?? t('actions.cancel')}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="h-10 px-4 rounded-md bg-danger text-white hover:opacity-90 transition-opacity"
-          >
+          </Button>
+          <Button color="error" onClick={onConfirm}>
             {confirmText ?? t('actions.confirm')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

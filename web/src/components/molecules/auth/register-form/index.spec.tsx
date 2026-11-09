@@ -58,15 +58,9 @@ describe('RegisterForm', () => {
       ).toBeInTheDocument();
       expect(screen.getByText(/Create your account/i)).toBeInTheDocument();
 
-      expect(
-        screen.getByPlaceholderText(/Choose a username/i),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByPlaceholderText(/Your email address/i),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByPlaceholderText(/Create a secure password/i),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText(/^username$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
 
       expect(
         screen.getByRole('button', { name: /Register/i }),
@@ -78,6 +72,24 @@ describe('RegisterForm', () => {
    * Test Group: Client-Side Synchronous Validation
    * Tests the immediate validation rules for each field (e.g., length, format).
    */
+  describe('Figma A2 layout', () => {
+    it('labels every field, marks the optional one and states the password rule', () => {
+      render(<RegisterForm />);
+      for (const name of ['Username', 'Email', 'Password']) {
+        expect(screen.getByText(name, { selector: 'label' })).toBeVisible();
+      }
+      expect(
+        screen.getByLabelText('Organization code (optional)'),
+      ).toHaveAttribute('placeholder', 'e.g. TALKUP-2026');
+      // The rule is a hint under the field, not the placeholder: a long
+      // placeholder gets cut off and disappears on typing.
+      const password = screen.getByLabelText(/^password$/i);
+      expect(password).toHaveAttribute('placeholder', 'Create a password');
+      expect(screen.getByText(/^8\+ characters/)).toBeVisible();
+      expect(password).toHaveAccessibleDescription(/^8\+ characters/);
+    });
+  });
+
   describe('Client-Side Synchronous Validation', () => {
     /**
      * Test Sub-Group: Username Validation
@@ -86,7 +98,7 @@ describe('RegisterForm', () => {
     describe('Username Validation', () => {
       it('displays error for username less than 3 characters', async () => {
         render(<RegisterForm />);
-        const usernameInput = screen.getByPlaceholderText(/Choose a username/i);
+        const usernameInput = screen.getByLabelText(/^username$/i);
         const signUpButton = screen.getByRole('button', { name: /Register/i });
 
         await act(async () => {
@@ -103,7 +115,7 @@ describe('RegisterForm', () => {
 
       it('displays error for username more than 20 characters', async () => {
         render(<RegisterForm />);
-        const usernameInput = screen.getByPlaceholderText(/Choose a username/i);
+        const usernameInput = screen.getByLabelText(/^username$/i);
         const signUpButton = screen.getByRole('button', { name: /Register/i });
 
         await act(async () => {
@@ -122,7 +134,7 @@ describe('RegisterForm', () => {
 
       it('displays error for username with special characters', async () => {
         render(<RegisterForm />);
-        const usernameInput = screen.getByPlaceholderText(/Choose a username/i);
+        const usernameInput = screen.getByLabelText(/^username$/i);
         const signUpButton = screen.getByRole('button', { name: /Register/i });
 
         await act(async () => {
@@ -145,7 +157,7 @@ describe('RegisterForm', () => {
     describe('Email Validation', () => {
       it('displays error for invalid email format', async () => {
         render(<RegisterForm />);
-        const emailInput = screen.getByPlaceholderText(/Your email address/i);
+        const emailInput = screen.getByLabelText(/^email$/i);
         const signUpButton = screen.getByRole('button', { name: /Register/i });
 
         await act(async () => {
@@ -166,9 +178,7 @@ describe('RegisterForm', () => {
     describe('Password Validation', () => {
       it('displays error for password less than 8 characters', async () => {
         render(<RegisterForm />);
-        const passwordInput = screen.getByPlaceholderText(
-          /Create a secure password/i,
-        );
+        const passwordInput = screen.getByLabelText(/^password$/i);
         const signUpButton = screen.getByRole('button', { name: /Register/i });
 
         await act(async () => {
@@ -185,9 +195,7 @@ describe('RegisterForm', () => {
 
       it('displays error for password more than allowed characters', async () => {
         render(<RegisterForm />);
-        const passwordInput = screen.getByPlaceholderText(
-          /Create a secure password/i,
-        );
+        const passwordInput = screen.getByLabelText(/^password$/i);
         const signUpButton = screen.getByRole('button', { name: /Register/i });
 
         await act(async () => {
@@ -209,9 +217,7 @@ describe('RegisterForm', () => {
 
       it('displays error for password missing lowercase letter', async () => {
         render(<RegisterForm />);
-        const passwordInput = screen.getByPlaceholderText(
-          /Create a secure password/i,
-        );
+        const passwordInput = screen.getByLabelText(/^password$/i);
         const signUpButton = screen.getByRole('button', { name: /Register/i });
 
         await act(async () => {
@@ -232,9 +238,7 @@ describe('RegisterForm', () => {
 
       it('displays error for password missing uppercase letter', async () => {
         render(<RegisterForm />);
-        const passwordInput = screen.getByPlaceholderText(
-          /Create a secure password/i,
-        );
+        const passwordInput = screen.getByLabelText(/^password$/i);
         const signUpButton = screen.getByRole('button', { name: /Register/i });
 
         await act(async () => {
@@ -255,9 +259,7 @@ describe('RegisterForm', () => {
 
       it('displays error for password missing number', async () => {
         render(<RegisterForm />);
-        const passwordInput = screen.getByPlaceholderText(
-          /Create a secure password/i,
-        );
+        const passwordInput = screen.getByLabelText(/^password$/i);
         const signUpButton = screen.getByRole('button', { name: /Register/i });
 
         await act(async () => {
@@ -282,15 +284,13 @@ describe('RegisterForm', () => {
     it('ensures correct htmlFor attributes on labels and id on inputs', () => {
       render(<RegisterForm />);
 
-      const usernameInput = screen.getByPlaceholderText(/Choose a username/i);
+      const usernameInput = screen.getByLabelText(/^username$/i);
       expect(usernameInput).toHaveAttribute('id', 'username');
 
-      const emailInput = screen.getByPlaceholderText(/Your email address/i);
+      const emailInput = screen.getByLabelText(/^email$/i);
       expect(emailInput).toHaveAttribute('id', 'email');
 
-      const passwordInput = screen.getByPlaceholderText(
-        /Create a secure password/i,
-      );
+      const passwordInput = screen.getByLabelText(/^password$/i);
       expect(passwordInput).toHaveAttribute('id', 'password');
     });
   });
@@ -303,14 +303,12 @@ describe('RegisterForm', () => {
   describe('Organization code (F2)', () => {
     it('renders an optional organization code field', () => {
       render(<RegisterForm />);
-      expect(
-        screen.getByPlaceholderText(/organization code/i),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText(/organization code/i)).toBeInTheDocument();
     });
 
     it('prefills the code from initialCode', () => {
       render(<RegisterForm initialCode="ABCDEFGHJKLM" />);
-      expect(screen.getByPlaceholderText(/organization code/i)).toHaveValue(
+      expect(screen.getByLabelText(/organization code/i)).toHaveValue(
         'ABCDEFGHJKLM',
       );
     });
@@ -319,16 +317,15 @@ describe('RegisterForm', () => {
       render(<RegisterForm initialCode="ABCDEFGHJKLM" />);
 
       await act(async () => {
-        fireEvent.change(screen.getByPlaceholderText(/Choose a username/i), {
+        fireEvent.change(screen.getByLabelText(/^username$/i), {
           target: { value: 'candidate1' },
         });
-        fireEvent.change(screen.getByPlaceholderText(/Your email address/i), {
+        fireEvent.change(screen.getByLabelText(/^email$/i), {
           target: { value: 'c@example.com' },
         });
-        fireEvent.change(
-          screen.getByPlaceholderText(/Create a secure password/i),
-          { target: { value: 'Abcdefg1*' } },
-        );
+        fireEvent.change(screen.getByLabelText(/^password$/i), {
+          target: { value: 'Abcdefg1*' },
+        });
         fireEvent.click(screen.getByRole('button', { name: /Register/i }));
       });
 
@@ -348,16 +345,15 @@ describe('RegisterForm', () => {
       render(<RegisterForm />);
 
       await act(async () => {
-        fireEvent.change(screen.getByPlaceholderText(/Choose a username/i), {
+        fireEvent.change(screen.getByLabelText(/^username$/i), {
           target: { value: 'candidate1' },
         });
-        fireEvent.change(screen.getByPlaceholderText(/Your email address/i), {
+        fireEvent.change(screen.getByLabelText(/^email$/i), {
           target: { value: 'c@example.com' },
         });
-        fireEvent.change(
-          screen.getByPlaceholderText(/Create a secure password/i),
-          { target: { value: 'Abcdefg1*' } },
-        );
+        fireEvent.change(screen.getByLabelText(/^password$/i), {
+          target: { value: 'Abcdefg1*' },
+        });
         fireEvent.click(screen.getByRole('button', { name: /Register/i }));
       });
 

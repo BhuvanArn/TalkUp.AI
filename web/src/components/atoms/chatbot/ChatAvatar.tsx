@@ -32,7 +32,7 @@ export const ChatAvatar = ({ variant, size = 'sm' }: ChatAvatarProps) => {
     <div
       className={`${sizeClasses[size]} rounded-full flex-shrink-0 flex items-center justify-center font-bold ${
         isAi
-          ? 'bg-brand-gradient text-white'
+          ? 'bg-brand-gradient text-on-accent'
           : 'bg-surface-raised text-text-weak'
       }`}
     >

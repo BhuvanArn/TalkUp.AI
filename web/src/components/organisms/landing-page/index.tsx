@@ -29,7 +29,7 @@ const H2 =
 const DISPLAY =
   'font-display font-extrabold tracking-[-0.01em] text-balance text-primary [.dark_&]:text-text';
 const LEAD = 'max-w-[56ch] text-lg text-text-weaker';
-const FINE = 'mt-3.5 text-[13px] text-text-weaker';
+const FINE = 'mt-3.5 text-body-m text-text-weaker';
 const CTAS = 'mt-7 flex flex-wrap gap-3';
 const BULLETS = 'mt-[18px] list-disc space-y-1.5 pl-[18px] text-text-weaker';
 
@@ -217,7 +217,7 @@ const Hero = () => {
             </Button>
           </div>
           <AccountCounter variant="hero" className="mt-4" />
-          <p className="mt-1 text-[13px] text-text-weaker">{t('hero.fine')}</p>
+          <p className="mt-1 text-body-m text-text-weaker">{t('hero.fine')}</p>
         </div>
         <HeroRoadmapMock />
       </div>
@@ -236,13 +236,13 @@ const ProblemBand = () => {
       <div
         className={`${WRAP} grid items-start gap-12 md:grid-cols-[1fr_1.3fr]`}
       >
-        <p className="font-display text-[clamp(30px,4.2vw,48px)] font-bold leading-[1.08] text-balance">
+        <p className="font-display text-[clamp(28px,4vw,40px)] font-bold leading-[1.08] text-balance">
           {t('problem.statement')}
         </p>
         <dl className="grid gap-[22px]">
           {PROBLEMS.map(({ termKey, detailKey }) => (
             <div key={termKey}>
-              <dt className="font-display text-lg font-semibold leading-snug">
+              <dt className="font-display text-h6 font-semibold leading-snug">
                 {t(termKey)}
               </dt>
               <dd className="mt-1 text-primary-weak [.dark_&]:text-text-weak">
@@ -271,17 +271,17 @@ const HowItWorks = () => {
             >
               <span
                 aria-hidden="true"
-                className="font-display text-[32px] font-extrabold leading-none tabular-nums text-accent"
+                className="font-display text-h1 font-extrabold leading-none tabular-nums text-accent"
               >
                 {index + 1}
               </span>
-              <h3 className="mt-3 font-display text-lg font-semibold leading-tight text-text">
+              <h3 className="mt-3 font-display text-h6 font-semibold leading-tight text-text">
                 {t(step.titleKey)}
               </h3>
-              <p className="mt-2 text-[15px] text-text-weaker">
+              <p className="mt-2 text-body-l text-text-weaker">
                 {t(step.bodyKey)}
               </p>
-              <p className="mt-3 text-[13px] text-text-weaker">
+              <p className="mt-3 text-body-m text-text-weaker">
                 {t(step.whereKey)}
               </p>
             </li>
@@ -329,10 +329,10 @@ const TalkingPoints = () => {
         >
           {TALKING_POINTS.map(({ missionKey, answerKey }) => (
             <li key={missionKey} className="grid gap-1.5 px-[18px] py-4">
-              <span className="text-[13px] text-text-weaker">
+              <span className="text-body-m text-text-weaker">
                 {t('talkingPoints.mission', { mission: t(missionKey) })}
               </span>
-              <span className="text-[15px] text-text">{t(answerKey)}</span>
+              <span className="text-body-l text-text">{t(answerKey)}</span>
             </li>
           ))}
         </ul>
@@ -350,10 +350,10 @@ const Audiences = () => {
         <div className="mt-9 grid gap-8 md:grid-cols-3">
           {AUDIENCES.map(({ titleKey, bodyKey }) => (
             <div key={titleKey} className="border-t-2 border-text pt-4">
-              <h3 className="font-display text-xl font-semibold leading-tight text-text">
+              <h3 className="font-display text-h6 font-semibold leading-tight text-text">
                 {t(titleKey)}
               </h3>
-              <p className="mt-1.5 text-[15px] text-text-weaker">
+              <p className="mt-1.5 text-body-l text-text-weaker">
                 {t(bodyKey)}
               </p>
             </div>
@@ -425,16 +425,16 @@ const Pricing = () => {
                   : 'border-border bg-background'
               }`}
             >
-              <h3 className="font-display text-xl font-semibold leading-tight text-text">
+              <h3 className="font-display text-h6 font-semibold leading-tight text-text">
                 {t(plan.nameKey)}
               </h3>
-              <p className="font-display text-[40px] font-extrabold leading-none text-text">
+              <p className="font-display text-h1 font-extrabold leading-none text-text">
                 {t('pricing.free')}
-                <small className="ml-1.5 font-body text-sm font-normal text-text-weaker">
+                <small className="ml-1.5 font-body text-body-m font-normal text-text-weaker">
                   {t('pricing.duringBeta')}
                 </small>
               </p>
-              <ul className="mt-1.5 list-disc space-y-1 pl-[18px] text-[15px] text-text-weaker">
+              <ul className="mt-1.5 list-disc space-y-1 pl-[18px] text-body-l text-text-weaker">
                 {plan.featureKeys.map((feature) => (
                   <li key={feature}>{t(feature)}</li>
                 ))}
@@ -468,7 +468,7 @@ const FinalCta = () => {
     <section className="py-16 sm:py-22">
       <div className={WRAP}>
         <h2
-          className={`${DISPLAY} max-w-[16ch] text-[clamp(36px,6vw,64px)] leading-none`}
+          className={`${DISPLAY} max-w-[16ch] text-[clamp(44px,6.4vw,76px)] leading-none`}
         >
           {t('finalCta.title')}
         </h2>

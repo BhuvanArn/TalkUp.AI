@@ -225,7 +225,7 @@ export const OrgSettings = ({
                 value={name}
                 maxLength={80}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-body-m text-text transition-colors placeholder:text-text-weakest hover:border-border-strong focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                className="w-full rounded-lg border border-border-input bg-background px-3 py-2 text-body-m text-text transition-colors placeholder:text-text-weakest hover:border-border-strong focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                 placeholder="Acme Corporation"
                 aria-invalid={nameChanged && nameTooShort}
                 aria-describedby="org-name-hint"

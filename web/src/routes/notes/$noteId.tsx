@@ -229,7 +229,7 @@ function RouteComponent() {
             </Button>
           </div>
         </div>
-        <p className="text-text-idle text-body-md mt-2">
+        <p className="text-text-idle text-body-m mt-2">
           {t('notes.editor.lastUpdated', {
             date: new Date(note.updated_at).toLocaleString(intlLocale),
           })}

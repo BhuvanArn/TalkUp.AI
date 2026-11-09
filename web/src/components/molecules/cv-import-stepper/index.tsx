@@ -20,7 +20,7 @@ export const Stepper = ({ currentStep }: StepperProps) => {
   const { t } = useTranslation('app');
 
   return (
-    <div className="border-border bg-background flex gap-10 border-b px-10 pt-6">
+    <div className="border-border bg-background flex flex-wrap gap-x-6 gap-y-2 border-b px-4 pt-6 sm:gap-x-10 sm:px-10">
       <StepIndicator
         number={1}
         label={t('cv.stepper.upload')}

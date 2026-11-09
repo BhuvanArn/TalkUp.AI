@@ -111,13 +111,9 @@ describe('auth flows in French', () => {
       expect(
         screen.getByRole('heading', { name: 'Connexion' }),
       ).toBeInTheDocument();
-      expect(
-        screen.getByPlaceholderText(
-          `Quelle adresse e-mail avez-vous utilisée${SP}?`,
-        ),
-      ).toHaveAttribute(
+      expect(screen.getByLabelText('Adresse e-mail')).toHaveAttribute(
         'placeholder',
-        `Quelle adresse e-mail avez-vous utilisée${NBSP}?`,
+        'vous@exemple.com',
       );
       expect(
         screen.getByRole('button', { name: 'Se connecter' }),
@@ -132,15 +128,10 @@ describe('auth flows in French', () => {
     it('shows validation errors in French', () => {
       render(<LoginForm />);
 
-      fireEvent.change(
-        screen.getByPlaceholderText(
-          `Quelle adresse e-mail avez-vous utilisée${SP}?`,
-        ),
-        { target: { value: 'not-an-email' } },
-      );
-      typeThenClear(
-        screen.getByPlaceholderText('Saisissez votre mot de passe'),
-      );
+      fireEvent.change(screen.getByLabelText('Adresse e-mail'), {
+        target: { value: 'not-an-email' },
+      });
+      typeThenClear(screen.getByLabelText('Mot de passe'));
 
       expect(screen.getByText('Adresse e-mail invalide')).toBeInTheDocument();
       expect(
@@ -154,16 +145,12 @@ describe('auth flows in French', () => {
       );
       render(<LoginForm />);
 
-      fireEvent.change(
-        screen.getByPlaceholderText(
-          `Quelle adresse e-mail avez-vous utilisée${SP}?`,
-        ),
-        { target: { value: 'user@example.com' } },
-      );
-      fireEvent.change(
-        screen.getByPlaceholderText('Saisissez votre mot de passe'),
-        { target: { value: 'secret' } },
-      );
+      fireEvent.change(screen.getByLabelText('Adresse e-mail'), {
+        target: { value: 'user@example.com' },
+      });
+      fireEvent.change(screen.getByLabelText('Mot de passe'), {
+        target: { value: 'secret' },
+      });
       fireEvent.click(screen.getByRole('button', { name: 'Se connecter' }));
 
       expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -183,20 +170,22 @@ describe('auth flows in French', () => {
         screen.getByRole('link', { name: `Connectez-vous${NBSP}!` }),
       ).toHaveAttribute('href', '/login');
 
-      fireEvent.change(
-        screen.getByPlaceholderText('Choisissez un nom d’utilisateur'),
-        { target: { value: 'ab' } },
-      );
+      fireEvent.change(screen.getByLabelText('Nom d’utilisateur'), {
+        target: { value: 'ab' },
+      });
       expect(
         screen.getByText(
           `Le nom d’utilisateur doit contenir au moins 3${SP}caractères`,
         ),
       ).toBeInTheDocument();
 
-      fireEvent.change(
-        screen.getByPlaceholderText('Créez un mot de passe sécurisé'),
-        { target: { value: 'abcdef1' } },
+      expect(screen.getByLabelText('Mot de passe')).toHaveAccessibleDescription(
+        /^8 caractères min\./,
       );
+
+      fireEvent.change(screen.getByLabelText('Mot de passe'), {
+        target: { value: 'abcdef1' },
+      });
       expect(screen.getByRole('status')).toHaveTextContent(
         `Robustesse${SP}: Faible`,
       );
@@ -206,7 +195,7 @@ describe('auth flows in French', () => {
       render(<RegisterForm />);
 
       fireEvent.change(
-        screen.getByPlaceholderText('Code d’organisation (facultatif)'),
+        screen.getByLabelText('Code d’organisation (facultatif)'),
         { target: { value: 'x'.repeat(33) } },
       );
       expect(

@@ -19,7 +19,7 @@ export const SaveStatus = ({ status }: SaveStatusProps) => {
   switch (status) {
     case 'saving':
       return (
-        <div className="flex items-center gap-2 text-text-weaker text-body-sm">
+        <div className="flex items-center gap-2 text-text-weaker text-body-s">
           <div
             className="loader"
             style={{
@@ -33,21 +33,21 @@ export const SaveStatus = ({ status }: SaveStatusProps) => {
       );
     case 'saved':
       return (
-        <div className="flex items-center gap-2 text-success text-body-sm">
+        <div className="flex items-center gap-2 text-success text-body-s">
           <Icon icon="check" className="w-4 h-4" />
           <span>{t('saveStatus.saved')}</span>
         </div>
       );
     case 'unsaved':
       return (
-        <div className="flex items-center gap-2 text-warning text-body-sm">
+        <div className="flex items-center gap-2 text-warning text-body-s">
           <Icon icon="warning" className="w-4 h-4" />
           <span>{t('saveStatus.unsaved')}</span>
         </div>
       );
     case 'error':
       return (
-        <div className="flex items-center gap-2 text-error text-body-sm">
+        <div className="flex items-center gap-2 text-error text-body-s">
           <Icon icon="error" className="w-4 h-4" />
           <span>{t('saveStatus.error')}</span>
         </div>

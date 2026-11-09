@@ -43,6 +43,7 @@ const LABEL_TEXT: Record<Exclude<StrengthScore, 0>, string> = {
 export const PasswordField: React.FC<PasswordFieldProps> = ({
   id,
   label,
+  hint,
   showToggle = true,
   showStrength = false,
   value,
@@ -54,14 +55,17 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
   const inputId = id ?? generatedId;
   const [revealed, setRevealed] = useState(false);
 
+  const hintId = hint ? `${inputId}-hint` : undefined;
   const strengthId = showStrength ? `${inputId}-strength` : undefined;
+  const describedBy =
+    [hintId, strengthId].filter(Boolean).join(' ') || undefined;
   const strValue = typeof value === 'string' ? value : '';
   const { score, label: strengthLabel } = scorePassword(strValue);
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       {label && (
-        <label htmlFor={inputId} className="text-label-m text-idle">
+        <label htmlFor={inputId} className="text-label-m text-text-weak">
           {label}
         </label>
       )}
@@ -72,7 +76,8 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
           id={inputId}
           value={strValue}
           type={revealed ? 'text' : 'password'}
-          aria-describedby={strengthId}
+          aria-describedby={describedBy}
+          hasVisibleLabel={Boolean(label)}
           className={cn('w-full', showToggle && 'pr-10', className)}
         />
 
@@ -94,6 +99,12 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
           </button>
         )}
       </div>
+
+      {hint && (
+        <p id={hintId} className="text-label-s text-text-weaker">
+          {hint}
+        </p>
+      )}
 
       {showStrength && (
         <div className="flex flex-col gap-1">

@@ -11,9 +11,9 @@ import { LogoColor } from './types';
  */
 describe('LogoSvg', () => {
   it('renders with default primary color and size 100', () => {
-    render(<LogoSvg />);
+    render(<LogoSvg label="TalkUp" />);
 
-    const svgElement = screen.getByRole('img');
+    const svgElement = screen.getByRole('img', { name: 'TalkUp' });
 
     expect(svgElement).toBeInTheDocument();
     expect(svgElement).toHaveClass('fill-primary');
@@ -23,9 +23,9 @@ describe('LogoSvg', () => {
 
   it('renders with a custom accent color', () => {
     const customColor: LogoColor = 'accent';
-    render(<LogoSvg color={customColor} />);
+    render(<LogoSvg color={customColor} label="TalkUp" />);
 
-    const svgElement = screen.getByRole('img');
+    const svgElement = screen.getByRole('img', { name: 'TalkUp' });
 
     expect(svgElement).toBeInTheDocument();
     expect(svgElement).toHaveClass(`fill-${customColor}`);
@@ -33,9 +33,9 @@ describe('LogoSvg', () => {
   });
 
   it('renders with a custom size of 50', () => {
-    render(<LogoSvg size={50} />);
+    render(<LogoSvg size={50} label="TalkUp" />);
 
-    const svgElement = screen.getByRole('img');
+    const svgElement = screen.getByRole('img', { name: 'TalkUp' });
 
     expect(svgElement).toBeInTheDocument();
     expect(svgElement).toHaveAttribute('width', '50');
@@ -45,9 +45,9 @@ describe('LogoSvg', () => {
   it('renders with both custom color and size', () => {
     const customColor: LogoColor = 'accent';
     const customSize = 75;
-    render(<LogoSvg color={customColor} size={customSize} />);
+    render(<LogoSvg color={customColor} size={customSize} label="TalkUp" />);
 
-    const svgElement = screen.getByRole('img');
+    const svgElement = screen.getByRole('img', { name: 'TalkUp' });
 
     expect(svgElement).toBeInTheDocument();
     expect(svgElement).toHaveClass(`fill-${customColor}`);
@@ -55,8 +55,17 @@ describe('LogoSvg', () => {
     expect(svgElement).toHaveAttribute('height', customSize.toString());
   });
 
-  it('has an appropriate role for accessibility', () => {
-    render(<LogoSvg />);
-    expect(screen.getByRole('img')).toBeInTheDocument();
+  it('is a named image when it stands alone (label)', () => {
+    render(<LogoSvg label="TalkUp" />);
+    expect(screen.getByRole('img', { name: 'TalkUp' })).toBeInTheDocument();
+  });
+
+  it('is decorative and hidden from assistive tech without a label', () => {
+    const { container } = render(<LogoSvg />);
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(container.querySelector('svg')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
   });
 });

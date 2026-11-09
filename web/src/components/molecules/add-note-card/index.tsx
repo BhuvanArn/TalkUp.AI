@@ -25,7 +25,7 @@ export const AddNoteCard = ({ onClick }: AddNoteCardProps) => {
           className="w-6 h-6 text-text-weaker group-hover:text-accent transition-colors"
         />
       </div>
-      <span className="text-body-md text-text-weaker group-hover:text-accent transition-colors font-medium">
+      <span className="text-body-m text-text-weaker group-hover:text-accent transition-colors font-medium">
         {t('notes.addNote')}
       </span>
     </button>

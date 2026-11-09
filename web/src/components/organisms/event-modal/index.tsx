@@ -72,7 +72,12 @@ const CalendarModal = () => {
                 ? t('agenda.eventModal.editTitle')
                 : t('agenda.eventModal.createTitle')}
             </h2>
-            <IconAction icon="times" size="md" onClick={closeModal} />
+            <IconAction
+              icon="times"
+              size="md"
+              onClick={closeModal}
+              ariaLabel={t('agenda.eventModal.close')}
+            />
           </div>
 
           {errorMessage && (
@@ -204,7 +209,7 @@ const CalendarModal = () => {
               {modalEventToEdit
                 ? t('agenda.eventModal.update')
                 : t('agenda.eventModal.create')}
-              <Icon icon="save" size="sm" color="white" />
+              <Icon icon="save" size="sm" color="inherit" />
             </Button>
           </div>
         </div>

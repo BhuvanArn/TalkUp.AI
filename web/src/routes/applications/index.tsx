@@ -1,3 +1,4 @@
+import { Button } from '@/components/atoms/button';
 import { iconMap } from '@/components/atoms/icon/icon-map';
 import { ApplicationsKanban } from '@/components/organisms/applications-kanban';
 import {
@@ -71,13 +72,12 @@ function ApplicationsPage() {
         {/* The add button only shows once at least one application exists — the
             empty state carries its own single call to action instead. */}
         {hasApplications && (
-          <Link
-            to="/cv-analysis"
-            className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-lg px-4 py-2 text-white transition-colors"
-          >
-            <PlusIcon size={18} aria-hidden="true" />
-            {t('applications.new')}
-          </Link>
+          <Button asChild color="accent">
+            <Link to="/cv-analysis">
+              <PlusIcon size={18} aria-hidden="true" />
+              {t('applications.new')}
+            </Link>
+          </Button>
         )}
       </div>
 
@@ -139,12 +139,9 @@ function ApplicationsPage() {
               <p className="text-body-m text-text-weaker mt-2">
                 {t('applications.empty.description')}
               </p>
-              <Link
-                to="/cv-analysis"
-                className="text-button-m bg-accent hover:bg-accent-hover mt-5 rounded-lg px-5 py-2.5 text-white transition-colors"
-              >
-                {t('applications.empty.cta')}
-              </Link>
+              <Button asChild color="accent" className="mt-5">
+                <Link to="/cv-analysis">{t('applications.empty.cta')}</Link>
+              </Button>
             </div>
           </div>
         </div>

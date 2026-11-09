@@ -189,7 +189,7 @@ describe('BaseInput', () => {
       const input = screen.getByRole('textbox');
       expect(input).toHaveClass('disabled:cursor-not-allowed');
       expect(input).toHaveClass('disabled:bg-disabled');
-      expect(input).toHaveClass('disabled:opacity-50');
+      expect(input).toHaveClass('disabled:text-text-disabled');
     });
   });
 

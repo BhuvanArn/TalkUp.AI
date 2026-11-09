@@ -38,7 +38,7 @@ describe('CalendarListDayHeader', () => {
     // parent element of the span has the conditional classes
     const parent = dateSpan.parentElement as HTMLElement;
     expect(parent).toHaveClass('bg-accent');
-    expect(parent).toHaveClass('text-white');
+    expect(parent).toHaveClass('text-on-accent');
   });
 
   it('calls onDayClick when overlay button is clicked and calls onCreateEvent when icon is clicked', () => {

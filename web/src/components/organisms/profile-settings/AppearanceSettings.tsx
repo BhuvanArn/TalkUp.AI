@@ -142,7 +142,7 @@ export const AppearanceSettings = ({
                 alt={t('appearanceSettings.preview.alt')}
                 fallback={initials}
                 size="md"
-                className={cn('shrink-0 font-bold text-white', className)}
+                className={cn('shrink-0 font-bold text-on-media', className)}
                 style={{ backgroundColor: avatarColor }}
               />
               <div className="mt-1.5 text-[11px] text-text-weaker">

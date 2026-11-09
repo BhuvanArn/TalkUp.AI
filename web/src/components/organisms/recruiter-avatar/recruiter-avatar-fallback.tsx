@@ -34,10 +34,10 @@ export function RecruiterAvatarFallback({
       />
 
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-4 pt-10">
-        <p className="text-sm font-semibold text-white">
+        <p className="text-sm font-semibold text-on-media">
           {RECRUITER_DISPLAY_NAME}
         </p>
-        <p className="text-xs text-white/80">{role}</p>
+        <p className="text-xs text-on-media/80">{role}</p>
       </div>
 
       {isAiSpeaking ? (

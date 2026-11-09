@@ -3,6 +3,12 @@ import { LogoColor } from './types';
 interface Props {
   color?: LogoColor;
   size?: number;
+  /**
+   * Accessible name. Pass it when the mark stands alone (no "TALKUP" text
+   * next to it); without it the SVG is decorative and hidden from assistive
+   * technology, so a visible wordmark is not announced twice.
+   */
+  label?: string;
 }
 
 /**
@@ -23,7 +29,7 @@ interface Props {
  * // With custom color and size
  * <LogoSvg color="secondary" size={50} />
  */
-const LogoSvg = ({ color = 'primary', size = 100 }: Props) => {
+const LogoSvg = ({ color = 'primary', size = 100, label }: Props) => {
   const fill = `fill-${color}`;
 
   return (
@@ -31,7 +37,9 @@ const LogoSvg = ({ color = 'primary', size = 100 }: Props) => {
       className={fill}
       width={size}
       height={size}
-      role="img"
+      {...(label
+        ? { role: 'img', 'aria-label': label }
+        : { 'aria-hidden': true, focusable: 'false' })}
       viewBox="0 0 78 75"
       xmlns="http://www.w3.org/2000/svg"
     >

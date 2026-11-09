@@ -1,3 +1,4 @@
+import { Button } from '@/components/atoms/button';
 import { iconMap } from '@/components/atoms/icon/icon-map';
 import { InterviewDatePill } from '@/components/molecules/interview-date-pill';
 import { RoadmapSourcesModal } from '@/components/organisms/roadmap-sources-modal';
@@ -118,16 +119,15 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
       >
         <div className="border-border flex flex-col items-center gap-3 rounded-2xl border border-dashed p-10 text-center">
           <p className="text-body-l text-error">{t('roadmap.loadError')}</p>
-          <button
-            type="button"
+          <Button
+            color="accent"
             onClick={() => regenerate.mutate()}
             disabled={regenerate.isPending}
-            className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-2xl px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-disabled"
           >
             {regenerate.isPending
               ? t('roadmap.retrying')
               : t('common:actions.retry')}
-          </button>
+          </Button>
           {regenerate.isError && (
             <p className="text-body-s text-error">
               {t('roadmap.regenerateError')}
@@ -148,39 +148,41 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
   // frame) and the empty state (plain footer). Never scrolls horizontally.
   const actions = (
     <div className="flex flex-wrap items-center gap-4">
-      <Link
-        to="/applications/$applicationId/simulations"
-        params={{ applicationId }}
-        className="text-button-m bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-2xl px-8 py-3 text-white"
-      >
-        {t('roadmap.startSimulation')}
-        <StartIcon size={16} aria-hidden="true" />
-      </Link>
-      <Link
-        to="/notes"
-        search={{ applicationId }}
-        className="text-button-m border-accent text-accent hover:bg-accent-weak flex items-center gap-2 rounded-2xl border px-8 py-3 transition-colors"
-      >
-        <NotesIcon size={16} aria-hidden="true" />
-        {t('roadmap.myNotes')}
-      </Link>
+      {/* Figma R1: 8px radius, 40px high (Button size md). */}
+      <Button asChild color="accent" className="px-8">
+        <Link
+          to="/applications/$applicationId/simulations"
+          params={{ applicationId }}
+        >
+          {t('roadmap.startSimulation')}
+          <StartIcon size={16} aria-hidden="true" />
+        </Link>
+      </Button>
+      <Button asChild variant="outlined" color="accent" className="border px-8">
+        <Link to="/notes" search={{ applicationId }}>
+          <NotesIcon size={16} aria-hidden="true" />
+          {t('roadmap.myNotes')}
+        </Link>
+      </Button>
       <div className="ml-auto flex flex-col items-end gap-1">
         <div className="flex items-center gap-4">
           {application && (
-            <button
-              type="button"
+            <Button
+              variant="outlined"
+              color="neutral"
+              className="border-border text-text-weak hover:border-accent hover:text-accent px-5 border"
               onClick={() => setSourcesOpen(true)}
-              className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-2xl border px-5 py-3 transition-colors"
             >
               <SourcesIcon size={16} aria-hidden="true" />
               {t('roadmap.sources')}
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
+          <Button
+            variant="outlined"
+            color="neutral"
+            className="border-border text-text-weak hover:border-accent hover:text-accent px-5 border"
             onClick={() => regenerate.mutate()}
             disabled={regenerate.isPending}
-            className="text-button-m border-border text-text-weak hover:border-accent hover:text-accent flex cursor-pointer items-center gap-2 rounded-2xl border px-5 py-3 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RegenerateIcon
               size={16}
@@ -190,7 +192,7 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
             {regenerate.isPending
               ? t('roadmap.regenerating')
               : t('roadmap.regenerate')}
-          </button>
+          </Button>
         </div>
         {regenerate.isError && (
           <p className="text-body-s text-error">
@@ -230,16 +232,15 @@ export function RoadmapPage({ applicationId }: { applicationId: string }) {
                   <p className="text-body-l text-text-weak">
                     {t('roadmap.emptyWithOffer')}
                   </p>
-                  <button
-                    type="button"
+                  <Button
+                    color="accent"
                     onClick={() => regenerate.mutate()}
                     disabled={regenerate.isPending}
-                    className="text-button-m bg-accent hover:bg-accent-hover cursor-pointer rounded-2xl px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-disabled"
                   >
                     {regenerate.isPending
                       ? t('roadmap.regenerating')
                       : t('roadmap.regenerate')}
-                  </button>
+                  </Button>
                 </>
               ) : (
                 <>

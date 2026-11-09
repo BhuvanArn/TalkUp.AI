@@ -38,7 +38,7 @@ export const Toggle = ({
       style={accentStyle}
       className={cn(
         'relative h-5 w-9 shrink-0 rounded-full border-[0.5px] transition-[background-color,border-color] duration-200 ease-out',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'focus-ring',
         enabled
           ? 'border-[color:var(--toggle-accent)] bg-[color:var(--toggle-accent)]'
           : 'border-border-strong bg-surface-raised',

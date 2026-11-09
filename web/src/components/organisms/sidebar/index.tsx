@@ -64,7 +64,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
 
   return (
     <aside
-      className={`h-screen bg-surface-sidebar px-4 pt-4 pb-5 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}
+      className={`h-screen border-r border-border bg-surface-sidebar px-4 pt-4 pb-5 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}
     >
       <div className={`${isCollapsed && 'w-8'} flex flex-col gap-4 h-full`}>
         <div
@@ -73,13 +73,20 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
           <div
             className={`flex gap-3 items-center justify-between ${isCollapsed ? 'flex-col' : 'flex-row'}`}
           >
-            <Link className="flex items-center gap-2" to="/">
+            <Link
+              className="focus-ring flex items-center gap-2 rounded-button"
+              to="/"
+            >
               <Logo variant={isCollapsed ? 'no-text' : 'line'} color="accent" />
             </Link>
             <Button
               variant="text"
               color="sidebar"
               squared
+              aria-label={
+                isCollapsed ? t('sidebar.expand') : t('sidebar.collapse')
+              }
+              aria-expanded={!isCollapsed}
               onClick={() => setIsCollapsed(!isCollapsed)}
             >
               <Icon
@@ -94,8 +101,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                 {t('sidebar.linkIntegrations')}
               </p>
               <div className="flex gap-1 p-1 bg-surface-sidebar-active rounded-md">
-                <IconAction icon="google" size="sm" />
-                <IconAction icon="linkedin" size="sm" color="accent" />
+                <IconAction
+                  icon="google"
+                  size="sm"
+                  ariaLabel={t('sidebar.googleIntegration')}
+                />
+                <IconAction
+                  icon="linkedin"
+                  size="sm"
+                  color="accent"
+                  ariaLabel={t('sidebar.linkedinIntegration')}
+                />
               </div>
             </div>
           )}
@@ -117,7 +133,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
               {/* Organization-view marker: shows the org name so the header is
                   useful (the flip switch below already signals the view). */}
               {isOrgView && !isCollapsed && org && (
-                <div className="flex shrink-0 items-center gap-2 rounded-md bg-surface-sidebar-active px-3 py-2 text-accent">
+                <div className="flex shrink-0 items-center gap-2 rounded-md bg-surface-sidebar-active px-3 py-2 text-text">
                   <Avatar
                     src={org.profile_picture ?? undefined}
                     alt=""

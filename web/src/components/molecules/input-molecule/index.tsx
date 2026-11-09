@@ -59,9 +59,9 @@ export const InputMolecule: React.FC<InputMoleculeProps> = React.memo(
     const helperTextId = helperText ? `${id}-helper` : undefined;
 
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         {shouldRenderExternalLabel && (
-          <label htmlFor={id} className="text-label-m text-idle">
+          <label htmlFor={id} className="text-label-m text-text-weak">
             {label}
           </label>
         )}
@@ -78,6 +78,7 @@ export const InputMolecule: React.FC<InputMoleculeProps> = React.memo(
             placeholder={props.placeholder ?? ''}
             aria-describedby={helperTextId}
             type={props.type ?? 'text'}
+            hasVisibleLabel={Boolean(shouldRenderExternalLabel)}
           />
         )}
 

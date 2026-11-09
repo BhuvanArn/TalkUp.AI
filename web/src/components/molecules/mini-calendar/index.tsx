@@ -71,7 +71,7 @@ export const MiniCalendar = () => {
               <span
                 className={`w-6 h-6 flex items-center justify-center rounded-full text-body-s z-10
                   ${day.isNotCurrentMonth ? 'text-idle/50' : 'text-idle'} 
-                  ${isToday ? 'bg-accent text-white font-bold' : ''}
+                  ${isToday ? 'bg-accent text-on-accent font-bold' : ''}
                   ${isSelectedWeek && !isToday ? 'text-accent font-medium' : ''}
                 `}
               >

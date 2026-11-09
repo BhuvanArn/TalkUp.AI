@@ -104,7 +104,7 @@ export const InviteCreateModal = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t('inviteCreateModal.email')}
-              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-body-s text-text transition-colors hover:border-border-strong focus:border-accent focus:outline-none"
+              className="rounded-lg border border-border-input bg-surface px-3 py-1.5 text-body-s text-text transition-colors hover:border-border-strong focus:border-accent focus:outline-none"
             />
           </label>
 
@@ -113,7 +113,7 @@ export const InviteCreateModal = ({
             <span className="relative inline-flex items-center">
               <select
                 aria-label={t('inviteCreateModal.role')}
-                className="w-full cursor-pointer appearance-none rounded-lg border border-border bg-surface py-1.5 pl-3 pr-9 text-body-s text-text transition-colors hover:border-border-strong hover:bg-surface-hover focus:border-accent focus:outline-none"
+                className="w-full cursor-pointer appearance-none rounded-lg border border-border-input bg-surface py-1.5 pl-3 pr-9 text-body-s text-text transition-colors hover:border-border-strong hover:bg-surface-hover focus:border-accent focus:outline-none"
                 value={role}
                 onChange={(e) => setRole(e.target.value as 'user' | 'employee')}
               >

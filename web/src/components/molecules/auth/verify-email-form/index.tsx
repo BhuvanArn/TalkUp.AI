@@ -154,7 +154,7 @@ export const VerifyEmailForm = ({
           )}
         </form.Field>
         {serverError && (
-          <div className="text-sm text-red-600 text-center" role="alert">
+          <div className="text-label-m text-error text-center" role="alert">
             {serverError}
           </div>
         )}
@@ -163,7 +163,7 @@ export const VerifyEmailForm = ({
           type="submit"
           disabled={verifyEmail.isPending || emailMissingOrInvalid}
         >
-          <Icon icon="register" color="white" />
+          <Icon icon="register" color="inherit" />
           {t('verifyEmailForm.submit')}
         </Button>
       </form>
@@ -211,7 +211,7 @@ export const VerifyEmailForm = ({
             );
           }}
         >
-          <Icon icon="arrow-right" color="white" />
+          <Icon icon="arrow-right" color="inherit" />
           {resendSecondsLeft > 0
             ? t('otpCode.resendCountdown', { seconds: resendSecondsLeft })
             : t('otpCode.resend')}

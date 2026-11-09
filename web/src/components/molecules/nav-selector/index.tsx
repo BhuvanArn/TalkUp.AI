@@ -21,7 +21,7 @@ export const NavSelector = ({
     return (
       <button
         onClick={onToggle}
-        className="w-8 h-4 my-2 rounded-[5px] flex items-center justify-center transition-all cursor-pointer mx-auto"
+        className="w-8 h-4 my-2 rounded-button flex items-center justify-center transition-all cursor-pointer mx-auto focus-ring"
         style={{ backgroundColor: `${color}CC` }}
         title={label}
       >
@@ -37,7 +37,7 @@ export const NavSelector = ({
   return (
     <button
       onClick={onToggle}
-      className={`w-full px-3 py-2 rounded-[5px] h-8 flex justify-between items-center transition-colors cursor-pointer ${
+      className={`w-full px-3 py-2 rounded-button h-8 flex justify-between items-center transition-colors cursor-pointer focus-ring ${
         isExpanded
           ? 'bg-surface-sidebar-active'
           : 'hover:bg-surface-sidebar-hover'

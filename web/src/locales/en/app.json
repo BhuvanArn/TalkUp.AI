@@ -162,7 +162,7 @@
     "offer": {
       "helper": "TalkUp will automatically extract details from the listing.",
       "label": "Job offer link",
-      "placeholder": "Paste LinkedIn, WTTJ link..."
+      "placeholder": "https://www.linkedin.com/jobs/view/…"
     },
     "processing": {
       "cv": "Analyzing your CV...",
@@ -496,7 +496,11 @@
       "description": "Explore the new AI content we have prepared for you in 2026",
       "title": "TalkUp new AI content"
     },
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "googleIntegration": "Google integration",
     "linkIntegrations": "Link Integrations",
+    "linkedinIntegration": "LinkedIn integration",
     "loading": "Loading...",
     "orgView": "Organization view"
   },

@@ -286,20 +286,22 @@ export function RecruiterAvatar3D({
       />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-8">
-        <p className="text-sm font-semibold text-white">
+        <p className="text-sm font-semibold text-on-media">
           {RECRUITER_DISPLAY_NAME}
         </p>
-        <p className="text-xs text-white/80">{t(RECRUITER_DISPLAY_ROLE_KEY)}</p>
+        <p className="text-xs text-on-media/80">
+          {t(RECRUITER_DISPLAY_ROLE_KEY)}
+        </p>
       </div>
 
       {initState === 'loading' ? (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-black/40 backdrop-blur-[2px]">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-          <p className="text-sm font-medium text-white">
+          <p className="text-sm font-medium text-on-media">
             {loadDetail ? t(loadDetail) : null}
           </p>
           {loadProgress > 0 ? (
-            <p className="text-xs text-white/70">
+            <p className="text-xs text-on-media/70">
               {formatPercent(loadProgress, intlLocale)}
             </p>
           ) : null}
@@ -308,7 +310,9 @@ export function RecruiterAvatar3D({
 
       {initState === 'error' ? (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 backdrop-blur-[2px]">
-          <p className="text-sm text-white/70">{t('recruiter.unavailable')}</p>
+          <p className="text-sm text-on-media/70">
+            {t('recruiter.unavailable')}
+          </p>
         </div>
       ) : null}
     </div>

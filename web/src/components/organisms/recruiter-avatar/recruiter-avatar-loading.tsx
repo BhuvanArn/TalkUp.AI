@@ -15,13 +15,13 @@ export function RecruiterAvatarLoading() {
       <RecruiterAvatarBackdrop />
       <div className="relative z-10 text-center">
         <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-        <p className="text-sm font-semibold text-white drop-shadow-sm">
+        <p className="text-sm font-semibold text-on-media drop-shadow-sm">
           {RECRUITER_DISPLAY_NAME}
         </p>
-        <p className="text-xs text-white/90 drop-shadow-sm">
+        <p className="text-xs text-on-media/90 drop-shadow-sm">
           {t(RECRUITER_DISPLAY_ROLE_KEY)}
         </p>
-        <p className="mt-2 text-xs text-white/80 drop-shadow-sm">
+        <p className="mt-2 text-xs text-on-media/80 drop-shadow-sm">
           {t('recruiter.loading3d')}
         </p>
       </div>

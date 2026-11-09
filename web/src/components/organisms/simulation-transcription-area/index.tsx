@@ -23,7 +23,7 @@ const SimulationTranscriptionArea = ({
             <div className="bg-neutral-weaker rounded-full p-4 mb-3">
               <Icon icon="notes" className="w-8 h-8 text-text-weaker" />
             </div>
-            <p className="text-body-md text-text-weaker max-w-xs">
+            <p className="text-body-m text-text-weaker max-w-xs">
               {t('simulations.transcriptions.empty')}
             </p>
           </div>
@@ -40,7 +40,7 @@ const SimulationTranscriptionArea = ({
                 className={`p-3 rounded-xl shadow-sm max-w-3/4 ${bubbleColor}`}
               >
                 <p className="text-sm">
-                  <span className="font-semibold bg-accent/80 text-white px-2 py-0.5 rounded-full mr-2">
+                  <span className="font-semibold bg-accent/80 text-on-accent px-2 py-0.5 rounded-full mr-2">
                     {turn.isIA
                       ? t('simulations.speakers.ai')
                       : t('simulations.speakers.you')}

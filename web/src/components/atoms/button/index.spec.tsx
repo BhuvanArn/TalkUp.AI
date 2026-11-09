@@ -52,7 +52,7 @@ describe('Button Component', () => {
     it('renders contained variant by default', () => {
       render(<Button>Contained</Button>);
       const buttonElement = screen.getByRole('button', { name: 'Contained' });
-      expect(buttonElement).toHaveClass('border-transparent', 'text-white');
+      expect(buttonElement).toHaveClass('border-transparent', 'text-on-accent');
     });
 
     it('renders outlined variant', () => {
@@ -79,6 +79,27 @@ describe('Button Component', () => {
       expect(buttonElement).toHaveClass('h-10', 'px-4', 'py-2');
     });
 
+    it('uses the Saira button type, the 8px button radius and an accent focus ring at every size', () => {
+      const typeBySize = {
+        xs: 'text-button-s',
+        sm: 'text-button-s',
+        md: 'text-button-m',
+        lg: 'text-button-l',
+      } as const;
+      for (const [size, typeClass] of Object.entries(typeBySize)) {
+        const { unmount } = render(
+          <Button size={size as keyof typeof typeBySize}>{size}</Button>,
+        );
+        const buttonElement = screen.getByRole('button', { name: size });
+        expect(buttonElement).toHaveClass(
+          typeClass,
+          'rounded-button',
+          'focus-ring',
+        );
+        unmount();
+      }
+    });
+
     it('renders small size', () => {
       render(<Button size="sm">Small</Button>);
       const buttonElement = screen.getByRole('button', { name: 'Small' });
@@ -88,7 +109,12 @@ describe('Button Component', () => {
     it('renders large size', () => {
       render(<Button size="lg">Large</Button>);
       const buttonElement = screen.getByRole('button', { name: 'Large' });
-      expect(buttonElement).toHaveClass('h-12', 'px-6', 'py-3', 'text-base');
+      expect(buttonElement).toHaveClass(
+        'h-12',
+        'px-6',
+        'py-3',
+        'text-button-l',
+      );
     });
   });
 
@@ -126,7 +152,7 @@ describe('Button Component', () => {
       const buttonElement = screen.getByRole('button', { name: 'Disabled' });
       expect(buttonElement).toBeDisabled();
       expect(buttonElement).toHaveAttribute('aria-disabled', 'true');
-      expect(buttonElement).toHaveClass('opacity-50', 'cursor-not-allowed');
+      expect(buttonElement).toHaveClass('cursor-not-allowed');
     });
 
     it('does not call onClick when disabled', () => {
@@ -152,7 +178,13 @@ describe('Button Component', () => {
       const buttonElement = screen.getByRole('button', {
         name: 'Disabled Contained',
       });
-      expect(buttonElement).toHaveClass('opacity-50', 'cursor-not-allowed');
+      expect(buttonElement).toHaveClass(
+        'disabled:bg-disabled',
+        'disabled:text-text-disabled',
+        'aria-disabled:bg-disabled',
+        'cursor-not-allowed',
+      );
+      expect(buttonElement).not.toHaveClass('opacity-50');
     });
 
     it('applies disabled styles for outlined variant', () => {
@@ -164,7 +196,32 @@ describe('Button Component', () => {
       const buttonElement = screen.getByRole('button', {
         name: 'Disabled Outlined',
       });
-      expect(buttonElement).toHaveClass('opacity-50', 'cursor-not-allowed');
+      expect(buttonElement).toHaveClass(
+        'disabled:border-border',
+        'disabled:text-text-disabled',
+        'cursor-not-allowed',
+      );
+    });
+
+    it('keeps the disabled colours when a colour is passed through className', () => {
+      render(
+        <Button
+          disabled
+          variant="outlined"
+          color="neutral"
+          className="border-border text-text-weak hover:text-accent"
+        >
+          Busy
+        </Button>,
+      );
+      const buttonElement = screen.getByRole('button', { name: 'Busy' });
+      // The override stays, but the variant-scoped disabled classes survive
+      // tailwind-merge and win in CSS while the button is disabled.
+      expect(buttonElement).toHaveClass(
+        'text-text-weak',
+        'disabled:text-text-disabled',
+        'disabled:hover:text-text-disabled',
+      );
     });
   });
 
@@ -201,7 +258,7 @@ describe('Button Component', () => {
       expect(handleClick).not.toHaveBeenCalled();
     });
 
-    it('applies disabled styling when loading', () => {
+    it('keeps its colour, dimmed, when loading', () => {
       render(
         <Button loading color="primary">
           Loading Primary
@@ -210,8 +267,9 @@ describe('Button Component', () => {
       const buttonElement = screen.getByRole('button', {
         name: 'Loading Primary',
       });
-      expect(buttonElement).toHaveClass('!cursor-wait');
-      expect(buttonElement).toHaveClass('opacity-50');
+      expect(buttonElement).toHaveClass('!cursor-wait', 'opacity-75');
+      expect(buttonElement).toHaveClass('bg-primary');
+      expect(buttonElement).not.toHaveClass('disabled:bg-disabled');
     });
   });
 

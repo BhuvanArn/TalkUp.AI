@@ -143,7 +143,7 @@ export const RoadmapTopicCard = ({ step, topic }: RoadmapTopicCardProps) => {
             <span />
           )}
           {isTruncated && (
-            <span className="text-body-s text-accent">
+            <span className="text-body-s text-accent-hover">
               {t('roadmap.topic.readMore')}
             </span>
           )}

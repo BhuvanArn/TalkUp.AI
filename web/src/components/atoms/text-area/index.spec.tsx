@@ -61,7 +61,7 @@ describe('TextArea', () => {
     expect(textarea).toBeDisabled();
     expect(textarea).toHaveClass('disabled:cursor-not-allowed');
     expect(textarea).toHaveClass('disabled:bg-disabled');
-    expect(textarea).toHaveClass('disabled:opacity-50');
+    expect(textarea).toHaveClass('disabled:text-text-disabled');
     expect(textarea).toHaveClass('resize-none');
   });
 

@@ -635,7 +635,7 @@ function Profile() {
                     }
                     fallback={initials}
                     size="xl"
-                    className="!h-24 !w-24 !border-4 !text-[28px] font-extrabold text-white shadow-md"
+                    className="!h-24 !w-24 !border-4 !text-[28px] font-extrabold text-on-media shadow-md"
                     style={{
                       backgroundColor: avatarColor,
                       borderColor: 'var(--color-background)',

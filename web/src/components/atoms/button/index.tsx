@@ -46,7 +46,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         variant,
         color,
         size,
-        disabled: isDisabled,
+        // Loading keeps its colour (the spinner says "busy"); only a real
+        // `disabled` switches to the disabled fill.
+        disabled,
         loading,
         squared,
         circled,

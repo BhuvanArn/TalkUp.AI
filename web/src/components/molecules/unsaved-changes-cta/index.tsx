@@ -131,7 +131,7 @@ export const UnsavedChangesCta = ({
             color="neutral"
             onClick={onReset}
             data-testid="reset-changes-button"
-            className="min-h-10 rounded-[10px] border-border bg-background px-[18px] text-sm font-medium text-text"
+            className="min-h-10 border-border bg-background px-[18px] text-text"
           >
             {resetLabel ?? t('unsavedChanges.reset')}
           </Button>
@@ -141,7 +141,7 @@ export const UnsavedChangesCta = ({
             color="accent"
             onClick={onSave}
             data-testid="save-button"
-            className="min-h-10 rounded-[10px] px-5 text-sm font-semibold"
+            className="min-h-10 px-5"
           >
             {isSaved
               ? (savedLabel ?? t('unsavedChanges.saved'))

@@ -41,14 +41,18 @@ const NavLink = ({
   isCollapsed,
 }: NavLinkProps) => {
   return (
-    <Link to={to} className="[&.active]:font-bold w-full h-8">
-      <Button
-        variant="text"
-        color="sidebar"
-        size="md"
-        squared={isCollapsed}
-        className={`w-full h-8 ${isCollapsed ? 'justify-center' : 'justify-start px-3'} ${isActive ? 'text-active bg-surface-sidebar-active' : 'text-idle'} py-2`}
-      >
+    // One focusable element: the Link itself, styled as the sidebar button
+    // (it used to wrap a <button>, which gave two tab stops and no visible
+    // focus). The Button atom supplies the accent focus-visible ring.
+    <Button
+      asChild
+      variant="text"
+      color="sidebar"
+      size="md"
+      squared={isCollapsed}
+      className={`w-full h-8 ${isCollapsed ? 'justify-center' : 'justify-start px-3'} ${isActive ? 'text-active bg-surface-sidebar-active' : 'text-idle'} py-2`}
+    >
+      <Link to={to}>
         {icon && (
           <Icon
             icon={icon}
@@ -58,8 +62,8 @@ const NavLink = ({
           />
         )}
         {!isCollapsed && <span className="text-button-s">{label}</span>}
-      </Button>
-    </Link>
+      </Link>
+    </Button>
   );
 };
 

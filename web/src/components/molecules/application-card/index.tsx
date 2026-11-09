@@ -142,7 +142,7 @@ export const ApplicationCard = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-background border-border rounded-xl border p-3 ${
+      className={`bg-surface-card border-border rounded-card border p-3 ${
         isDragging ? 'z-10 opacity-80 shadow-lg' : ''
       } ${isPending ? 'opacity-60' : ''}`}
     >
@@ -152,11 +152,11 @@ export const ApplicationCard = ({
         <div
           {...listeners}
           {...attributes}
-          className="bg-surface-raised border-border hover:border-border-strong group flex min-w-0 flex-1 cursor-grab items-center gap-2.5 rounded-lg border p-2 transition-colors active:cursor-grabbing"
+          className="bg-surface-raised border-border hover:border-border-strong group flex min-w-6 flex-1 cursor-grab items-center gap-2.5 rounded-lg border p-2 transition-colors active:cursor-grabbing focus-ring"
         >
           <span
             aria-hidden="true"
-            className="bg-background text-primary text-body-s-strong flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-display"
+            className="bg-surface-card text-primary text-body-s-strong flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-display"
           >
             {(application.companyName ?? '?').charAt(0).toUpperCase()}
           </span>
@@ -184,7 +184,7 @@ export const ApplicationCard = ({
             aria-expanded={isMenuOpen}
             disabled={isPending}
             onClick={() => (isMenuOpen ? closeMenu() : setIsMenuOpen(true))}
-            className={`text-text-weakest hover:text-text hover:bg-surface flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed ${
+            className={`text-text-weakest hover:text-text hover:bg-surface flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed focus-ring ${
               isMenuOpen ? 'bg-surface text-text' : ''
             }`}
           >
@@ -217,7 +217,7 @@ export const ApplicationCard = ({
                         onStatusChange(application.applicationId, status);
                         closeMenu();
                       }}
-                      className="text-body-s text-text hover:bg-surface flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left"
+                      className="text-body-s text-text hover:bg-surface focus-visible:bg-surface flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left outline-none"
                     >
                       <StatusIcon
                         size={15}
@@ -257,7 +257,7 @@ export const ApplicationCard = ({
                     onClick={() =>
                       onInterviewAtChange(application.applicationId, null)
                     }
-                    className="text-text-weakest hover:text-text shrink-0 cursor-pointer rounded px-1"
+                    className="text-text-weakest hover:text-text shrink-0 cursor-pointer rounded px-1 focus-ring"
                   >
                     <iconMap.times size={14} aria-hidden="true" />
                   </button>
@@ -272,7 +272,7 @@ export const ApplicationCard = ({
                   closeMenu();
                   setIsDeleteModalOpen(true);
                 }}
-                className="text-body-s text-error hover:bg-error-weaker flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left"
+                className="text-body-s text-error hover:bg-error-weaker focus-visible:bg-error-weaker flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left outline-none"
               >
                 <TrashIcon size={15} aria-hidden="true" className="shrink-0" />
                 {t('common:actions.delete')}
@@ -332,7 +332,7 @@ export const ApplicationCard = ({
         <button
           type="button"
           onClick={() => onOpenTraining(application.applicationId)}
-          className="text-body-s-strong text-accent hover:text-accent-hover cursor-pointer"
+          className="text-body-s-strong text-accent hover:text-accent-hover cursor-pointer rounded-button focus-ring"
         >
           {t('applications.card.resumeTraining')}
         </button>

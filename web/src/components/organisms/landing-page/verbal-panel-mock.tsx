@@ -29,9 +29,9 @@ const VerbalPanelMock = () => {
         <span className="font-display text-base font-semibold text-text">
           {t('verbalMock.title')}
         </span>
-        <span className="font-display text-4xl font-extrabold leading-none tabular-nums text-text">
+        <span className="font-display text-h1 font-extrabold leading-none tabular-nums text-text">
           74
-          <small className="ml-1 font-body text-xs font-normal text-text-weaker">
+          <small className="ml-1 font-body text-body-s font-normal text-text-weaker">
             {t('verbalMock.outOf')}
           </small>
         </span>
@@ -41,7 +41,7 @@ const VerbalPanelMock = () => {
         {SCORES.map(({ labelKey, value }) => (
           <div
             key={labelKey}
-            className="grid grid-cols-[88px_minmax(0,1fr)_28px] items-center gap-2.5 text-[13px] text-text sm:grid-cols-[96px_minmax(0,1fr)_34px]"
+            className="grid grid-cols-[88px_minmax(0,1fr)_28px] items-center gap-2.5 text-body-m text-text sm:grid-cols-[96px_minmax(0,1fr)_34px]"
           >
             <span>{t(labelKey)}</span>
             <span className="h-2 overflow-hidden rounded bg-surface-raised">
@@ -55,7 +55,7 @@ const VerbalPanelMock = () => {
         ))}
       </div>
 
-      <p className="mt-3.5 text-[13px] text-text-weaker">
+      <p className="mt-3.5 text-body-m text-text-weaker">
         <Trans
           ns="landing"
           i18nKey="verbalMock.register"
@@ -63,21 +63,21 @@ const VerbalPanelMock = () => {
         />
       </p>
 
-      <div className="mt-3.5 rounded-md bg-warning-weak px-3 py-2.5 text-sm">
+      <div className="mt-3.5 rounded-md bg-warning-weak px-3 py-2.5 text-body-m">
         <span className="mb-0.5 block font-display text-xs font-semibold text-warning-active">
           {t('verbalMock.alertTitle')}
         </span>
         <span className="text-text">{t('verbalMock.alert')}</span>
       </div>
 
-      <div className="mt-3.5 rounded-md bg-accent-weak px-3 py-2.5 text-sm text-text">
+      <div className="mt-3.5 rounded-md bg-accent-weak px-3 py-2.5 text-body-m text-text">
         <span className="mb-0.5 block font-display text-xs font-semibold text-accent-active">
           {t('verbalMock.tipTitle')}
         </span>
         {t('verbalMock.tip')}
       </div>
 
-      <div className="mt-3.5 text-[13px] text-text-weaker">
+      <div className="mt-3.5 text-body-m text-text-weaker">
         {t('verbalMock.frequentTics')}
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -85,14 +85,14 @@ const VerbalPanelMock = () => {
           <span
             key={tic}
             lang="fr"
-            className="rounded bg-surface-raised px-2 py-[3px] text-xs tabular-nums text-text"
+            className="rounded bg-surface-raised px-2 py-[3px] text-body-s tabular-nums text-text"
           >
             {tic}
           </span>
         ))}
       </div>
 
-      <div className="mt-3.5 grid gap-2 border-t border-border pt-3 text-sm text-text">
+      <div className="mt-3.5 grid gap-2 border-t border-border pt-3 text-body-m text-text">
         <div className="grid grid-cols-[28px_minmax(0,1fr)] gap-2">
           <span className="font-display text-xs font-semibold leading-relaxed text-text-weaker">
             {t('verbalMock.ai')}

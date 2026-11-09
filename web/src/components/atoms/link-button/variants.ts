@@ -4,7 +4,7 @@ import { cva } from 'class-variance-authority';
  * LinkButton component variants using CVA
  */
 export const linkButtonVariants = cva(
-  'h-6 px-2 py-0.5 w-fit rounded-md inline-flex items-center justify-center gap-2 transition-colors cursor-pointer',
+  'h-6 px-2 py-0.5 w-fit rounded-md inline-flex items-center justify-center gap-2 transition-colors cursor-pointer focus-ring',
   {
     variants: {
       variant: {

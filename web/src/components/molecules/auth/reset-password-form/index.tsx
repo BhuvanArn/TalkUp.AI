@@ -213,7 +213,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
         </form.Field>
 
         {serverError && (
-          <div className="text-sm text-red-600 text-center" role="alert">
+          <div className="text-label-m text-error text-center" role="alert">
             {'key' in serverError ? t(serverError.key) : serverError.raw}
           </div>
         )}
@@ -223,7 +223,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
           type="submit"
           disabled={completeReset.isPending || emailMissingOrInvalid}
         >
-          <Icon icon="register" color="white" />
+          <Icon icon="register" color="inherit" />
           {t('resetPasswordForm.submit')}
         </Button>
       </form>
@@ -269,7 +269,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
             );
           }}
         >
-          <Icon icon="arrow-right" color="white" />
+          <Icon icon="arrow-right" color="inherit" />
           {resendSecondsLeft > 0
             ? t('otpCode.resendCountdown', { seconds: resendSecondsLeft })
             : t('otpCode.resend')}

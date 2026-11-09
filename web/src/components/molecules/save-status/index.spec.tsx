@@ -128,7 +128,7 @@ describe('SaveStatus', () => {
 
       statuses.forEach((status) => {
         const { container } = render(<SaveStatus status={status} />);
-        const statusContainer = container.querySelector('.text-body-sm');
+        const statusContainer = container.querySelector('.text-body-s');
         expect(statusContainer).toBeInTheDocument();
       });
     });

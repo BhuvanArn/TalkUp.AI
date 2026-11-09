@@ -149,12 +149,12 @@ export const RegisterOrganizationForm = () => {
         </form.Field>
 
         {serverError && (
-          <div className="text-sm text-error text-center" role="alert">
+          <div className="text-label-m text-error text-center" role="alert">
             {serverError}
           </div>
         )}
         <Button color="accent" type="submit">
-          <Icon icon="register" color="white" />
+          <Icon icon="register" color="inherit" />
           {t('registerOrganizationForm.submit')}
         </Button>
         <p className="text-idle text-label-m">

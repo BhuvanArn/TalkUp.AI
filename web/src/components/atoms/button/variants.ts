@@ -4,14 +4,16 @@ export const buttonVariants = cva(
   // Base styles
   [
     'inline-flex items-center justify-center gap-2',
-    'rounded-md font-medium text-sm cursor-pointer',
+    'rounded-button cursor-pointer',
     'transition-all duration-200 ease-in-out',
-    'focus:outline-none',
+    // Keyboard focus: one accent ring for every variant and colour
+    // (4.93:1 light, 8.37:1 dark against the page).
+    'focus-ring',
   ],
   {
     variants: {
       variant: {
-        contained: 'border-transparent text-white',
+        contained: 'border-transparent text-on-accent',
         outlined: 'border-2 bg-transparent',
         text: 'border-transparent bg-transparent',
       },
@@ -27,13 +29,14 @@ export const buttonVariants = cva(
         sidebar: '',
       },
       size: {
-        xs: 'h-6 px-2 py-1 text-button-s border rounded-[5px]',
+        // Saira at every size (text-button-*), per the design system.
+        xs: 'h-6 px-2 py-1 text-button-s border',
         sm: 'h-8 px-3 text-button-s',
-        md: 'h-10 px-4 py-2',
-        lg: 'h-12 px-6 py-3 text-base',
+        md: 'h-10 px-4 py-2 text-button-m',
+        lg: 'h-12 px-6 py-3 text-button-l',
       },
       disabled: {
-        true: 'opacity-50 cursor-not-allowed',
+        true: 'cursor-not-allowed',
         false: '',
       },
       loading: {
@@ -87,147 +90,147 @@ export const buttonVariants = cva(
         variant: 'contained',
         color: 'primary',
         className:
-          'bg-primary text-white hover:bg-primary-hover active:bg-primary-active focus:ring-2 focus:ring-primary-weak focus:ring-offset-2',
+          'bg-primary text-on-accent hover:bg-primary-hover active:bg-primary-active',
       },
       {
         variant: 'contained',
         color: 'accent',
         className:
-          'bg-accent text-white hover:bg-accent-hover active:bg-accent-active focus:ring-2 focus:ring-accent-weak focus:ring-offset-2',
+          'bg-accent text-on-accent hover:bg-accent-hover active:bg-accent-active',
       },
       {
         variant: 'contained',
         color: 'black',
         className:
-          'bg-black text-white hover:bg-black-hover active:bg-black-active focus:ring-2 focus:ring-gray-400 focus:ring-offset-2',
+          'bg-black text-white hover:bg-black-hover active:bg-black-active',
       },
       {
         variant: 'contained',
         color: 'white',
         className:
-          'bg-white text-black hover:bg-white-hover active:bg-white-active focus:ring-2 focus:ring-gray-300 focus:ring-offset-2',
+          'bg-white text-black hover:bg-white-hover active:bg-white-active',
       },
       {
         variant: 'contained',
         color: 'success',
         className:
-          'bg-success text-white hover:bg-success-hover active:bg-success-active focus:ring-2 focus:ring-success-weak focus:ring-offset-2',
+          'bg-success text-on-accent hover:bg-success-hover active:bg-success-active',
       },
       {
         variant: 'contained',
         color: 'warning',
         className:
-          'bg-warning text-white hover:bg-warning-hover active:bg-warning-active focus:ring-2 focus:ring-warning-weak focus:ring-offset-2',
+          'bg-warning text-on-accent hover:bg-warning-hover active:bg-warning-active',
       },
       {
         variant: 'contained',
         color: 'neutral',
         className:
-          'bg-neutral text-white hover:bg-neutral-hover active:bg-neutral-active focus:ring-2 focus:ring-neutral-weak focus:ring-offset-2',
+          'bg-neutral text-on-accent hover:bg-neutral-hover active:bg-neutral-active',
       },
       {
         variant: 'contained',
         color: 'error',
         className:
-          'bg-error text-white hover:bg-error-hover active:bg-error-active focus:ring-2 focus:ring-error-weak focus:ring-offset-2',
+          'bg-error text-on-accent hover:bg-error-hover active:bg-error-active',
       },
       // Outlined variants
       {
         variant: 'outlined',
         color: 'primary',
         className:
-          'border-primary text-primary hover:border-primary-hover hover:text-primary-hover hover:bg-primary-weaker active:border-primary-active active:text-primary-active active:bg-primary-weak focus:ring-2 focus:ring-primary-weak focus:ring-offset-2',
+          'border-primary text-primary hover:border-primary-hover hover:text-primary-hover hover:bg-primary-weaker active:border-primary-active active:text-primary-active active:bg-primary-weak',
       },
       {
         variant: 'outlined',
         color: 'accent',
         className:
-          'border-accent text-accent hover:border-accent-hover hover:text-accent-hover hover:bg-accent-weaker active:border-accent-active active:text-accent-active active:bg-accent-weak focus:ring-2 focus:ring-accent-weak focus:ring-offset-2',
+          'border-accent text-accent hover:border-accent-hover hover:text-accent-hover hover:bg-accent-weaker active:border-accent-active active:text-accent-active active:bg-accent-weak',
       },
       {
         variant: 'outlined',
         color: 'black',
         className:
-          'border-black text-black hover:border-black-hover hover:text-black-hover hover:bg-black-weaker active:border-black-active active:text-black-active active:bg-black-weak focus:ring-2 focus:ring-gray-400 focus:ring-offset-2',
+          'border-black text-black hover:border-black-hover hover:text-black-hover hover:bg-black-weaker active:border-black-active active:text-black-active active:bg-black-weak',
       },
       {
         variant: 'outlined',
         color: 'white',
         className:
-          'border-black text-black hover:border-black-hover hover:text-black-hover hover:bg-black-weaker active:border-black-active active:text-black-active active:bg-black-weak focus:ring-2 focus:ring-gray-300 focus:ring-offset-2',
+          'border-black text-black hover:border-black-hover hover:text-black-hover hover:bg-black-weaker active:border-black-active active:text-black-active active:bg-black-weak',
       },
       {
         variant: 'outlined',
         color: 'success',
         className:
-          'border-success text-success hover:border-success-hover hover:text-success-hover hover:bg-success-weaker active:border-success-active active:text-success-active active:bg-success-weak focus:ring-2 focus:ring-success-weak focus:ring-offset-2',
+          'border-success text-success hover:border-success-hover hover:text-success-hover hover:bg-success-weaker active:border-success-active active:text-success-active active:bg-success-weak',
       },
       {
         variant: 'outlined',
         color: 'warning',
         className:
-          'border-warning text-warning hover:border-warning-hover hover:text-warning-hover hover:bg-warning-weaker active:border-warning-active active:text-warning-active active:bg-warning-weak focus:ring-2 focus:ring-warning-weak focus:ring-offset-2',
+          'border-warning text-warning hover:border-warning-hover hover:text-warning-hover hover:bg-warning-weaker active:border-warning-active active:text-warning-active active:bg-warning-weak',
       },
       {
         variant: 'outlined',
         color: 'neutral',
         className:
-          'border-neutral text-neutral hover:border-neutral-hover hover:text-neutral-hover hover:bg-neutral-weaker active:border-neutral-active active:text-neutral-active active:bg-neutral-weak focus:ring-2 focus:ring-neutral-weak focus:ring-offset-2',
+          'border-neutral text-neutral hover:border-neutral-hover hover:text-neutral-hover hover:bg-neutral-weaker active:border-neutral-active active:text-neutral-active active:bg-neutral-weak',
       },
       {
         variant: 'outlined',
         color: 'error',
         className:
-          'border-error text-error hover:border-error-hover hover:text-error-hover hover:bg-error-weaker active:border-error-active active:text-error-active active:bg-error-weak focus:ring-2 focus:ring-error-weak focus:ring-offset-2',
+          'border-error text-error hover:border-error-hover hover:text-error-hover hover:bg-error-weaker active:border-error-active active:text-error-active active:bg-error-weak',
       },
       // Text variants
       {
         variant: 'text',
         color: 'primary',
         className:
-          'text-primary hover:text-primary-hover hover:bg-primary-weaker active:text-primary-active active:bg-primary-weak focus:ring-2 focus:ring-primary-weak focus:ring-offset-2',
+          'text-primary hover:text-primary-hover hover:bg-primary-weaker active:text-primary-active active:bg-primary-weak',
       },
       {
         variant: 'text',
         color: 'accent',
         className:
-          'text-accent hover:text-accent-hover hover:bg-accent-weaker active:text-accent-active active:bg-accent-weak focus:ring-2 focus:ring-accent-weak focus:ring-offset-2',
+          'text-accent hover:text-accent-hover hover:bg-accent-weaker active:text-accent-active active:bg-accent-weak',
       },
       {
         variant: 'text',
         color: 'black',
         className:
-          'text-black hover:text-black-hover hover:bg-black-weaker active:text-black-active active:bg-black-weak focus:ring-2 focus:ring-gray-400 focus:ring-offset-2',
+          'text-black hover:text-black-hover hover:bg-black-weaker active:text-black-active active:bg-black-weak',
       },
       {
         variant: 'text',
         color: 'white',
         className:
-          'text-black hover:text-black-hover hover:bg-black-weaker active:text-black-active active:bg-black-weak focus:ring-2 focus:ring-gray-300 focus:ring-offset-2',
+          'text-black hover:text-black-hover hover:bg-black-weaker active:text-black-active active:bg-black-weak',
       },
       {
         variant: 'text',
         color: 'success',
         className:
-          'text-success hover:text-success-hover hover:bg-success-weaker active:text-success-active active:bg-success-weak focus:ring-2 focus:ring-success-weak focus:ring-offset-2',
+          'text-success hover:text-success-hover hover:bg-success-weaker active:text-success-active active:bg-success-weak',
       },
       {
         variant: 'text',
         color: 'warning',
         className:
-          'text-warning hover:text-warning-hover hover:bg-warning-weaker active:text-warning-active active:bg-warning-weak focus:ring-2 focus:ring-warning-weak focus:ring-offset-2',
+          'text-warning hover:text-warning-hover hover:bg-warning-weaker active:text-warning-active active:bg-warning-weak',
       },
       {
         variant: 'text',
         color: 'neutral',
         className:
-          'text-neutral hover:text-neutral-hover hover:bg-neutral-weaker active:text-neutral-active active:bg-neutral-weak focus:ring-2 focus:ring-neutral-weak focus:ring-offset-2',
+          'text-neutral hover:text-neutral-hover hover:bg-neutral-weaker active:text-neutral-active active:bg-neutral-weak',
       },
       {
         variant: 'text',
         color: 'error',
         className:
-          'text-error hover:text-error-hover hover:bg-error-weaker active:text-error-active active:bg-error-weak focus:ring-2 focus:ring-error-weak focus:ring-offset-2',
+          'text-error hover:text-error-hover hover:bg-error-weaker active:text-error-active active:bg-error-weak',
       },
       // Sidebar variants - subtle styling for sidebar buttons
       {
@@ -248,29 +251,32 @@ export const buttonVariants = cva(
         className:
           'text-idle hover:text-active hover:bg-surface-sidebar-hover active:text-active active:bg-surface-sidebar-active',
       },
-      // Disabled variants - prevent hover effects
+      // Disabled variants - readable (5.04:1 light, 5.49:1 dark), no hover.
+      // Written under `disabled:` / `aria-disabled:` (native button, or
+      // `asChild` link) so a colour passed through `className` cannot win
+      // over them: tailwind-merge only dedupes classes with the same variant.
       {
         disabled: true,
         variant: 'contained',
         className:
-          'opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400 active:bg-gray-400 text-gray-600 hover:text-gray-600 active:text-gray-600 focus:ring-0',
+          'disabled:bg-disabled disabled:text-text-disabled disabled:hover:bg-disabled disabled:hover:text-text-disabled disabled:active:bg-disabled aria-disabled:bg-disabled aria-disabled:text-text-disabled aria-disabled:hover:bg-disabled aria-disabled:hover:text-text-disabled aria-disabled:active:bg-disabled',
       },
       {
         disabled: true,
         variant: 'outlined',
         className:
-          'opacity-50 cursor-not-allowed border-gray-300 text-gray-400 hover:border-gray-300 hover:text-gray-400 hover:bg-transparent active:border-gray-300 active:text-gray-400 active:bg-transparent focus:ring-0',
+          'disabled:border-border disabled:text-text-disabled disabled:hover:border-border disabled:hover:text-text-disabled disabled:hover:bg-transparent aria-disabled:border-border aria-disabled:text-text-disabled aria-disabled:hover:border-border aria-disabled:hover:text-text-disabled aria-disabled:hover:bg-transparent',
       },
       {
         disabled: true,
         variant: 'text',
         className:
-          'opacity-50 cursor-not-allowed text-gray-400 hover:text-gray-400 hover:bg-transparent active:text-gray-400 active:bg-transparent focus:ring-0',
+          'disabled:text-text-disabled disabled:hover:text-text-disabled disabled:hover:bg-transparent aria-disabled:text-text-disabled aria-disabled:hover:text-text-disabled aria-disabled:hover:bg-transparent',
       },
       // Loading state
       {
         loading: true,
-        className: '!cursor-wait relative',
+        className: '!cursor-wait relative opacity-75',
       },
     ],
     defaultVariants: {

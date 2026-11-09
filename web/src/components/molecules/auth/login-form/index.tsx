@@ -63,13 +63,13 @@ export const LoginForm = () => {
   });
 
   return (
-    <div className="flex flex-col w-full gap-3 max-w-96">
+    <div className="flex flex-col w-full gap-6 max-w-96">
       <header className="flex items-center justify-start gap-4">
         <h2 className="text-h3 text-idle">{t('loginForm.title')}</h2>
         <p className="text-body-l text-idle mt-1">{t('loginForm.subtitle')}</p>
       </header>
       <form
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-4"
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -91,6 +91,7 @@ export const LoginForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
+                label={t('loginForm.emailLabel')}
                 placeholder={t('loginForm.emailPlaceholder')}
               />
               <FieldErrors errors={field.state.meta.errors} />
@@ -111,6 +112,7 @@ export const LoginForm = () => {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
+                label={t('loginForm.passwordLabel')}
                 placeholder={t('loginForm.passwordPlaceholder')}
                 autoComplete="current-password"
               />
@@ -119,7 +121,7 @@ export const LoginForm = () => {
           )}
         </form.Field>
         {serverError && (
-          <div className="text-sm text-red-600 text-center" role="alert">
+          <div className="text-label-m text-error text-center" role="alert">
             {serverError}
           </div>
         )}
@@ -129,8 +131,9 @@ export const LoginForm = () => {
         >
           {t('loginForm.forgotPassword')}
         </Link>
-        <Button color="accent" type="submit">
-          <Icon icon="login" color="white" />
+        {/* Figma A1: 32px before the primary button (16px gap + 16px). */}
+        <Button color="accent" type="submit" className="mt-4">
+          <Icon icon="login" color="inherit" />
           {t('loginForm.submit')}
         </Button>
         <p className="text-idle text-label-m">

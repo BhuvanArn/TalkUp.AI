@@ -81,7 +81,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
       aria-readonly={readOnly}
       aria-required={required}
       className={cn(
-        'p-2 text-body-m font-normal transition-colors duration-200 ease-in-out border rounded-sm font-display focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:cursor-not-allowed disabled:bg-disabled disabled:opacity-50 border-border-strong',
+        'p-2 text-body-m font-normal transition-colors duration-200 ease-in-out border rounded-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:cursor-not-allowed disabled:bg-disabled disabled:text-text-disabled border-border-input',
         resizeClass,
         className,
       )}

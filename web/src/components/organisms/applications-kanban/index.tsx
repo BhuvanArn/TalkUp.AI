@@ -97,7 +97,7 @@ const KanbanColumn = ({
       ref={setNodeRef}
       data-testid={`kanban-column-${status}`}
       aria-label={t(STATUS_LABEL_KEYS[status])}
-      className={`bg-surface-raised flex h-full min-h-[180px] flex-col gap-2.5 rounded-xl p-3 ${
+      className={`bg-surface-raised flex h-full min-h-[180px] flex-col gap-2.5 rounded-card p-3 ${
         isOver ? 'ring-accent ring-2' : ''
       }`}
     >
@@ -112,7 +112,7 @@ const KanbanColumn = ({
           className="text-text-weak shrink-0"
         />
         {t(STATUS_LABEL_KEYS[status])}
-        <span className="bg-background ml-auto rounded-full px-2">
+        <span className="bg-surface-card ml-auto rounded-full px-2">
           {applications.length}
         </span>
       </h3>

@@ -120,7 +120,7 @@ export const OrganizationCreated = ({
             })
           }
         >
-          <Icon icon="arrow-right" color="white" />
+          <Icon icon="arrow-right" color="inherit" />
           {t('organizationCreated.verifyCta')}
         </Button>
         <Link

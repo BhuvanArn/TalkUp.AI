@@ -20,11 +20,11 @@ const menuPanelClass =
   'min-w-[220px] rounded-xl border border-border bg-surface-raised p-1 shadow-lg ring-1 ring-black/5 dark:ring-white/10';
 
 const menuItemClass =
-  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-body-s font-medium text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-body-s font-medium text-text transition-colors hover:bg-surface-sidebar-hover focus-ring';
 
 // Shared by the compact theme and language buttons of the menu's bottom row.
 const menuIconButtonClass =
-  'h-9 rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer';
+  'h-9 rounded-lg text-text transition-colors hover:bg-surface-sidebar-hover focus-ring cursor-pointer';
 // Falls back to the live brand accent token so the avatar follows the active
 // view (blue normally, emerald in the organization view). A user's explicit
 // avatarAccentColor still overrides it.
@@ -127,6 +127,11 @@ export const UserProfileSwitcher = ({
   const displayEmail = profile?.email ?? t('userMenu.noEmail');
   const avatarSrc = profile?.profilePicture ?? undefined;
   const avatarColor = profile?.avatarAccentColor ?? DEFAULT_AVATAR_COLOR;
+  // A user-picked colour is a literal hex in both themes (white initials);
+  // the default follows the theme accent, which turns pastel in dark.
+  const avatarTextClass = profile?.avatarAccentColor
+    ? 'text-on-media'
+    : 'text-on-accent';
   const initials =
     (resolvedFirstName.charAt(0) || '').toUpperCase() +
     (resolvedLastName.charAt(0) || '').toUpperCase();
@@ -178,13 +183,13 @@ export const UserProfileSwitcher = ({
           alt={t('userMenu.avatarAlt')}
           fallback={initials}
           size="sm"
-          className="!h-8 !w-8 !border border-border text-white font-semibold"
+          className={`!h-8 !w-8 !border border-border font-semibold ${avatarTextClass}`}
           style={{ backgroundColor: avatarColor }}
         />
       ) : (
         <button
           type="button"
-          className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg py-0.5 pl-0.5 pr-1 text-left transition-colors hover:bg-surface-sidebar-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
+          className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg py-0.5 pl-0.5 pr-1 text-left transition-colors hover:bg-surface-sidebar-hover focus-ring cursor-pointer"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
           aria-label={t('userMenu.open', { name: displayName })}
@@ -196,14 +201,14 @@ export const UserProfileSwitcher = ({
               alt=""
               fallback={initials}
               size="sm"
-              className="!h-8 !w-8 shrink-0 !border border-border text-white font-semibold"
+              className={`!h-8 !w-8 shrink-0 !border border-border font-semibold ${avatarTextClass}`}
               style={{ backgroundColor: avatarColor }}
             />
             <span className="min-w-0 flex flex-col text-left">
               <span className="truncate text-body-s text-idle">
                 {displayName}
               </span>
-              <span className="truncate text-body-s text-idle/60">
+              <span className="truncate text-body-s text-text-weakest">
                 {displayEmail}
               </span>
             </span>

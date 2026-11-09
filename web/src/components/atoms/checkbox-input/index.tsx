@@ -36,7 +36,7 @@ export const CheckboxInput: React.FC<CheckboxInputProps> = ({
       type="checkbox"
       aria-label={name}
       className={cn(
-        'w-4 h-4 text-accent border-borderStrong rounded focus:ring-accent focus:ring-2 disabled:cursor-not-allowed disabled:bg-disabled disabled:opacity-50',
+        'w-4 h-4 text-accent border-border-input rounded focus:ring-accent focus:ring-2 disabled:cursor-not-allowed disabled:bg-disabled',
         className,
       )}
     />

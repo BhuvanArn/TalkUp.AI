@@ -11,6 +11,12 @@ export interface BaseInputProps
   id?: string;
   /* The name of the input field. This also defaults the accessible name if no other label is provided. */
   name?: string;
+  /**
+   * Set when a visible <label> points at this input. The `name` fallback
+   * `aria-label` is then omitted, because an `aria-label` would override the
+   * visible label as the accessible name.
+   */
+  hasVisibleLabel?: boolean;
   /* The value of the input. */
   value?: string;
   /* The type of the input (e.g., 'text', 'password'). */

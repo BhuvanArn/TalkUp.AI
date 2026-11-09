@@ -186,7 +186,7 @@ const SimulationVideoArea = ({
 
       {isStreaming && (
         <time
-          className="absolute top-4 left-4 z-20 rounded bg-gray-800/50 px-3 py-1 text-sm font-semibold text-white"
+          className="absolute top-4 left-4 z-20 rounded bg-gray-800/50 px-3 py-1 text-sm font-semibold text-on-media"
           dateTime={formatDurationISO(elapsedTime)}
         >
           {formatTime(elapsedTime)}

@@ -162,7 +162,7 @@
     "offer": {
       "helper": "TalkUp extraira automatiquement les informations de l’annonce.",
       "label": "Lien de l’offre d’emploi",
-      "placeholder": "Collez un lien LinkedIn, WTTJ…"
+      "placeholder": "https://www.linkedin.com/jobs/view/…"
     },
     "processing": {
       "cv": "Analyse de votre CV…",
@@ -496,7 +496,11 @@
       "description": "Découvrez les nouveaux contenus IA que nous vous avons préparés pour 2026",
       "title": "Nouveaux contenus IA sur TalkUp"
     },
+    "collapse": "Réduire la barre latérale",
+    "expand": "Développer la barre latérale",
+    "googleIntegration": "Intégration Google",
     "linkIntegrations": "Connecter des comptes",
+    "linkedinIntegration": "Intégration LinkedIn",
     "loading": "Chargement…",
     "orgView": "Vue organisation"
   },

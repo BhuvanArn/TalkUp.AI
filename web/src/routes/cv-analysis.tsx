@@ -1,3 +1,4 @@
+import { Button } from '@/components/atoms/button';
 import { CheckboxInput } from '@/components/atoms/checkbox-input';
 import { useLocale } from '@/hooks/i18n/useLocale';
 import { useCreateApplication } from '@/services/applications/hooks';
@@ -203,16 +204,25 @@ function CVAnalysisPage() {
             <section className="flex flex-col gap-4">
               <h2 className="text-h6 text-text">{t('cv.steps.offer')}</h2>
               <div className="bg-background border-border flex min-h-[110px] flex-col justify-center rounded-3xl border p-6">
-                <label htmlFor="job-url" className="sr-only">
+                <label
+                  htmlFor="job-url"
+                  className="text-label-m text-text-weak mb-2"
+                >
                   {t('cv.offer.label')}
                 </label>
-                <div className="bg-surface border-border focus-within:border-accent flex items-center gap-3 rounded-xl border px-4 py-3">
-                  <LinkIcon size={18} className="text-text-weakest" />
+                {/* The input itself is borderless: this wrapper is the visible
+                    field boundary, so it uses the input border token (3:1). */}
+                <div className="bg-surface border-border-input focus-within:border-accent focus-within:ring-2 focus-within:ring-accent flex items-center gap-3 rounded-xl border px-4">
+                  <LinkIcon
+                    size={18}
+                    className="text-text-weakest"
+                    aria-hidden="true"
+                  />
                   <input
                     id="job-url"
                     name="jobUrl"
                     type="url"
-                    className="text-body-m text-text flex-1 border-none bg-transparent outline-none"
+                    className="text-body-m text-text flex-1 border-none bg-transparent py-3 outline-none"
                     placeholder={t('cv.offer.placeholder')}
                     value={jobUrl}
                     onChange={(e) => setJobUrl(e.target.value)}
@@ -254,14 +264,15 @@ function CVAnalysisPage() {
               </p>
             </div>
 
-            <button
-              type="button"
+            <Button
+              color="accent"
+              size="lg"
+              className="px-14"
               onClick={handleStartAnalysis}
               disabled={!canStart || isAnalyzing}
-              className="text-button-m bg-accent hover:bg-accent-hover focus-visible:ring-accent cursor-pointer rounded-2xl px-14 py-4 text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-disabled"
             >
               {t('cv.start')}
-            </button>
+            </Button>
           </footer>
         </>
       )}

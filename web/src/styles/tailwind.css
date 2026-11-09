@@ -1,5 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Saira:wght@400;500;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap');
+/* Fonts are loaded once, from index.html (Inter + Saira, full variable weight
+   range). Do not @import them here: a second, narrower request used to pin
+   Inter to weight 400 only. */
 @import 'tailwindcss';
 
 @source inline('{text,fill}-{primary,accent}');
@@ -16,6 +17,13 @@
     color 0.3s ease;
 }
 
+/*
+ * Foundations aligned with the post-seminar Figma (2026-11-06), file
+ * "TalkUp — App & Design System", pages "Avant / Après" and "Foundations".
+ * Contrast targets (WCAG 2.2 AA): every text tier >= 4.5:1 on the surfaces it
+ * sits on, input borders >= 3:1. Ratios are noted next to the values that
+ * were adjusted away from Figma to reach them. See web/DESIGN.md.
+ */
 @theme {
   /* Light Mode Colors (Default) */
   --color-primary: #29457a;
@@ -30,19 +38,28 @@
   --color-black-weak: #e4e4e4;
   --color-black-weaker: #ededed;
 
+  /* `white` flips to the dark card colour under `.dark`. For text that must
+     stay literally white (over video, photos, the recruiter avatar), use
+     `on-media`; for labels on accent / status fills, use `on-accent`. */
   --color-white: #fff;
   --color-white-hover: #ededed;
   --color-white-active: #e4e4e4;
   --color-white-weak: #e4e4e4;
   --color-white-weaker: #ededed;
 
-  --color-disabled: #c7c7c7;
+  /* Disabled controls stay readable: label on fill 5.04:1 (Figma
+     disabled/light-bg + disabled/light-text). */
+  --color-disabled: #e4e8f0;
+  --color-text-disabled: #5f5f77;
 
   --color-background: #fff;
   --color-surface: #f8f9ff;
   --color-surface-hover: #f0f4fa;
   --color-surface-raised: #ecedf6;
   --color-surface-raised-hover: #dcddee;
+  /* Card that sits inside a raised column (kanban): white in light, an
+     inset navy well in dark (Figma dark/bg). */
+  --color-surface-card: #fff;
 
   --color-note-card: #ecedf6;
   --color-note-card-hover: #dfe0e9;
@@ -54,7 +71,15 @@
      `bg-scrim/<alpha>` for overlays so raising opacity always darkens. */
   --color-scrim: #000000;
 
-  --color-text-accent: #f0effb;
+  /* Non-inverting white for text and icons over media (video, photos,
+     avatars rendered on images). Same in both themes, like `scrim`. */
+  --color-on-media: #ffffff;
+
+  /* Label colour on filled accent / primary / status surfaces. White in
+     light, dark navy in dark where the fills turn pastel (Figma
+     dark/on-accent). */
+  --color-on-accent: #ffffff;
+
   --color-accent: #2b70c9;
   --color-accent-hover: #205497;
   --color-accent-active: #163865;
@@ -65,24 +90,23 @@
   --color-text: #24242d;
   --color-text-weak: #383850;
   --color-text-weaker: #5f5f77;
-  --color-text-weakest: #a4a4b2;
+  /* Figma keeps #a4a4b2 (2.46:1 on white). Closest value of the same hue
+     that passes on white / surface / surface-raised: 5.28 / 5.03 / 4.53. */
+  --color-text-weakest: #6a6a7e;
   --color-text-idle: #57585e;
   --color-text-active: #1e2229;
 
-  --color-idle: #57585e;
-  --color-active: #1e2229;
-  --color-hover: #24242d;
-  --color-weak: #383850;
-  --color-weaker: #5f5f77;
-  --color-weakest: #a4a4b2;
-
-  --color-surface-sidebar: #ecedf6;
+  /* Light sidebar = page surface + hairline right border (Figma G1). */
+  --color-surface-sidebar: #f8f9ff;
   --color-surface-sidebar-hover: #e2e4f0;
   --color-surface-sidebar-active: #e2e4f0;
 
   --color-border: #d9dbeb;
   --color-border-strong: #c8c8d4;
   --color-border-hover: #5f5f77;
+  /* Boundary of text inputs, selects and text areas: 3.16:1 on white,
+     3.0:1 on surface (WCAG 1.4.11). Decorative borders keep `border`. */
+  --color-border-input: #8f8fa7;
 
   --color-notification-banner: #f8f9ff;
 
@@ -98,17 +122,19 @@
   --color-neutral-hover: #303044;
   --color-neutral-active: #272738;
 
+  /* Was #b3881f (3.25:1 with a white label). 5.05:1 on white. */
   --color-warning-weak: #fbf5d3;
   --color-warning-weaker: #fdf9e5;
-  --color-warning: #b3881f;
-  --color-warning-hover: #9f6e1a;
-  --color-warning-active: #7f5414;
+  --color-warning: #8a6a17;
+  --color-warning-hover: #75590f;
+  --color-warning-active: #5f480c;
 
+  /* Was #ef4444 (3.76:1 as text and with a white label). 5.32:1. */
   --color-error-weak: #fbdedc;
   --color-error-weaker: #feebe8;
-  --color-error: #ef4444;
-  --color-error-hover: #8b1f12;
-  --color-error-active: #6e1610;
+  --color-error: #c8322a;
+  --color-error-hover: #a32a15;
+  --color-error-active: #8b1f12;
   --color-danger: var(--color-error);
   --color-danger-hover: var(--color-error-hover);
   --color-danger-active: var(--color-error-active);
@@ -118,6 +144,12 @@
 
   --font-display: 'Saira', sans-serif;
   --font-body: 'Inter', sans-serif;
+
+  /* Radius roles. Buttons are 8px everywhere (Figma R1: "same radius as the
+     rest of the site"), cards and panels 12px. Use `rounded-button` /
+     `rounded-card`; small badges and dots keep `rounded-full`. */
+  --radius-button: 0.5rem;
+  --radius-card: 0.75rem;
 
   /* Typography styles */
   --font-size-h1: 40px;
@@ -132,97 +164,119 @@
   --font-size-body-s: 12px;
 }
 
-/* Dark Mode Colors */
+/* Short aliases of the text tiers (`text-idle`, `bg-weak`…). `inline` makes
+   the generated utilities point straight at the text-* tokens, so the two sets
+   cannot drift apart and they follow `.dark` / `data-view` wherever those are
+   set, not only on <html>. */
+@theme inline {
+  --color-idle: var(--color-text-idle);
+  --color-active: var(--color-text-active);
+  --color-hover: var(--color-text);
+  --color-weak: var(--color-text-weak);
+  --color-weaker: var(--color-text-weaker);
+  --color-weakest: var(--color-text-weakest);
+}
+
+/*
+ * Dark Mode Colors — navy, not neutral grey (Figma G4 / L2, variables
+ * dark/*). Elevation reads by lightness: surface (inset wells, cards)
+ * #111c31 < sidebar #16223a < page #18253f < raised (columns) #1f2e4d <
+ * selected #24345a. Accent and status colours turn pastel and carry dark
+ * labels (`on-accent`). Contrast on the page background noted per tier.
+ */
 .dark {
-  --color-primary: #4a6ba8;
-  --color-primary-hover: #5a7db8;
-  --color-primary-active: #6a8fc8;
-  --color-primary-weak: #2a3a5a;
-  --color-primary-weaker: #1a2a4a;
+  --color-primary: #8fb8f4;
+  --color-primary-hover: #a6c8f7;
+  --color-primary-active: #bcd6fa;
+  --color-primary-weak: #24345a;
+  --color-primary-weaker: #1b2a47;
 
   --color-black: #e8e8e8;
-  --color-black-hover: #d0d0d0;
+  --color-black-hover: #d0d6e2;
   --color-black-active: #e8e8e8;
-  --color-black-weak: #3a3a3a;
-  --color-black-weaker: #2a2a2a;
+  --color-black-weak: #2f3f63;
+  --color-black-weaker: #1f2e4d;
 
-  --color-white: #1a1a1a;
-  --color-white-hover: #2a2a2a;
-  --color-white-active: #3a3a3a;
-  --color-white-weak: #3a3a3a;
-  --color-white-weaker: #2a2a2a;
+  --color-white: #111c31;
+  --color-white-hover: #1f2e4d;
+  --color-white-active: #24345a;
+  --color-white-weak: #24345a;
+  --color-white-weaker: #18253f;
 
-  --color-disabled: #4a4a4a;
+  /* 5.49:1 */
+  --color-disabled: #24345a;
+  --color-text-disabled: #a3aec4;
 
-  --color-background: #121212;
-  --color-surface: #1e1e1e;
-  --color-surface-hover: #2a2a2a;
-  --color-surface-raised: #2a2a2a;
-  --color-surface-raised-hover: #3a3a3a;
+  --color-background: #18253f;
+  --color-surface: #111c31;
+  --color-surface-hover: #1f2e4d;
+  --color-surface-raised: #1f2e4d;
+  --color-surface-raised-hover: #24345a;
+  --color-surface-card: #111c31;
 
-  --color-note-card: #2a2a3a;
-  --color-note-card-hover: #35354a;
+  --color-note-card: #1f2e4d;
+  --color-note-card-hover: #24345a;
 
   --color-video-off: #0a0a15;
 
-  --color-text-accent: #2a2a3a;
-  --color-accent: #5a8fe8;
-  --color-accent-hover: #6a9ff8;
-  --color-accent-active: #7aafff;
-  --color-accent-weak: #2a3a4a;
-  --color-accent-weaker: #1a2a3a;
-  --color-text-link: #5a8fe8;
+  /* 8.37:1 on accent */
+  --color-on-accent: #111c31;
+  --color-accent: #8fb8f4;
+  --color-accent-hover: #a6c8f7;
+  --color-accent-active: #bcd6fa;
+  --color-accent-weak: #24345a;
+  --color-accent-weaker: #1b2a47;
+  --color-text-link: #8fb8f4;
 
+  /* On #18253f: 12.5 / 9.9 / 8.1 / 6.8 (weakest is 5.49 on #24345a). */
   --color-text: #e8e8e8;
-  --color-text-weak: #b8b8c0;
-  --color-text-weaker: #909098;
-  --color-text-weakest: #606068;
-  --color-text-idle: #a0a0a8;
+  --color-text-weak: #c8d0e0;
+  --color-text-weaker: #b4bdd0;
+  --color-text-weakest: #a3aec4;
+  --color-text-idle: #b4bdd0;
   --color-text-active: #f0f0f0;
 
-  --color-idle: #9595a2;
-  --color-active: #f0f0f0;
-  --color-hover: #e8e8e8;
-  --color-weak: #b8b8c0;
-  --color-weaker: #909098;
-  --color-weakest: #606068;
+  --color-surface-sidebar: #16223a;
+  --color-surface-sidebar-hover: #24345a;
+  --color-surface-sidebar-active: #24345a;
 
-  --color-surface-sidebar: #232429;
-  --color-surface-sidebar-hover: #312f3d;
-  --color-surface-sidebar-active: #312f3d;
+  --color-border: #2f3f63;
+  --color-border-strong: #3e5079;
+  --color-border-hover: #b4bdd0;
+  /* Figma border-strong #3e5079 is 2.13:1; this is 3.4:1 on the page,
+     3.0:1 on raised surfaces. */
+  --color-border-input: #5e76ad;
 
-  --color-border: #3a3a3a;
-  --color-border-strong: #4a4a4a;
-  --color-border-hover: #909098;
+  --color-notification-banner: #16223a;
 
-  --color-success-weak: #1a3a1a;
-  --color-success-weaker: #0a2a0a;
-  --color-success: #2a9a32;
-  --color-success-hover: #3aaa42;
-  --color-success-active: #4aba52;
+  --color-success-weak: #1d3b3a;
+  --color-success-weaker: #17302f;
+  --color-success: #8fdba4;
+  --color-success-hover: #a6e4b8;
+  --color-success-active: #bdeccb;
 
-  --color-neutral-weak: #3a3a4a;
-  --color-neutral-weaker: #2a2a3a;
-  --color-neutral: #b8b8c0;
-  --color-neutral-hover: #c8c8d0;
-  --color-neutral-active: #d8d8e0;
+  --color-neutral-weak: #2f3f63;
+  --color-neutral-weaker: #1f2e4d;
+  --color-neutral: #c8d0e0;
+  --color-neutral-hover: #d6dceb;
+  --color-neutral-active: #e2e7f1;
 
-  --color-warning-weak: #3a3a1a;
-  --color-warning-weaker: #2a2a0a;
-  --color-warning: #d8b040;
-  --color-warning-hover: #e8c050;
-  --color-warning-active: #f8d060;
+  --color-warning-weak: #3b3a2e;
+  --color-warning-weaker: #2e2e27;
+  --color-warning: #f2d488;
+  --color-warning-hover: #f5dea2;
+  --color-warning-active: #f8e8bc;
 
-  --color-error-weak: #3a1a1a;
-  --color-error-weaker: #2a0a0a;
-  --color-error: #d84a35;
-  --color-error-hover: #e85a45;
-  --color-error-active: #f86a55;
+  --color-error-weak: #3f2c3a;
+  --color-error-weaker: #33242f;
+  --color-error: #f4a093;
+  --color-error-hover: #f7b6ac;
+  --color-error-active: #f9cbc4;
   --color-danger: var(--color-error);
   --color-danger-hover: var(--color-error-hover);
   --color-danger-active: var(--color-error-active);
 
-  --color-icon: #909098;
+  --color-icon: #b4bdd0;
   --color-icon-hover: #e8e8e8;
 }
 
@@ -234,14 +288,19 @@
  * just the brand tokens — accent, primary, and the text link — on a
  * `data-view="organization"` scope on the document root (set by
  * NavigationProvider, the same mechanism as `.dark`). Surfaces, page
- * backgrounds and neutral tints are deliberately left untouched: only what was
- * blue turns green (logo/title, active nav, links, primary buttons). Both
- * themes covered by the accent/primary values flipping under `.dark`.
+ * backgrounds and neutral tints are deliberately left untouched: only
+ * interactive elements turn green. Non-interactive labels (the
+ * "Organization" eyebrow, the org name in the sidebar) stay neutral.
+ *
+ * Light uses the deep emerald #0f6b4c (Figma org/accent-dark, 6.51:1 with a
+ * white label) so it never reads as a success message. Dark has no Figma
+ * value yet (see docs/design/figma-backlog.md) and keeps #2fc48f, which
+ * carries the dark `on-accent` label at 7.63:1.
  */
 :root[data-view='organization'] {
-  --color-accent: #1d9e75;
-  --color-accent-hover: #178a63;
-  --color-accent-active: #0f6b4c;
+  --color-accent: #0f6b4c;
+  --color-accent-hover: #0c5a40;
+  --color-accent-active: #094833;
   --color-accent-weak: #e6f6f0;
   --color-accent-weaker: #f0faf6;
 
@@ -251,7 +310,7 @@
   --color-primary-weak: #d0ebde;
   --color-primary-weaker: #e8f5ee;
 
-  --color-text-link: #1d9e75;
+  --color-text-link: #0f6b4c;
 }
 
 :root.dark[data-view='organization'] {
@@ -271,6 +330,15 @@
 }
 
 @layer base {
+  /* Inter is the default face for everything that does not opt into a
+     text-* utility (bare text-sm, avatars, inputs…). Without this, Preflight
+     falls back to ui-sans-serif. Saira stays opt-in via text-h* / button. */
+  body {
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background-color: var(--color-background);
+  }
+
   /* Tailwind v4 Preflight resets buttons to `cursor: default`. Restore a
      pointer cursor on every enabled interactive control app-wide so no
      individual component has to remember `cursor-pointer` — and show
@@ -299,116 +367,140 @@
   }
 }
 
+/* Keyboard focus ring shared by every interactive control (buttons, links,
+   nav items, segmented controls): 2px accent ring, 2px offset on the page
+   colour. Contrast 4.93:1 light, 8.37:1 dark. Mouse clicks show no ring
+   (:focus-visible); text fields keep their own `focus:` ring. Override the
+   offset with `focus-visible:ring-offset-*` in tight spots. */
+@utility focus-ring {
+  &:focus {
+    outline: none;
+  }
+  &:focus-visible {
+    @apply ring-2 ring-accent ring-offset-2 ring-offset-background;
+  }
+}
+
 @layer utilities {
+  /* Weights read `--tw-font-weight` first, so `font-bold`, `font-medium`…
+     placed next to a text-* utility still apply (they used to be silently
+     overridden). The number after the comma is the scale default. */
   .text-h1 {
     font-family: var(--font-display);
     font-size: var(--font-size-h1);
-    font-weight: 700;
+    font-weight: var(--tw-font-weight, 700);
     line-height: 1.2;
   }
 
   .text-h2 {
     font-family: var(--font-display);
     font-size: var(--font-size-h2);
-    font-weight: 700;
+    font-weight: var(--tw-font-weight, 700);
     line-height: 1.2;
   }
 
   .text-h3 {
     font-family: var(--font-display);
     font-size: var(--font-size-h3);
-    font-weight: 700;
+    font-weight: var(--tw-font-weight, 700);
     line-height: 1.25;
   }
 
   .text-h4 {
     font-family: var(--font-display);
     font-size: var(--font-size-h4);
-    font-weight: 700;
+    font-weight: var(--tw-font-weight, 700);
     line-height: 1.3;
   }
 
   .text-h5 {
     font-family: var(--font-display);
     font-size: var(--font-size-h5);
-    font-weight: 500;
+    font-weight: var(--tw-font-weight, 500);
     line-height: 1.4;
   }
 
   .text-h6 {
     font-family: var(--font-display);
     font-size: var(--font-size-h6);
-    font-weight: 400;
+    font-weight: var(--tw-font-weight, 400);
     line-height: 1.4;
   }
 
   .text-body-xl-strong {
     font-family: var(--font-body);
     font-size: var(--font-size-body-xl);
-    font-weight: 700;
+    font-weight: var(--tw-font-weight, 700);
     line-height: 1.5;
   }
 
   .text-body-l {
     font-family: var(--font-body);
     font-size: var(--font-size-body-l);
-    font-weight: 400;
+    font-weight: var(--tw-font-weight, 400);
     line-height: 1.5;
   }
 
   .text-body-l-strong {
     font-family: var(--font-body);
     font-size: var(--font-size-body-l);
-    font-weight: 700;
+    font-weight: var(--tw-font-weight, 700);
     line-height: 1.5;
   }
 
   .text-body-m {
     font-family: var(--font-body);
     font-size: var(--font-size-body-m);
-    font-weight: 400;
+    font-weight: var(--tw-font-weight, 400);
     line-height: 1.5;
   }
 
   .text-body-s-strong {
     font-family: var(--font-body);
     font-size: var(--font-size-body-s);
-    font-weight: 700;
+    font-weight: var(--tw-font-weight, 700);
     line-height: 1.5;
   }
 
   .text-body-s {
     font-family: var(--font-body);
     font-size: var(--font-size-body-s);
-    font-weight: 400;
+    font-weight: var(--tw-font-weight, 400);
     line-height: 1.5;
   }
 
   .text-label-m {
     font-family: var(--font-body);
     font-size: var(--font-size-body-m);
-    font-weight: 400;
+    font-weight: var(--tw-font-weight, 400);
     line-height: 1.5;
   }
 
   .text-label-s {
     font-family: var(--font-body);
     font-size: var(--font-size-body-s);
-    font-weight: 400;
+    font-weight: var(--tw-font-weight, 400);
     line-height: 1.5;
   }
 
   .text-button-m {
     font-family: var(--font-display);
     font-size: var(--font-size-body-m);
-    font-weight: 400;
+    font-weight: var(--tw-font-weight, 400);
+    line-height: 1.5;
+  }
+
+  .text-button-l {
+    font-family: var(--font-display);
+    font-size: var(--font-size-body-l);
+    font-weight: var(--tw-font-weight, 400);
     line-height: 1.5;
   }
 
   .text-button-s {
     font-family: var(--font-display);
     font-size: var(--font-size-body-s);
-    font-weight: 400;
+    font-weight: var(--tw-font-weight, 400);
     line-height: 1.5;
   }
 
