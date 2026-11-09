@@ -213,7 +213,7 @@ export const ResetPasswordForm = ({ initialEmail }: ResetPasswordFormProps) => {
         </form.Field>
 
         {serverError && (
-          <div className="text-sm text-red-600 text-center" role="alert">
+          <div className="text-label-m text-error text-center" role="alert">
             {'key' in serverError ? t(serverError.key) : serverError.raw}
           </div>
         )}

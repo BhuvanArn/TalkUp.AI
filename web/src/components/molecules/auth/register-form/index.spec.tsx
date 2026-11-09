@@ -81,10 +81,12 @@ describe('RegisterForm', () => {
       expect(
         screen.getByLabelText('Organization code (optional)'),
       ).toHaveAttribute('placeholder', 'e.g. TALKUP-2026');
-      expect(screen.getByLabelText(/^password$/i)).toHaveAttribute(
-        'placeholder',
-        expect.stringMatching(/^8\+ characters/),
-      );
+      // The rule is a hint under the field, not the placeholder: a long
+      // placeholder gets cut off and disappears on typing.
+      const password = screen.getByLabelText(/^password$/i);
+      expect(password).toHaveAttribute('placeholder', 'Create a password');
+      expect(screen.getByText(/^8\+ characters/)).toBeVisible();
+      expect(password).toHaveAccessibleDescription(/^8\+ characters/);
     });
   });
 

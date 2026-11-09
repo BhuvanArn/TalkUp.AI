@@ -179,6 +179,10 @@ describe('auth flows in French', () => {
         ),
       ).toBeInTheDocument();
 
+      expect(screen.getByLabelText('Mot de passe')).toHaveAccessibleDescription(
+        /^8 caractères min\./,
+      );
+
       fireEvent.change(screen.getByLabelText('Mot de passe'), {
         target: { value: 'abcdef1' },
       });

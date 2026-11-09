@@ -70,6 +70,30 @@ describe('PasswordField', () => {
     expect(onBlur).toHaveBeenCalledTimes(1);
   });
 
+  it('renders the hint under the input and describes the input with it', () => {
+    render(
+      <PasswordField
+        id="pw"
+        label="Password"
+        hint="8+ characters"
+        value=""
+        onChange={() => {}}
+        showStrength
+      />,
+    );
+    const input = screen.getByLabelText('Password');
+    expect(screen.getByText('8+ characters')).toHaveAttribute('id', 'pw-hint');
+    expect(input).toHaveAttribute('aria-describedby', 'pw-hint pw-strength');
+    expect(input).toHaveAccessibleDescription(/8\+ characters/);
+  });
+
+  it('has no description without hint or strength meter', () => {
+    render(<PasswordField id="pw" value="plain" onChange={() => {}} />);
+    expect(screen.getByDisplayValue('plain')).not.toHaveAttribute(
+      'aria-describedby',
+    );
+  });
+
   it('renders an external label bound to the input', () => {
     render(
       <PasswordField id="pw" label="Password" value="" onChange={() => {}} />,

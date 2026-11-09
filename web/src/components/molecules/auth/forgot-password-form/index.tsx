@@ -94,7 +94,7 @@ export const ForgotPasswordForm = ({
           )}
         </form.Field>
         {serverError && (
-          <div className="text-sm text-red-600 text-center" role="alert">
+          <div className="text-label-m text-error text-center" role="alert">
             {serverError}
           </div>
         )}
