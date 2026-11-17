@@ -24,6 +24,8 @@ describe("SimulationCronService", () => {
 
   beforeEach(async () => {
     process.env.SIM_SLOT_TTL_SEC = "900";
+    delete process.env.SIM_CRON_ENABLED;
+    delete process.env.RAILWAY_ENVIRONMENT_NAME;
 
     capacity = {
       listActiveInterviewIds: jest.fn().mockResolvedValue([]),
@@ -60,13 +62,27 @@ describe("SimulationCronService", () => {
     expect(capacity.releaseSlot).not.toHaveBeenCalled();
   });
 
-  it("skips interviews with no meta", async () => {
+  it("does not touch Redis when the cron is disabled", async () => {
+    process.env.SIM_CRON_ENABLED = "false";
+
+    await service.expireStaleSlots();
+
+    expect(capacity.listActiveInterviewIds).not.toHaveBeenCalled();
+  });
+
+  it("releases orphaned slots whose hash already expired", async () => {
     capacity.listActiveInterviewIds.mockResolvedValueOnce(["int-1"]);
     capacity.getActiveMeta.mockResolvedValueOnce(null);
 
     await service.expireStaleSlots();
 
-    expect(capacity.releaseSlot).not.toHaveBeenCalled();
+    expect(capacity.releaseSlot).toHaveBeenCalledWith("int-1", "");
+    expect(context.deleteContext).toHaveBeenCalledWith("int-1");
+    expect(repo.update).toHaveBeenCalledWith(
+      { interview_id: "int-1" },
+      { status: AiInterviewStatus.EXPIRED },
+    );
+    expect(promotion.promoteNextFromQueue).toHaveBeenCalled();
   });
 
   it("skips interviews whose heartbeat is within the TTL window", async () => {

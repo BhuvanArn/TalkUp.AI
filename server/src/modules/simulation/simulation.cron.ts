@@ -6,7 +6,10 @@ import { Repository } from "typeorm";
 import { ai_interview } from "@entities/aiInterview.entity";
 import { AiInterviewStatus } from "@common/enums/AiInterviewStatus";
 
-import { loadSimulationConfig } from "./simulation.config";
+import {
+  isSimulationCronEnabled,
+  loadSimulationConfig,
+} from "./simulation.config";
 import { SimulationCapacityService } from "./simulation-capacity.service";
 import { SimulationContextService } from "./simulation-context.service";
 import { SimulationPromotionService } from "./simulation-promotion.service";
@@ -23,23 +26,33 @@ export class SimulationCronService {
     private readonly interviewRepo: Repository<ai_interview>,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  /**
+   * Slots time out after `SIM_SLOT_TTL_SEC` (15 min by default), so a 5-minute
+   * sweep is precise enough and keeps idle instances quiet.
+   */
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async expireStaleSlots(): Promise<void> {
+    if (!isSimulationCronEnabled()) return;
+
     const { slotTtlSec } = loadSimulationConfig();
     const now = Math.floor(Date.now() / 1000);
     const activeIds = await this.capacity.listActiveInterviewIds();
 
     for (const interviewId of activeIds) {
       const meta = await this.capacity.getActiveMeta(interviewId);
-      if (!meta) continue;
 
-      if (now - meta.lastHeartbeat <= slotTtlSec) continue;
+      // A heartbeat sets the slot hash TTL to `slotTtlSec`, so a slot abandoned
+      // after its first heartbeat loses its hash before it can look stale here.
+      // An id still in the active set without its hash is an orphan: release it.
+      if (meta && now - meta.lastHeartbeat <= slotTtlSec) continue;
 
       this.logger.warn(
-        `Expiring stale simulation slot for interview ${interviewId}`,
+        meta
+          ? `Expiring stale simulation slot for interview ${interviewId}`
+          : `Releasing orphaned simulation slot for interview ${interviewId}`,
       );
 
-      await this.capacity.releaseSlot(interviewId, meta.userId);
+      await this.capacity.releaseSlot(interviewId, meta?.userId ?? "");
       await this.context.deleteContext(interviewId);
 
       await this.interviewRepo.update(
