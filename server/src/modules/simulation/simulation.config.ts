@@ -51,6 +51,20 @@ export function loadSimulationConfig(): SimulationConfig {
   };
 }
 
+/**
+ * Whether the stale-slot cron should run. `SIM_CRON_ENABLED` wins when set;
+ * otherwise it is off in Railway PR preview environments so idle previews
+ * emit no Redis traffic and App Sleeping can suspend them.
+ */
+export function isSimulationCronEnabled(): boolean {
+  const explicit = process.env.SIM_CRON_ENABLED?.trim().toLowerCase();
+  if (explicit === "true") return true;
+  if (explicit === "false") return false;
+
+  const railwayEnv = process.env.RAILWAY_ENVIRONMENT_NAME ?? "";
+  return !/-pr-\d+$/i.test(railwayEnv);
+}
+
 /** Public WebSocket URL for browsers (VM/proxy). Falls back from AI_SERVER_URL for local dev. */
 export function resolveAiWsPublicBase(): string {
   const explicit = process.env.AI_WS_PUBLIC_URL?.trim();

@@ -1,4 +1,5 @@
 import {
+  isSimulationCronEnabled,
   loadAiInitTimeoutMs,
   loadSimulationConfig,
   parsePositiveIntEnv,
@@ -129,6 +130,39 @@ describe("simulation.config", () => {
       process.env.AI_SERVER_URL = "https://ai.example.com";
 
       expect(resolveAiWsPublicBase()).toBe("wss://ai.example.com/ws");
+    });
+  });
+
+  describe("isSimulationCronEnabled", () => {
+    beforeEach(() => {
+      delete process.env.SIM_CRON_ENABLED;
+      delete process.env.RAILWAY_ENVIRONMENT_NAME;
+    });
+
+    it("is enabled by default", () => {
+      expect(isSimulationCronEnabled()).toBe(true);
+    });
+
+    it("is enabled on staging and production", () => {
+      process.env.RAILWAY_ENVIRONMENT_NAME = "staging";
+      expect(isSimulationCronEnabled()).toBe(true);
+      process.env.RAILWAY_ENVIRONMENT_NAME = "production";
+      expect(isSimulationCronEnabled()).toBe(true);
+    });
+
+    it("is disabled in Railway PR preview environments", () => {
+      process.env.RAILWAY_ENVIRONMENT_NAME = "TalkUp.AI-pr-196";
+      expect(isSimulationCronEnabled()).toBe(false);
+    });
+
+    it("lets SIM_CRON_ENABLED override the environment name", () => {
+      process.env.RAILWAY_ENVIRONMENT_NAME = "TalkUp.AI-pr-196";
+      process.env.SIM_CRON_ENABLED = "true";
+      expect(isSimulationCronEnabled()).toBe(true);
+
+      process.env.RAILWAY_ENVIRONMENT_NAME = "staging";
+      process.env.SIM_CRON_ENABLED = " FALSE ";
+      expect(isSimulationCronEnabled()).toBe(false);
     });
   });
 });
