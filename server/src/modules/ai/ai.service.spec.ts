@@ -515,6 +515,17 @@ describe("AiService", () => {
   });
 
   describe("cancelInterview", () => {
+    it("is a no-op (returns true) when the cron already expired it", async () => {
+      jest.spyOn(service, "getInterviewById").mockResolvedValueOnce({
+        ...mockInterview,
+        status: AiInterviewStatus.EXPIRED,
+      } as any);
+
+      expect(await service.cancelInterview("i1", "user-1")).toBe(true);
+      expect(mockCapacity.releaseSlot).not.toHaveBeenCalled();
+      expect(mockAiInterviewRepo.save).not.toHaveBeenCalled();
+    });
+
     it("is a no-op (returns true) when already completed", async () => {
       jest.spyOn(service, "getInterviewById").mockResolvedValueOnce({
         ...mockInterview,

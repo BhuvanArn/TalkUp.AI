@@ -462,7 +462,8 @@ export class AiService {
 
     if (
       interview.status === AiInterviewStatus.COMPLETED ||
-      interview.status === AiInterviewStatus.CANCELLED
+      interview.status === AiInterviewStatus.CANCELLED ||
+      interview.status === AiInterviewStatus.EXPIRED
     ) {
       return true;
     }

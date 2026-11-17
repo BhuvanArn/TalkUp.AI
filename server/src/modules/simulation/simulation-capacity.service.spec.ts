@@ -187,6 +187,27 @@ describe("SimulationCapacityService", () => {
         "user-1",
       );
     });
+
+    it("returns true when the lua removed the id from the active set", async () => {
+      redis.eval.mockResolvedValueOnce(1);
+
+      expect(await service.releaseSlot("int-1", "user-1")).toBe(true);
+    });
+
+    it("returns false when the slot was already released", async () => {
+      redis.eval.mockResolvedValueOnce(0);
+
+      expect(await service.releaseSlot("int-1", "user-1")).toBe(false);
+    });
+
+    it("only decrements the counter when the id actually left the active set", async () => {
+      await service.releaseSlot("int-1", "user-1");
+
+      const lua = redis.eval.mock.calls[0][0] as string;
+      expect(lua).toMatch(
+        /local removed = redis\.call\('SREM'[\s\S]*if removed == 1 then[\s\S]*DECR/,
+      );
+    });
   });
 
   describe("touchHeartbeat", () => {
