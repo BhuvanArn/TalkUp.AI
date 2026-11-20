@@ -1,0 +1,292 @@
+Explore the new AI content we have prepared for yo
+Add Notes, Share them and Access them during Pract
+• Comment est organisée l'équipe backend ?
+• Quel est le cycle de déploiement ?
+Bonjour, je m'appelle Camille, développeur full-st
+Ajouter les résultats chiffrés du stage et mettre 
+Revoir les principes SOLID et préparer un exemple 
+« Link Integrations » quitte la nav. L’assistant prend sa place, avec son avatar à la place de la bulle. L’accès aux intégrations reste dans Settings.
+« Conserver l’assistant accessible directement depuis la sidebar. Remplacer la bulle actuelle par une petite icône personnalisée »
+Tous les pictos restent au trait. Seul l’élément sélectionné passe en plein, en accent.
+« on pourrait faire en sorte que le bouton sélectionné serait celui avec un picto différent »
+Sidebar plus claire (#f8f9ff) avec une bordure à droite, au lieu de #ecedf6. Valable sur tous les Après en clair.
+« peut-être la sidebar est un peu trop grise »
+Le prénom « Tali » est une proposition.
+« Donner éventuellement un nom à l’assistant pour renforcer son identité »
+Kit d’illustrations et avatars — à valider
+Illustrations v3 à gauche : volume et couleurs, pour plus de jeu. Seul le micro garde un visage. Vectorielles, originales, sans aucun fichier Thiings. Les v2 au trait restent à droite, écartées. Les pictos fonctionnels restent des pictos.
+Style conservé pour le carrousel A1/A2, à la demande de l’équipe.
+Piste D (écartée) : forme de galet, sans bouche, avec un casque-micro de coach
+Piste E (écartée) : un micro qui devient personnage, avec un nœud papillon d’entretien
+Piste F (écartée) : le « T » du logo TalkUp, avec un œil et un nœud papillon
+Piste A : carré arrondi, sourire
+6 applications · 2 interviews coming up
+Développeur Full-Stack React / Node
+Ingénieur Logiciel Backend (Go)
+Hello! I'm TalkUp AI. Ask me anything to prepare f
+Rename my Qonto application and add the interview to my agenda.
+Interview · 12 Nov 2026, added after you confirm
+Maquette · pas dans le code · à valider
+L’assistant reste dans la sidebar, avec son avatar. La bulle flottante disparaît.
+« Conserver l’assistant accessible directement depuis la sidebar. Remplacer la bulle actuelle »
+Il s’ouvre dans une barre repliable à droite : on garde la page sous les yeux.
+« ou dans une collapse bar à droite »
+Il agit sur le site : il renomme une application, et demande confirmation avant d’ajouter à l’agenda.
+« le faire faire des actions sur le site à la place de l’utilisateur »
+Update how your organization appears to every memb
+Square images work best. Saved as a JPEG preview.
+This name appears across the organization workspac
+9993e847-e4d1-45d5-98f0-58cb080b0852
+Le label « Organization » n’est pas interactif : il passe en gris.
+« le mot "Organisation" en vert au-dessus du nom de l’org ça fait attirer l’oeil pour un texte pas interactif, donc plus en gris »
+Le vert de l’espace organisation devient foncé (#0f6b4c, déjà dans la palette Org) : logo, liens, bouton. Il ne se confond plus avec un succès.
+« donc avoir du vert ne rappelant pas de la validation, donc peut-être du vert foncé »
+Bouton désactivé : gris plus clair, texte plus foncé. Contraste 5,0:1, contre 1,7:1 pour le blanc sur #c7c7c7 du token (CV Analysis, C1).
+« Boutons désactivé : on voit pas le texte dedans, le gris est trop foncé »
+Le nom de l’organisation dans la nav perd aussi son vert : il passe en couleur de texte standard.
+« aussi enlever le vert "Talkup Demo school" (le nom de l’orga) de la navbar pour une autre couleur »
+Le fond passe de #121212 à #111c31, la couleur prise sur la copie de la landing dark de la designer. Surfaces et bordures dérivées en bleu.
+« si on veut garder les CTA bleu avec texte noir, vaut mieux passer le noir du bg en bleu très très foncé »
+CTA adouci en #8fb8f4 avec texte foncé : contraste 8,4:1.
+« "pastellifier" ces couleurs-là / retour : c’est super »
+Statuts en pastel (succès, alerte, erreur).
+Textes secondaires éclaircis (#a3aec4 à #c8d0e0) : le plus faible des textes passe de 2,55:1 à au moins 4,5:1. Appliqué aussi sur L2.
+« Peux-tu regarder le contraste du texte ? la carte "New" de la navbar ou certains textes du board ont l’air trop sombre »
+Nothing matches this filter yet. Pick another kind
+L’icône grise devient une illustration v3, ludique et colorée. Réservé aux états vides : elle occupe un vrai vide et invite à agir.
+« Éviter les illustrations qui ressemblent à de simples stickers / Éviter les éléments décoratifs sans réelle valeur ajoutée »
+The interview before the interview.
+Add your CV and the link to the job offer. Talkup 
+CV in PDF. Simulations are held in French for now.
+Atelier Nord · Lyon · Apprenticeship
+PostgreSQL indexing and queries
+Listed as required. Your CV only mentions MongoDB.
+You used Jest on one school project. Prepare a con
+The offer stresses long-term team fit.
+A strong profile can still lose the job in a bad i
+You know your background by heart, then lose your 
+"Tell me about a mistake you made." Without prepar
+After a rejection, nobody tells you what went wron
+Each application gets its own preparation, built f
+Drop your CV and paste the offer link from LinkedI
+Get a preparation path ranked by priority, with th
+Talk with Sophie, the AI recruiter. She asks about
+See your scores move as you speak, take notes duri
+Live analysis, notes, assistant
+Each answer is scored as soon as you finish it. Yo
+Clarity, politeness and vocabulary scores for ever
+Register detection: professional, neutral or too c
+Your most frequent verbal tics, named
+One concrete tip after each answer
+Register: Professional · Turn 6
+Pause briefly instead of saying “euh” or “genre”.
+Parlez-moi d'une erreur que vous avez commise en p
+Alors en fait, sur mon projet de fin d'année, du c
+For every mission in the offer, Talkup suggests th
+Mission · Maintain and extend our REST API
+Your end-of-year project: a Node.js API used by 40
+Mission · Work in pairs with a senior developer
+Your hackathon team of four, where you handled cod
+Mission · Write automated tests
+The Jest suite you added to your school project. S
+Built for people with everything to prove out loud
+First internship or apprenticeship. You've never d
+First job. Interviews keep coming and you want to 
+New field, new vocabulary. You need to tell your s
+For schools, bootcamps and career services
+Create an organization, send invite codes, and fol
+Invite codes by email, with a role for each person
+Admin, employee and user roles
+Interviews, completion and average score per membe
+Talkup is free while in beta. Paid plans will come
+Preparation path and talking points
+Voice simulations with live analysis
+Organization with invite codes
+Progress stats for each member
+Simulations run on shared servers. At busy times y
+Speak with confidence. Land the job.
+Join 1 person already preparing with Talkup.
+Interview preparation built by four Epitech studen
+Your CV only mentions MongoDB. Let’s prepare a PostgreSQL example.
+L’ombre décalée de la maquette du hero (18 px) disparaît. À la place, un halo bleu en Layer Blur, sans décalage.
+« Supprimer l’ombre décalée si elle n’apporte rien visuellement. Ou créer une nouvelle ombre avec un effet Layer Blur »
+Les illustrations flottantes du hero sont retirées. L’avatar de l’IA commente la maquette, avec de l’espace sous ses boutons : il montre ce que fait le produit.
+« les illustrations du héro sont bizarres / Revoir la proposition actuelle du Hero / trouver un avatar pour l’IA à mettre dans la landing »
+Plus de numéros : chaque étape a son illustration v3, avec du volume et des couleurs.
+« les illustrations du héro sont bizarres sauf pour les 4 points et peut-être enlever les numéros pour mettre ces 4 points »
+Une ombre de texte discrète remplace les grands halos, trop forts : le glow suit les lettres des grands titres, et les boutons restent sans glow.
+« le glow discret ne serait pas vraiment sur le bouton mais sur des grands titres notamment "A strong profile..." car les boutons sont déjà assez voyants »
+Le micro garde un léger glow bleu très clair en dessous.
+« Ajouter un léger glow bleu très clair sous le microphone en mode sombre »
+Illustrations v3 : couleurs et volume, visibles en clair comme en sombre.
+« Adapter les couleurs des illustrations pour assurer leur visibilité en mode clair et sombre »
+La carte de Tali descend sous la maquette : elle ne touche plus les boutons.
+« L1 : l’illustration flottante touche les boutons au-dessus visuellement, donc un peu d’espace serait cool »
+Textes secondaires éclaircis, comme sur G4.
+« Peux-tu regarder le contraste du texte ? »
+Try it: is this offer for you?
+welcometothejungle.com/…/backend-go
+Create a free account to see everything
+La démo quitte le hero de la page d’accueil et devient une page à part, pour une opération de com. Argument pour un jury marketing.
+« la landing interactive n’est pas forcément bien pour le hero, peut-être plus utilisable dans une landing de teasing comme une opération de com. Par contre ça plaît pour des jurys marketing/com »
+Le score est expliqué : c’est une estimation de l’IA, comme dans le code actuel (0 à 100), pas une probabilité d’embauche.
+« peut-être un peu plus expliquer le score de l’interactive ou dans la roadmap, notamment comment on le calcule »
+Score visible, infos clés floutées, un seul CTA pour créer un compte. Reste à décider : quel CV sans compte, et le coût de l’IA par visiteur.
+« flouter les infos clés et s’ils veulent avoir ces infos-là ils doivent créer un compte »
+You do not have an account? Create one
+Florent recently published this 5 stars review
+"TalkUp completely transformed my interview skills
+Labels visibles et placeholders d’exemple : validés.
+« l’espacement est bien mieux »
+16 px entre les champs, au lieu de 24 px en première version.
+« sauf entre les input, genre entre email et password c’est trop grand. (Le 24px, généralement c’est soit 16 ou 20) »
+32 px entre « Forgot your password? » et le bouton.
+« Aérer un peu plus comme entre "Forgot password" et le bouton primaire »
+Carte de citation vitrée et illustration des bulles conservées. Les étoiles sont centrées.
+« le bloc bleu foncé du carousel est trop voyant et cache le reste de la page, sa marge est aussi »
+Learn about our Terms of Service
+Already have an account? Let's get you back in!
+Mêmes labels et exemples que sur la connexion, 16 px entre les champs. Le champ optionnel est signalé dans le label.
+« Le 24px, généralement c’est soit 16 ou 20 »
+Même carrousel que A1 : bulles conservées, étoiles centrées.
+« le bloc bleu foncé du carousel est trop voyant »
+Upload your CV and paste the job offer link to beg
+Optional: when is your interview with this company
+TalkUp will automatically extract details from the
+I consent to TalkUp processing my personal data (i
+Your data is stored securely. You can access, expo
+Plus d’air au-dessus du titre (64 px) et sous l’en-tête (40 px). Le contenu reste centré.
+« Aérer le dessus, on a fait une belle marge autour donc lecture fastidieuse / retour : ok »
+Le picto d’import reste un picto : l’illustration est retirée. Il passe du vert au bleu, car le vert signale un succès.
+« Conserver les icônes fonctionnelles plutôt que de chercher à les rendre illustratives »
+Bouton désactivé lisible, comme sur G3.
+Ingénieur Logiciel Backend (Go) at Qonto
+Votre profil correspond à 74% aux attentes du post
+Attendu lors des entretiens techniques.
+Question d'ouverture classique.
+Original offer: Ingénieur Logiciel Backend (Go) at Qonto
+Un lien de retour vers la liste, en haut à gauche de la page.
+« manque un retour quand on est dans les détails d’une application »
+Crayon à côté du titre : l’utilisateur choisit le nom affiché. L’intitulé d’origine reste visible. Le nouveau nom se retrouve dans la nav. Ombre du menu recentrée, sans décalage.
+« permettre à l’utilisateur de modifier le nom d’une application pour faire quelque chose de custom / Supprimer l’ombre décalée »
+La liste des applications laisse place à un sélecteur et un compteur : la colonne ne défile plus. Avec moins de 3 applications, on garde la liste simple, sans recherche.
+« c’est très bien mais peut-être ne pas l’activer quand on a moins de 3 applications »
+Le menu s’ouvre avec une recherche sur le nom. Données d’exemple.
+« avec une recherche sur le nom de l’application »
+Survol et sélection plus légers : #f0f4fa au lieu de #e2e4f0.
+« la couleur de hover des applications quand on cherche est trop forte »
+3 of 42 applications match “qonto”
+1 hidden: rejected applications stay out of the way.
+Une recherche en haut de liste, sur le nom personnalisé, l’entreprise et le poste.
+« Vraiment utiliser de la recherche sur les champs comme le nom etc »
+Des filtres par statut, entreprise et date d’entretien.
+« ça devient commun que des gens postulent à plusieurs dizaines d’offres »
+Trois offres chez Qonto se distinguent grâce à leur nom. Données d’exemple.
+« quand quelqu’un postule à 3 offres chez la même entreprise »
+La colonne Rejected se replie et masque ses cartes. Un clic les réaffiche. Les autres colonnes gagnent de la place.
+« board kanban : peut-être masquer/archiver les apps en rejected »
+42 applications · 2 interviews coming up
+En plus du Kanban, une vue tableau inspirée d’Airtable, pour voir beaucoup d’applications d’un coup. Noms et chiffres d’exemple.
+« Inspiration : airtable pour kanban / workflow »
+Colonnes triables, dont le nom personnalisé et le score. Une ligne fait 40 px : 16 applications tiennent à l’écran, contre 6 cartes environ en Kanban.
+TalkUp’s AI compares your CV with the requirements of this offer, then estimates a score from 0 to 100. It is an estimate, not a chance of being hired. The topics below show what to work on first.
+Le score passe dans une carte plus visible en haut à droite, avec un libellé. Il n’est pas utilisé en texte de fond, pour rester lisible.
+« Le score en haut à droite est un peu planqué / attention à habiller une page avec du texte en background »
+Le score est expliqué en un clic. Texte fidèle au code : aujourd’hui c’est une estimation de l’IA, sans détail du calcul.
+« peut-être un peu plus expliquer le score […] dans la roadmap, notamment comment on le calcule »
+Fond gris, cartes blanches et chemin linéaire : conservés.
+« mettre le bg en gris pour faire ressortir les cartes / chemin linéaire »
+Moins de variantes de police : Saira Bold et Regular, Inter Regular et Bold, tailles de l’échelle du design system.
+« attention aux typos à ne pas avoir trop de variantes de typo différentes créé par l’IA »
+Cercle du score : l’arc s’arrête à la valeur du score (74 %), comme dans le code. À 0 %, une amorce reste visible (8 %) au lieu d’un cercle vide.
+« pour le cercle du score, comme c’est évolutif […] faudrait quand même avoir un bout de cercle pour ne pas avoir un cercle vide à 0% »
+La phrase sous le titre est coupée en deux lignes : le constat, puis le conseil.
+« la phrase en-dessous du titre et au-dessus du statut bleu est très longue, peut-être le couper en deux »
+Boutons au même rayon que le reste du site (8 px au lieu de 16 px) et 40 px de haut. Le rayon de 16 px était bien spécifique à la roadmap.
+« la rondeur des boutons fait très IA slop et je pense n’est pas généralisé avec les autres boutons du site »
+Talking points from the role's responsibilities, m
+Concevoir et développer de nouvelles fonctionnalit
+Évoquez un projet récent où vous avez livré une fo
+3 to bring to your interview · 1 hidden
+Concevoir et développer de nouvelles fonctionnalités
+Évoquez un projet récent où vous avez livré une fonctionnalité de bout en bout.
+Travailler avec une équipe produit
+Les talking points passent sous la roadmap, sur toute la largeur : le chemin retrouve sa place et le bas de page n’est plus vide.
+« les talking points c’est mieux à droite mais maintenant on a trop de place en bas donc peut-être déplacer ça en dessous de la roadmap »
+Seul le titre s’affiche, avec « See more » pour lire le détail.
+« peut-être ajouter un "Voir plus" si ça l’intéresse »
+Deux actions sur chaque point : « compris » et « masquer ». Les points masqués restent accessibles. Seul le premier point vient de la capture, les autres sont des exemples.
+« avec la feature de supprimer/enlever/masquer/collapser un talking point »
+Avant : à 390 px, la sidebar garde ses 256 px et écrase le contenu. Ici, une nav en bas remplace la sidebar : 5 entrées, cibles de 56 px de haut. Burger ou flèche restent possibles. Choix à valider.
+« c’est quand même important d’avoir une partie mobile qui fonctionne… peut-être utiliser un burger ou une nav en bas ou une flèche dropdown pour étendre une colonne »
+Barre du haut : logo, recherche, profil. La recherche suit ce qui est proposé sur Ap2 et Ap3.
+Les colonnes du Kanban deviennent 4 onglets de statut de même largeur : plus aucun n’est coupé. Une seule liste de cartes à la fois.
+« de plus en plus de jeunes n’utilisent que mobile au lieu de pc, donc prévoir au cas-où et être prêt si le jury demande »
+A real interview happens at a desk, with your camera and microphone set up. Open TalkUp on your computer when you are ready.
+Parti pris à valider : sur mobile, la simulation est remplacée par un écran explicatif illustré.
+« Notre parti pris pourrait être que simulations ne doit être qu’avec pc car personne en entretien ne va se balader en tenant son téléphone »
+L’écran propose deux suites : recevoir le lien par email pour l’ouvrir sur ordinateur, ou réviser ses talking points depuis le téléphone.
+« prévoir au cas-où et être prêt si le jury demande »
+Your AI coach. I can prepare your interviews and act in TalkUp for you.
+Add my interview to the agenda
+What should I prepare for Qonto?
+L’avatar revient au smiley : composant Avatar Bot de l’équipe, en clair et en sombre. Repos dans l’interface, Sourire à l’accueil et sur la landing. Clin d’œil et Parle restent disponibles.
+« on revient aux smiley, on a ajouté un layer "Avatar bot" avec des états »
+Accueil : qui est l’assistant et ce qu’il sait faire. Variante où le panneau pousse le contenu : ligne G7.
+« voilà aussi un screenshot de l’assistant d’airtable »
+Tali est le coach, Sophie reste la recruteuse des simulations.
+« Tali est bien pour le moment / Oui ok »
+Tali can prepare your interviews and act in TalkUp for you.
+Le panneau pousse la page au lieu de la recouvrir : les 4 colonnes restent visibles en entier. C’était le défaut de la barre à droite de G2.
+« c’est surtout que la sidebar que tu as proposée fait qu’il y a du contenu de perdu derrière »
+La nav reste un rail d’icônes, avec la même bordure à droite que dans G1 point 3 : elle se distingue de l’assistant. Le bouton sous le logo la déplie.
+« ajouter la petite bordure entre la nav et l’assistant comme dans G1 point 3 »
+La page passe dans une fenêtre arrondie, pour bien séparer l’outil de l’assistant. Limite à valider : les colonnes sont plus étroites et les cartes moins lisibles.
+« proposer une maquette Talkup ressemblant au screenshot d’airtable »
+Piste A, montrée ici. Les étapes décrivent l’action de chacun : ajouter le CV et l’offre, TalkUp les compare, voir le score. Le stepper passe au-dessus des deux cartes, car il concerne aussi l’offre.
+« dans la card 1 ("Upload", "Analysis" and "Confirmation") ne décrit pas ce qui va réellement se passer dans la card »
+Piste B, plus courte, dans la carte actuelle : « Your CV » · « AI analysis » · « Your result ».
+« Elle ne nous a pas donné d’idée par quoi remplacer donc peux-tu faire des propositions ? »
+Piste C, sans onglets : une seule phrase et une barre. « Step 1 of 3: add your CV and the offer », puis « Next: TalkUp compares them ».
+Step 1 of 3: add your CV and the offer
+Avant / Après — retours du séminaire UI/UX, 4e tour
+Chaque ligne : la capture de l’app à gauche, la proposition à droite. Les pastilles roses renvoient à la liste « Ce qui change ». Cliquez un code d’écran pour y aller, « ↑ Sommaire » pour revenir. Fait : traité dans la maquette. À valider : interprétation ou choix à confirmer. Maquette : la fonctionnalité n’existe pas encore dans le code. Aucun code n’a été modifié.
+Brainstorm — Où placer l’assistant ?
+La page est poussée, jamais recouverte, et reste dans sa fenêtre bordée. La nav se replie à l’ouverture du panneau et se déplie avec son bouton. Maquettes : rien de cela n’est dans le code, sauf le repli de la nav.
+B · À droite, nav repliée — retenue pour le moment
+B · La même, nav dépliée à la main
+Page : 928 px, 4 colonnes visibles
+• Le panneau s’ouvre juste à côté du bouton Tali.
+• Ouvrir le panneau décale toute la page vers la droite.
+• La nav repliée se déplie avec le bouton sous le logo.
+• Le début de la page ne bouge pas : seul son bord droit recule.
+• La nav se replie à l’ouverture ; le bouton sous le logo la déplie.
+• Le bouton Tali est à gauche, le panneau s’ouvre à l’opposé.
+Page : 744 px, 3 colonnes et le début de la 4e
+• La nav retrouve ses libellés, avec son bouton habituel en haut.
+• Colonne Rejected coupée : il faut un défilement horizontal.
+1. Panneau à droite (option B), pour le moment.
+2. La nav se replie à l’ouverture et reste dépliable.
+3. Encore ouvert : sur un écran de 1024 px, il ne reste que 512 px à la page. Le panneau la pousse quand même, ou passe par-dessus ?
+Zone libre : posez ici vos notes, croquis et votes.
+Add the job offer and your CV: TalkUp compares them for you.
+TalkUp will automatically extract details from the listing.
+Drag and drop it here, or browse your files. Max size: 5 MB
+A new CV replaces the one saved on your profile.
+Optional: when is your interview with this company? Leave it empty if you don’t know yet.
+I consent to TalkUp processing my personal data (including my CV) to perform this compatibility analysis.
+Your data is stored securely. You can access, export, or delete it at any time.
+Remove the PDF to use a link instead.
+https://jobs.example.com/offer/1234
+We couldn’t read this page. Check the link, or upload the offer as a PDF.
+Your CV has been saved to your profile.
+Libellé Étape 1 · Erreur de lien
+Comme sur le dessin : les étapes passent dans une carte en haut et deviennent les 3 saisies. Une seule à la fois, sans « Retour » à l’étape 1. Les étapes faites restent cliquables.
+« avoir les étapes en haut dans une card, puis que ces étapes soient enfaite les 3 inputs »
+Étape 1 : le lien reste le choix principal, le PDF sert de repli. Choisir l’un grise l’autre. Le PDF de l’offre n’existe pas dans le code : à développer.
+« étape 1 = ajout de l’offre avec soit un lien ou upload en pdf de l’offre »
+Étape 2 : « Use my current CV » évite de redéposer le CV à chaque analyse. PDF seul, DOC et DOCX retirés : le serveur ne lit que le PDF. Le choix du CV actuel est à développer.
+« étape 2 = ajout du CV en upload » / « ok pour tes changements et ton idée en plus » / « pdf seul »
+Étape 3 : date facultative et consentement, sans bouton « Passer ». Le bouton de lancement s’active une fois le consentement coché. Ensuite, l’écran d’attente et le résultat actuels restent hors du stepper.
+« étape 3 = ajout de la date d’interview si elle est connu »
+Si l’offre est illisible, retour à l’étape 1 avec l’erreur sous le champ. CV, date et consentement sont conservés. Le message sur le CV enregistré vient du code actuel.

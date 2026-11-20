@@ -29,3 +29,7 @@ ai/microservices/**/llm/
 
 # superpowers brainstorm companion artifacts
 .superpowers/
+
+# Live session states from the design skill's login script (never commit)
+*storage-state*.json
+docs/design/pistes/**/state.json
