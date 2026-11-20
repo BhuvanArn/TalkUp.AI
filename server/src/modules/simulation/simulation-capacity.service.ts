@@ -31,16 +31,21 @@ redis.call('SET', KEYS[4], ARGV[4], 'EX', tonumber(ARGV[5]))
 return 1
 `;
 
+// Idempotent: the counter only drops when the id actually leaves the active
+// set, so a second release (cron + late cancel/finalize) cannot free a slot
+// that another simulation holds.
 const RELEASE_SLOT_LUA = `
-local count = tonumber(redis.call('GET', KEYS[1]) or '0')
-if count > 0 then
-  redis.call('DECR', KEYS[1])
+local removed = redis.call('SREM', KEYS[3], ARGV[1])
+if removed == 1 then
+  local count = tonumber(redis.call('GET', KEYS[1]) or '0')
+  if count > 0 then
+    redis.call('DECR', KEYS[1])
+  end
 end
 redis.call('DEL', KEYS[2])
-redis.call('SREM', KEYS[3], ARGV[1])
 redis.call('DEL', KEYS[4])
 redis.call('DEL', KEYS[5])
-return 1
+return removed
 `;
 
 @Injectable()
@@ -133,8 +138,9 @@ export class SimulationCapacityService {
     await this.redis.del(SimRedisKeys.queuedAt(interviewId));
   }
 
-  async releaseSlot(interviewId: string, userId: string): Promise<void> {
-    await this.redis.eval(
+  /** Returns `true` when this call freed the slot, `false` if it was already free. */
+  async releaseSlot(interviewId: string, userId: string): Promise<boolean> {
+    const removed = (await this.redis.eval(
       RELEASE_SLOT_LUA,
       5,
       SimRedisKeys.activeCount,
@@ -144,7 +150,8 @@ export class SimulationCapacityService {
       SimRedisKeys.queuedAt(interviewId),
       interviewId,
       userId,
-    );
+    )) as number;
+    return removed === 1;
   }
 
   async touchHeartbeat(interviewId: string, userId: string): Promise<void> {
